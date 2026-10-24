@@ -15,8 +15,8 @@ export default function NoGymScreen() {
         <Icon name="mail-unread-outline" size={28} color="primary" />
         <ThemedText type="heading">Waiting for an invite</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Your account isn&apos;t linked to a gym yet. Ask the front desk to add you, then sign in
-          again.
+          Your account isn&apos;t linked to a gym yet. Ask the front desk to invite the email you
+          signed up with, then sign in again.
         </ThemedText>
       </Card>
       <Button label="Sign out" variant="secondary" icon="log-out-outline" onPress={signOut} />

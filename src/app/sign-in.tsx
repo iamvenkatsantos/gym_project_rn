@@ -10,7 +10,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
-import { signInAsDemo, signInWithPassword } from '@/features/auth/api';
+import { signInAsDemo, signInWithPassword, signUp } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,6 +25,8 @@ const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[]
 export default function SignInScreen() {
   const theme = useTheme();
   const setProfile = useAuthStore((s) => s.setProfile);
+  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -36,8 +38,14 @@ export default function SignInScreen() {
     mutationFn: () => signInWithPassword(email.trim(), password),
     onSuccess: onSignedIn,
   });
+  const createAccount = useMutation({
+    mutationFn: () => signUp(fullName.trim(), email.trim(), password),
+    onSuccess: (profile) => profile && onSignedIn(profile),
+  });
   const demoSignIn = useMutation({ mutationFn: signInAsDemo, onSuccess: onSignedIn });
-  const error = passwordSignIn.error ?? demoSignIn.error;
+  const error =
+    (mode === 'signIn' ? passwordSignIn.error : createAccount.error) ?? demoSignIn.error;
+  const awaitingConfirmation = mode === 'signUp' && createAccount.isSuccess && !createAccount.data;
 
   const inputStyle = [
     styles.input,
@@ -61,6 +69,17 @@ export default function SignInScreen() {
 
       {isSupabaseConfigured ? (
         <View style={styles.form}>
+          {mode === 'signUp' ? (
+            <TextInput
+              style={inputStyle}
+              placeholder="Full name"
+              placeholderTextColor={theme.textSecondary}
+              autoComplete="name"
+              textContentType="name"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+          ) : null}
           <TextInput
             style={inputStyle}
             placeholder="Email"
@@ -76,18 +95,51 @@ export default function SignInScreen() {
             style={inputStyle}
             placeholder="Password"
             placeholderTextColor={theme.textSecondary}
-            autoComplete="current-password"
-            textContentType="password"
+            autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+            textContentType={mode === 'signIn' ? 'password' : 'newPassword'}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
-          <Button
-            label="Sign in"
-            loading={passwordSignIn.isPending}
-            disabled={!email || !password}
-            onPress={() => passwordSignIn.mutate()}
-          />
+          {mode === 'signIn' ? (
+            <Button
+              label="Sign in"
+              loading={passwordSignIn.isPending}
+              disabled={!email || !password}
+              onPress={() => passwordSignIn.mutate()}
+            />
+          ) : awaitingConfirmation ? (
+            <Card highlighted>
+              <ThemedText type="heading">Check your email</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                We sent a link to {email.trim()}. Confirm it, then sign in. If your gym invited this
+                email, you&apos;ll be in your gym straight away.
+              </ThemedText>
+            </Card>
+          ) : (
+            <Button
+              label="Create account"
+              loading={createAccount.isPending}
+              disabled={!fullName.trim() || !email || password.length < 8}
+              onPress={() => createAccount.mutate()}
+            />
+          )}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setMode((m) => (m === 'signIn' ? 'signUp' : 'signIn'))}
+            style={styles.switchMode}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {mode === 'signIn' ? 'New to CoreFit? ' : 'Already have an account? '}
+              <ThemedText type="linkPrimary">
+                {mode === 'signIn' ? 'Create an account' : 'Sign in'}
+              </ThemedText>
+            </ThemedText>
+          </Pressable>
+          {mode === 'signUp' && !awaitingConfirmation ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Use the email your gym has on file. Passwords need at least 8 characters.
+            </ThemedText>
+          ) : null}
         </View>
       ) : !isDemoMode ? (
         <ThemedText themeColor="danger">
@@ -175,5 +227,10 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  switchMode: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

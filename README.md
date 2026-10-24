@@ -8,11 +8,11 @@ lands in their own area after signing in.
 People can belong to several gyms and hold a different role in each (say, a trainer at one branch
 and a member at another). The app shows one gym at a time and switches area with the role.
 
-| Role    | What they can do today                                                                                                |
-| ------- | --------------------------------------------------------------------------------------------------------------------- |
-| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes     |
-| Trainer | Build plans from the exercise library and assign them to members, set weekly bookable hours, 1:1 sessions and classes |
-| Owner   | Dashboard with renewals due, the class timetable, members and plans                                                   |
+| Role    | What they can do today                                                                                                      |
+| ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes           |
+| Trainer | Build plans and assign them to members, follow those members' progress, set weekly bookable hours, 1:1 sessions and classes |
+| Owner   | Invite people by email, change roles, suspend or remove access; dashboard with renewals due, class timetable, memberships   |
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
@@ -23,6 +23,11 @@ and a member at another). The app shows one gym at a time and switches area with
   <img src="docs/screenshots/plan-builder.png" width="200" alt="Trainer plan builder" />
   <img src="docs/screenshots/assign-plan.png" width="200" alt="Assigning a plan to members" />
   <img src="docs/screenshots/weekly-hours.png" width="200" alt="Trainer weekly hours" />
+</p>
+<p>
+  <img src="docs/screenshots/owner-people.png" width="200" alt="Owner People screen" />
+  <img src="docs/screenshots/invite-person.png" width="200" alt="Inviting someone by email" />
+  <img src="docs/screenshots/trainer-member-progress.png" width="200" alt="Trainer viewing a member's progress" />
 </p>
 
 ## Design
@@ -63,8 +68,14 @@ npx supabase db push
 Then run `supabase/seed.sql` in the SQL editor to load the shared exercise library, and deploy the
 account deletion function with `npx supabase functions deploy delete-account`.
 
-New sign-ups get a profile with no gym. Add a row to `gym_members` (gym, user, role) to put
-someone in a gym as a member, trainer or owner.
+People create their own account in the app. Owners add them from the **People** tab by email:
+someone who already has an account joins straight away, anyone else joins as soon as they sign up
+and confirm that email. A new gym's first owner is added in SQL:
+
+```sql
+insert into gyms (name) values ('CoreFit Anna Nagar') returning id;
+insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>', 'owner');
+```
 
 ## Releasing
 
