@@ -11,6 +11,7 @@ import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
+import { usePushNotifications } from '@/features/notifications/use-push-notifications';
 import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
@@ -47,6 +48,7 @@ export default function RootLayout() {
 function RootNavigator() {
   useAuthBootstrap();
   useAuthLinks();
+  usePushNotifications();
   const status = useAuthStore((s) => s.status);
   const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
   // Nobody reaches their role's screens until they've chosen a password.

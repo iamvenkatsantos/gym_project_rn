@@ -16,6 +16,7 @@ import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/constants/legal'
 import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { useSignOut } from '@/features/auth/use-sign-out';
+import { PushSettings } from '@/features/notifications/components/push-settings';
 import { queryClient } from '@/lib/query-client';
 
 export default function AccountScreen() {
@@ -78,6 +79,9 @@ export default function AccountScreen() {
           })}
         </>
       ) : null}
+
+      <SectionHeader title="Notifications" />
+      <PushSettings />
 
       <SectionHeader title="Legal" />
       <Button

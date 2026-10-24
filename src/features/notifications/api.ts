@@ -88,3 +88,20 @@ export async function messageTrainer(gymId: string, senderId: string, input: Tra
   });
   if (error) throw error;
 }
+
+/** Ties this phone's Expo push token to the signed-in person, taking it from anyone before. */
+export async function savePushToken(token: string, platform: 'ios' | 'android') {
+  if (!supabase) return;
+  const { error } = await supabase.rpc('register_push_token', {
+    p_token: token,
+    p_platform: platform,
+  });
+  if (error) throw error;
+}
+
+/** Stops pushes to this phone, e.g. on sign-out. Needs the session, so call it first. */
+export async function removePushToken(token: string) {
+  if (!supabase) return;
+  const { error } = await supabase.rpc('unregister_push_token', { p_token: token });
+  if (error) throw error;
+}

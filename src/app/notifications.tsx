@@ -17,6 +17,9 @@ const kindIcon: Record<NotificationKind, IconName> = {
   message: 'chatbubble-ellipses-outline',
   trainer_request: 'hand-right-outline',
   trainer_assigned: 'people-outline',
+  reminder: 'alarm-outline',
+  booking: 'calendar-outline',
+  membership: 'card-outline',
 };
 
 export default function NotificationsScreen() {

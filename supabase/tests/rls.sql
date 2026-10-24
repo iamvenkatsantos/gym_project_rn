@@ -491,3 +491,78 @@ reset role;
 delete from public.member_trainers where member_id = '00000000-0000-0000-0000-000000000031' and trainer_id = '00000000-0000-0000-0000-00000000000b';
 set role authenticated;
 select string_agg(title, ', ' order by title) as trainer_sees from public.workout_logs;
+\echo '83 push tokens: M2 registers (expect ok), a bad token is refused (expect check error), outsider cannot read it (expect 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select public.register_push_token('ExponentPushToken[device-1]', 'android');
+select public.register_push_token('not-a-token', 'android');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e');
+select count(*) as outsider_tokens from public.push_tokens;
+\echo '84 same phone signs in as T2 and takes the token over (expect T2 sees 1, M2 sees 0); M2 cannot unregister it (expect still 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000030');
+select public.register_push_token('ExponentPushToken[device-1]', 'android');
+select count(*) as t2_tokens from public.push_tokens;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select count(*) as m2_tokens from public.push_tokens;
+select public.unregister_push_token('ExponentPushToken[device-1]');
+reset role; select count(*) as tokens_left from public.push_tokens; set role authenticated;
+\echo '85 members cannot run reminders or write inbox rows directly (expect permission denied, RLS error)'
+select public.send_reminders();
+insert into public.notifications (gym_id, recipient_id, kind, title) values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', 'message', 'x');
+\echo '86 owner schedules a class in 40 min and one tomorrow; M2 books both; reminders go to M2 and the trainer once (expect 1 and 1, then still 1 and 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Soon HIIT', '00000000-0000-0000-0000-00000000000b', now() + interval '40 minutes', 45, 10, 1);
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Later HIIT', '00000000-0000-0000-0000-00000000000b', now() + interval '1 day', 45, 10, 1);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select public.book_class(id) is not null as booked from public.classes where title in ('Soon HIIT', 'Later HIIT');
+reset role;
+select public.send_reminders();
+select public.send_reminders();
+select count(*) filter (where recipient_id = '00000000-0000-0000-0000-00000000000d') as m2_reminded,
+       count(*) filter (where recipient_id = '00000000-0000-0000-0000-00000000000b') as trainer_reminded
+  from public.notifications where kind = 'reminder' and title like 'Soon HIIT%';
+select count(*) as later_reminded from public.notifications where kind = 'reminder' and title like 'Later HIIT%';
+set role authenticated;
+\echo '87 owner moves then cancels the later class; M2 hears both and so does the trainer (expect Class moved, Class cancelled for each)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+update public.classes set starts_at = starts_at + interval '1 hour' where title = 'Later HIIT';
+select public.cancel_class((select id from public.classes where title = 'Later HIIT'), false);
+reset role;
+select r.full_name, string_agg(n.title, ', ' order by n.created_at, n.title) as heard
+  from public.notifications n join public.profiles r on r.id = n.recipient_id
+  where n.kind = 'booking' and n.body like 'Later HIIT%' group by r.full_name order by r.full_name;
+set role authenticated;
+\echo '88 M2 books T for a 1:1, then cancels it; T hears both (expect New session booked, Session cancelled)'
+reset role;
+delete from public.notifications where recipient_id = '00000000-0000-0000-0000-00000000000b';
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select set_config('test.session', public.book_trainer_session('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b','2026-11-03 17:00+05:30')::text, false) is not null as ok;
+update public.trainer_sessions set status = 'cancelled' where id = current_setting('test.session')::uuid;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select string_agg(title, ', ' order by created_at, title) as trainer_heard from public.notifications;
+\echo '88b M2 books that slot again; 30 min before, both get a reminder naming the other (expect 2 rows)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select public.book_trainer_session('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b','2026-11-03 17:00+05:30') is not null as ok;
+reset role;
+select public.send_reminders('2026-11-03 16:30+05:30');
+select body from public.notifications where title = 'Session starts soon' order by body;
+set role authenticated;
+\echo '89 a membership is recorded for Q (expect Membership active); 3 days before the end, Q is reminded once after 9 am gym time, not before (expect 0, 1, 1)'
+reset role;
+insert into public.memberships (member_id, plan_id, starts_on, ends_on)
+  select '00000000-0000-0000-0000-000000000032', id, '2026-10-01', '2026-10-30' from public.membership_plans
+  where gym_id = '10000000-0000-0000-0000-000000000001' limit 1;
+select title from public.notifications where kind = 'membership' and recipient_id = '00000000-0000-0000-0000-000000000032';
+select public.send_reminders('2026-10-27 08:30+05:30');
+select count(*) as before_nine from public.notifications where title = 'Membership ends soon' and recipient_id = '00000000-0000-0000-0000-000000000032';
+select public.send_reminders('2026-10-27 09:05+05:30');
+select public.send_reminders('2026-10-27 09:10+05:30');
+select count(*) as after_nine from public.notifications where title = 'Membership ends soon' and recipient_id = '00000000-0000-0000-0000-000000000032';
+\echo '89b Q renews past it, so the last-day reminder is skipped (expect 0)'
+insert into public.memberships (member_id, plan_id, starts_on, ends_on)
+  select '00000000-0000-0000-0000-000000000032', id, '2026-10-31', '2026-11-29' from public.membership_plans
+  where gym_id = '10000000-0000-0000-0000-000000000001' limit 1;
+select public.send_reminders('2026-10-30 10:00+05:30');
+select count(*) as last_day from public.notifications where title = 'Membership ends today';
+\echo '90 statement push trigger runs without Vault or pg_net (expect INSERT ok, no error)'
+select public.notify('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', 'message', 'Push check', '');

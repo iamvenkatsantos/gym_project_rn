@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { listNotifications, markAllRead, messageTrainer } from '@/features/notifications/api';
+import { clearBadge } from '@/features/notifications/push';
 import type { TrainerMessageInput } from '@/features/notifications/types';
 
 export const notificationKeys = {
@@ -20,6 +21,7 @@ export function useMarkAllRead(gymId: string, recipientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => markAllRead(gymId, recipientId),
+    onSuccess: clearBadge,
     onSettled: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
   });
 }
