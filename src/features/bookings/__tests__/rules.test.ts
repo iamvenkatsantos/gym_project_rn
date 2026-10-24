@@ -1,4 +1,4 @@
-import { canBook, spotsLeft } from '@/features/bookings/rules';
+import { canBook, classesOnDay, spotsLeft, upcomingDays } from '@/features/bookings/rules';
 import type { Booking, GymClass } from '@/features/bookings/types';
 
 const now = new Date('2026-10-24T10:00:00Z');
@@ -50,5 +50,22 @@ describe('canBook', () => {
     };
     expect(canBook(gymClass, [booking], now)).toEqual({ ok: false, reason: 'alreadyBooked' });
     expect(canBook(gymClass, [{ ...booking, status: 'cancelled' }], now)).toEqual({ ok: true });
+  });
+});
+
+describe('classesOnDay', () => {
+  it('keeps only classes on the given local day', () => {
+    const day = new Date(2026, 9, 24);
+    const morning = { ...gymClass, id: 'a', startsAt: new Date(2026, 9, 24, 7).toISOString() };
+    const tomorrow = { ...gymClass, id: 'b', startsAt: new Date(2026, 9, 25, 7).toISOString() };
+    expect(classesOnDay([morning, tomorrow], day).map((c) => c.id)).toEqual(['a']);
+  });
+});
+
+describe('upcomingDays', () => {
+  it('starts today at midnight', () => {
+    const days = upcomingDays(3, new Date(2026, 9, 31, 18));
+    expect(days.map((d) => d.getDate())).toEqual([31, 1, 2]);
+    expect(days[0].getHours()).toBe(0);
   });
 });

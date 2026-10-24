@@ -1,23 +1,24 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing, TapTarget } from '@/constants/theme';
 import { signInAsDemo, signInWithPassword } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
-import { isSupabaseConfigured } from '@/lib/env';
+import { isDemoMode, isSupabaseConfigured } from '@/lib/env';
 
-const demoRoles: { role: Role; label: string }[] = [
-  { role: 'member', label: 'Continue as member' },
-  { role: 'trainer', label: 'Continue as trainer' },
-  { role: 'owner', label: 'Continue as gym owner' },
+const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[] = [
+  { role: 'member', title: 'Member', detail: 'Book classes and track your plan', icon: 'person' },
+  { role: 'trainer', title: 'Trainer', detail: 'See your schedule and workouts', icon: 'barbell' },
+  { role: 'owner', title: 'Gym owner', detail: 'Members, classes and renewals', icon: 'business' },
 ];
 
 export default function SignInScreen() {
@@ -37,12 +38,27 @@ export default function SignInScreen() {
   const demoSignIn = useMutation({ mutationFn: signInAsDemo, onSuccess: onSignedIn });
   const error = passwordSignIn.error ?? demoSignIn.error;
 
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.border }];
+  const inputStyle = [
+    styles.input,
+    { color: theme.text, borderColor: theme.border, backgroundColor: theme.backgroundElement },
+  ];
 
   return (
-    <Screen title="Welcome to the gym">
+    <Screen>
+      <View style={styles.hero}>
+        <ThemedText type="label" themeColor="primary">
+          Gym App
+        </ThemedText>
+        <ThemedText type="display">
+          Train.{'\n'}Book.{'\n'}Repeat.
+        </ThemedText>
+        <ThemedText themeColor="textSecondary">
+          Classes, workouts and your membership in one place.
+        </ThemedText>
+      </View>
+
       {isSupabaseConfigured ? (
-        <Card>
+        <View style={styles.form}>
           <TextInput
             style={inputStyle}
             placeholder="Email"
@@ -50,6 +66,7 @@ export default function SignInScreen() {
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
+            textContentType="emailAddress"
             value={email}
             onChangeText={setEmail}
           />
@@ -58,6 +75,7 @@ export default function SignInScreen() {
             placeholder="Password"
             placeholderTextColor={theme.textSecondary}
             autoComplete="current-password"
+            textContentType="password"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -68,34 +86,83 @@ export default function SignInScreen() {
             disabled={!email || !password}
             onPress={() => passwordSignIn.mutate()}
           />
-        </Card>
+        </View>
+      ) : !isDemoMode ? (
+        <ThemedText themeColor="danger">
+          This build has no backend configured. Set EXPO_PUBLIC_SUPABASE_URL and
+          EXPO_PUBLIC_SUPABASE_ANON_KEY.
+        </ThemedText>
       ) : (
-        <Card>
-          <ThemedText type="small" themeColor="textSecondary">
-            Supabase isn&apos;t configured, so the app is using demo data. Pick a role to explore.
+        <View style={styles.form}>
+          <ThemedText type="label" themeColor="textSecondary">
+            Explore the demo as
           </ThemedText>
-          {demoRoles.map(({ role, label }) => (
-            <Button
+          {demoRoles.map(({ role, title, detail, icon }) => (
+            <Pressable
               key={role}
-              label={label}
-              variant="secondary"
-              loading={demoSignIn.isPending && demoSignIn.variables === role}
+              accessibilityRole="button"
+              accessibilityLabel={`Continue as ${title}`}
               disabled={demoSignIn.isPending}
-              onPress={() => demoSignIn.mutate(role)}
-            />
+              onPress={() => demoSignIn.mutate(role)}>
+              {({ pressed }) => (
+                <Card style={[styles.roleCard, pressed && styles.pressed]}>
+                  <View style={[styles.roleIcon, { backgroundColor: theme.backgroundSelected }]}>
+                    <Icon name={icon} size={22} color="primary" />
+                  </View>
+                  <View style={styles.roleBody}>
+                    <ThemedText type="heading">{title}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {detail}
+                    </ThemedText>
+                  </View>
+                  {demoSignIn.isPending && demoSignIn.variables === role ? (
+                    <ActivityIndicator color={theme.primary} />
+                  ) : (
+                    <Icon name="chevron-forward" size={20} />
+                  )}
+                </Card>
+              )}
+            </Pressable>
           ))}
-        </Card>
+        </View>
       )}
-      {error ? <ThemedText themeColor="primary">{error.message}</ThemedText> : null}
+      {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    gap: Spacing.three,
+    paddingTop: Spacing.five,
+    paddingBottom: Spacing.three,
+  },
+  form: {
+    gap: Spacing.three,
+  },
   input: {
-    minHeight: 44,
+    minHeight: TapTarget,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: Radius.medium,
     paddingHorizontal: Spacing.three,
+    fontSize: 16,
+  },
+  roleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  roleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleBody: {
+    flex: 1,
+  },
+  pressed: {
+    opacity: 0.75,
   },
 });

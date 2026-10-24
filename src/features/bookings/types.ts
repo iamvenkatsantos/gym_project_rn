@@ -1,6 +1,6 @@
 export type GymClass = {
   id: string;
-  trainerId: string;
+  trainerId: string | null;
   trainerName: string;
   title: string;
   startsAt: string;

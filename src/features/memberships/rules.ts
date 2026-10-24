@@ -30,3 +30,20 @@ export function membershipStatus(
   if (left <= EXPIRING_SOON_DAYS) return 'expiringSoon';
   return 'active';
 }
+
+/** Share of the membership period still remaining, from 1 at the start to 0 at the end. */
+export function remainingFraction(membership: Membership, today: Date = new Date()) {
+  const total =
+    Math.round((parseDate(membership.endsOn) - parseDate(membership.startsOn)) / DAY) + 1;
+  return Math.min(daysRemaining(membership, today) / total, 1);
+}
+
+/** Memberships that need a renewal conversation, soonest first. */
+export function renewalsDue(memberships: Membership[], today: Date = new Date()) {
+  return memberships
+    .filter((m) => {
+      const status = membershipStatus(m, today);
+      return status === 'expiringSoon' || status === 'expired';
+    })
+    .sort((a, b) => a.endsOn.localeCompare(b.endsOn));
+}

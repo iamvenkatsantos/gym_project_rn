@@ -56,7 +56,8 @@ create table public.workouts (
 create table public.classes (
   id uuid primary key default gen_random_uuid(),
   gym_id uuid not null references public.gyms (id) on delete cascade,
-  trainer_id uuid not null references public.profiles (id),
+  -- Nulled rather than cascaded so deleting a trainer's account keeps the timetable.
+  trainer_id uuid references public.profiles (id) on delete set null,
   title text not null,
   starts_at timestamptz not null,
   duration_minutes int not null check (duration_minutes > 0),
@@ -102,12 +103,12 @@ create index on public.memberships (member_id, ends_on desc);
 -- where clause keeps it scoped to the caller's gym.
 create view public.class_schedule as
   select
-    c.id, c.gym_id, c.trainer_id, p.full_name as trainer_name, c.title, c.starts_at,
+    c.id, c.gym_id, c.trainer_id, coalesce(p.full_name, 'TBA') as trainer_name, c.title, c.starts_at,
     c.duration_minutes, c.capacity,
     (select count(*)::int from public.bookings b
       where b.class_id = c.id and b.status = 'booked') as booked_count
   from public.classes c
-  join public.profiles p on p.id = c.trainer_id
+  left join public.profiles p on p.id = c.trainer_id
   where c.gym_id = public.current_gym_id();
 
 -- Books the caller into a class, locking the class row so two members can't

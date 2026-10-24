@@ -1,5 +1,6 @@
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
+import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { useProfile } from '@/features/auth/use-profile';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
@@ -20,13 +21,17 @@ export default function MemberMembershipScreen() {
         {(m) => m && <MembershipCard membership={m} />}
       </QueryState>
 
-      <ThemedText type="smallBold">Plans</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        Ask at the front desk to start or renew a plan.
-      </ThemedText>
+      <SectionHeader title="Plans" />
       <QueryState query={plans}>
-        {(list) => list.map((plan) => <PlanCard key={plan.id} plan={plan} />)}
+        {(list) =>
+          list.map((plan) => (
+            <PlanCard key={plan.id} plan={plan} current={plan.id === membership.data?.plan.id} />
+          ))
+        }
       </QueryState>
+      <ThemedText type="small" themeColor="textSecondary">
+        To start or renew a plan, speak to the front desk.
+      </ThemedText>
     </Screen>
   );
 }

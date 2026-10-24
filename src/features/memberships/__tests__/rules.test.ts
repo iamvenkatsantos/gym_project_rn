@@ -1,4 +1,9 @@
-import { daysRemaining, membershipStatus } from '@/features/memberships/rules';
+import {
+  daysRemaining,
+  membershipStatus,
+  remainingFraction,
+  renewalsDue,
+} from '@/features/memberships/rules';
 import type { Membership } from '@/features/memberships/types';
 
 const today = new Date(2026, 9, 24);
@@ -33,5 +38,24 @@ describe('membershipStatus', () => {
     ['2026-10-25', '2026-11-25', 'upcoming'],
   ] as const)('%s to %s is %s', (startsOn, endsOn, expected) => {
     expect(membershipStatus(membership(startsOn, endsOn), today)).toBe(expected);
+  });
+});
+
+describe('remainingFraction', () => {
+  it('is 1 on the first day and shrinks to 0 after the end', () => {
+    expect(remainingFraction(membership('2026-10-24', '2026-11-22'), today)).toBe(1);
+    expect(remainingFraction(membership('2026-09-25', '2026-10-24'), today)).toBeCloseTo(1 / 30);
+    expect(remainingFraction(membership('2026-09-01', '2026-10-01'), today)).toBe(0);
+  });
+});
+
+describe('renewalsDue', () => {
+  it('lists expiring and expired memberships, soonest end first', () => {
+    const list = [
+      { ...membership('2026-10-01', '2026-11-30'), id: 'active' },
+      { ...membership('2026-10-01', '2026-10-28'), id: 'soon' },
+      { ...membership('2026-09-01', '2026-10-20'), id: 'expired' },
+    ];
+    expect(renewalsDue(list, today).map((m) => m.id)).toEqual(['expired', 'soon']);
   });
 });

@@ -4,8 +4,8 @@ export default function TrainerLayout() {
   return (
     <RoleTabs
       tabs={[
-        { name: 'index', title: 'Schedule' },
-        { name: 'workouts', title: 'My workouts' },
+        { name: 'index', title: 'Schedule', icon: 'calendar-outline' },
+        { name: 'workouts', title: 'My workouts', icon: 'barbell-outline' },
       ]}
     />
   );

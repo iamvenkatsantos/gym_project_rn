@@ -4,7 +4,7 @@ import { supabase, unwrap } from '@/lib/supabase';
 
 type ClassRow = {
   id: string;
-  trainer_id: string;
+  trainer_id: string | null;
   trainer_name: string;
   title: string;
   starts_at: string;

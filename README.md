@@ -3,11 +3,24 @@
 A React Native app for gym members, trainers and owners. One app, three roles: each user
 lands in their own area after signing in.
 
-| Role    | What they can do today                                            |
-| ------- | ----------------------------------------------------------------- |
-| Member  | See their membership, browse workouts, book and cancel classes    |
-| Trainer | See their class schedule and the workouts they've written         |
-| Owner   | Dashboard of members and bookings, all classes, members and plans |
+| Role    | What they can do today                                              |
+| ------- | ------------------------------------------------------------------- |
+| Member  | See their membership, browse workouts, book and cancel classes      |
+| Trainer | See their class schedule and the workouts they've written           |
+| Owner   | Dashboard with renewals due, the class timetable, members and plans |
+
+<p>
+  <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
+  <img src="docs/screenshots/member-classes.png" width="200" alt="Class booking" />
+  <img src="docs/screenshots/owner-dashboard.png" width="200" alt="Owner dashboard" />
+</p>
+
+## Design
+
+Dark-first with a volt accent and large (52pt) tap targets, since people use gym apps mid-workout
+in dim light. Class booking follows the common timetable pattern: a horizontal day picker, then
+rows showing time, trainer and live spots left with a fill bar. Tokens live in
+`src/constants/theme.ts`.
 
 ## Stack
 
@@ -24,8 +37,8 @@ npm install
 npm start          # then press i, a or w
 ```
 
-Without Supabase credentials the app runs on in-memory demo data, and the sign-in screen
-lets you continue as a member, trainer or owner.
+In development (and EAS `preview` builds) without Supabase credentials the app runs on in-memory
+demo data, and the sign-in screen lets you continue as a member, trainer or owner.
 
 To use a real backend, copy `.env.example` to `.env`, fill in your project's URL and anon key,
 and apply the schema:
@@ -37,6 +50,11 @@ npx supabase db push
 
 New sign-ups get a `member` profile with no gym. Set `gym_id` and `role` on `profiles` to put
 someone in a gym or make them a trainer or owner.
+
+## Releasing
+
+See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
+checklist.
 
 ## Scripts
 

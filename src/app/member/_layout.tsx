@@ -4,10 +4,10 @@ export default function MemberLayout() {
   return (
     <RoleTabs
       tabs={[
-        { name: 'index', title: 'Home' },
-        { name: 'classes', title: 'Classes' },
-        { name: 'workouts', title: 'Workouts' },
-        { name: 'membership', title: 'Membership' },
+        { name: 'index', title: 'Home', icon: 'home-outline' },
+        { name: 'classes', title: 'Classes', icon: 'calendar-outline' },
+        { name: 'workouts', title: 'Workouts', icon: 'barbell-outline' },
+        { name: 'membership', title: 'Membership', icon: 'card-outline' },
       ]}
     />
   );

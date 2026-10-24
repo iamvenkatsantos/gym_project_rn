@@ -11,10 +11,6 @@ import type { Workout } from '@/features/workouts/types';
 const GYM_ID = 'gym-1';
 const DAY = 24 * 60 * 60 * 1000;
 
-function hoursFromNow(hours: number) {
-  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
-}
-
 function daysFromToday(days: number) {
   return new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
 }
@@ -54,41 +50,45 @@ export const mockWorkouts: Workout[] = [
   },
 ];
 
-export const mockClasses: GymClass[] = [
-  {
-    id: 'c-1',
-    trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
-    title: 'HIIT Express',
-    startsAt: hoursFromNow(3),
-    durationMinutes: 30,
-    capacity: 12,
-    bookedCount: 9,
-  },
-  {
-    id: 'c-2',
-    trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
-    title: 'Strength Fundamentals',
-    startsAt: hoursFromNow(26),
-    durationMinutes: 60,
-    capacity: 8,
-    bookedCount: 8,
-  },
-  {
-    id: 'c-3',
-    trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
-    title: 'Mobility Flow',
-    startsAt: hoursFromNow(50),
-    durationMinutes: 45,
-    capacity: 15,
-    bookedCount: 4,
-  },
+const classTemplates = [
+  { title: 'HIIT Express', hour: 7, durationMinutes: 30, capacity: 12 },
+  { title: 'Strength Fundamentals', hour: 12, durationMinutes: 60, capacity: 8 },
+  { title: 'Spin & Burn', hour: 18, durationMinutes: 45, capacity: 20 },
+  { title: 'Mobility Flow', hour: 19, durationMinutes: 45, capacity: 15 },
 ];
 
+function atHour(daysAhead: number, hour: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  date.setHours(hour, 0, 0, 0);
+  return date.toISOString();
+}
+
+/** A week of classes; booked counts vary so full and nearly full classes show up. */
+export const mockClasses: GymClass[] = Array.from({ length: 7 }, (_, day) =>
+  classTemplates.map((template, i) => ({
+    id: `c-${day}-${i}`,
+    trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
+    title: template.title,
+    startsAt: atHour(day, template.hour),
+    durationMinutes: template.durationMinutes,
+    capacity: template.capacity,
+    bookedCount: Math.min(template.capacity, (day * 3 + i * 5) % (template.capacity + 3)),
+  })),
+).flat();
+
+const bookedClass = mockClasses.find((c) => c.id === 'c-1-3')!;
+bookedClass.bookedCount += 1;
+
 export const mockBookings: Booking[] = [
-  { id: 'b-1', classId: 'c-3', memberId: 'u-member', status: 'booked', gymClass: mockClasses[2] },
+  {
+    id: 'b-1',
+    classId: bookedClass.id,
+    memberId: 'u-member',
+    status: 'booked',
+    gymClass: bookedClass,
+  },
 ];
 
 export const mockPlans: MembershipPlan[] = [
@@ -105,6 +105,30 @@ export const mockMemberships: Membership[] = [
     plan: mockPlans[0],
     startsOn: daysFromToday(-25),
     endsOn: daysFromToday(5),
+  },
+  {
+    id: 'm-2',
+    memberId: 'u-member-2',
+    memberName: 'Arjun Kumar',
+    plan: mockPlans[2],
+    startsOn: daysFromToday(-100),
+    endsOn: daysFromToday(265),
+  },
+  {
+    id: 'm-3',
+    memberId: 'u-member-3',
+    memberName: 'Priya Sharma',
+    plan: mockPlans[1],
+    startsOn: daysFromToday(-93),
+    endsOn: daysFromToday(-3),
+  },
+  {
+    id: 'm-4',
+    memberId: 'u-member-4',
+    memberName: 'Leo Martins',
+    plan: mockPlans[0],
+    startsOn: daysFromToday(-28),
+    endsOn: daysFromToday(2),
   },
 ];
 

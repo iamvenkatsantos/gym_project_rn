@@ -38,6 +38,17 @@ export async function signOut() {
   await supabase?.auth.signOut();
 }
 
+/**
+ * Permanently deletes the signed-in user's account and data. Required by both
+ * App Store (5.1.1(v)) and Google Play for apps that let people sign up.
+ */
+export async function deleteAccount() {
+  if (!supabase) return delay(undefined);
+  const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+  if (error) throw error;
+  await supabase.auth.signOut();
+}
+
 export async function restoreProfile(): Promise<Profile | null> {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();

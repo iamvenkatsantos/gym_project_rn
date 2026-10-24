@@ -1,8 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+
+import { Colors } from '@/constants/theme';
 
 import { useAuthStore } from '@/features/auth/auth-store';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
@@ -10,12 +12,23 @@ import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+const navigationTheme: Theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: Colors.primary,
+    background: Colors.background,
+    card: Colors.background,
+    text: Colors.text,
+    border: Colors.border,
+  },
+};
 
+export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={navigationTheme}>
+        <StatusBar style="light" />
         <RootNavigator />
       </ThemeProvider>
     </QueryClientProvider>
@@ -48,6 +61,12 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
+      </Stack.Protected>
+      <Stack.Protected guard={status === 'signedIn'}>
+        <Stack.Screen
+          name="account"
+          options={{ presentation: 'modal', headerShown: true, title: 'Account' }}
+        />
       </Stack.Protected>
     </Stack>
   );

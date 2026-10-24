@@ -1,11 +1,15 @@
-import { Screen } from '@/components/screen';
+import { router } from 'expo-router';
+
+import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
-import { ThemedText } from '@/components/themed-text';
+import { Screen } from '@/components/screen';
+import { SectionHeader } from '@/components/section-header';
 import { useProfile } from '@/features/auth/use-profile';
-import { ClassCard } from '@/features/bookings/components/class-card';
+import { ClassRow } from '@/features/bookings/components/class-row';
 import { useMyBookings } from '@/features/bookings/hooks';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { useCurrentMembership } from '@/features/memberships/hooks';
+import { greeting } from '@/lib/greeting';
 
 export default function MemberHomeScreen() {
   const profile = useProfile();
@@ -13,8 +17,8 @@ export default function MemberHomeScreen() {
   const bookings = useMyBookings(profile.id);
 
   return (
-    <Screen title={`Hi, ${profile.fullName.split(' ')[0]}`}>
-      <ThemedText type="smallBold">Your membership</ThemedText>
+    <Screen eyebrow={greeting()} title={profile.fullName.split(' ')[0]}>
+      <SectionHeader title="Membership" />
       <QueryState
         query={membership}
         isEmpty={(m) => !m}
@@ -22,10 +26,29 @@ export default function MemberHomeScreen() {
         {(m) => m && <MembershipCard membership={m} />}
       </QueryState>
 
-      <ThemedText type="smallBold">Next class</ThemedText>
+      <SectionHeader
+        title="Your bookings"
+        detail={bookings.data?.length ? `${bookings.data.length} upcoming` : undefined}
+      />
       <QueryState query={bookings} isEmpty={(b) => b.length === 0} emptyText="No classes booked.">
-        {([next]) => <ClassCard gymClass={next.gymClass} />}
+        {(list) =>
+          list
+            .slice(0, 3)
+            .map((booking, i) => (
+              <ClassRow
+                key={booking.id}
+                gymClass={booking.gymClass}
+                showDay
+                highlighted={i === 0}
+              />
+            ))
+        }
       </QueryState>
+      <Button
+        label="Book a class"
+        icon="add-circle-outline"
+        onPress={() => router.navigate('/member/classes')}
+      />
     </Screen>
   );
 }
