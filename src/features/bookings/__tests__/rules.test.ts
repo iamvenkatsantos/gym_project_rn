@@ -1,0 +1,71 @@
+import { canBook, classesOnDay, spotsLeft, upcomingDays } from '@/features/bookings/rules';
+import type { Booking, GymClass } from '@/features/bookings/types';
+
+const now = new Date('2026-10-24T10:00:00Z');
+
+const gymClass: GymClass = {
+  id: 'c-1',
+  trainerId: 't-1',
+  trainerName: 'Tom',
+  title: 'HIIT',
+  startsAt: '2026-10-24T12:00:00Z',
+  durationMinutes: 30,
+  capacity: 10,
+  bookedCount: 4,
+};
+
+describe('spotsLeft', () => {
+  it('never goes below zero', () => {
+    expect(spotsLeft(gymClass)).toBe(6);
+    expect(spotsLeft({ ...gymClass, bookedCount: 12 })).toBe(0);
+  });
+});
+
+describe('canBook', () => {
+  it('allows booking an open future class', () => {
+    expect(canBook(gymClass, [], now)).toEqual({ ok: true });
+  });
+
+  it('rejects classes that have started', () => {
+    expect(canBook({ ...gymClass, startsAt: '2026-10-24T09:00:00Z' }, [], now)).toEqual({
+      ok: false,
+      reason: 'started',
+    });
+  });
+
+  it('rejects full classes', () => {
+    expect(canBook({ ...gymClass, bookedCount: 10 }, [], now)).toEqual({
+      ok: false,
+      reason: 'full',
+    });
+  });
+
+  it('rejects a class the member already booked, but not a cancelled one', () => {
+    const booking: Booking = {
+      id: 'b-1',
+      classId: 'c-1',
+      memberId: 'm-1',
+      status: 'booked',
+      gymClass,
+    };
+    expect(canBook(gymClass, [booking], now)).toEqual({ ok: false, reason: 'alreadyBooked' });
+    expect(canBook(gymClass, [{ ...booking, status: 'cancelled' }], now)).toEqual({ ok: true });
+  });
+});
+
+describe('classesOnDay', () => {
+  it('keeps only classes on the given local day', () => {
+    const day = new Date(2026, 9, 24);
+    const morning = { ...gymClass, id: 'a', startsAt: new Date(2026, 9, 24, 7).toISOString() };
+    const tomorrow = { ...gymClass, id: 'b', startsAt: new Date(2026, 9, 25, 7).toISOString() };
+    expect(classesOnDay([morning, tomorrow], day).map((c) => c.id)).toEqual(['a']);
+  });
+});
+
+describe('upcomingDays', () => {
+  it('starts today at midnight', () => {
+    const days = upcomingDays(3, new Date(2026, 9, 31, 18));
+    expect(days.map((d) => d.getDate())).toEqual([31, 1, 2]);
+    expect(days[0].getHours()).toBe(0);
+  });
+});

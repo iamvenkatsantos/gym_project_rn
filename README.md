@@ -1,56 +1,96 @@
-# Welcome to your Expo app 👋
+# CoreFit
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<img src="assets/images/icon.png" width="96" alt="CoreFit icon" />
 
-## Get started
+A React Native app for gym members, trainers and owners. One app, three roles: each user
+lands in their own area after signing in.
 
-1. Install dependencies
+| Role    | What they can do today                                              |
+| ------- | ------------------------------------------------------------------- |
+| Member  | See their membership, browse workouts, book and cancel classes      |
+| Trainer | See their class schedule and the workouts they've written           |
+| Owner   | Dashboard with renewals due, the class timetable, members and plans |
 
-   ```bash
-   npm install
-   ```
+<p>
+  <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
+  <img src="docs/screenshots/member-classes.png" width="200" alt="Bookings" />
+  <img src="docs/screenshots/owner-dashboard.png" width="200" alt="Owner dashboard" />
+</p>
 
-2. Start the app
+## Design
 
-   ```bash
-   npx expo start
-   ```
+The product plan is in [docs/product-plan.pdf](docs/product-plan.pdf).
 
-In the output, you'll find options to open the app in a
+Dark-first with the CoreFit green accent and large (52pt) tap targets, since people use gym apps mid-workout
+in dim light. Class booking follows the common timetable pattern: a horizontal day picker, then
+rows showing time, trainer and live spots left with a fill bar. Tokens live in
+`src/constants/theme.ts`.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Stack
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Expo SDK 58** with **Expo Router** (file-based routes, protected per role)
+- **TypeScript** (strict)
+- **TanStack Query** for server state, **Zustand** for the auth session
+- **Supabase** for auth and Postgres, with row-level security per gym and role
+- **Jest** + **React Native Testing Library**, ESLint (`eslint-config-expo`), Prettier
 
-## Get a fresh project
-
-When you're ready, run:
+## Getting started
 
 ```bash
-npm run reset-project
+npm install
+npm start          # then press i, a or w
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+In development (and EAS `preview` builds) without Supabase credentials the app runs on in-memory
+demo data, and the sign-in screen lets you continue as a member, trainer or owner.
 
-### Other setup steps
+To use a real backend, copy `.env.example` to `.env`, fill in your project's URL and anon key,
+and apply the schema:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npx supabase link --project-ref <your-ref>
+npx supabase db push
+```
 
-## Learn more
+New sign-ups get a `member` profile with no gym. Set `gym_id` and `role` on `profiles` to put
+someone in a gym or make them a trainer or owner.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Releasing
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
+checklist.
 
-## Join the community
+## Scripts
 
-Join our community of developers creating universal apps.
+| Command             | What it does              |
+| ------------------- | ------------------------- |
+| `npm start`         | Start the Expo dev server |
+| `npm test`          | Run Jest                  |
+| `npm run typecheck` | `tsc --noEmit`            |
+| `npm run lint`      | ESLint via `expo lint`    |
+| `npm run format`    | Prettier                  |
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Project structure
+
+```
+src/
+  app/                    Routes (Expo Router). Every file is a screen.
+    _layout.tsx           Providers and role guards
+    sign-in.tsx
+    member/               Member tabs: home, classes, workouts, membership
+    trainer/              Trainer tabs: schedule, workouts
+    owner/                Owner tabs: dashboard, classes, members
+  features/
+    auth/                 Session store, sign-in/out, profile
+    workouts/             types, api, hooks, components, tests
+    bookings/             classes, bookings, booking rules
+    memberships/          plans, memberships, status rules
+  components/             Shared UI (Screen, Card, Button, QueryState, tabs)
+  lib/                    Supabase client, query client, env, formatting, mock data
+  constants/ hooks/       Theme tokens and theme hooks
+supabase/migrations/      Database schema and RLS policies
+```
+
+Each feature keeps the same shape: `types.ts` for the domain model, `api.ts` for Supabase calls
+(mapping snake_case rows to camelCase types, with a mock fallback), `hooks.ts` for React Query
+hooks and keys, pure business rules in `rules.ts`, and its own `components/`.

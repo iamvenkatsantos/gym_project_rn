@@ -1,0 +1,65 @@
+# Releasing to the App Store and Google Play
+
+Builds and submissions go through [EAS](https://docs.expo.dev/eas/). Native `ios/` and `android/`
+folders are generated, so all native config lives in `app.json` and `eas.json`.
+
+## Build profiles (`eas.json`)
+
+| Profile       | Use                                        | Demo data | Distribution     |
+| ------------- | ------------------------------------------ | --------- | ---------------- |
+| `development` | Dev client for day-to-day work on a device | Allowed   | Internal         |
+| `preview`     | Installable test builds (APK, ad hoc iOS)  | Allowed   | Internal         |
+| `production`  | Store builds; build numbers auto-increment | Never     | App Store / Play |
+
+Production builds refuse to show demo data (`isDemoMode` in `src/lib/env.ts`), so a store build
+without Supabase keys shows a configuration error instead of fake content.
+
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest init                       # links the project, adds projectId to app.json
+npx eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value ...
+npx eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value ...
+npx eas-cli@latest build --profile production --platform all
+npx eas-cli@latest submit --profile production --platform ios
+npx eas-cli@latest submit --profile production --platform android   # goes to the internal track
+```
+
+## Before the first submission
+
+**Identity**
+
+- [x] App name: CoreFit.
+- [x] Bundle ID / package: `com.corefit.gym`. It can't change after the first upload to either
+      store.
+- [x] Icon, Android adaptive icon and splash generated from the CoreFit logo. A sharper master
+      (vector or 1024px with an opaque white figure) would improve the store icon.
+- [ ] Android themed (monochrome) icon: needs a single-colour version of the logo.
+
+**Accounts**
+
+- [ ] Apple Developer Program membership and an App Store Connect app record.
+- [ ] Google Play Console account, app created, and a service account key for `eas submit`.
+- [ ] New Play personal accounts must run a closed test with testers for 14 days before production
+      access; plan for it.
+
+**Policy requirements already handled in the app**
+
+- [x] In-app account deletion (Account screen → Delete account), required by App Store guideline
+      5.1.1(v) and Google Play. Deploy the function: `npx supabase functions deploy delete-account`.
+- [x] Privacy policy and terms links in the app (Account screen).
+- [x] `ITSAppUsesNonExemptEncryption: false`, so builds skip the export compliance question.
+- [x] No demo or placeholder content in production builds.
+
+**Still to do**
+
+- [ ] Publish a real privacy policy and terms, then update `src/constants/legal.ts` and the store
+      listings. Play also needs a web page for account deletion requests.
+- [ ] App Store privacy labels and Play Data safety form. Data collected today: name, email, gym
+      bookings and membership history, all linked to the account, none used for tracking.
+- [ ] A reviewer account (member role, with a membership and bookings) for App Review and Play's
+      app access section, because every screen is behind sign-in.
+- [ ] Store screenshots (6.9" iPhone and phone sizes for Play) and descriptions.
+- [ ] Content rating questionnaire (Play) and age rating (App Store).
+- [ ] If payments for memberships are added in the app, Apple and Google require their in-app
+      purchase systems for digital goods; gym memberships used in person are usually exempt as
+      physical services, but confirm before building checkout.
