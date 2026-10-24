@@ -39,3 +39,16 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## This project
+
+- Gym app for three roles (member, trainer, owner). Routes live in `src/app/<role>/`; the root
+  layout guards each role with `Stack.Protected`.
+- Feature code lives in `src/features/<feature>/` (`types.ts`, `api.ts`, `hooks.ts`, `rules.ts`,
+  `components/`, `__tests__/`). Keep screens thin and put logic in hooks and rules.
+- `api.ts` functions fall back to `src/lib/mock-db.ts` when Supabase env vars are missing. Keep the
+  mock path working when adding API calls.
+- Schema changes go in a new file under `supabase/migrations/`, with RLS policies for every table.
+- Run `npm run typecheck`, `npm run lint` and `npm test` before declaring a task done.
+- In this cloud environment the Expo API is blocked by the proxy; prefix Expo CLI commands with
+  `EXPO_OFFLINE=1`.
