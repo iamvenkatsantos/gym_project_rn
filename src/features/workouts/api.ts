@@ -1,5 +1,5 @@
 import type { Workout } from '@/features/workouts/types';
-import { delay, mockWorkouts } from '@/lib/mock-db';
+import { delay, forGym, mockWorkouts } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type WorkoutRow = {
@@ -24,13 +24,21 @@ function toWorkout(row: WorkoutRow): Workout {
   };
 }
 
-export async function listWorkouts(filter: { trainerId?: string } = {}): Promise<Workout[]> {
+export async function listWorkouts(
+  gymId: string,
+  filter: { trainerId?: string } = {},
+): Promise<Workout[]> {
   if (!supabase) {
-    return delay(mockWorkouts.filter((w) => !filter.trainerId || w.trainerId === filter.trainerId));
+    return delay(
+      forGym(gymId, mockWorkouts).filter(
+        (w) => !filter.trainerId || w.trainerId === filter.trainerId,
+      ),
+    );
   }
   let query = supabase
     .from('workouts')
     .select('id, trainer_id, title, description, level, duration_minutes, exercises')
+    .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
   if (filter.trainerId) query = query.eq('trainer_id', filter.trainerId);
   return unwrap(await query).map(toWorkout);

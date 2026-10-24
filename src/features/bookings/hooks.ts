@@ -9,21 +9,22 @@ import {
 
 export const bookingKeys = {
   all: ['bookings'] as const,
-  classes: (trainerId?: string) => [...bookingKeys.all, 'classes', { trainerId }] as const,
-  mine: (memberId: string) => [...bookingKeys.all, 'mine', memberId] as const,
+  classes: (gymId: string, trainerId?: string) =>
+    [...bookingKeys.all, gymId, 'classes', { trainerId }] as const,
+  mine: (gymId: string, memberId: string) => [...bookingKeys.all, gymId, 'mine', memberId] as const,
 };
 
-export function useUpcomingClasses(trainerId?: string) {
+export function useUpcomingClasses(gymId: string, trainerId?: string) {
   return useQuery({
-    queryKey: bookingKeys.classes(trainerId),
-    queryFn: () => listUpcomingClasses({ trainerId }),
+    queryKey: bookingKeys.classes(gymId, trainerId),
+    queryFn: () => listUpcomingClasses(gymId, { trainerId }),
   });
 }
 
-export function useMyBookings(memberId: string) {
+export function useMyBookings(gymId: string, memberId: string) {
   return useQuery({
-    queryKey: bookingKeys.mine(memberId),
-    queryFn: () => listMyBookings(memberId),
+    queryKey: bookingKeys.mine(gymId, memberId),
+    queryFn: () => listMyBookings(gymId, memberId),
   });
 }
 

@@ -4,12 +4,12 @@ import { listWorkouts } from '@/features/workouts/api';
 
 export const workoutKeys = {
   all: ['workouts'] as const,
-  list: (trainerId?: string) => [...workoutKeys.all, { trainerId }] as const,
+  list: (gymId: string, trainerId?: string) => [...workoutKeys.all, gymId, { trainerId }] as const,
 };
 
-export function useWorkouts(trainerId?: string) {
+export function useWorkouts(gymId: string, trainerId?: string) {
   return useQuery({
-    queryKey: workoutKeys.list(trainerId),
-    queryFn: () => listWorkouts({ trainerId }),
+    queryKey: workoutKeys.list(gymId, trainerId),
+    queryFn: () => listWorkouts(gymId, { trainerId }),
   });
 }

@@ -5,15 +5,16 @@ import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
-import { useProfile } from '@/features/auth/use-profile';
+import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useCurrentMembership, usePlans } from '@/features/memberships/hooks';
 
 export default function MemberProfileScreen() {
   const profile = useProfile();
-  const membership = useCurrentMembership(profile.id);
-  const plans = usePlans();
+  const gym = useActiveGym();
+  const membership = useCurrentMembership(gym.gymId, profile.id);
+  const plans = usePlans(gym.gymId);
 
   return (
     <Screen>
