@@ -15,6 +15,8 @@ export default function OwnerMembershipsScreen() {
   const gym = useActiveGym();
   const memberships = useMemberships(gym.gymId);
   const plans = usePlans(gym.gymId);
+  // Supervisors record payments; selling plans stays with the owner.
+  const isOwner = gym.role === 'owner';
   const renew = (memberId: string) =>
     router.push({ pathname: '/record-membership', params: { memberId } });
 
@@ -26,32 +28,39 @@ export default function OwnerMembershipsScreen() {
         onPress={() => router.push('/record-membership')}
       />
 
-      <SectionHeader title="Plans for sale" />
-      <QueryState
-        query={plans}
-        isEmpty={(list) => list.length === 0}
-        emptyText="No plans yet. Add your first one so you can record memberships.">
-        {(list) =>
-          list.map((plan) => (
-            <Pressable
-              key={plan.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${plan.name} plan`}
-              onPress={() =>
-                router.push({ pathname: '/membership-plan-editor', params: { planId: plan.id } })
-              }>
-              <PlanCard plan={plan} />
-            </Pressable>
-          ))
-        }
-      </QueryState>
-      <Button
-        label="Add a plan"
-        icon="add"
-        variant="secondary"
-        size="compact"
-        onPress={() => router.push('/membership-plan-editor')}
-      />
+      {isOwner ? (
+        <>
+          <SectionHeader title="Plans for sale" />
+          <QueryState
+            query={plans}
+            isEmpty={(list) => list.length === 0}
+            emptyText="No plans yet. Add your first one so you can record memberships.">
+            {(list) =>
+              list.map((plan) => (
+                <Pressable
+                  key={plan.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${plan.name} plan`}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/membership-plan-editor',
+                      params: { planId: plan.id },
+                    })
+                  }>
+                  <PlanCard plan={plan} />
+                </Pressable>
+              ))
+            }
+          </QueryState>
+          <Button
+            label="Add a plan"
+            icon="add"
+            variant="secondary"
+            size="compact"
+            onPress={() => router.push('/membership-plan-editor')}
+          />
+        </>
+      ) : null}
 
       <SectionHeader
         title="Members"

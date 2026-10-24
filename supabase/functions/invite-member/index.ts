@@ -30,6 +30,10 @@ const roles: Record<string, { label: string; blurb: string }> = {
     label: 'Trainer',
     blurb: "See your schedule, build workout plans and follow your members' progress.",
   },
+  supervisor: {
+    label: 'Supervisor',
+    blurb: 'Record payments, invite people and match members with the right trainer.',
+  },
   owner: {
     label: 'Co-owner',
     blurb: 'Run members, classes and memberships for the gym from your phone.',

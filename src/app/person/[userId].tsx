@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { Chip } from '@/components/chip';
 import { Pill } from '@/components/pill';
 import { Screen } from '@/components/screen';
 import { SegmentedControl } from '@/components/segmented-control';
@@ -11,6 +12,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { useSetTrainer, useTrainerLinks } from '@/features/coaching/hooks';
+import { membersOf, trainersOf } from '@/features/coaching/rules';
+import type { GymPerson } from '@/features/members/types';
 import { roleTone } from '@/features/members/components/person-row';
 import { usePeople, useRemovePerson, useUpdatePerson } from '@/features/members/hooks';
 import { isLastActiveOwner } from '@/features/members/rules';
@@ -37,6 +41,8 @@ export default function PersonScreen() {
     );
   }
 
+  // Supervisors see people and map trainers; roles and access stay with owners.
+  const isOwner = gym.role === 'owner';
   const lastOwner = isLastActiveOwner(people.data ?? [], person.id);
   const isSelf = person.id === profile.id;
   const suspended = person.status === 'suspended';
@@ -63,95 +69,183 @@ export default function PersonScreen() {
         {isSelf ? <Pill label="You" tone="neutral" /> : null}
       </View>
 
-      <View style={styles.field}>
-        <ThemedText type="label" themeColor="textSecondary">
-          Role
-        </ThemedText>
-        <SegmentedControl<Role>
-          options={[
-            { value: 'member', label: 'Member' },
-            { value: 'trainer', label: 'Trainer' },
-            { value: 'owner', label: 'Owner' },
-          ]}
-          value={person.role}
-          onChange={(role) => {
-            // The last owner's role is locked; the note below says why.
-            if (role !== person.role && !lastOwner)
-              update.mutate({ userId: person.id, patch: { role } });
-          }}
-        />
-        {person.role === 'trainer' ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Trainers show up for 1:1 booking once they set their weekly hours.
-          </ThemedText>
-        ) : null}
-      </View>
-
-      {lastOwner ? (
-        <Card>
-          <ThemedText type="small" themeColor="textSecondary">
-            {isSelf ? 'You are' : 'This is'} the only owner, so this account can&apos;t be demoted,
-            suspended or removed. Make someone else an owner first.
-          </ThemedText>
-        </Card>
+      {person.role === 'member' && !suspended ? (
+        <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
       ) : null}
-      {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
+      {person.role === 'trainer' ? (
+        <TrainerMembers gymId={gym.gymId} trainerId={person.id} />
+      ) : null}
 
-      <Button
-        label={suspended ? 'Reactivate' : 'Suspend access'}
-        icon={suspended ? 'refresh-outline' : 'ban-outline'}
-        variant="secondary"
-        disabled={lastOwner}
-        loading={update.isPending && update.variables?.patch.status !== undefined}
-        onPress={() =>
-          update.mutate({
-            userId: person.id,
-            patch: { status: suspended ? 'active' : 'suspended' },
-          })
-        }
-      />
-      <ThemedText type="small" themeColor="textSecondary">
-        Suspended people keep their account and history but can&apos;t open this gym in the app.
-      </ThemedText>
-
-      {confirmRemove ? (
-        <Card>
-          <ThemedText type="smallBold">
-            Remove {person.fullName} from {gym.gymName}?
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Their account and workout history stay. You can invite them again later.
-          </ThemedText>
-          <View style={styles.row}>
-            <View style={styles.flex}>
-              <Button
-                label="Cancel"
-                variant="secondary"
-                size="compact"
-                onPress={() => setConfirmRemove(false)}
-              />
-            </View>
-            <View style={styles.flex}>
-              <Button
-                label="Remove"
-                variant="danger"
-                size="compact"
-                loading={remove.isPending}
-                onPress={() => remove.mutate(person.id, { onSuccess: () => router.back() })}
-              />
-            </View>
+      {isOwner ? (
+        <>
+          <View style={styles.field}>
+            <ThemedText type="label" themeColor="textSecondary">
+              Role
+            </ThemedText>
+            <SegmentedControl<Role>
+              options={[
+                { value: 'member', label: 'Member' },
+                { value: 'trainer', label: 'Trainer' },
+                { value: 'supervisor', label: 'Supervisor' },
+                { value: 'owner', label: 'Owner' },
+              ]}
+              value={person.role}
+              onChange={(role) => {
+                // The last owner's role is locked; the note below says why.
+                if (role !== person.role && !lastOwner)
+                  update.mutate({ userId: person.id, patch: { role } });
+              }}
+            />
+            {person.role === 'trainer' ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Trainers show up for 1:1 booking once they set their weekly hours.
+              </ThemedText>
+            ) : person.role === 'supervisor' ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Supervisors record payments, invite members and trainers, and match members with
+                trainers.
+              </ThemedText>
+            ) : null}
           </View>
-        </Card>
-      ) : (
-        <Button
-          label="Remove from gym"
-          variant="danger"
-          size="compact"
-          disabled={lastOwner}
-          onPress={() => setConfirmRemove(true)}
-        />
-      )}
+
+          {lastOwner ? (
+            <Card>
+              <ThemedText type="small" themeColor="textSecondary">
+                {isSelf ? 'You are' : 'This is'} the only owner, so this account can&apos;t be
+                demoted, suspended or removed. Make someone else an owner first.
+              </ThemedText>
+            </Card>
+          ) : null}
+          {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
+
+          <Button
+            label={suspended ? 'Reactivate' : 'Suspend access'}
+            icon={suspended ? 'refresh-outline' : 'ban-outline'}
+            variant="secondary"
+            disabled={lastOwner}
+            loading={update.isPending && update.variables?.patch.status !== undefined}
+            onPress={() =>
+              update.mutate({
+                userId: person.id,
+                patch: { status: suspended ? 'active' : 'suspended' },
+              })
+            }
+          />
+          <ThemedText type="small" themeColor="textSecondary">
+            Suspended people keep their account and history but can&apos;t open this gym in the app.
+          </ThemedText>
+
+          {confirmRemove ? (
+            <Card>
+              <ThemedText type="smallBold">
+                Remove {person.fullName} from {gym.gymName}?
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Their account and workout history stay. You can invite them again later.
+              </ThemedText>
+              <View style={styles.row}>
+                <View style={styles.flex}>
+                  <Button
+                    label="Cancel"
+                    variant="secondary"
+                    size="compact"
+                    onPress={() => setConfirmRemove(false)}
+                  />
+                </View>
+                <View style={styles.flex}>
+                  <Button
+                    label="Remove"
+                    variant="danger"
+                    size="compact"
+                    loading={remove.isPending}
+                    onPress={() => remove.mutate(person.id, { onSuccess: () => router.back() })}
+                  />
+                </View>
+              </View>
+            </Card>
+          ) : (
+            <Button
+              label="Remove from gym"
+              variant="danger"
+              size="compact"
+              disabled={lastOwner}
+              onPress={() => setConfirmRemove(true)}
+            />
+          )}
+        </>
+      ) : null}
     </Screen>
+  );
+}
+
+/** Owners and supervisors pick which trainers a member works with. */
+function MemberTrainers({
+  gymId,
+  member,
+  people,
+}: {
+  gymId: string;
+  member: GymPerson;
+  people: GymPerson[];
+}) {
+  const links = useTrainerLinks(gymId);
+  const setTrainer = useSetTrainer(gymId);
+  const trainers = people.filter((p) => p.role === 'trainer' && p.status === 'active');
+  const assigned = new Set(trainersOf(links.data ?? [], member.id).map((l) => l.trainerId));
+
+  return (
+    <View style={styles.field}>
+      <ThemedText type="label" themeColor="textSecondary">
+        Trainers
+      </ThemedText>
+      {trainers.length ? (
+        <View style={styles.chips}>
+          {trainers.map((t) => {
+            const on = assigned.has(t.id);
+            return (
+              <Chip
+                key={t.id}
+                label={`${t.fullName} · ${membersOf(links.data ?? [], t.id).length}`}
+                selected={on}
+                onPress={() =>
+                  !setTrainer.isPending &&
+                  setTrainer.mutate({ memberId: member.id, trainerId: t.id, assigned: !on })
+                }
+              />
+            );
+          })}
+        </View>
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          Invite a trainer first.
+        </ThemedText>
+      )}
+      <ThemedText type="small" themeColor="textSecondary">
+        Tap to add or remove. The number is each trainer&apos;s members. Removing a trainer also
+        takes their plans off {member.fullName.split(' ')[0]}.
+      </ThemedText>
+      {setTrainer.error ? (
+        <ThemedText themeColor="danger">{setTrainer.error.message}</ThemedText>
+      ) : null}
+    </View>
+  );
+}
+
+function TrainerMembers({ gymId, trainerId }: { gymId: string; trainerId: string }) {
+  const links = useTrainerLinks(gymId);
+  const members = membersOf(links.data ?? [], trainerId);
+
+  return (
+    <View style={styles.field}>
+      <ThemedText type="label" themeColor="textSecondary">
+        Members ({members.length})
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {members.length
+          ? members.map((l) => l.memberName).join(', ')
+          : 'No members yet. Assign trainers from a member’s page.'}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -163,6 +257,11 @@ const styles = StyleSheet.create({
   },
   pills: {
     flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   field: {

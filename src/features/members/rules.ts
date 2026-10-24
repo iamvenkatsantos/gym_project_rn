@@ -26,6 +26,7 @@ export function countPeople(people: GymPerson[]): Record<PeopleFilter, number> {
     all: people.length,
     member: 0,
     trainer: 0,
+    supervisor: 0,
     owner: 0,
     suspended: 0,
   };

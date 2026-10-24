@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { ClassRow } from '@/features/bookings/components/class-row';
+import { YourTrainers } from '@/features/coaching/components/your-trainers';
 import { useMyBookings } from '@/features/bookings/hooks';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { useCurrentMembership } from '@/features/memberships/hooks';
@@ -39,6 +40,8 @@ export default function MemberHomeScreen() {
         emptyText="You don't have a membership yet.">
         {(m) => m && <MembershipCard membership={m} />}
       </QueryState>
+
+      <YourTrainers gymId={gym.gymId} memberId={profile.id} />
 
       <SectionHeader title="Coming up" detail={upcoming ? `${upcoming} booked` : undefined} />
       {nextSession ? <SessionRow session={nextSession} show="trainer" highlighted /> : null}

@@ -42,18 +42,29 @@ function describe({ result, emailSent, emailError }: InviteOutcome, email: strin
   }
 }
 
+const ownerInviteRoles: { value: Role; label: string }[] = [
+  { value: 'member', label: 'Member' },
+  { value: 'trainer', label: 'Trainer' },
+  { value: 'supervisor', label: 'Supervisor' },
+  { value: 'owner', label: 'Owner' },
+];
+
 export default function InvitePersonScreen() {
   const gym = useActiveGym();
   const invite = useInvitePerson(gym.gymId);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('member');
+  // Supervisors invite members and trainers; only owners add supervisors and owners.
+  const roles = gym.role === 'owner' ? ownerInviteRoles : ownerInviteRoles.slice(0, 2);
   const valid = isValidEmail(email);
   const result = invite.data ? describe(invite.data, invite.variables.email) : null;
 
   return (
     <Screen>
       <ThemedText type="small" themeColor="textSecondary">
-        Add a member, trainer or co-owner to {gym.gymName} by their email address.
+        {gym.role === 'owner'
+          ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address.`
+          : `Add a member or trainer to ${gym.gymName} by their email address.`}
       </ThemedText>
       <TextField
         label="Email"
@@ -74,11 +85,7 @@ export default function InvitePersonScreen() {
           Role
         </ThemedText>
         <SegmentedControl<Role>
-          options={[
-            { value: 'member', label: 'Member' },
-            { value: 'trainer', label: 'Trainer' },
-            { value: 'owner', label: 'Owner' },
-          ]}
+          options={roles}
           value={role}
           onChange={(next) => {
             setRole(next);
@@ -88,6 +95,11 @@ export default function InvitePersonScreen() {
         {role === 'owner' ? (
           <ThemedText type="small" themeColor="warning">
             Owners can manage everyone at this gym, including you.
+          </ThemedText>
+        ) : role === 'supervisor' ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Supervisors record payments, invite members and trainers, and match members with
+            trainers. They can&apos;t change roles or remove anyone.
           </ThemedText>
         ) : null}
       </View>

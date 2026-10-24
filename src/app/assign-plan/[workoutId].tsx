@@ -12,7 +12,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
-import { useGymMembers } from '@/features/members/hooks';
+import { useCoachedMembers } from '@/features/members/hooks';
 import { initials } from '@/features/trainers/rules';
 import { useSetAssignment, useWorkout } from '@/features/workouts/hooks';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,7 +23,7 @@ export default function AssignPlanScreen() {
   const profile = useProfile();
   const gym = useActiveGym();
   const { workout, isPending } = useWorkout(gym.gymId, profile.id, workoutId);
-  const members = useGymMembers(gym.gymId);
+  const members = useCoachedMembers(gym.gymId, profile.id);
   const assign = useSetAssignment();
   const [query, setQuery] = useState('');
 
@@ -45,7 +45,8 @@ export default function AssignPlanScreen() {
         </ThemedText>
         <ThemedText type="title">{workout.title}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Members you assign see this plan first, and you can follow their logged workouts.
+          Members you assign see this plan first. You can assign it to the members your gym matched
+          with you.
         </ThemedText>
       </View>
       <TextField
@@ -59,7 +60,7 @@ export default function AssignPlanScreen() {
       <QueryState
         query={members}
         isEmpty={(list) => list.length === 0}
-        emptyText="No members at this gym yet.">
+        emptyText="No members matched with you yet. Ask the owner or a supervisor to assign some.">
         {(list) => {
           const q = query.trim().toLowerCase();
           const matches = list.filter((m) => m.fullName.toLowerCase().includes(q));

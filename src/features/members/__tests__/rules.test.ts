@@ -49,7 +49,14 @@ describe('member rules', () => {
   });
 
   it('counts each group', () => {
-    expect(countPeople(people)).toEqual({ all: 4, member: 1, trainer: 1, owner: 1, suspended: 1 });
+    expect(countPeople(people)).toEqual({
+      all: 4,
+      member: 1,
+      trainer: 1,
+      supervisor: 0,
+      owner: 1,
+      suspended: 1,
+    });
   });
 
   it('spots the last active owner', () => {

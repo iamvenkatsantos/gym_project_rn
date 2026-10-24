@@ -10,7 +10,7 @@ import { Stepper } from '@/components/stepper';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useActiveGym } from '@/features/auth/use-profile';
+import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { DateStrip } from '@/features/bookings/components/date-strip';
 import {
   useCancelClass,
@@ -49,11 +49,17 @@ export default function ClassEditorScreen() {
 }
 
 function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) {
+  const profile = useProfile();
+  const gym = useActiveGym();
+  // Trainers schedule and edit their own classes; owners can pick any trainer.
+  const asTrainer = gym.role === 'trainer';
   const people = usePeople(gymId);
   const days = useMemo(() => upcomingDays(28), []);
   const initialStart = gymClass ? new Date(gymClass.startsAt) : null;
   const [title, setTitle] = useState(gymClass?.title ?? '');
-  const [trainerId, setTrainerId] = useState<string | null>(gymClass?.trainerId ?? null);
+  const [trainerId, setTrainerId] = useState<string | null>(
+    asTrainer ? profile.id : (gymClass?.trainerId ?? null),
+  );
   const [day, setDay] = useState(
     initialStart
       ? new Date(initialStart.getFullYear(), initialStart.getMonth(), initialStart.getDate())
@@ -92,29 +98,31 @@ function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) 
         maxLength={40}
       />
 
-      <View style={styles.field}>
-        <ThemedText type="label" themeColor="textSecondary">
-          Trainer
-        </ThemedText>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}>
-          <Chip
-            label="No trainer"
-            selected={trainerId === null}
-            onPress={() => setTrainerId(null)}
-          />
-          {trainers.map((t) => (
+      {asTrainer ? null : (
+        <View style={styles.field}>
+          <ThemedText type="label" themeColor="textSecondary">
+            Trainer
+          </ThemedText>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}>
             <Chip
-              key={t.id}
-              label={t.fullName}
-              selected={trainerId === t.id}
-              onPress={() => setTrainerId(t.id)}
+              label="No trainer"
+              selected={trainerId === null}
+              onPress={() => setTrainerId(null)}
             />
-          ))}
-        </ScrollView>
-      </View>
+            {trainers.map((t) => (
+              <Chip
+                key={t.id}
+                label={t.fullName}
+                selected={trainerId === t.id}
+                onPress={() => setTrainerId(t.id)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       <View style={styles.field}>
         <ThemedText type="label" themeColor="textSecondary">

@@ -2,17 +2,18 @@
 
 <img src="assets/images/icon.png" width="96" alt="CoreFit icon" />
 
-A React Native app for gym members, trainers and owners. One app, three roles: each user
-lands in their own area after signing in.
+A React Native app for gym members, trainers, supervisors and owners. One app, four roles: each
+user lands in their own area after signing in.
 
 People can belong to several gyms and hold a different role in each (say, a trainer at one branch
 and a member at another). The app shows one gym at a time and switches area with the role.
 
-| Role    | What they can do today                                                                                                                                                                  |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes                                                                       |
-| Trainer | Build plans and assign them to members, follow those members' progress, set weekly bookable hours, 1:1 sessions and classes                                                             |
-| Owner   | Invite people by email, change roles, suspend or remove access; set up membership plans, schedule weekly classes, record cash or UPI payments and renewals; dashboard with renewals due |
+| Role       | What they can do today                                                                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Member     | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes; see their trainers and ask the gym for one                                           |
+| Trainer    | Build plans and assign them to their matched members, follow those members' progress, set weekly bookable hours, schedule their own classes, 1:1 sessions; inbox for nudges from the gym                |
+| Supervisor | The owner's second-in-command: see and record payments and renewals, invite members and trainers, match members with one or more trainers, answer trainer requests, follow classes and message trainers |
+| Owner      | Invite people by email, change roles, suspend or remove access; set up membership plans, schedule weekly classes, record cash or UPI payments and renewals; dashboard with renewals due                 |
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
@@ -33,6 +34,11 @@ and a member at another). The app shows one gym at a time and switches area with
   <img src="docs/screenshots/membership-plan-editor.png" width="200" alt="Creating a membership plan" />
   <img src="docs/screenshots/class-editor.png" width="200" alt="Scheduling a weekly class" />
   <img src="docs/screenshots/record-membership.png" width="200" alt="Recording a UPI payment" />
+</p>
+<p>
+  <img src="docs/screenshots/assign-trainers.png" width="200" alt="Matching a member with trainers" />
+  <img src="docs/screenshots/request-trainer.png" width="200" alt="A member asking for a trainer" />
+  <img src="docs/screenshots/message-trainer.png" width="200" alt="A supervisor messaging a trainer" />
 </p>
 
 ## Design
@@ -86,7 +92,8 @@ insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>',
 
 ### Inviting people and signing in
 
-Owners invite people from **People** by email and pick their role:
+Owners invite people from **People** by email and pick their role. Supervisors can invite
+members and trainers; only owners add supervisors and owners.
 
 - Someone with a CoreFit account joins straight away.
 - Anyone else gets an invite email with a code and a link. They enter the code in the app (or tap
@@ -94,8 +101,8 @@ Owners invite people from **People** by email and pick their role:
   email instead.
 - **Forgot password?** on the sign-in screen emails a link to the same set-password screen.
 
-After sign-in the app opens only the screens for the person's role at their gym (owner, trainer or
-member). Role changes and suspensions apply the next time the app comes to the foreground.
+After sign-in the app opens only the screens for the person's role at their gym (owner,
+supervisor, trainer or member). Role changes and suspensions apply the next time the app comes to the foreground.
 
 Supabase settings these emails need (Dashboard → Authentication):
 
@@ -156,7 +163,8 @@ src/
     book-trainer/         Member: pick a trainer's slot and book
     workout-session.tsx   Member: the workout in progress (sets, reps, rest timer)
     exercise/             Exercise detail, shared by members and trainers
-    owner/                Owner tabs: dashboard, classes, members
+    owner/                Owner tabs: dashboard, people, classes, memberships
+    supervisor/           Supervisor tabs: the owner's dashboard, people and payments, plus classes
   features/
     auth/                 Session store, sign-in/out, profile
     workouts/             types, api, hooks, components, tests
@@ -165,6 +173,8 @@ src/
     exercises/            exercise library, search and filters
     progress/             workout logs, offline draft, streaks and personal records
     memberships/          plans, memberships, status rules
+    coaching/             member-to-trainer mapping and trainer requests
+    notifications/        in-app inbox and messages to trainers
   components/             Shared UI (Screen, Card, Button, QueryState, tabs)
   lib/                    Supabase client, query client, env, formatting, mock data
   constants/ hooks/       Theme tokens and theme hooks

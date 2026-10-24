@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
 import { type IconName } from '@/components/icon';
 import { Spacing } from '@/constants/theme';
 import { AccountButton } from '@/features/auth/components/account-button';
+import { InboxButton } from '@/features/notifications/components/inbox-button';
 import { useTheme } from '@/hooks/use-theme';
 
 export type RoleTab = {
@@ -12,7 +14,7 @@ export type RoleTab = {
   icon: IconName;
 };
 
-/** Shared tab navigator for the member, trainer and owner areas. */
+/** Shared tab navigator for the member, trainer, supervisor and owner areas. */
 export function RoleTabs({ tabs }: { tabs: RoleTab[] }) {
   const theme = useTheme();
 
@@ -28,7 +30,12 @@ export function RoleTabs({ tabs }: { tabs: RoleTab[] }) {
         headerTintColor: theme.text,
         headerTitleStyle: { fontWeight: 800 },
         headerRightContainerStyle: { paddingRight: Spacing.three },
-        headerRight: () => <AccountButton />,
+        headerRight: () => (
+          <View style={styles.actions}>
+            <InboxButton />
+            <AccountButton />
+          </View>
+        ),
       }}>
       {tabs.map((tab) => (
         <Tabs.Screen
@@ -45,3 +52,11 @@ export function RoleTabs({ tabs }: { tabs: RoleTab[] }) {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+});

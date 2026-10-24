@@ -14,10 +14,13 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing, TapTarget } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { useTrainerLinks } from '@/features/coaching/hooks';
+import { membersOf, trainersOf } from '@/features/coaching/rules';
+import type { TrainerLink } from '@/features/coaching/types';
 import { PersonRow, roleTone } from '@/features/members/components/person-row';
 import { useInvites, usePeople, useWithdrawInvite } from '@/features/members/hooks';
 import { countPeople, filterPeople } from '@/features/members/rules';
-import type { PeopleFilter } from '@/features/members/types';
+import type { GymPerson, PeopleFilter } from '@/features/members/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/lib/format';
 
@@ -25,16 +28,22 @@ const filters: { value: PeopleFilter; label: string }[] = [
   { value: 'all', label: 'Everyone' },
   { value: 'member', label: 'Members' },
   { value: 'trainer', label: 'Trainers' },
+  { value: 'supervisor', label: 'Supervisors' },
   { value: 'owner', label: 'Owners' },
   { value: 'suspended', label: 'Suspended' },
 ];
 
+/** Everyone at the gym, for owners and supervisors. */
 export default function OwnerPeopleScreen() {
   const theme = useTheme();
   const gym = useActiveGym();
   const people = usePeople(gym.gymId);
   const invites = useInvites(gym.gymId);
   const withdraw = useWithdrawInvite();
+  const links = useTrainerLinks(gym.gymId);
+  // Supervisors can only withdraw the invites they could have sent.
+  const canWithdraw = (role: GymPerson['role']) =>
+    gym.role === 'owner' || role === 'member' || role === 'trainer';
   const [filter, setFilter] = useState<PeopleFilter>('all');
   const [query, setQuery] = useState('');
 
@@ -70,14 +79,16 @@ export default function OwnerPeopleScreen() {
                   </ThemedText>
                 </View>
                 <Pill label={invite.role} tone={roleTone[invite.role]} />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Withdraw invite for ${invite.email}`}
-                  hitSlop={8}
-                  disabled={withdraw.isPending}
-                  onPress={() => withdraw.mutate(invite.id)}>
-                  <Icon name="close-circle" size={22} />
-                </Pressable>
+                {canWithdraw(invite.role) ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Withdraw invite for ${invite.email}`}
+                    hitSlop={8}
+                    disabled={withdraw.isPending}
+                    onPress={() => withdraw.mutate(invite.id)}>
+                    <Icon name="close-circle" size={22} />
+                  </Pressable>
+                ) : null}
               </View>
             ))}
           </Card>
@@ -121,6 +132,7 @@ export default function OwnerPeopleScreen() {
                       key={person.id}
                       person={person}
                       divider={i > 0}
+                      detail={coachingDetail(person, links.data ?? [])}
                       onPress={() =>
                         router.push({ pathname: '/person/[userId]', params: { userId: person.id } })
                       }
@@ -134,6 +146,19 @@ export default function OwnerPeopleScreen() {
       </QueryState>
     </Screen>
   );
+}
+
+/** Who a member trains with, or how many members a trainer has. */
+function coachingDetail(person: GymPerson, links: TrainerLink[]) {
+  if (person.role === 'member') {
+    const trainers = trainersOf(links, person.id).map((l) => l.trainerName);
+    return trainers.length ? `Trainer: ${trainers.join(', ')}` : 'No trainer yet';
+  }
+  if (person.role === 'trainer') {
+    const count = membersOf(links, person.id).length;
+    return `${count} member${count === 1 ? '' : 's'}`;
+  }
+  return undefined;
 }
 
 const styles = StyleSheet.create({
