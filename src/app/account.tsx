@@ -1,10 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { Icon } from '@/components/icon';
 import { Pill } from '@/components/pill';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
@@ -12,13 +14,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/constants/legal';
 import { deleteAccount } from '@/features/auth/api';
-import { useAuthStore } from '@/features/auth/auth-store';
+import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { queryClient } from '@/lib/query-client';
 
 export default function AccountScreen() {
   const profile = useAuthStore((s) => s.profile);
   const setProfile = useAuthStore((s) => s.setProfile);
+  const activeGym = useAuthStore(selectActiveGym);
+  const setActiveGym = useAuthStore((s) => s.setActiveGym);
   const signOut = useSignOut();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const removeAccount = useMutation({
@@ -35,8 +39,45 @@ export default function AccountScreen() {
     <Screen>
       <Card>
         <ThemedText type="heading">{profile.fullName}</ThemedText>
-        <Pill label={profile.role} tone="accent" />
+        {activeGym ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {activeGym.gymName}
+          </ThemedText>
+        ) : null}
+        {activeGym ? <Pill label={activeGym.role} tone="accent" /> : null}
       </Card>
+
+      {profile.gyms.length > 1 ? (
+        <>
+          <SectionHeader title="Your gyms" />
+          {profile.gyms.map((g) => {
+            const active = g.gymId === activeGym?.gymId;
+            return (
+              <Pressable
+                key={g.gymId}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`Switch to ${g.gymName} as ${g.role}`}
+                onPress={() => {
+                  setActiveGym(g.gymId);
+                  router.dismissTo('/');
+                }}>
+                <Card highlighted={active} style={styles.gymRow}>
+                  <View style={styles.flex}>
+                    <ThemedText type="smallBold">{g.gymName}</ThemedText>
+                    <Pill label={g.role} tone={active ? 'accent' : 'neutral'} />
+                  </View>
+                  {active ? (
+                    <Icon name="checkmark-circle" size={22} color="primary" />
+                  ) : (
+                    <Icon name="swap-horizontal" size={20} />
+                  )}
+                </Card>
+              </Pressable>
+            );
+          })}
+        </>
+      ) : null}
 
       <SectionHeader title="Legal" />
       <Button
@@ -109,5 +150,10 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+    gap: Spacing.one,
+  },
+  gymRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

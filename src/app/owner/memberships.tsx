@@ -1,13 +1,15 @@
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
+import { useActiveGym } from '@/features/auth/use-profile';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 
 export default function OwnerMembershipsScreen() {
-  const memberships = useMemberships();
-  const plans = usePlans();
+  const gym = useActiveGym();
+  const memberships = useMemberships(gym.gymId);
+  const plans = usePlans(gym.gymId);
 
   return (
     <Screen>

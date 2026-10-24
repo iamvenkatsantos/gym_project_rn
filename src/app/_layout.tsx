@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 
 import { Colors } from '@/constants/theme';
 
-import { useAuthStore } from '@/features/auth/auth-store';
+import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { queryClient } from '@/lib/query-client';
 
@@ -35,11 +35,14 @@ export default function RootLayout() {
   );
 }
 
-/** Each role only gets its own stack of screens; everything else is unreachable. */
+/**
+ * Each role only gets its own stack of screens; everything else is unreachable.
+ * The role comes from the active gym, so switching gyms can switch areas.
+ */
 function RootNavigator() {
   useAuthBootstrap();
   const status = useAuthStore((s) => s.status);
-  const role = useAuthStore((s) => s.profile?.role);
+  const role = useAuthStore((s) => selectActiveGym(s)?.role);
 
   useEffect(() => {
     if (status !== 'loading') SplashScreen.hideAsync();
@@ -53,14 +56,34 @@ function RootNavigator() {
       <Stack.Protected guard={status === 'signedOut'}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
+      <Stack.Protected guard={status === 'signedIn' && !role}>
+        <Stack.Screen name="no-gym" />
+      </Stack.Protected>
       <Stack.Protected guard={role === 'member'}>
         <Stack.Screen name="member" />
+        <Stack.Screen
+          name="book-trainer/[trainerId]"
+          options={{ headerShown: true, title: 'Book a session' }}
+        />
+        <Stack.Screen
+          name="workout-session"
+          options={{ headerShown: true, gestureEnabled: false }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" />
+        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen
+          name="assign-plan/[workoutId]"
+          options={{ headerShown: true, title: 'Assign' }}
+        />
+        <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!role}>
+        <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: true }} />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen

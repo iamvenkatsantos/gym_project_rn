@@ -42,7 +42,8 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## This project
 
-- Gym app for three roles (member, trainer, owner). Routes live in `src/app/<role>/`; the root
+- CoreFit: gym app for three roles (member, trainer, owner). Roles are per gym (`gym_members`);
+  the auth store's active gym decides the role, and every API call takes a `gymId`. Routes live in `src/app/<role>/`; the root
   layout guards each role with `Stack.Protected`.
 - Feature code lives in `src/features/<feature>/` (`types.ts`, `api.ts`, `hooks.ts`, `rules.ts`,
   `components/`, `__tests__/`). Keep screens thin and put logic in hooks and rules.

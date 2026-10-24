@@ -1,6 +1,9 @@
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
+import type { GymMember } from '@/features/members/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
+import type { WorkoutLog } from '@/features/progress/types';
+import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
 import type { Workout } from '@/features/workouts/types';
 
 /**
@@ -8,18 +11,54 @@ import type { Workout } from '@/features/workouts/types';
  * Data resets on every reload.
  */
 
-const GYM_ID = 'gym-1';
+export const MOCK_GYM_ID = 'gym-1';
+const GYM_ID = MOCK_GYM_ID;
 const DAY = 24 * 60 * 60 * 1000;
 
 function daysFromToday(days: number) {
   return new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
 }
 
+const GYM_NAME = 'CoreFit Anna Nagar';
+
 export const mockProfiles: Profile[] = [
-  { id: 'u-member', gymId: GYM_ID, fullName: 'Maya Member', role: 'member' },
-  { id: 'u-trainer', gymId: GYM_ID, fullName: 'Tom Trainer', role: 'trainer' },
-  { id: 'u-owner', gymId: GYM_ID, fullName: 'Olivia Owner', role: 'owner' },
+  {
+    id: 'u-member',
+    fullName: 'Maya Member',
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'member' }],
+  },
+  {
+    id: 'u-trainer',
+    fullName: 'Tom Trainer',
+    // Trains at one branch and works out as a member at another.
+    gyms: [
+      { gymId: GYM_ID, gymName: GYM_NAME, role: 'trainer' },
+      { gymId: 'gym-2', gymName: 'CoreFit Velachery', role: 'member' },
+    ],
+  },
+  {
+    id: 'u-owner',
+    fullName: 'Olivia Owner',
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'owner' }],
+  },
 ];
+
+/** Everyone with the member role at the demo gym. */
+export const mockMembers: GymMember[] = [
+  { id: 'u-member', fullName: 'Maya Member' },
+  { id: 'u-member-2', fullName: 'Arjun Kumar' },
+  { id: 'u-member-3', fullName: 'Priya Sharma' },
+  { id: 'u-member-4', fullName: 'Leo Martins' },
+];
+
+const prescribe = (
+  exerciseId: string,
+  name: string,
+  sets: number,
+  reps: number,
+  targetWeightKg: number | null = null,
+  restSeconds = 90,
+) => ({ exerciseId, name, sets, reps, targetWeightKg, restSeconds });
 
 export const mockWorkouts: Workout[] = [
   {
@@ -30,10 +69,12 @@ export const mockWorkouts: Workout[] = [
     level: 'beginner',
     durationMinutes: 45,
     exercises: [
-      { name: 'Goblet squat', sets: 3, reps: 12 },
-      { name: 'Push-up', sets: 3, reps: 10 },
-      { name: 'Dumbbell row', sets: 3, reps: 12 },
+      prescribe('e-goblet-squat', 'Goblet squat', 3, 12, 12),
+      prescribe('e-push-up', 'Push-up', 3, 10, null, 60),
+      prescribe('e-dumbbell-row', 'Dumbbell row', 3, 12, 14),
+      prescribe('e-plank', 'Plank', 3, 30, null, 45),
     ],
+    assignedMemberIds: ['u-member'],
   },
   {
     id: 'w-2',
@@ -43,10 +84,11 @@ export const mockWorkouts: Workout[] = [
     level: 'intermediate',
     durationMinutes: 60,
     exercises: [
-      { name: 'Back squat', sets: 5, reps: 5 },
-      { name: 'Romanian deadlift', sets: 4, reps: 8 },
-      { name: 'Walking lunge', sets: 3, reps: 12 },
+      prescribe('e-back-squat', 'Back squat', 5, 5, 60, 150),
+      prescribe('e-romanian-deadlift', 'Romanian deadlift', 4, 8, 50, 120),
+      prescribe('e-walking-lunge', 'Walking lunge', 3, 12),
     ],
+    assignedMemberIds: [],
   },
 ];
 
@@ -132,6 +174,130 @@ export const mockMemberships: Membership[] = [
   },
 ];
 
+const weekdays = [1, 2, 3, 4, 5, 6];
+
+export const mockTrainers: TrainerWithAvailability[] = [
+  {
+    id: 'u-trainer',
+    fullName: 'Tom Trainer',
+    bio: 'Strength coach focused on safe technique and steady progress.',
+    specialties: ['Strength', 'Fat loss'],
+    sessionMinutes: 60,
+    availability: weekdays.flatMap((weekday) => [
+      { weekday, startTime: '07:00', endTime: '11:00' },
+      { weekday, startTime: '17:00', endTime: '20:00' },
+    ]),
+  },
+  {
+    id: 'u-trainer-2',
+    fullName: 'Divya Raman',
+    bio: 'Mobility and yoga, great for beginners and recovery days.',
+    specialties: ['Mobility', 'Yoga', 'Beginners'],
+    sessionMinutes: 45,
+    availability: [0, 2, 4, 6].map((weekday) => ({
+      weekday,
+      startTime: '06:00',
+      endTime: '10:30',
+    })),
+  },
+];
+
+function nextWeekdayAt(weekday: number, hour: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + ((weekday - date.getDay() + 7) % 7 || 7));
+  date.setHours(hour, 0, 0, 0);
+  return date;
+}
+
+const sessionStart = nextWeekdayAt(2, 8);
+
+export const mockSessions: TrainerSession[] = [
+  {
+    id: 's-1',
+    gymId: GYM_ID,
+    trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
+    memberId: 'u-member',
+    memberName: 'Maya Member',
+    startsAt: sessionStart.toISOString(),
+    endsAt: new Date(sessionStart.getTime() + 60 * 60 * 1000).toISOString(),
+    status: 'booked',
+  },
+  {
+    id: 's-2',
+    gymId: GYM_ID,
+    trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
+    memberId: 'u-member-2',
+    memberName: 'Arjun Kumar',
+    startsAt: nextWeekdayAt(2, 9).toISOString(),
+    endsAt: nextWeekdayAt(2, 10).toISOString(),
+    status: 'booked',
+  },
+];
+
+function daysAgoAt(days: number, hour: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  date.setHours(hour, 0, 0, 0);
+  return date;
+}
+
+function pastLog(days: number, title: string, sets: WorkoutLog['sets']): WorkoutLog {
+  const completed = daysAgoAt(days, 8);
+  return {
+    clientId: `log-${days}`,
+    workoutId: title === 'Full body starter' ? 'w-1' : 'w-2',
+    title,
+    startedAt: new Date(completed.getTime() - 50 * 60 * 1000).toISOString(),
+    completedAt: completed.toISOString(),
+    sets,
+  };
+}
+
+const set = (
+  exerciseId: string,
+  exerciseName: string,
+  setNumber: number,
+  reps: number,
+  weightKg: number | null,
+) => ({
+  exerciseId,
+  exerciseName,
+  setNumber,
+  reps,
+  weightKg,
+});
+
+/** A few weeks of history for the demo member, keyed by member id. */
+export const mockLogs: Record<string, WorkoutLog[]> = {
+  'u-member': [
+    pastLog(2, 'Lower body strength', [
+      set('e-back-squat', 'Back squat', 1, 5, 55),
+      set('e-back-squat', 'Back squat', 2, 5, 57.5),
+      set('e-back-squat', 'Back squat', 3, 5, 60),
+      set('e-romanian-deadlift', 'Romanian deadlift', 1, 8, 50),
+      set('e-romanian-deadlift', 'Romanian deadlift', 2, 8, 50),
+    ]),
+    pastLog(5, 'Full body starter', [
+      set('e-goblet-squat', 'Goblet squat', 1, 12, 14),
+      set('e-goblet-squat', 'Goblet squat', 2, 12, 14),
+      set('e-push-up', 'Push-up', 1, 12, null),
+      set('e-push-up', 'Push-up', 2, 10, null),
+      set('e-dumbbell-row', 'Dumbbell row', 1, 12, 16),
+    ]),
+    pastLog(9, 'Lower body strength', [
+      set('e-back-squat', 'Back squat', 1, 5, 55),
+      set('e-back-squat', 'Back squat', 2, 5, 55),
+      set('e-romanian-deadlift', 'Romanian deadlift', 1, 8, 45),
+    ]),
+    pastLog(16, 'Full body starter', [
+      set('e-goblet-squat', 'Goblet squat', 1, 12, 12),
+      set('e-push-up', 'Push-up', 1, 10, null),
+    ]),
+  ],
+};
+
 let nextId = 100;
 export function mockId(prefix: string) {
   nextId += 1;
@@ -142,6 +308,11 @@ export function mockId(prefix: string) {
  * Simulates a network response: adds latency so loading states are visible, and
  * returns a copy so later mutations of the mock data don't leak into the cache.
  */
+/** Mock content only exists for the first gym; other gyms come back empty. */
+export function forGym<T>(gymId: string, items: T[]): T[] {
+  return gymId === MOCK_GYM_ID ? items : [];
+}
+
 export function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
 }

@@ -1,5 +1,5 @@
 import type { Booking, GymClass } from '@/features/bookings/types';
-import { delay, mockBookings, mockClasses, mockId } from '@/lib/mock-db';
+import { delay, forGym, mockBookings, mockClasses, mockId } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type ClassRow = {
@@ -47,11 +47,11 @@ function toBooking(row: BookingRow): Booking {
   };
 }
 
-export async function listUpcomingClasses(filter: { trainerId?: string } = {}) {
+export async function listUpcomingClasses(gymId: string, filter: { trainerId?: string } = {}) {
   const now = new Date().toISOString();
   if (!supabase) {
     return delay(
-      mockClasses
+      forGym(gymId, mockClasses)
         .filter((c) => c.startsAt > now && (!filter.trainerId || c.trainerId === filter.trainerId))
         .sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
     );
@@ -59,22 +59,26 @@ export async function listUpcomingClasses(filter: { trainerId?: string } = {}) {
   let query = supabase
     .from('class_schedule')
     .select(CLASS_COLUMNS)
+    .eq('gym_id', gymId)
     .gt('starts_at', now)
     .order('starts_at');
   if (filter.trainerId) query = query.eq('trainer_id', filter.trainerId);
   return unwrap(await query).map(toGymClass);
 }
 
-export async function listMyBookings(memberId: string): Promise<Booking[]> {
+export async function listMyBookings(gymId: string, memberId: string): Promise<Booking[]> {
   if (!supabase) {
-    return delay(mockBookings.filter((b) => b.memberId === memberId && b.status === 'booked'));
+    return delay(
+      forGym(gymId, mockBookings).filter((b) => b.memberId === memberId && b.status === 'booked'),
+    );
   }
   const rows = unwrap(
     await supabase
       .from('bookings')
-      .select(`id, class_id, member_id, status, class:class_schedule(${CLASS_COLUMNS})`)
+      .select(`id, class_id, member_id, status, class:class_schedule!inner(${CLASS_COLUMNS})`)
       .eq('member_id', memberId)
-      .eq('status', 'booked'),
+      .eq('status', 'booked')
+      .eq('class.gym_id', gymId),
   ) as unknown as BookingRow[];
   return rows.map(toBooking).sort((a, b) => a.gymClass.startsAt.localeCompare(b.gymClass.startsAt));
 }

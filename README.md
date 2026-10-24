@@ -5,16 +5,24 @@
 A React Native app for gym members, trainers and owners. One app, three roles: each user
 lands in their own area after signing in.
 
-| Role    | What they can do today                                              |
-| ------- | ------------------------------------------------------------------- |
-| Member  | See their membership, browse workouts, book and cancel classes      |
-| Trainer | See their class schedule and the workouts they've written           |
-| Owner   | Dashboard with renewals due, the class timetable, members and plans |
+People can belong to several gyms and hold a different role in each (say, a trainer at one branch
+and a member at another). The app shows one gym at a time and switches area with the role.
+
+| Role    | What they can do today                                                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes     |
+| Trainer | Build plans from the exercise library and assign them to members, set weekly bookable hours, 1:1 sessions and classes |
+| Owner   | Dashboard with renewals due, the class timetable, members and plans                                                   |
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
   <img src="docs/screenshots/member-classes.png" width="200" alt="Bookings" />
   <img src="docs/screenshots/owner-dashboard.png" width="200" alt="Owner dashboard" />
+</p>
+<p>
+  <img src="docs/screenshots/plan-builder.png" width="200" alt="Trainer plan builder" />
+  <img src="docs/screenshots/assign-plan.png" width="200" alt="Assigning a plan to members" />
+  <img src="docs/screenshots/weekly-hours.png" width="200" alt="Trainer weekly hours" />
 </p>
 
 ## Design
@@ -52,13 +60,33 @@ npx supabase link --project-ref <your-ref>
 npx supabase db push
 ```
 
-New sign-ups get a `member` profile with no gym. Set `gym_id` and `role` on `profiles` to put
-someone in a gym or make them a trainer or owner.
+Then run `supabase/seed.sql` in the SQL editor to load the shared exercise library, and deploy the
+account deletion function with `npx supabase functions deploy delete-account`.
+
+New sign-ups get a profile with no gym. Add a row to `gym_members` (gym, user, role) to put
+someone in a gym as a member, trainer or owner.
 
 ## Releasing
 
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
 checklist.
+
+## Exercise library seed
+
+`supabase/seed.sql` loads the shared exercise library. It's generated from
+`src/features/exercises/library.ts` (also the demo data) with `node scripts/generate-exercise-seed.js`.
+
+## Database checks
+
+`supabase/tests/rls.sql` exercises the RLS policies and booking rules (double-booking, availability,
+cross-gym access). On plain Postgres 16:
+
+```bash
+createdb corefit_test
+psql -d corefit_test -f supabase/tests/plain-postgres-auth-stub.sql
+for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
+psql -d corefit_test -f supabase/tests/rls.sql
+```
 
 ## Scripts
 
@@ -78,12 +106,18 @@ src/
     _layout.tsx           Providers and role guards
     sign-in.tsx
     member/               Member tabs: home, classes, workouts, membership
-    trainer/              Trainer tabs: schedule, workouts
+    trainer/              Trainer tabs: schedule (1:1 sessions and classes), workouts
+    book-trainer/         Member: pick a trainer's slot and book
+    workout-session.tsx   Member: the workout in progress (sets, reps, rest timer)
+    exercise/             Exercise detail, shared by members and trainers
     owner/                Owner tabs: dashboard, classes, members
   features/
     auth/                 Session store, sign-in/out, profile
     workouts/             types, api, hooks, components, tests
-    bookings/             classes, bookings, booking rules
+    bookings/             classes, class bookings, booking rules
+    trainers/             trainer profiles, availability slots, 1:1 sessions
+    exercises/            exercise library, search and filters
+    progress/             workout logs, offline draft, streaks and personal records
     memberships/          plans, memberships, status rules
   components/             Shared UI (Screen, Card, Button, QueryState, tabs)
   lib/                    Supabase client, query client, env, formatting, mock data

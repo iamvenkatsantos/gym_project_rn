@@ -30,7 +30,7 @@ export default function SignInScreen() {
 
   const onSignedIn = (profile: Profile) => {
     setProfile(profile);
-    router.replace(`/${profile.role}`);
+    router.replace('/');
   };
   const passwordSignIn = useMutation({
     mutationFn: () => signInWithPassword(email.trim(), password),

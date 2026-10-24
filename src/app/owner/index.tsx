@@ -6,6 +6,7 @@ import { SectionHeader } from '@/components/section-header';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
 import { ClassRow } from '@/features/bookings/components/class-row';
+import { useActiveGym } from '@/features/auth/use-profile';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { classesOnDay } from '@/features/bookings/rules';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
@@ -13,8 +14,9 @@ import { useMemberships } from '@/features/memberships/hooks';
 import { membershipStatus, renewalsDue } from '@/features/memberships/rules';
 
 export default function OwnerDashboardScreen() {
-  const memberships = useMemberships();
-  const classes = useUpcomingClasses();
+  const gym = useActiveGym();
+  const memberships = useMemberships(gym.gymId);
+  const classes = useUpcomingClasses(gym.gymId);
 
   const statuses = memberships.data?.map((m) => membershipStatus(m));
   const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;

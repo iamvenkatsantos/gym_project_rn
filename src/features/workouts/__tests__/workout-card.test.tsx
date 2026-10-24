@@ -10,9 +10,24 @@ const workout: Workout = {
   description: 'A balanced first session.',
   level: 'beginner',
   durationMinutes: 45,
+  assignedMemberIds: [],
   exercises: [
-    { name: 'Goblet squat', sets: 3, reps: 12 },
-    { name: 'Push-up', sets: 3, reps: 10 },
+    {
+      exerciseId: 'e-1',
+      name: 'Goblet squat',
+      sets: 3,
+      reps: 12,
+      targetWeightKg: 12,
+      restSeconds: 90,
+    },
+    {
+      exerciseId: 'e-2',
+      name: 'Push-up',
+      sets: 3,
+      reps: 10,
+      targetWeightKg: null,
+      restSeconds: 60,
+    },
   ],
 };
 
@@ -25,5 +40,6 @@ describe('WorkoutCard', () => {
     expect(screen.getByText('2 exercises')).toBeTruthy();
     expect(screen.getByText('Goblet squat')).toBeTruthy();
     expect(screen.getByText('3 × 10')).toBeTruthy();
+    expect(screen.getByText('3 × 12 · 12 kg')).toBeTruthy();
   });
 });

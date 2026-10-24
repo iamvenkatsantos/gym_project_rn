@@ -4,13 +4,15 @@ import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { DateStrip } from '@/features/bookings/components/date-strip';
+import { useActiveGym } from '@/features/auth/use-profile';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { classesOnDay, upcomingDays } from '@/features/bookings/rules';
 
 export default function OwnerClassesScreen() {
+  const gym = useActiveGym();
   const days = useMemo(() => upcomingDays(7), []);
   const [selectedDay, setSelectedDay] = useState(days[0]);
-  const classes = useUpcomingClasses();
+  const classes = useUpcomingClasses(gym.gymId);
 
   return (
     <Screen>
