@@ -1,4 +1,14 @@
-import { canBook, classesOnDay, spotsLeft, upcomingDays } from '@/features/bookings/rules';
+import {
+  atMinutes,
+  canBook,
+  classesOnDay,
+  classProblem,
+  formatClock,
+  minutesOfDay,
+  spotsLeft,
+  upcomingDays,
+  weeklyStarts,
+} from '@/features/bookings/rules';
 import type { Booking, GymClass } from '@/features/bookings/types';
 
 const now = new Date('2026-10-24T10:00:00Z');
@@ -12,6 +22,7 @@ const gymClass: GymClass = {
   durationMinutes: 30,
   capacity: 10,
   bookedCount: 4,
+  seriesId: null,
 };
 
 describe('spotsLeft', () => {
@@ -67,5 +78,31 @@ describe('upcomingDays', () => {
     const days = upcomingDays(3, new Date(2026, 9, 31, 18));
     expect(days.map((d) => d.getDate())).toEqual([31, 1, 2]);
     expect(days[0].getHours()).toBe(0);
+  });
+});
+
+describe('scheduling helpers', () => {
+  it('builds local times from a day and minutes, and reads them back', () => {
+    const start = atMinutes(new Date(2026, 9, 26), 7 * 60 + 30);
+    expect(start.getHours()).toBe(7);
+    expect(start.getMinutes()).toBe(30);
+    expect(minutesOfDay(start.toISOString())).toBe(450);
+    expect(formatClock(450)).toBe('07:30');
+  });
+
+  it('repeats a class weekly at the same local time', () => {
+    const starts = weeklyStarts(new Date(2026, 9, 26, 7, 0), 3);
+    expect(starts.map((d) => [d.getMonth(), d.getDate(), d.getHours()])).toEqual([
+      [9, 26, 7],
+      [10, 2, 7],
+      [10, 9, 7],
+    ]);
+  });
+
+  it('needs a name and a future time', () => {
+    const future = new Date(now.getTime() + 60 * 60 * 1000);
+    expect(classProblem({ title: ' ', startsAt: future }, now)).toBe('Give the class a name.');
+    expect(classProblem({ title: 'HIIT', startsAt: now }, now)).toBe('Pick a time in the future.');
+    expect(classProblem({ title: 'HIIT', startsAt: future }, now)).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Pill, type PillTone } from '@/components/pill';
 import { ProgressBar } from '@/components/progress-bar';
@@ -53,7 +54,13 @@ export function MembershipCard({ membership }: { membership: Membership }) {
 }
 
 /** Compact row for staff lists of members. */
-export function MembershipRow({ membership }: { membership: Membership }) {
+export function MembershipRow({
+  membership,
+  onRenew,
+}: {
+  membership: Membership;
+  onRenew?: () => void;
+}) {
   const status = membershipStatus(membership);
   const pill = statusPill[status];
 
@@ -64,8 +71,13 @@ export function MembershipRow({ membership }: { membership: Membership }) {
         <ThemedText type="small" themeColor="textSecondary">
           {membership.plan.name} · ends {formatDate(membership.endsOn)}
         </ThemedText>
+        <View style={styles.pill}>
+          <Pill label={pill.label} tone={pill.tone} />
+        </View>
       </View>
-      <Pill label={pill.label} tone={pill.tone} />
+      {onRenew ? (
+        <Button label="Renew" icon="refresh-outline" size="compact" onPress={onRenew} />
+      ) : null}
     </Card>
   );
 }
@@ -89,5 +101,9 @@ const styles = StyleSheet.create({
   },
   rowBody: {
     flex: 1,
+    gap: Spacing.one,
+  },
+  pill: {
+    flexDirection: 'row',
   },
 });

@@ -246,3 +246,65 @@ update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000
 \echo '46 deleting the last owner''s account still works (expect DELETE 1)'
 reset role;
 delete from auth.users where id = '00000000-0000-0000-0000-00000000000f';
+
+-- Gym setup -------------------------------------------------------------------------
+reset role;
+update public.gym_members set role = 'owner', status = 'active'
+  where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
+set role authenticated;
+
+\echo '47 owner creates a plan (expect ok); member cannot (expect RLS error)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.membership_plans (id, gym_id, name, price_cents, duration_days)
+  values ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Monthly', 149900, 30) returning true as ok;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+insert into public.membership_plans (gym_id, name, price_cents, duration_days)
+  values ('10000000-0000-0000-0000-000000000001', 'Free forever', 0, 3650);
+\echo '48 owner records a paid membership for a member (expect ok, recorded_by = owner)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.memberships (member_id, plan_id, starts_on, ends_on, amount_paid_cents, payment_method)
+  values ('00000000-0000-0000-0000-00000000000c', '60000000-0000-0000-0000-000000000001', current_date, current_date + 29, 149900, 'upi')
+  returning recorded_by = '00000000-0000-0000-0000-00000000000a' as recorded_by_owner;
+\echo '49 ... but not for someone outside the gym (expect RLS error)'
+reset role;
+insert into auth.users (id, raw_user_meta_data) values ('00000000-0000-0000-0000-000000000010', '{"full_name":"Gina Gym2"}');
+insert into public.gym_members (gym_id, user_id, role) values ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000010', 'member');
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.memberships (member_id, plan_id, starts_on, ends_on)
+  values ('00000000-0000-0000-0000-000000000010', '60000000-0000-0000-0000-000000000001', current_date, current_date + 29);
+\echo '50 owner schedules a class weekly for 4 weeks at 07:00 IST (expect 4, all at 07:00 local, one series)'
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', ' Morning HIIT ', '00000000-0000-0000-0000-00000000000b',
+  (current_date + 1 + time '07:00') at time zone 'Asia/Kolkata', 45, 2, 4);
+select count(*) as classes, count(distinct series_id) as series,
+       bool_and(to_char(starts_at at time zone 'Asia/Kolkata', 'HH24:MI') = '07:00') as all_at_seven,
+       bool_and(title = 'Morning HIIT') as trimmed
+  from public.classes where title = 'Morning HIIT';
+\echo '51 class with a trainer from another gym, or a member as trainer (expect "Pick a trainer" twice)'
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Yoga', '00000000-0000-0000-0000-00000000000c',
+  now() + interval '2 days', 60, 10, 1);
+insert into public.classes (gym_id, trainer_id, title, starts_at, duration_minutes, capacity)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000e', 'Yoga', now() + interval '2 days', 60, 10);
+\echo '52 trainer cannot schedule classes (expect RLS error); past time (expect "future"); 30 weeks (expect "1 to 26")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Mine', null, now() + interval '1 day', 30, 5, 1);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Late', null, now() - interval '1 hour', 30, 5, 1);
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Long', null, now() + interval '1 day', 30, 5, 30);
+\echo '53 two members book week 2 (expect ok, ok); owner lowers capacity to 1 (expect "More people have booked")'
+select set_config('test.week2', (select id::text from public.classes where title = 'Morning HIIT' order by starts_at offset 1 limit 1), false) is not null as ok;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.book_class(current_setting('test.week2')::uuid) is not null as ok;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select public.book_class(current_setting('test.week2')::uuid) is not null as ok;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+update public.classes set capacity = 1 where id = current_setting('test.week2')::uuid;
+\echo '54 owner cancels week 2 and the rest of the series (expect 3); bookings cancelled (expect 0 booked); schedule shows 1'
+select public.cancel_class(current_setting('test.week2')::uuid, true);
+select count(*) as still_booked from public.bookings
+  where class_id = current_setting('test.week2')::uuid and status = 'booked';
+select count(*) as on_schedule from public.class_schedule where title = 'Morning HIIT';
+\echo '55 member cannot book a cancelled class (expect "Class not found") or cancel classes (expect "Class not found")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.book_class(current_setting('test.week2')::uuid);
+select public.cancel_class(current_setting('test.week2')::uuid, false);

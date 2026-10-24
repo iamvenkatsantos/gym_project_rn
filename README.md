@@ -8,11 +8,11 @@ lands in their own area after signing in.
 People can belong to several gyms and hold a different role in each (say, a trainer at one branch
 and a member at another). The app shows one gym at a time and switches area with the role.
 
-| Role    | What they can do today                                                                                                      |
-| ------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes           |
-| Trainer | Build plans and assign them to members, follow those members' progress, set weekly bookable hours, 1:1 sessions and classes |
-| Owner   | Invite people by email, change roles, suspend or remove access; dashboard with renewals due, class timetable, memberships   |
+| Role    | What they can do today                                                                                                                                                                  |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes                                                                       |
+| Trainer | Build plans and assign them to members, follow those members' progress, set weekly bookable hours, 1:1 sessions and classes                                                             |
+| Owner   | Invite people by email, change roles, suspend or remove access; set up membership plans, schedule weekly classes, record cash or UPI payments and renewals; dashboard with renewals due |
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
@@ -28,6 +28,11 @@ and a member at another). The app shows one gym at a time and switches area with
   <img src="docs/screenshots/owner-people.png" width="200" alt="Owner People screen" />
   <img src="docs/screenshots/invite-person.png" width="200" alt="Inviting someone by email" />
   <img src="docs/screenshots/trainer-member-progress.png" width="200" alt="Trainer viewing a member's progress" />
+</p>
+<p>
+  <img src="docs/screenshots/membership-plan-editor.png" width="200" alt="Creating a membership plan" />
+  <img src="docs/screenshots/class-editor.png" width="200" alt="Scheduling a weekly class" />
+  <img src="docs/screenshots/record-membership.png" width="200" alt="Recording a UPI payment" />
 </p>
 
 ## Design

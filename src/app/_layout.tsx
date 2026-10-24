@@ -87,6 +87,15 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
         />
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="class-editor" options={{ headerShown: true, title: 'Class' }} />
+        <Stack.Screen
+          name="membership-plan-editor"
+          options={{ headerShown: true, title: 'Membership plan' }}
+        />
+        <Stack.Screen
+          name="record-membership"
+          options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!!role}>
         <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: true }} />

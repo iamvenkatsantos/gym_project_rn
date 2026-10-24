@@ -1,6 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { getCurrentMembership, listMemberships, listPlans } from '@/features/memberships/api';
+import {
+  archivePlan,
+  getCurrentMembership,
+  listMemberships,
+  listPlans,
+  recordMembership,
+  savePlan,
+} from '@/features/memberships/api';
+import type { MembershipInput, PlanInput } from '@/features/memberships/types';
 
 export const membershipKeys = {
   all: ['memberships'] as const,
@@ -25,5 +33,32 @@ export function useMemberships(gymId: string) {
   return useQuery({
     queryKey: membershipKeys.list(gymId),
     queryFn: () => listMemberships(gymId),
+  });
+}
+
+function useInvalidateMemberships() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: membershipKeys.all });
+}
+
+export function useSavePlan(gymId: string) {
+  const invalidate = useInvalidateMemberships();
+  return useMutation({
+    mutationFn: ({ planId, input }: { planId: string | null; input: PlanInput }) =>
+      savePlan(gymId, planId, input),
+    onSettled: invalidate,
+  });
+}
+
+export function useArchivePlan() {
+  const invalidate = useInvalidateMemberships();
+  return useMutation({ mutationFn: archivePlan, onSettled: invalidate });
+}
+
+export function useRecordMembership(gymId: string) {
+  const invalidate = useInvalidateMemberships();
+  return useMutation({
+    mutationFn: (input: MembershipInput) => recordMembership(gymId, input),
+    onSettled: invalidate,
   });
 }

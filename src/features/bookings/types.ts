@@ -7,6 +7,17 @@ export type GymClass = {
   durationMinutes: number;
   capacity: number;
   bookedCount: number;
+  /** Shared by the classes of one weekly repeat; null for a one-off class. */
+  seriesId: string | null;
+};
+
+/** What an owner fills in to schedule a class. */
+export type ClassInput = {
+  title: string;
+  trainerId: string | null;
+  startsAt: string;
+  durationMinutes: number;
+  capacity: number;
 };
 
 export type BookingStatus = 'booked' | 'cancelled' | 'attended';

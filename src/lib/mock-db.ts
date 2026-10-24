@@ -146,6 +146,7 @@ export const mockClasses: GymClass[] = Array.from({ length: 7 }, (_, day) =>
     durationMinutes: template.durationMinutes,
     capacity: template.capacity,
     bookedCount: Math.min(template.capacity, (day * 3 + i * 5) % (template.capacity + 3)),
+    seriesId: `series-${i}`,
   })),
 ).flat();
 
@@ -176,6 +177,8 @@ export const mockMemberships: Membership[] = [
     plan: mockPlans[0],
     startsOn: daysFromToday(-25),
     endsOn: daysFromToday(5),
+    amountPaidCents: null,
+    paymentMethod: null,
   },
   {
     id: 'm-2',
@@ -184,6 +187,8 @@ export const mockMemberships: Membership[] = [
     plan: mockPlans[2],
     startsOn: daysFromToday(-100),
     endsOn: daysFromToday(265),
+    amountPaidCents: null,
+    paymentMethod: null,
   },
   {
     id: 'm-3',
@@ -192,6 +197,8 @@ export const mockMemberships: Membership[] = [
     plan: mockPlans[1],
     startsOn: daysFromToday(-93),
     endsOn: daysFromToday(-3),
+    amountPaidCents: null,
+    paymentMethod: null,
   },
   {
     id: 'm-4',
@@ -200,6 +207,8 @@ export const mockMemberships: Membership[] = [
     plan: mockPlans[0],
     startsOn: daysFromToday(-28),
     endsOn: daysFromToday(2),
+    amountPaidCents: null,
+    paymentMethod: null,
   },
 ];
 
