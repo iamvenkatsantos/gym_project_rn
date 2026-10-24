@@ -44,6 +44,7 @@ export default function EnterCodeScreen() {
       </ThemedText>
       <TextField
         label="Email"
+        icon="mail-outline"
         placeholder="name@example.com"
         autoCapitalize="none"
         autoComplete="email"
@@ -55,6 +56,7 @@ export default function EnterCodeScreen() {
       />
       <TextField
         label="Code"
+        icon="keypad-outline"
         placeholder="123456"
         keyboardType="number-pad"
         autoComplete="one-time-code"
