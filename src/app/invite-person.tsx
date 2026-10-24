@@ -23,7 +23,7 @@ function describe({ result, emailSent, emailError }: InviteOutcome, email: strin
       return {
         title: 'Added to the gym',
         detail:
-          'They already had a CoreFit account, so they can use this gym the next time they open the app.',
+          'They already had a CoreFit Gym account, so they can use this gym the next time they open the app.',
       };
     case 'already_member':
       return {
@@ -34,11 +34,11 @@ function describe({ result, emailSent, emailError }: InviteOutcome, email: strin
       return emailSent
         ? {
             title: 'Invite sent',
-            detail: `We emailed ${email} a link. It opens CoreFit to set a password, then signs them in to this gym.`,
+            detail: `We emailed ${email} a link. It opens CoreFit Gym to set a password, then signs them in to this gym.`,
           }
         : {
             title: 'Invite saved',
-            detail: `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit and create an account with this email. They join the gym as soon as they confirm it.`,
+            detail: `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit Gym and create an account with this email. They join the gym as soon as they confirm it.`,
           };
   }
 }

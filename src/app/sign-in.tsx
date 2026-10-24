@@ -99,7 +99,7 @@ export default function SignInScreen() {
       <View style={styles.hero}>
         <View style={styles.brand}>
           <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
-          <ThemedText type="heading">CoreFit</ThemedText>
+          <ThemedText type="heading">CoreFit Gym</ThemedText>
         </View>
         <ThemedText type="display">
           Train. Book.{'\n'}
@@ -272,7 +272,7 @@ export default function SignInScreen() {
                   <View style={[styles.notice, { borderColor: theme.primary }]}>
                     <ThemedText type="smallBold">Check your email</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      If {email.trim()} has a CoreFit account, we sent it a code to choose a new
+                      If {email.trim()} has a CoreFit Gym account, we sent it a code to choose a new
                       password.
                     </ThemedText>
                     <Button
