@@ -97,14 +97,13 @@ export async function invitePerson(
   email: string,
   role: GymPerson['role'],
 ): Promise<InviteOutcome> {
-  if (!supabase) return { result: await mockInvite(email, role), emailSent: false };
+  if (!supabase)
+    return { result: await mockInvite(email, role), emailSent: false, emailError: null };
 
-  const { data, error } = await supabase.functions.invoke<
-    InviteOutcome & { emailError: string | null }
-  >('invite-member', {
+  const { data, error } = await supabase.functions.invoke<InviteOutcome>('invite-member', {
     body: { gymId, email, role, redirectTo: setPasswordUrl() },
   });
-  if (!error && data) return { result: data.result, emailSent: data.emailSent };
+  if (!error && data) return data;
 
   // Before the invite-member function is deployed, still save the invite.
   const notDeployed =
@@ -114,7 +113,12 @@ export async function invitePerson(
   const result = unwrap(
     await supabase.rpc('invite_to_gym', { p_gym_id: gymId, p_email: email, p_role: role }),
   ) as InviteResult;
-  return { result, emailSent: false };
+  return {
+    result,
+    emailSent: false,
+    emailError:
+      result === 'invited' ? 'The invite-member function is not deployed to Supabase yet.' : null,
+  };
 }
 
 async function functionErrorMessage(error: unknown): Promise<string> {

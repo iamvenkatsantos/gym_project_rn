@@ -16,7 +16,7 @@ import { useInvitePerson } from '@/features/members/hooks';
 import { isValidEmail, normalizeEmail } from '@/features/members/rules';
 import type { InviteOutcome } from '@/features/members/types';
 
-function describe({ result, emailSent }: InviteOutcome, email: string) {
+function describe({ result, emailSent, emailError }: InviteOutcome, email: string) {
   switch (result) {
     case 'added':
       return {
@@ -37,8 +37,7 @@ function describe({ result, emailSent }: InviteOutcome, email: string) {
           }
         : {
             title: 'Invite saved',
-            detail:
-              "We couldn't email them, so ask them to install CoreFit and create an account with this email. They join the gym as soon as they confirm it.",
+            detail: `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit and create an account with this email. They join the gym as soon as they confirm it.`,
           };
   }
 }
