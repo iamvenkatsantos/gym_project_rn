@@ -1,6 +1,6 @@
-# CoreFit
+# CoreFit Gym
 
-<img src="assets/images/icon.png" width="96" alt="CoreFit icon" />
+<img src="assets/images/icon.png" width="96" alt="CoreFit Gym icon" />
 
 A React Native app for gym members, trainers, supervisors and owners. One app, four roles: each
 user lands in their own area after signing in.
@@ -95,7 +95,7 @@ insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>',
 Owners invite people from **People** by email and pick their role. Supervisors can invite
 members and trainers; only owners add supervisors and owners.
 
-- Someone with a CoreFit account joins straight away.
+- Someone with a CoreFit Gym account joins straight away.
 - Anyone else gets an invite email with a code and a link. They enter the code in the app (or tap
   the link on their phone), choose their name and a password, and land on their role's screens. They can also just **Create an account** with that
   email instead.

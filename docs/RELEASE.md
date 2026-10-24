@@ -30,7 +30,8 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 
 **Identity**
 
-- [x] App name: CoreFit.
+- [x] App name: CoreFit Gym (`expo.name` in app.json). It is the home-screen name and the App Store
+      and Play listing name; the slug `corefit` and the `corefit://` scheme stay as they are.
 - [x] Bundle ID / package: `com.corefit.gym`. It can't change after the first upload to either
       store.
 - [x] Icon, Android adaptive icon and splash generated from the CoreFit logo. A sharper master
