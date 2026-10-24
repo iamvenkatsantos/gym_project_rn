@@ -29,7 +29,12 @@ export type GymInvite = {
 export type InviteResult = 'added' | 'invited' | 'already_member';
 
 /** What inviting did, and whether the invite email went out. */
-export type InviteOutcome = { result: InviteResult; emailSent: boolean };
+export type InviteOutcome = {
+  result: InviteResult;
+  emailSent: boolean;
+  /** Why no email went out, when one should have. */
+  emailError: string | null;
+};
 
 export type PeopleFilter = 'all' | Role | 'suspended';
 

@@ -51,5 +51,6 @@ Deno.serve(async (req) => {
     },
   );
   // The invite is saved either way, so they can still join by creating an account.
+  if (mailError) console.error('invite email failed', mailError.message);
   return json({ result, emailSent: !mailError, emailError: mailError?.message ?? null });
 });
