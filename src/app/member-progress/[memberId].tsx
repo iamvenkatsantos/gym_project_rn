@@ -9,18 +9,22 @@ import { useCoachedMembers } from '@/features/members/hooks';
 import { ProgressOverview } from '@/features/progress/components/progress-overview';
 import { useWorkoutLogs } from '@/features/progress/hooks';
 
-/** A trainer's view of a member they coach. The database only shares logs with assigned trainers. */
-export default function MemberProgressForTrainerScreen() {
-  const { memberId } = useLocalSearchParams<{ memberId: string }>();
+/**
+ * Someone's workouts as their trainer, supervisor or owner sees them. The
+ * database only shares logs along that hierarchy (can_view_workout_logs).
+ */
+export default function MemberProgressScreen() {
+  const { memberId, name } = useLocalSearchParams<{ memberId: string; name?: string }>();
   const profile = useProfile();
   const gym = useActiveGym();
+  // Only trainers have coached members; for managers this comes back empty.
   const coached = useCoachedMembers(gym.gymId, profile.id);
   const logs = useWorkoutLogs(gym.gymId, memberId);
   const member = coached.data?.find((m) => m.id === memberId);
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: member?.fullName ?? 'Member' }} />
+      <Stack.Screen options={{ title: member?.fullName ?? name ?? 'Member' }} />
       {member ? (
         <View>
           <ThemedText type="title">{member.fullName}</ThemedText>
@@ -28,6 +32,8 @@ export default function MemberProgressForTrainerScreen() {
             On {member.plans.join(', ')}
           </ThemedText>
         </View>
+      ) : name ? (
+        <ThemedText type="title">{name}</ThemedText>
       ) : null}
       <QueryState
         query={logs}

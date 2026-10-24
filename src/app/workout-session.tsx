@@ -9,7 +9,8 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
 import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
-import { useProfile } from '@/features/auth/use-profile';
+import type { Role } from '@/features/auth/types';
+import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { type DraftSet, useWorkoutDraft } from '@/features/progress/draft-store';
 import { useFinishWorkout } from '@/features/progress/hooks';
 import { useTheme } from '@/hooks/use-theme';
@@ -30,6 +31,14 @@ function clock(ms: number) {
   return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 }
 
+/** Where each role reads their own history after a workout. */
+const historyRoute = {
+  member: '/member/progress',
+  trainer: '/trainer/training',
+  supervisor: '/supervisor/training',
+  owner: '/owner/training',
+} as const satisfies Record<Role, string>;
+
 /** Reps typed in a set: a whole number, or an error to show under the set. */
 function parseReps(text: string): { value: number } | { error: string } {
   const error = validateWholeNumber(text, { min: 0, max: 200, label: 'number of reps' });
@@ -46,6 +55,7 @@ function parseWeight(text: string): { value: number | null } | { error: string }
 export default function WorkoutSessionScreen() {
   const theme = useTheme();
   const profile = useProfile();
+  const gym = useActiveGym();
   const { draft, restUntil, toggleSet, updateSet, addSet, skipRest, discard } = useWorkoutDraft();
   const finish = useFinishWorkout(profile.id);
   const now = useNow();
@@ -230,7 +240,7 @@ export default function WorkoutSessionScreen() {
         disabled={doneSets === 0}
         loading={finish.isPending}
         onPress={() =>
-          finish.mutate(undefined, { onSuccess: () => router.replace('/member/progress') })
+          finish.mutate(undefined, { onSuccess: () => router.replace(historyRoute[gym.role]) })
         }
       />
       {finish.error ? (

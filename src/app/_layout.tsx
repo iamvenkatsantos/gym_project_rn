@@ -78,10 +78,6 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Book a session' }}
         />
         <Stack.Screen
-          name="workout-session"
-          options={{ headerShown: true, gestureEnabled: false }}
-        />
-        <Stack.Screen
           name="request-trainer"
           options={{ presentation: 'modal', headerShown: true, title: 'Ask for a trainer' }}
         />
@@ -94,7 +90,6 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Assign' }}
         />
         <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
-        <Stack.Screen name="member-progress/[memberId]" options={{ headerShown: true }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
@@ -125,11 +120,20 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
         />
       </Stack.Protected>
+      {/* Trainers follow their members; owners and supervisors follow everyone they oversee. */}
+      <Stack.Protected guard={role === 'trainer' || (!!role && canManageGym(role))}>
+        <Stack.Screen name="member-progress/[memberId]" options={{ headerShown: true }} />
+      </Stack.Protected>
       {/* Owners schedule any class; trainers schedule and edit their own. */}
       <Stack.Protected guard={role === 'owner' || role === 'trainer'}>
         <Stack.Screen name="class-editor" options={{ headerShown: true, title: 'Class' }} />
       </Stack.Protected>
       <Stack.Protected guard={!!role}>
+        {/* Everyone trains, whatever their role. */}
+        <Stack.Screen
+          name="workout-session"
+          options={{ headerShown: true, gestureEnabled: false }}
+        />
         <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: true }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Inbox' }} />
       </Stack.Protected>
