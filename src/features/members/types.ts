@@ -38,5 +38,5 @@ export type InviteOutcome = {
 
 export type PeopleFilter = 'all' | Role | 'suspended';
 
-/** A member a trainer coaches through an assigned plan. */
+/** A member mapped to a trainer, with the plans that trainer assigned them. */
 export type CoachedMember = GymMember & { plans: string[] };

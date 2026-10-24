@@ -108,6 +108,10 @@ insert into public.workout_logs (client_id, gym_id, member_id, title, started_at
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000d'); select count(*) from public.workout_logs;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b'); select count(*) from public.workout_logs;
 \echo '21 trainer assigns plan to member, then sees log and sets (expect 1, 1)'
+reset role;
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000c','00000000-0000-0000-0000-00000000000b');
+set role authenticated;
 insert into public.workout_assignments (workout_id, member_id, assigned_by)
   values ('40000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000c','00000000-0000-0000-0000-00000000000b');
 select count(*) from public.workout_logs;
@@ -163,6 +167,9 @@ select public.save_workout('10000000-0000-0000-0000-000000000001', null, 'Mine',
 select public.save_workout('10000000-0000-0000-0000-000000000001', current_setting('test.plan')::uuid, 'Hijack', '', 'beginner', 30,
   '[{"exercise_id":"30000000-0000-0000-0000-000000000001","sets":3,"reps":10,"target_weight_kg":null,"rest_seconds":90}]');
 \echo '31 trainer assigns without assigned_by; it defaults to the trainer (expect true). M2 sees it, M sees only own'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-00000000000b');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 insert into public.workout_assignments (workout_id, member_id) values (current_setting('test.plan')::uuid, '00000000-0000-0000-0000-00000000000d')
   returning assigned_by = '00000000-0000-0000-0000-00000000000b' as defaulted;
@@ -285,7 +292,7 @@ select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Yoga', '
   now() + interval '2 days', 60, 10, 1);
 insert into public.classes (gym_id, trainer_id, title, starts_at, duration_minutes, capacity)
   values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000e', 'Yoga', now() + interval '2 days', 60, 10);
-\echo '52 trainer cannot schedule classes (expect RLS error); past time (expect "future"); 30 weeks (expect "1 to 26")'
+\echo '52 trainer cannot schedule a class for nobody (expect RLS error); past time (expect "future"); 30 weeks (expect "1 to 26")'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Mine', null, now() + interval '1 day', 30, 5, 1);
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
@@ -308,3 +315,117 @@ select count(*) as on_schedule from public.class_schedule where title = 'Morning
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 select public.book_class(current_setting('test.week2')::uuid);
 select public.cancel_class(current_setting('test.week2')::uuid, false);
+
+-- Supervisors and trainer mapping ----------------------------------------------------
+reset role;
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000020', 'sam@example.com', now(), '{"full_name":"Sam Supervisor"}'),
+  ('00000000-0000-0000-0000-000000000021', 'uma@example.com', now(), '{"full_name":"Uma New"}'),
+  ('00000000-0000-0000-0000-000000000022', 'ravi@example.com', now(), '{"full_name":"Ravi Unmapped"}');
+insert into public.gym_members (gym_id, user_id, role) values
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000020', 'supervisor'),
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000021', 'member'),
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000022', 'member');
+set role authenticated;
+
+\echo '56 supervisor invites a member and a trainer (expect invited twice), not a supervisor or owner (expect "Only owners can invite supervisors" twice)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'new.member@example.com', 'member');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'new.coach@example.com', 'trainer');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'boss@example.com', 'supervisor');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'boss@example.com', 'owner');
+\echo '57 owner invites a supervisor (expect invited); supervisor cannot withdraw it (expect DELETE 0) but can withdraw a member invite (expect DELETE 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'second.sup@example.com', 'supervisor');
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+delete from public.gym_invites where email = 'second.sup@example.com';
+delete from public.gym_invites where email = 'new.member@example.com';
+\echo '58 supervisor lists people (expect > 0), cannot change roles or suspend (expect UPDATE 0 twice)'
+select count(*) > 0 as sees_people from public.gym_people('10000000-0000-0000-0000-000000000001');
+update public.gym_members set role = 'trainer' where user_id = '00000000-0000-0000-0000-00000000000c';
+update public.gym_members set status = 'suspended' where user_id = '00000000-0000-0000-0000-00000000000c';
+\echo '59 supervisor sees payments (expect > 0), records one (expect ok), cannot edit or delete one (expect UPDATE 0, DELETE 0)'
+select count(*) > 0 as sees_payments from public.memberships;
+insert into public.memberships (member_id, plan_id, starts_on, ends_on, amount_paid_cents, payment_method)
+  values ('00000000-0000-0000-0000-00000000000d', '60000000-0000-0000-0000-000000000001', current_date, current_date + 30, 149900, 'upi')
+  returning recorded_by = '00000000-0000-0000-0000-000000000020' as ok;
+update public.memberships set amount_paid_cents = 0;
+delete from public.memberships;
+\echo '60 supervisor cannot edit plans (expect UPDATE 0) or schedule classes (expect RLS error)'
+update public.membership_plans set price_cents = 1;
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Sup class', '00000000-0000-0000-0000-00000000000b', now() + interval '1 day', 30, 5, 1);
+\echo '61 supervisor maps Uma to the trainer (expect INSERT), a member as trainer (expect "Pick a trainer"), the trainer as member (expect "Pick an active member")'
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-00000000000b');
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-00000000000d');
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000b');
+\echo '62 members and trainers cannot map (expect RLS error twice); M sees own link only (expect 1), trainer sees 3'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-00000000000b');
+select count(*) as m_links from public.member_trainers;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-00000000000b');
+select count(*) as trainer_links from public.member_trainers;
+\echo '63 mapping told M and the trainer (expect 1 each: Meet your trainer / New member)'
+select title from public.notifications where kind = 'trainer_assigned' and title = 'New member' limit 1;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select title from public.notifications where kind = 'trainer_assigned';
+\echo '64 trainer assigns a plan to mapped M (expect ok); to an unmapped member (expect RLS error)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+insert into public.workout_assignments (workout_id, member_id) values (current_setting('test.plan')::uuid, '00000000-0000-0000-0000-00000000000c')
+  on conflict do nothing returning true as ok;
+insert into public.workout_assignments (workout_id, member_id) values (current_setting('test.plan')::uuid, '00000000-0000-0000-0000-000000000022');
+\echo '65 unmapping M takes the trainer''s plans off M (expect DELETE 1, then 0 assignments for M)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+delete from public.member_trainers where member_id = '00000000-0000-0000-0000-00000000000c';
+select count(*) as m_assignments from public.workout_assignments where member_id = '00000000-0000-0000-0000-00000000000c';
+\echo '66 M asks for the trainer (expect ok), again (expect "already have a request"); trainer cannot ask (expect "Only members")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select set_config('test.request', public.request_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', array['Weight loss'], 'Mornings please')::text, false) is not null as ok;
+select public.request_trainer('10000000-0000-0000-0000-000000000001', null, array['Strength'], '');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.request_trainer('10000000-0000-0000-0000-000000000001', null, array['Strength'], '');
+\echo '67 managers were told (expect 1 for supervisor); M2 cannot see the request (expect 0) or resolve it (expect "Request not found")'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select count(*) as sup_told from public.notifications where kind = 'trainer_request';
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select count(*) as m2_sees from public.trainer_requests;
+select public.resolve_trainer_request(current_setting('test.request')::uuid, true, '00000000-0000-0000-0000-00000000000b', '');
+\echo '68 supervisor approves without a trainer (expect "Pick a trainer"), then with one (expect ok); M is mapped (expect 1) and told (expect approved)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.resolve_trainer_request(current_setting('test.request')::uuid, true, null, '');
+select public.resolve_trainer_request(current_setting('test.request')::uuid, true, '00000000-0000-0000-0000-00000000000b', 'Starts Monday');
+select count(*) as m_mapped from public.member_trainers where member_id = '00000000-0000-0000-0000-00000000000c';
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select body from public.notifications where title = 'Trainer request approved';
+\echo '69 answering twice (expect "already answered"); M withdraws a new request (expect ok)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.resolve_trainer_request(current_setting('test.request')::uuid, false, null, '');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.withdraw_trainer_request(public.request_trainer('10000000-0000-0000-0000-000000000001', null, array['Mobility'], ''));
+select status from public.trainer_requests order by created_at desc limit 1;
+\echo '70 supervisor messages the trainer (expect ok); a member cannot (expect "Only owners and supervisors"); trainer reads it (expect 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.message_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', 'Please schedule Saturday yoga', '');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.message_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', 'Hi', '');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select count(*) as trainer_messages from public.notifications where kind = 'message';
+\echo '71 trainer schedules own class (expect 1), edits it (expect UPDATE 1), cannot hand it to nobody (expect RLS error), cancels it (expect 1)'
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Trainer yoga', '00000000-0000-0000-0000-00000000000b', now() + interval '3 days', 60, 10, 1);
+update public.classes set capacity = 12 where title = 'Trainer yoga';
+update public.classes set trainer_id = null where title = 'Trainer yoga';
+select public.cancel_class((select id from public.classes where title = 'Trainer yoga'), false);
+\echo '72 trainer cannot cancel a class they don''t teach (expect "Class not found")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Open gym', null, now() + interval '3 days', 60, 10, 1);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.cancel_class((select id from public.classes where title = 'Open gym'), false);
+\echo '73 M leaves the gym, so their trainer links go (expect 0)'
+reset role;
+delete from public.gym_members where user_id = '00000000-0000-0000-0000-00000000000c' and gym_id = '10000000-0000-0000-0000-000000000001';
+select count(*) as links_left from public.member_trainers where member_id = '00000000-0000-0000-0000-00000000000c';

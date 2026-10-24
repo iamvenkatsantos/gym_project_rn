@@ -1,7 +1,9 @@
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
+import type { TrainerLink, TrainerRequest } from '@/features/coaching/types';
 import type { GymInvite, GymPerson } from '@/features/members/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
+import type { AppNotification } from '@/features/notifications/types';
 import type { WorkoutLog } from '@/features/progress/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
 import type { Workout } from '@/features/workouts/types';
@@ -48,6 +50,11 @@ export const mockProfiles: Profile[] = [
     ],
   },
   {
+    id: 'u-supervisor',
+    fullName: 'Sam Supervisor',
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'supervisor' }],
+  },
+  {
     id: 'u-owner',
     fullName: 'Olivia Owner',
     gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'owner' }],
@@ -57,6 +64,7 @@ export const mockProfiles: Profile[] = [
 /** Everyone at the demo gym, as the owner's People screen shows them. */
 export const mockPeople: GymPerson[] = [
   person('u-owner', 'Olivia Owner', 'owner', 400),
+  person('u-supervisor', 'Sam Supervisor', 'supervisor', 390),
   person('u-trainer', 'Tom Trainer', 'trainer', 380),
   person('u-trainer-2', 'Divya Raman', 'trainer', 200),
   person('u-member', 'Maya Member', 'member', 120),
@@ -78,6 +86,76 @@ export const mockInvites: GymInvite[] = [
 /** Demo accounts that exist but aren't at the gym yet, so inviting them adds them at once. */
 export const mockAccounts: { id: string; fullName: string; email: string }[] = [
   { id: 'u-sneha', fullName: 'Sneha Iyer', email: 'sneha@example.com' },
+];
+
+function link(memberId: string, trainerId: string, daysAgo: number): TrainerLink {
+  const name = (id: string) => mockPeople.find((p) => p.id === id)!.fullName;
+  return {
+    memberId,
+    memberName: name(memberId),
+    trainerId,
+    trainerName: name(trainerId),
+    assignedAt: daysFromToday(-daysAgo),
+  };
+}
+
+/** Who trains whom. Maya has two trainers; Priya and Leo have none yet. */
+export const mockTrainerLinks: TrainerLink[] = [
+  link('u-member', 'u-trainer', 90),
+  link('u-member', 'u-trainer-2', 30),
+  link('u-member-2', 'u-trainer', 80),
+];
+
+export const mockTrainerRequests: TrainerRequest[] = [
+  {
+    id: 'req-1',
+    memberId: 'u-member-3',
+    memberName: 'Priya Sharma',
+    trainerId: 'u-trainer-2',
+    trainerName: 'Divya Raman',
+    needs: ['Mobility', 'Injury recovery'],
+    comments: 'Recovering from a knee strain, evenings work best.',
+    status: 'pending',
+    response: '',
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    resolvedAt: null,
+  },
+];
+
+export const mockNotifications: AppNotification[] = [
+  {
+    id: 'n-1',
+    recipientId: 'u-trainer',
+    senderName: 'Sam Supervisor',
+    kind: 'message',
+    title: 'Please schedule a class',
+    body: 'Members are asking for a Saturday morning strength class.',
+    classId: null,
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    readAt: null,
+  },
+  {
+    id: 'n-2',
+    recipientId: 'u-member',
+    senderName: 'Sam Supervisor',
+    kind: 'trainer_assigned',
+    title: 'Meet your trainer',
+    body: 'Divya Raman is now your trainer.',
+    classId: null,
+    createdAt: new Date(Date.now() - 30 * DAY).toISOString(),
+    readAt: null,
+  },
+  ...['u-supervisor', 'u-owner'].map((recipientId) => ({
+    id: `n-req-${recipientId}`,
+    recipientId,
+    senderName: 'Priya Sharma',
+    kind: 'trainer_request' as const,
+    title: 'Trainer request',
+    body: 'Priya Sharma asked for a trainer: Mobility, Injury recovery.',
+    classId: null,
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    readAt: null,
+  })),
 ];
 
 const prescribe = (

@@ -28,7 +28,7 @@ export default function TrainerMembersScreen() {
       <QueryState
         query={members}
         isEmpty={(list) => list.length === 0}
-        emptyText="Assign a plan to a member from My workouts to follow their progress here.">
+        emptyText="No members yet. Members your gym matches with you show up here.">
         {(list) => (
           <Card>
             {list.map((member, i) => (
@@ -56,7 +56,7 @@ export default function TrainerMembersScreen() {
                 <View style={styles.flex}>
                   <ThemedText type="smallBold">{member.fullName}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                    {member.plans.join(', ')}
+                    {member.plans.length ? member.plans.join(', ') : 'No plan yet'}
                   </ThemedText>
                 </View>
                 <Icon name="chevron-forward" size={20} />

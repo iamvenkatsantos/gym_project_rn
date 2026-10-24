@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -82,12 +82,27 @@ export default function TrainerScheduleScreen() {
         }
       </QueryState>
 
-      <SectionHeader title="Classes" />
+      <SectionHeader title="Your classes" />
+      <Button
+        label="Schedule a class"
+        icon="add"
+        variant="secondary"
+        size="compact"
+        onPress={() => router.push('/class-editor')}
+      />
       <QueryState query={classes} isEmpty={(c) => c.length === 0} emptyText="No classes scheduled.">
         {(list) =>
-          list
-            .slice(0, 6)
-            .map((gymClass) => <ClassRow key={gymClass.id} gymClass={gymClass} showDay />)
+          list.slice(0, 6).map((gymClass) => (
+            <Pressable
+              key={gymClass.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${gymClass.title}`}
+              onPress={() =>
+                router.push({ pathname: '/class-editor', params: { classId: gymClass.id } })
+              }>
+              <ClassRow gymClass={gymClass} showDay />
+            </Pressable>
+          ))
         }
       </QueryState>
     </Screen>

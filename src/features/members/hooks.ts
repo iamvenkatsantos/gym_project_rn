@@ -14,15 +14,18 @@ import type { GymPerson } from '@/features/members/types';
 
 export const memberKeys = {
   all: ['members'] as const,
-  list: (gymId: string) => [...memberKeys.all, gymId, 'members'] as const,
+  list: (gymId: string, role: 'member' | 'trainer') => [...memberKeys.all, gymId, role] as const,
   people: (gymId: string) => [...memberKeys.all, gymId, 'people'] as const,
   invites: (gymId: string) => [...memberKeys.all, gymId, 'invites'] as const,
   coached: (gymId: string, trainerId: string) =>
     [...memberKeys.all, gymId, 'coached', trainerId] as const,
 };
 
-export function useGymMembers(gymId: string) {
-  return useQuery({ queryKey: memberKeys.list(gymId), queryFn: () => listGymMembers(gymId) });
+export function useGymMembers(gymId: string, role: 'member' | 'trainer' = 'member') {
+  return useQuery({
+    queryKey: memberKeys.list(gymId, role),
+    queryFn: () => listGymMembers(gymId, role),
+  });
 }
 
 export function usePeople(gymId: string) {

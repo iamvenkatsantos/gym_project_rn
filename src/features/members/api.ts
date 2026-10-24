@@ -1,5 +1,6 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { setPasswordUrl } from '@/features/auth/api';
+import { listTrainerLinks } from '@/features/coaching/api';
 import type {
   CoachedMember,
   GymInvite,
@@ -33,14 +34,17 @@ type PersonRow = {
 
 type InviteRow = { id: string; email: string; role: GymInvite['role']; created_at: string };
 
-type CoachedRow = { member_id: string; member: { full_name: string }; workout: { title: string } };
+type CoachedRow = { member_id: string; workout: { title: string } };
 
-/** Active members of a gym, by name. Staff of the gym can read this. */
-export async function listGymMembers(gymId: string): Promise<GymMember[]> {
+/** Active members (or trainers) of a gym, by name. Anyone at the gym can read this. */
+export async function listGymMembers(
+  gymId: string,
+  role: 'member' | 'trainer' = 'member',
+): Promise<GymMember[]> {
   if (!supabase) {
     return delay(
       forGym(gymId, mockPeople)
-        .filter((p) => p.role === 'member' && p.status === 'active')
+        .filter((p) => p.role === role && p.status === 'active')
         .map(({ id, fullName }) => ({ id, fullName })),
     );
   }
@@ -49,7 +53,7 @@ export async function listGymMembers(gymId: string): Promise<GymMember[]> {
       .from('gym_members')
       .select('user_id, profile:profiles(full_name)')
       .eq('gym_id', gymId)
-      .eq('role', 'member')
+      .eq('role', role)
       .eq('status', 'active'),
   ) as unknown as MemberRow[];
   return rows
@@ -57,7 +61,7 @@ export async function listGymMembers(gymId: string): Promise<GymMember[]> {
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
 }
 
-/** Everyone at the gym with their email. Owners only. */
+/** Everyone at the gym with their email. Owners and supervisors only. */
 export async function listPeople(gymId: string): Promise<GymPerson[]> {
   if (!supabase) {
     return delay(
@@ -223,11 +227,12 @@ export async function removePerson(gymId: string, userId: string) {
   if (error) throw error;
 }
 
-/** Members a trainer coaches, from the plans they've assigned, with those plans' names. */
+/** Members mapped to a trainer, with the names of the plans that trainer gave them. */
 export async function listCoachedMembers(
   gymId: string,
   trainerId: string,
 ): Promise<CoachedMember[]> {
+  const links = await listTrainerLinks(gymId, { trainerId });
   let rows: CoachedRow[];
   if (!supabase) {
     rows = forGym(gymId, mockWorkouts)
@@ -235,7 +240,6 @@ export async function listCoachedMembers(
       .flatMap((w) =>
         w.assignedMemberIds.map((memberId) => ({
           member_id: memberId,
-          member: { full_name: mockPeople.find((p) => p.id === memberId)?.fullName ?? 'Member' },
           workout: { title: w.title },
         })),
       );
@@ -243,23 +247,16 @@ export async function listCoachedMembers(
     rows = unwrap(
       await supabase
         .from('workout_assignments')
-        .select(
-          'member_id, member:profiles!workout_assignments_member_id_fkey(full_name), workout:workouts!inner(title, gym_id, trainer_id)',
-        )
+        .select('member_id, workout:workouts!inner(title, gym_id, trainer_id)')
         .eq('workout.gym_id', gymId)
         .eq('workout.trainer_id', trainerId),
     ) as unknown as CoachedRow[];
   }
-  const byMember = new Map<string, CoachedMember>();
-  for (const row of rows) {
-    const member = byMember.get(row.member_id) ?? {
-      id: row.member_id,
-      fullName: row.member.full_name,
-      plans: [],
-    };
-    member.plans.push(row.workout.title);
-    byMember.set(row.member_id, member);
-  }
-  const members = [...byMember.values()].sort((a, b) => a.fullName.localeCompare(b.fullName));
-  return supabase ? members : delay(members);
+  return links
+    .map((link) => ({
+      id: link.memberId,
+      fullName: link.memberName,
+      plans: rows.filter((r) => r.member_id === link.memberId).map((r) => r.workout.title),
+    }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
 }

@@ -8,6 +8,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Colors } from '@/constants/theme';
 
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
+import { canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { queryClient } from '@/lib/query-client';
@@ -80,6 +81,10 @@ function RootNavigator() {
           name="workout-session"
           options={{ headerShown: true, gestureEnabled: false }}
         />
+        <Stack.Screen
+          name="request-trainer"
+          options={{ presentation: 'modal', headerShown: true, title: 'Ask for a trainer' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" />
@@ -94,22 +99,39 @@ function RootNavigator() {
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
         <Stack.Screen
+          name="membership-plan-editor"
+          options={{ headerShown: true, title: 'Membership plan' }}
+        />
+      </Stack.Protected>
+      <Stack.Protected guard={role === 'supervisor'}>
+        <Stack.Screen name="supervisor" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!role && canManageGym(role)}>
+        <Stack.Screen
           name="invite-person"
           options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
         />
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: '' }} />
-        <Stack.Screen name="class-editor" options={{ headerShown: true, title: 'Class' }} />
-        <Stack.Screen
-          name="membership-plan-editor"
-          options={{ headerShown: true, title: 'Membership plan' }}
-        />
         <Stack.Screen
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
         />
+        <Stack.Screen
+          name="trainer-request/[requestId]"
+          options={{ headerShown: true, title: 'Trainer request' }}
+        />
+        <Stack.Screen
+          name="message-trainer"
+          options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
+        />
+      </Stack.Protected>
+      {/* Owners schedule any class; trainers schedule and edit their own. */}
+      <Stack.Protected guard={role === 'owner' || role === 'trainer'}>
+        <Stack.Screen name="class-editor" options={{ headerShown: true, title: 'Class' }} />
       </Stack.Protected>
       <Stack.Protected guard={!!role}>
         <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: true }} />
+        <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Inbox' }} />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen

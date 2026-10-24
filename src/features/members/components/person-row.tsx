@@ -11,16 +11,20 @@ import { useTheme } from '@/hooks/use-theme';
 export const roleTone: Record<GymPerson['role'], PillTone> = {
   member: 'neutral',
   trainer: 'success',
+  supervisor: 'warning',
   owner: 'accent',
 };
 
 export function PersonRow({
   person,
   divider,
+  detail,
   onPress,
 }: {
   person: GymPerson;
   divider: boolean;
+  /** An extra line, e.g. a member's trainers. */
+  detail?: string;
   onPress: () => void;
 }) {
   const theme = useTheme();
@@ -51,6 +55,11 @@ export function PersonRow({
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
           {person.email}
         </ThemedText>
+        {detail ? (
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {detail}
+          </ThemedText>
+        ) : null}
       </View>
       <View>
         {suspended ? (
