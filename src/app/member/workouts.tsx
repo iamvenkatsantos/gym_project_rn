@@ -1,10 +1,12 @@
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
+import { useActiveGym } from '@/features/auth/use-profile';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
 import { useWorkouts } from '@/features/workouts/hooks';
 
 export default function MemberWorkoutsScreen() {
-  const workouts = useWorkouts();
+  const gym = useActiveGym();
+  const workouts = useWorkouts(gym.gymId);
 
   return (
     <Screen>

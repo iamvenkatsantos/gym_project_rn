@@ -5,11 +5,14 @@
 A React Native app for gym members, trainers and owners. One app, three roles: each user
 lands in their own area after signing in.
 
-| Role    | What they can do today                                              |
-| ------- | ------------------------------------------------------------------- |
-| Member  | See their membership, browse workouts, book and cancel classes      |
-| Trainer | See their class schedule and the workouts they've written           |
-| Owner   | Dashboard with renewals due, the class timetable, members and plans |
+People can belong to several gyms and hold a different role in each (say, a trainer at one branch
+and a member at another). The app shows one gym at a time and switches area with the role.
+
+| Role    | What they can do today                                                   |
+| ------- | ------------------------------------------------------------------------ |
+| Member  | Membership, workouts, book trainers 1:1 and group classes, cancel either |
+| Trainer | 1:1 sessions and classes on one schedule, mark sessions done, workouts   |
+| Owner   | Dashboard with renewals due, the class timetable, members and plans      |
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
@@ -60,6 +63,18 @@ someone in a gym or make them a trainer or owner.
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
 checklist.
 
+## Database checks
+
+`supabase/tests/rls.sql` exercises the RLS policies and booking rules (double-booking, availability,
+cross-gym access). On plain Postgres 16:
+
+```bash
+createdb corefit_test
+psql -d corefit_test -f supabase/tests/plain-postgres-auth-stub.sql
+for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
+psql -d corefit_test -f supabase/tests/rls.sql
+```
+
 ## Scripts
 
 | Command             | What it does              |
@@ -78,12 +93,14 @@ src/
     _layout.tsx           Providers and role guards
     sign-in.tsx
     member/               Member tabs: home, classes, workouts, membership
-    trainer/              Trainer tabs: schedule, workouts
+    trainer/              Trainer tabs: schedule (1:1 sessions and classes), workouts
+    book-trainer/         Member: pick a trainer's slot and book
     owner/                Owner tabs: dashboard, classes, members
   features/
     auth/                 Session store, sign-in/out, profile
     workouts/             types, api, hooks, components, tests
-    bookings/             classes, bookings, booking rules
+    bookings/             classes, class bookings, booking rules
+    trainers/             trainer profiles, availability slots, 1:1 sessions
     memberships/          plans, memberships, status rules
   components/             Shared UI (Screen, Card, Button, QueryState, tabs)
   lib/                    Supabase client, query client, env, formatting, mock data

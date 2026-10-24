@@ -2,10 +2,20 @@ import type { Profile, Role } from '@/features/auth/types';
 import { delay, mockProfiles } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
-type ProfileRow = { id: string; gym_id: string | null; full_name: string; role: Role };
+type ProfileRow = {
+  id: string;
+  full_name: string;
+  gyms: { role: Role; status: string; gym: { id: string; name: string } }[];
+};
 
 function toProfile(row: ProfileRow): Profile {
-  return { id: row.id, gymId: row.gym_id, fullName: row.full_name, role: row.role };
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    gyms: row.gyms
+      .filter((g) => g.status === 'active')
+      .map((g) => ({ gymId: g.gym.id, gymName: g.gym.name, role: g.role })),
+  };
 }
 
 export async function fetchProfile(userId: string): Promise<Profile> {
@@ -15,8 +25,12 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     return delay(profile);
   }
   const row = unwrap(
-    await supabase.from('profiles').select('id, gym_id, full_name, role').eq('id', userId).single(),
-  );
+    await supabase
+      .from('profiles')
+      .select('id, full_name, gyms:gym_members(role, status, gym:gyms(id, name))')
+      .eq('id', userId)
+      .single(),
+  ) as unknown as ProfileRow;
   return toProfile(row);
 }
 
@@ -27,9 +41,9 @@ export async function signInWithPassword(email: string, password: string): Promi
   return fetchProfile(data.user.id);
 }
 
-/** Demo sign-in for mock mode: pick a role and get that seeded user. */
+/** Demo sign-in for mock mode: pick a role and get the seeded user who has it first. */
 export async function signInAsDemo(role: Role): Promise<Profile> {
-  const profile = mockProfiles.find((p) => p.role === role);
+  const profile = mockProfiles.find((p) => p.gyms[0]?.role === role);
   if (!profile) throw new Error(`No demo ${role}`);
   return delay(profile);
 }

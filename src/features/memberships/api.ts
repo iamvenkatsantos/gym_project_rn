@@ -1,5 +1,5 @@
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
-import { delay, mockMemberships, mockPlans } from '@/lib/mock-db';
+import { delay, forGym, mockMemberships, mockPlans } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type PlanRow = {
@@ -20,7 +20,8 @@ type MembershipRow = {
 };
 
 const PLAN_COLUMNS = 'id, name, price_cents, currency, duration_days';
-const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, member:profiles(full_name), plan:membership_plans(${PLAN_COLUMNS})`;
+// The inner join lets queries filter memberships by the plan's gym.
+const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, member:profiles(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
 
 function toPlan(row: PlanRow): MembershipPlan {
   return {
@@ -43,27 +44,32 @@ function toMembership(row: MembershipRow): Membership {
   };
 }
 
-export async function listPlans(): Promise<MembershipPlan[]> {
-  if (!supabase) return delay(mockPlans);
+export async function listPlans(gymId: string): Promise<MembershipPlan[]> {
+  if (!supabase) return delay(forGym(gymId, mockPlans));
   const rows = unwrap(
     await supabase
       .from('membership_plans')
       .select(PLAN_COLUMNS)
+      .eq('gym_id', gymId)
       .eq('active', true)
       .order('price_cents'),
   );
   return rows.map(toPlan);
 }
 
-/** The member's latest membership, whether or not it has expired. */
-export async function getCurrentMembership(memberId: string): Promise<Membership | null> {
+/** The member's latest membership at this gym, whether or not it has expired. */
+export async function getCurrentMembership(
+  gymId: string,
+  memberId: string,
+): Promise<Membership | null> {
   if (!supabase) {
-    return delay(mockMemberships.find((m) => m.memberId === memberId) ?? null);
+    return delay(forGym(gymId, mockMemberships).find((m) => m.memberId === memberId) ?? null);
   }
   const { data, error } = await supabase
     .from('memberships')
     .select(MEMBERSHIP_COLUMNS)
     .eq('member_id', memberId)
+    .eq('plan.gym_id', gymId)
     .order('ends_on', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -71,11 +77,15 @@ export async function getCurrentMembership(memberId: string): Promise<Membership
   return data ? toMembership(data as unknown as MembershipRow) : null;
 }
 
-/** Every membership in the owner's gym; RLS scopes rows to that gym. */
-export async function listMemberships(): Promise<Membership[]> {
-  if (!supabase) return delay(mockMemberships);
+/** Every membership in the gym. RLS only lets owners see other people's. */
+export async function listMemberships(gymId: string): Promise<Membership[]> {
+  if (!supabase) return delay(forGym(gymId, mockMemberships));
   const rows = unwrap(
-    await supabase.from('memberships').select(MEMBERSHIP_COLUMNS).order('ends_on'),
+    await supabase
+      .from('memberships')
+      .select(MEMBERSHIP_COLUMNS)
+      .eq('plan.gym_id', gymId)
+      .order('ends_on'),
   ) as unknown as MembershipRow[];
   return rows.map(toMembership);
 }

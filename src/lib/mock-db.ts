@@ -1,6 +1,7 @@
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
+import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
 import type { Workout } from '@/features/workouts/types';
 
 /**
@@ -8,17 +9,36 @@ import type { Workout } from '@/features/workouts/types';
  * Data resets on every reload.
  */
 
-const GYM_ID = 'gym-1';
+export const MOCK_GYM_ID = 'gym-1';
+const GYM_ID = MOCK_GYM_ID;
 const DAY = 24 * 60 * 60 * 1000;
 
 function daysFromToday(days: number) {
   return new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
 }
 
+const GYM_NAME = 'CoreFit Anna Nagar';
+
 export const mockProfiles: Profile[] = [
-  { id: 'u-member', gymId: GYM_ID, fullName: 'Maya Member', role: 'member' },
-  { id: 'u-trainer', gymId: GYM_ID, fullName: 'Tom Trainer', role: 'trainer' },
-  { id: 'u-owner', gymId: GYM_ID, fullName: 'Olivia Owner', role: 'owner' },
+  {
+    id: 'u-member',
+    fullName: 'Maya Member',
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'member' }],
+  },
+  {
+    id: 'u-trainer',
+    fullName: 'Tom Trainer',
+    // Trains at one branch and works out as a member at another.
+    gyms: [
+      { gymId: GYM_ID, gymName: GYM_NAME, role: 'trainer' },
+      { gymId: 'gym-2', gymName: 'CoreFit Velachery', role: 'member' },
+    ],
+  },
+  {
+    id: 'u-owner',
+    fullName: 'Olivia Owner',
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'owner' }],
+  },
 ];
 
 export const mockWorkouts: Workout[] = [
@@ -132,6 +152,68 @@ export const mockMemberships: Membership[] = [
   },
 ];
 
+const weekdays = [1, 2, 3, 4, 5, 6];
+
+export const mockTrainers: TrainerWithAvailability[] = [
+  {
+    id: 'u-trainer',
+    fullName: 'Tom Trainer',
+    bio: 'Strength coach focused on safe technique and steady progress.',
+    specialties: ['Strength', 'Fat loss'],
+    sessionMinutes: 60,
+    availability: weekdays.flatMap((weekday) => [
+      { weekday, startTime: '07:00', endTime: '11:00' },
+      { weekday, startTime: '17:00', endTime: '20:00' },
+    ]),
+  },
+  {
+    id: 'u-trainer-2',
+    fullName: 'Divya Raman',
+    bio: 'Mobility and yoga, great for beginners and recovery days.',
+    specialties: ['Mobility', 'Yoga', 'Beginners'],
+    sessionMinutes: 45,
+    availability: [0, 2, 4, 6].map((weekday) => ({
+      weekday,
+      startTime: '06:00',
+      endTime: '10:30',
+    })),
+  },
+];
+
+function nextWeekdayAt(weekday: number, hour: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + ((weekday - date.getDay() + 7) % 7 || 7));
+  date.setHours(hour, 0, 0, 0);
+  return date;
+}
+
+const sessionStart = nextWeekdayAt(2, 8);
+
+export const mockSessions: TrainerSession[] = [
+  {
+    id: 's-1',
+    gymId: GYM_ID,
+    trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
+    memberId: 'u-member',
+    memberName: 'Maya Member',
+    startsAt: sessionStart.toISOString(),
+    endsAt: new Date(sessionStart.getTime() + 60 * 60 * 1000).toISOString(),
+    status: 'booked',
+  },
+  {
+    id: 's-2',
+    gymId: GYM_ID,
+    trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
+    memberId: 'u-member-2',
+    memberName: 'Arjun Kumar',
+    startsAt: nextWeekdayAt(2, 9).toISOString(),
+    endsAt: nextWeekdayAt(2, 10).toISOString(),
+    status: 'booked',
+  },
+];
+
 let nextId = 100;
 export function mockId(prefix: string) {
   nextId += 1;
@@ -142,6 +224,11 @@ export function mockId(prefix: string) {
  * Simulates a network response: adds latency so loading states are visible, and
  * returns a copy so later mutations of the mock data don't leak into the cache.
  */
+/** Mock content only exists for the first gym; other gyms come back empty. */
+export function forGym<T>(gymId: string, items: T[]): T[] {
+  return gymId === MOCK_GYM_ID ? items : [];
+}
+
 export function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
 }
