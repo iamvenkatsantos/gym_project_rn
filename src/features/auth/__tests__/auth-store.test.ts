@@ -36,6 +36,14 @@ describe('auth store', () => {
     expect(useAuthStore.getState().activeGymId).toBe('g-1');
   });
 
+  it('picks up a role change on refresh at the same gym', () => {
+    useAuthStore.getState().setProfile(profile);
+    useAuthStore
+      .getState()
+      .setProfile({ ...profile, gyms: [{ ...profile.gyms[0], role: 'owner' }, profile.gyms[1]] });
+    expect(selectActiveGym(useAuthStore.getState())?.role).toBe('owner');
+  });
+
   it('has no active gym for someone who belongs to none', () => {
     useAuthStore.getState().setProfile({ ...profile, gyms: [] });
     expect(useAuthStore.getState().status).toBe('signedIn');

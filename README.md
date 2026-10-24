@@ -83,6 +83,12 @@ insert into gyms (name) values ('CoreFit Anna Nagar') returning id;
 insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>', 'owner');
 ```
 
+After sign-in the app opens the screens for the person's role at their gym (owner, trainer or
+member); the other roles' screens can't be reached. To try each role, invite two emails you own
+from **People** (one as Trainer, one as Member), then use **Create an account** with each. Role
+changes and suspensions apply the next time the app comes to the foreground. Set the Site URL
+under Supabase → Authentication → URL Configuration so confirmation emails link somewhere useful.
+
 ## Releasing
 
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
