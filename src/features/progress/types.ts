@@ -1,3 +1,5 @@
+import type { Role } from '@/features/auth/types';
+
 export type LoggedSet = {
   exerciseId: string;
   exerciseName: string;
@@ -14,6 +16,13 @@ export type WorkoutLog = {
   startedAt: string;
   completedAt: string;
   sets: LoggedSet[];
+};
+
+/** Someone else's workout, as their trainer, supervisor or owner sees it in the history feed. */
+export type GymWorkoutLog = WorkoutLog & {
+  personId: string;
+  personName: string;
+  personRole: Role;
 };
 
 export type PersonalRecord = {
