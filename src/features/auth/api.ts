@@ -80,6 +80,26 @@ export async function signInWithLinkSession(session: LinkSession): Promise<Profi
   return fetchProfile(data.user.id);
 }
 
+/**
+ * Signs in with the code from an invite, password reset or confirmation email,
+ * for when the link can't open the app (say the email was read on a computer).
+ * The code doesn't say which email it came from, so each kind is tried in turn.
+ */
+export async function verifyEmailCode(
+  email: string,
+  code: string,
+  kinds: LinkSession['type'][],
+): Promise<{ type: LinkSession['type']; userId: string }> {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  let lastError: Error = new Error('That code is wrong or has expired.');
+  for (const type of kinds) {
+    const { data, error } = await supabase.auth.verifyOtp({ email, token: code, type });
+    if (!error && data.user) return { type, userId: data.user.id };
+    if (error) lastError = error;
+  }
+  throw lastError;
+}
+
 /** Sets the signed-in user's password, and their name if they haven't given one yet. */
 export async function setPassword(password: string, fullName?: string): Promise<Profile> {
   if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');

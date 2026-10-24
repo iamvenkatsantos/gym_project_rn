@@ -1,0 +1,51 @@
+<!-- Supabase → Authentication → Emails → Templates → Reset password.
+     Subject: Your CoreFit password reset code -->
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#0B0B0F;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0B0B0F" style="background:#0B0B0F;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#F5F5F7;">
+            <tr>
+              <td align="center" style="padding-bottom:24px;">
+                <img src="https://raw.githubusercontent.com/iamvenkatsantos/gym_project_rn/main/assets/images/logo.png" width="72" height="72" alt="CoreFit" style="display:block;border:0;" />
+                <div style="font-size:22px;font-weight:800;letter-spacing:0.5px;padding-top:8px;">CoreFit</div>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#16161D" style="background:#16161D;border-radius:16px;padding:28px 24px;">
+                <div style="font-size:24px;font-weight:800;line-height:1.3;">Reset your password</div>
+                <div style="font-size:15px;line-height:1.6;color:#A1A1AA;padding-top:12px;">
+                  Someone asked to reset the password for this CoreFit account. Use the code or the button to choose a new one.
+                </div>
+
+                <div style="font-size:13px;color:#A1A1AA;padding-top:24px;">Your reset code</div>
+                <div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#3DDC5C;padding-top:4px;">{{ .Token }}</div>
+                <div style="font-size:13px;line-height:1.6;color:#A1A1AA;padding-top:8px;">
+                  In the CoreFit app, tap <b style="color:#F5F5F7;">Got a code by email? Enter it</b>, then type this email address and the code.
+                </div>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+                  <tr>
+                    <td bgcolor="#3DDC5C" style="background:#3DDC5C;border-radius:12px;">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 24px;font-size:16px;font-weight:700;color:#0B0B0F;text-decoration:none;">Reset on this phone</a>
+                    </td>
+                  </tr>
+                </table>
+                <div style="font-size:12px;line-height:1.6;color:#71717A;padding-top:8px;">
+                  The button only works on a phone with CoreFit installed. On a computer, use the code.
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 16px 0;font-size:12px;line-height:1.6;color:#71717A;">
+                Sent to {{ .Email }}. If you didn't ask for this, ignore it and your password stays the same.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

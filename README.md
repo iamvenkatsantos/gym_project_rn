@@ -89,8 +89,8 @@ insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>',
 Owners invite people from **People** by email and pick their role:
 
 - Someone with a CoreFit account joins straight away.
-- Anyone else gets an invite email. The link opens the app, they choose their name and a
-  password, and land on their role's screens. They can also just **Create an account** with that
+- Anyone else gets an invite email with a code and a link. They enter the code in the app (or tap
+  the link on their phone), choose their name and a password, and land on their role's screens. They can also just **Create an account** with that
   email instead.
 - **Forgot password?** on the sign-in screen emails a link to the same set-password screen.
 
@@ -104,7 +104,13 @@ Supabase settings these emails need (Dashboard → Authentication):
 2. **Emails → SMTP Settings:** turn on custom SMTP (Resend, Brevo, SendGrid, Amazon SES or your
    domain's mail). Supabase's built-in sender only emails members of your Supabase team and
    about 2 emails an hour, so invites to anyone else fail without it.
-3. Optional: **Emails → Templates → Invite user** to word the invite your way.
+3. **Emails → Templates:** paste the branded templates from `supabase/templates/` (each file's
+   first line names the template and its subject): `invite.html` into **Invite user**,
+   `recovery.html` into **Reset password** and `confirmation.html` into **Confirm signup**. They
+   show the CoreFit logo, the gym, the role and a code.
+
+Every one of these emails has a code as well as a link. The link only opens the app on a phone
+that has it; the code works anywhere: on the sign-in screen tap **Got a code by email? Enter it**.
 
 ## Releasing
 

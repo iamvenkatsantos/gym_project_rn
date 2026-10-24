@@ -109,8 +109,8 @@ export default function SignInScreen() {
             <Card>
               <ThemedText type="smallBold">That email link didn&apos;t work</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {linkError}. Links work once and expire after a day. Sign in below, use Forgot
-                password, or ask your gym to invite you again.
+                {linkError}. Links work once and expire. If the email has a code, tap Enter it
+                below. Otherwise sign in, use Forgot password, or ask your gym to invite you again.
               </ThemedText>
             </Card>
           ) : null}
@@ -126,8 +126,8 @@ export default function SignInScreen() {
                 <Card highlighted>
                   <ThemedText type="heading">Check your email</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    If {email.trim()} has a CoreFit account, we sent it a link. Open it on this
-                    phone to choose a new password.
+                    If {email.trim()} has a CoreFit account, we sent it a link and a code. Open the
+                    link on this phone, or enter the code below.
                   </ThemedText>
                 </Card>
               ) : (
@@ -141,6 +141,21 @@ export default function SignInScreen() {
                   </ThemedText>
                 </Pressable>
               )}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() =>
+                  router.push({
+                    pathname: '/enter-code',
+                    params: resetPassword.isSuccess
+                      ? { email: email.trim(), kind: 'recovery' }
+                      : { email: email.trim() },
+                  })
+                }
+                style={styles.switchMode}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Got a code by email? <ThemedText type="linkPrimary">Enter it</ThemedText>
+                </ThemedText>
+              </Pressable>
               {resetHint && !email.trim() ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   Enter your email above, then tap Forgot password.
@@ -151,9 +166,19 @@ export default function SignInScreen() {
             <Card highlighted>
               <ThemedText type="heading">Check your email</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                We sent a link to {email.trim()}. Open it on this phone to finish signing in. If
-                your gym invited this email, you&apos;ll be in your gym straight away.
+                We sent a link and a code to {email.trim()}. Open the link on this phone, or enter
+                the code. If your gym invited this email, you&apos;ll be in your gym straight away.
               </ThemedText>
+              <Button
+                label="Enter the code"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/enter-code',
+                    params: { email: email.trim(), kind: 'signup' },
+                  })
+                }
+              />
             </Card>
           ) : (
             <Button
