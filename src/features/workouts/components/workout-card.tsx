@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
@@ -14,7 +15,7 @@ const levelTone: Record<WorkoutLevel, PillTone> = {
   advanced: 'danger',
 };
 
-export function WorkoutCard({ workout }: { workout: Workout }) {
+export function WorkoutCard({ workout, action }: { workout: Workout; action?: ReactNode }) {
   const theme = useTheme();
 
   return (
@@ -40,14 +41,16 @@ export function WorkoutCard({ workout }: { workout: Workout }) {
       </ThemedText>
       <View style={[styles.exercises, { borderTopColor: theme.border }]}>
         {workout.exercises.map((exercise) => (
-          <View key={exercise.name} style={styles.exercise}>
+          <View key={exercise.exerciseId} style={styles.exercise}>
             <ThemedText type="small">{exercise.name}</ThemedText>
             <ThemedText type="smallBold" themeColor="primary">
               {exercise.sets} × {exercise.reps}
+              {exercise.targetWeightKg ? ` · ${exercise.targetWeightKg} kg` : ''}
             </ThemedText>
           </View>
         ))}
       </View>
+      {action}
     </Card>
   );
 }

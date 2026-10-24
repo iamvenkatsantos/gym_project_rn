@@ -78,3 +78,50 @@ select public.book_class('20000000-0000-0000-0000-000000000001');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select count(*) as outsider_classes from public.class_schedule;
 \echo '16 profiles visible to outsider: self + gym-mates in gym 2 (expect 2: Xavier, Tom)'
 select full_name from public.profiles order by full_name;
+
+-- Fitness core ----------------------------------------------------------------
+reset role;
+insert into public.exercises (id, gym_id, name, muscle_groups, equipment) values
+ ('30000000-0000-0000-0000-000000000001', null, 'Goblet squat', '{legs}', 'dumbbell'),
+ ('30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'House sled push', '{legs}', 'sled');
+insert into public.workouts (id, gym_id, trainer_id, title, duration_minutes) values
+ ('40000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b','Leg day',45);
+set role authenticated;
+
+\echo '17 exercises: outsider sees shared only (expect 1), member sees both (expect 2)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select count(*) from public.exercises;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c'); select count(*) from public.exercises;
+\echo '18 member logs a workout (expect ok), retry with same client_id is a no-op (expect 0 rows)'
+insert into public.workout_logs (client_id, gym_id, member_id, workout_id, title, started_at, completed_at)
+  values ('50000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000c','40000000-0000-0000-0000-000000000001','Leg day', now() - interval '1 hour', now())
+  returning true as ok;
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values ('50000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000c','Leg day', now() - interval '1 hour', now())
+  on conflict (client_id) do nothing returning true as inserted_again;
+insert into public.workout_log_sets (log_id, exercise_id, set_number, reps, weight_kg)
+  select id, '30000000-0000-0000-0000-000000000001', 1, 10, 20 from public.workout_logs where client_id = '50000000-0000-0000-0000-000000000001'
+  returning true as set_ok;
+\echo '19 member logs as someone else (expect RLS error)'
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(),'10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000d','x', now(), now());
+\echo '20 other member and unassigned trainer see no logs (expect 0, 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d'); select count(*) from public.workout_logs;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b'); select count(*) from public.workout_logs;
+\echo '21 trainer assigns plan to member, then sees log and sets (expect 1, 1)'
+insert into public.workout_assignments (workout_id, member_id, assigned_by)
+  values ('40000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000c','00000000-0000-0000-0000-00000000000b');
+select count(*) from public.workout_logs;
+select count(*) from public.workout_log_sets;
+\echo '22 trainer cannot assign a plan to someone outside the gym (expect RLS error)'
+insert into public.workout_assignments (workout_id, member_id)
+  values ('40000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000e');
+\echo '23 body measurements stay private (member 1, trainer 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+insert into public.body_measurements (member_id, metric, value) values ('00000000-0000-0000-0000-00000000000c','weight_kg',62.5);
+select count(*) from public.body_measurements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b'); select count(*) from public.body_measurements;
+\echo '24 member cannot edit plan exercises (expect RLS error), trainer can (expect ok)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+insert into public.workout_exercises (workout_id, exercise_id, position, sets, reps) values ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,3,10);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+insert into public.workout_exercises (workout_id, exercise_id, position, sets, reps) values ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,3,10) returning true as ok;

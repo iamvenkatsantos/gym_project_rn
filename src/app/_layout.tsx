@@ -65,12 +65,19 @@ function RootNavigator() {
           name="book-trainer/[trainerId]"
           options={{ headerShown: true, title: 'Book a session' }}
         />
+        <Stack.Screen
+          name="workout-session"
+          options={{ headerShown: true, gestureEnabled: false }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!role}>
+        <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: true }} />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen
