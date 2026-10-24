@@ -3,9 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   bookClass,
   cancelBooking,
+  cancelClass,
   listMyBookings,
   listUpcomingClasses,
+  scheduleClasses,
+  updateClass,
 } from '@/features/bookings/api';
+import type { ClassInput } from '@/features/bookings/types';
 
 export const bookingKeys = {
   all: ['bookings'] as const,
@@ -41,5 +45,37 @@ export function useCancelBooking() {
   return useMutation({
     mutationFn: cancelBooking,
     onSettled: () => queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
+  });
+}
+
+function useInvalidateBookings() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+}
+
+export function useScheduleClasses(gymId: string) {
+  const invalidate = useInvalidateBookings();
+  return useMutation({
+    mutationFn: ({ input, weeks }: { input: ClassInput; weeks: number }) =>
+      scheduleClasses(gymId, input, weeks),
+    onSettled: invalidate,
+  });
+}
+
+export function useUpdateClass() {
+  const invalidate = useInvalidateBookings();
+  return useMutation({
+    mutationFn: ({ classId, input }: { classId: string; input: ClassInput }) =>
+      updateClass(classId, input),
+    onSettled: invalidate,
+  });
+}
+
+export function useCancelClass() {
+  const invalidate = useInvalidateBookings();
+  return useMutation({
+    mutationFn: ({ classId, restOfSeries }: { classId: string; restOfSeries: boolean }) =>
+      cancelClass(classId, restOfSeries),
+    onSettled: invalidate,
   });
 }

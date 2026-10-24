@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { QueryState } from '@/components/query-state';
@@ -11,14 +12,15 @@ import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { classesOnDay } from '@/features/bookings/rules';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { useMemberships } from '@/features/memberships/hooks';
-import { membershipStatus, renewalsDue } from '@/features/memberships/rules';
+import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 
 export default function OwnerDashboardScreen() {
   const gym = useActiveGym();
   const memberships = useMemberships(gym.gymId);
   const classes = useUpcomingClasses(gym.gymId);
 
-  const statuses = memberships.data?.map((m) => membershipStatus(m));
+  const latest = memberships.data ? [...latestByMember(memberships.data).values()] : undefined;
+  const statuses = latest?.map((m) => membershipStatus(m));
   const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
   const bookedToday = today?.reduce((sum, c) => sum + c.bookedCount, 0);
@@ -41,7 +43,17 @@ export default function OwnerDashboardScreen() {
         query={memberships}
         isEmpty={(list) => renewalsDue(list).length === 0}
         emptyText="No renewals due this week.">
-        {(list) => renewalsDue(list).map((m) => <MembershipRow key={m.id} membership={m} />)}
+        {(list) =>
+          renewalsDue(list).map((m) => (
+            <MembershipRow
+              key={m.id}
+              membership={m}
+              onRenew={() =>
+                router.push({ pathname: '/record-membership', params: { memberId: m.memberId } })
+              }
+            />
+          ))
+        }
       </QueryState>
 
       <SectionHeader title="Up next" />

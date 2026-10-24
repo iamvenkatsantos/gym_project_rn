@@ -42,3 +42,6 @@ example
 # generated native folders
 /ios
 /android
+
+# Supabase CLI link state (written by `supabase link`)
+supabase/.temp/

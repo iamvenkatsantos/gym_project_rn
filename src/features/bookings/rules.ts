@@ -43,3 +43,39 @@ export function upcomingDays(count: number, from: Date = new Date()) {
     return day;
   });
 }
+
+/** Midnight-based local time on a given day, e.g. minutes 450 → 07:30. */
+export function atMinutes(day: Date, minutes: number) {
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, minutes);
+}
+
+export function minutesOfDay(iso: string) {
+  const date = new Date(iso);
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+export function formatClock(minutes: number) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** The start of each class in a weekly repeat, keeping the same local time across DST changes. */
+export function weeklyStarts(first: Date, weeks: number) {
+  return Array.from(
+    { length: weeks },
+    (_, w) =>
+      new Date(
+        first.getFullYear(),
+        first.getMonth(),
+        first.getDate() + 7 * w,
+        first.getHours(),
+        first.getMinutes(),
+      ),
+  );
+}
+
+/** Why a class can't be scheduled yet, or null when it can. */
+export function classProblem(input: { title: string; startsAt: Date }, now: Date = new Date()) {
+  if (!input.title.trim()) return 'Give the class a name.';
+  if (input.startsAt <= now) return 'Pick a time in the future.';
+  return null;
+}

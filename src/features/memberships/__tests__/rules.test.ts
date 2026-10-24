@@ -1,8 +1,12 @@
 import {
   daysRemaining,
+  endDateFor,
   membershipStatus,
+  parseRupees,
   remainingFraction,
+  renewalStart,
   renewalsDue,
+  toIsoDate,
 } from '@/features/memberships/rules';
 import type { Membership } from '@/features/memberships/types';
 
@@ -16,6 +20,8 @@ function membership(startsOn: string, endsOn: string): Membership {
     plan: { id: 'p-1', name: 'Monthly', priceCents: 4900, currency: 'USD', durationDays: 30 },
     startsOn,
     endsOn,
+    amountPaidCents: null,
+    paymentMethod: null,
   };
 }
 
@@ -52,10 +58,46 @@ describe('remainingFraction', () => {
 describe('renewalsDue', () => {
   it('lists expiring and expired memberships, soonest end first', () => {
     const list = [
-      { ...membership('2026-10-01', '2026-11-30'), id: 'active' },
-      { ...membership('2026-10-01', '2026-10-28'), id: 'soon' },
-      { ...membership('2026-09-01', '2026-10-20'), id: 'expired' },
+      { ...membership('2026-10-01', '2026-11-30'), id: 'active', memberId: 'a' },
+      { ...membership('2026-10-01', '2026-10-28'), id: 'soon', memberId: 'b' },
+      { ...membership('2026-09-01', '2026-10-20'), id: 'expired', memberId: 'c' },
     ];
     expect(renewalsDue(list, today).map((m) => m.id)).toEqual(['expired', 'soon']);
+  });
+
+  it('drops members who have already renewed', () => {
+    const list = [
+      { ...membership('2026-09-01', '2026-10-20'), id: 'old' },
+      { ...membership('2026-10-21', '2026-11-19'), id: 'renewed' },
+    ];
+    expect(renewalsDue(list, today)).toEqual([]);
+  });
+});
+
+describe('membership dates and prices', () => {
+  it('ends a 30 day plan on its 30th day, across month ends', () => {
+    expect(endDateFor('2026-10-24', 30)).toBe('2026-11-22');
+    expect(endDateFor('2026-12-15', 30)).toBe('2027-01-13');
+    expect(endDateFor('2026-10-24', 1)).toBe('2026-10-24');
+  });
+
+  it('starts a renewal after the current membership, or today once it has lapsed', () => {
+    expect(renewalStart(null, today)).toBe('2026-10-24');
+    expect(renewalStart(membership('2026-10-01', '2026-10-30'), today)).toBe('2026-10-31');
+    expect(renewalStart(membership('2026-09-01', '2026-10-20'), today)).toBe('2026-10-24');
+    expect(renewalStart(membership('2026-09-25', '2026-10-23'), today)).toBe('2026-10-24');
+  });
+
+  it('parses rupee amounts into paise', () => {
+    expect(parseRupees('1499')).toBe(149900);
+    expect(parseRupees('₹ 1,499.50')).toBe(149950);
+    expect(parseRupees('0')).toBe(0);
+    expect(parseRupees('')).toBeNull();
+    expect(parseRupees('12.345')).toBeNull();
+    expect(parseRupees('-5')).toBeNull();
+  });
+
+  it('formats local dates without shifting to UTC', () => {
+    expect(toIsoDate(new Date(2026, 0, 1, 23, 30))).toBe('2026-01-01');
   });
 });
