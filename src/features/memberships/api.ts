@@ -28,7 +28,7 @@ type MembershipRow = {
 
 const PLAN_COLUMNS = 'id, name, price_cents, currency, duration_days';
 // The inner join lets queries filter memberships by the plan's gym.
-const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, member:profiles(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
+const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
 
 function toPlan(row: PlanRow): MembershipPlan {
   return {
