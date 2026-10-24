@@ -51,7 +51,7 @@ export async function listGymMembers(
   const rows = unwrap(
     await supabase
       .from('gym_members')
-      .select('user_id, profile:profiles(full_name)')
+      .select('user_id, profile:profiles!gym_members_user_id_fkey(full_name)')
       .eq('gym_id', gymId)
       .eq('role', role)
       .eq('status', 'active'),
