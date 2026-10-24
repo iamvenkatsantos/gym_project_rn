@@ -12,9 +12,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useArchivePlan, usePlans, useSavePlan } from '@/features/memberships/hooks';
-import { parseRupees } from '@/features/memberships/rules';
 import type { MembershipPlan } from '@/features/memberships/types';
 import { formatPrice } from '@/lib/format';
+import { firstError, parseAmount, validateAmount, validateTitle } from '@/lib/validation';
 
 const durations = [
   { days: 30, label: '1 month' },
@@ -48,12 +48,10 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   const save = useSavePlan(gymId);
   const archive = useArchivePlan();
-  const priceCents = parseRupees(price);
-  const problem = !name.trim()
-    ? 'Give the plan a name.'
-    : priceCents === null
-      ? 'Enter the price in rupees, like 1499.'
-      : null;
+  const nameError = validateTitle(name, { label: 'plan name', max: 40 });
+  const priceError = validateAmount(price, { label: 'price' });
+  const priceCents = priceError ? null : parseAmount(price);
+  const problem = firstError(nameError, priceError);
 
   return (
     <Screen>
@@ -64,6 +62,7 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
         value={name}
         onChangeText={setName}
         maxLength={40}
+        error={nameError}
       />
       <TextField
         label="Price (₹)"
@@ -71,6 +70,8 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
         value={price}
         onChangeText={setPrice}
         keyboardType="decimal-pad"
+        maxLength={12}
+        error={priceError}
       />
       <View style={styles.field}>
         <ThemedText type="label" themeColor="textSecondary">
@@ -120,9 +121,6 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
 
       {save.error ? (
         <ThemedText themeColor="danger">Couldn&apos;t save: {save.error.message}</ThemedText>
-      ) : null}
-      {problem && (name || price) ? (
-        <ThemedText themeColor="textSecondary">{problem}</ThemedText>
       ) : null}
       <Button
         label={plan ? 'Save changes' : 'Create plan'}

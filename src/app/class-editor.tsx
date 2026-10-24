@@ -29,6 +29,7 @@ import {
 import type { GymClass } from '@/features/bookings/types';
 import { usePeople } from '@/features/members/hooks';
 import { formatDate } from '@/lib/format';
+import { firstError, validateTitle } from '@/lib/validation';
 
 export default function ClassEditorScreen() {
   const { classId } = useLocalSearchParams<{ classId?: string }>();
@@ -76,7 +77,8 @@ function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) 
 
   const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
   const startsAt = atMinutes(day, minutes);
-  const problem = classProblem({ title, startsAt });
+  const titleError = validateTitle(title, { label: 'class name', max: 40 });
+  const problem = firstError(titleError, classProblem({ title, startsAt }));
   const lastStart = weeklyStarts(startsAt, weeks).at(-1)!;
   const input = {
     title,
@@ -96,6 +98,7 @@ function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) 
         value={title}
         onChangeText={setTitle}
         maxLength={40}
+        error={titleError}
       />
 
       {asTrainer ? null : (
@@ -203,7 +206,9 @@ function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) 
         </ThemedText>
       ) : null}
 
-      {problem && title ? <ThemedText themeColor="textSecondary">{problem}</ThemedText> : null}
+      {problem && title && !titleError ? (
+        <ThemedText themeColor="textSecondary">{problem}</ThemedText>
+      ) : null}
       {error ? (
         <ThemedText themeColor="danger">Couldn&apos;t save: {error.message}</ThemedText>
       ) : null}

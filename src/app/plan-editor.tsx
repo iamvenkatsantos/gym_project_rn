@@ -28,6 +28,7 @@ import {
   type PlanDraft,
 } from '@/features/workouts/plan-draft';
 import type { WorkoutLevel } from '@/features/workouts/types';
+import { firstError, validateOptionalText, validateTitle } from '@/lib/validation';
 
 export default function PlanEditorScreen() {
   const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
@@ -75,7 +76,9 @@ function PlanForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const save = useSaveWorkout();
   const remove = useDeleteWorkout();
-  const problem = planProblem(plan);
+  const titleError = validateTitle(plan.title, { label: 'plan name' });
+  const descriptionError = validateOptionalText(plan.description, 500);
+  const problem = firstError(titleError, descriptionError, planProblem(plan));
 
   const onSave = () => {
     if (problem) {
@@ -102,6 +105,8 @@ function PlanForm({
         value={plan.title}
         onChangeText={(title) => setPlan((p) => ({ ...p, title }))}
         maxLength={80}
+        error={titleError}
+        showError={showProblem}
       />
       <TextField
         label="Description"
@@ -110,6 +115,7 @@ function PlanForm({
         onChangeText={(description) => setPlan((p) => ({ ...p, description }))}
         multiline
         maxLength={500}
+        error={descriptionError}
       />
       <View style={styles.field}>
         <ThemedText type="label" themeColor="textSecondary">

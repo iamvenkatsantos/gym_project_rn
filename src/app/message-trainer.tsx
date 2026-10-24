@@ -19,6 +19,7 @@ import {
   messageProblem,
   messageTemplates,
 } from '@/features/notifications/rules';
+import { firstError, validateOptionalText, validateTitle } from '@/lib/validation';
 
 /** Owners and supervisors nudge a trainer to schedule a class or follow up on one. */
 export default function MessageTrainerScreen() {
@@ -35,7 +36,10 @@ export default function MessageTrainerScreen() {
   );
   const [body, setBody] = useState('');
   const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
-  const problem = messageProblem({ trainerId, title, body });
+  const problem = firstError(
+    messageProblem({ trainerId, title, body }),
+    validateTitle(title, { label: 'subject', max: MAX_TITLE }),
+  );
 
   return (
     <Screen>
@@ -75,7 +79,13 @@ export default function MessageTrainerScreen() {
           ))}
         </View>
       </View>
-      <TextField label="Subject" value={title} onChangeText={setTitle} maxLength={MAX_TITLE} />
+      <TextField
+        label="Subject"
+        value={title}
+        onChangeText={setTitle}
+        maxLength={MAX_TITLE}
+        error={validateTitle(title, { label: 'subject', max: MAX_TITLE })}
+      />
       <TextField
         label="Message"
         placeholder="e.g. Members are asking for a Saturday 8 am strength class."
@@ -83,6 +93,7 @@ export default function MessageTrainerScreen() {
         onChangeText={setBody}
         multiline
         maxLength={MAX_BODY}
+        error={validateOptionalText(body, MAX_BODY)}
       />
 
       {send.error ? <ThemedText themeColor="danger">{send.error.message}</ThemedText> : null}

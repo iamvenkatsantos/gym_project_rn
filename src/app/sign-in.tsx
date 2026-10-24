@@ -17,8 +17,14 @@ import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
 import { isDemoMode } from '@/lib/env';
-
-const MIN_PASSWORD = 8;
+import {
+  firstError,
+  MAX_PASSWORD,
+  MIN_PASSWORD,
+  validateEmail,
+  validateName,
+  validateNewPassword,
+} from '@/lib/validation';
 
 const features: { label: string; icon: IconName }[] = [
   { label: 'Classes', icon: 'calendar-outline' },
@@ -71,10 +77,12 @@ export default function SignInScreen() {
     (mode === 'signIn' ? (passwordSignIn.error ?? resetPassword.error) : createAccount.error) ??
     demoSignIn.error;
   const awaitingConfirmation = mode === 'signUp' && createAccount.isSuccess && !createAccount.data;
-  const canSubmit =
-    mode === 'signIn'
-      ? !!email.trim() && !!password
-      : !!fullName.trim() && !!email.trim() && password.length >= MIN_PASSWORD;
+  const nameError = mode === 'signUp' ? validateName(fullName) : null;
+  const emailError = validateEmail(email);
+  // Existing passwords only need to be there; new ones must be strong enough.
+  const passwordError =
+    mode === 'signUp' ? validateNewPassword(password) : password ? null : 'Enter your password.';
+  const canSubmit = !firstError(nameError, emailError, passwordError);
   const submit = () => {
     if (!canSubmit) return;
     if (mode === 'signIn') passwordSignIn.mutate();
@@ -197,6 +205,8 @@ export default function SignInScreen() {
                     onSubmitEditing={() => emailRef.current?.focus()}
                     value={fullName}
                     onChangeText={setFullName}
+                    maxLength={60}
+                    error={nameError}
                   />
                 ) : null}
                 <TextField
@@ -214,13 +224,17 @@ export default function SignInScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   value={email}
                   onChangeText={setEmail}
+                  maxLength={254}
+                  error={emailError}
                 />
                 <TextField
                   ref={passwordRef}
                   label="Password"
                   icon="lock-closed-outline"
                   placeholder={
-                    mode === 'signUp' ? `At least ${MIN_PASSWORD} characters` : 'Password'
+                    mode === 'signUp'
+                      ? `${MIN_PASSWORD}+ characters, letters and a number`
+                      : 'Password'
                   }
                   autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
                   textContentType={mode === 'signIn' ? 'password' : 'newPassword'}
@@ -229,6 +243,8 @@ export default function SignInScreen() {
                   onSubmitEditing={submit}
                   value={password}
                   onChangeText={setPassword}
+                  maxLength={MAX_PASSWORD}
+                  error={passwordError}
                 />
 
                 {mode === 'signIn' ? (
@@ -236,7 +252,7 @@ export default function SignInScreen() {
                     accessibilityRole="button"
                     disabled={resetPassword.isPending || resetPassword.isSuccess}
                     hitSlop={8}
-                    onPress={() => (email.trim() ? resetPassword.mutate() : setResetHint(true))}
+                    onPress={() => (emailError ? setResetHint(true) : resetPassword.mutate())}
                     style={styles.forgot}>
                     <ThemedText type="linkPrimary">
                       {resetPassword.isPending
@@ -247,7 +263,7 @@ export default function SignInScreen() {
                     </ThemedText>
                   </Pressable>
                 ) : null}
-                {mode === 'signIn' && resetHint && !email.trim() ? (
+                {mode === 'signIn' && resetHint && emailError ? (
                   <ThemedText type="small" themeColor="textSecondary">
                     Enter your email above, then tap Forgot password.
                   </ThemedText>

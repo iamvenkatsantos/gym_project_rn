@@ -7,6 +7,7 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
+import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
@@ -20,15 +21,19 @@ export default function OwnerMembershipsScreen() {
   const renew = (memberId: string) =>
     router.push({ pathname: '/record-membership', params: { memberId } });
 
+  const noPlans = plans.data?.length === 0;
+
   return (
     <Screen>
+      {noPlans ? <MembershipSetup isOwner={isOwner} /> : null}
       <Button
         label="Record a payment"
         icon="receipt-outline"
+        disabled={noPlans}
         onPress={() => router.push('/record-membership')}
       />
 
-      {isOwner ? (
+      {isOwner && !noPlans ? (
         <>
           <SectionHeader title="Plans for sale" />
           <QueryState
@@ -69,7 +74,11 @@ export default function OwnerMembershipsScreen() {
       <QueryState
         query={memberships}
         isEmpty={(m) => m.length === 0}
-        emptyText="No memberships recorded yet.">
+        emptyText={
+          noPlans
+            ? 'Memberships show here once you record payments.'
+            : 'No memberships recorded yet. Tap Record a payment to add one.'
+        }>
         {(list) =>
           [...latestByMember(list).values()]
             .sort((a, b) => a.endsOn.localeCompare(b.endsOn))

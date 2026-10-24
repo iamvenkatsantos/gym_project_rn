@@ -19,6 +19,9 @@ import { roleTone } from '@/features/members/components/person-row';
 import { usePeople, useRemovePerson, useUpdatePerson } from '@/features/members/hooks';
 import { isLastActiveOwner } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
+import { MembershipRow } from '@/features/memberships/components/membership-card';
+import { useMemberships } from '@/features/memberships/hooks';
+import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
 
 export default function PersonScreen() {
@@ -70,7 +73,10 @@ export default function PersonScreen() {
       </View>
 
       {person.role === 'member' && !suspended ? (
-        <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
+        <>
+          <MemberMembership gymId={gym.gymId} memberId={person.id} />
+          <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
+        </>
       ) : null}
       {person.role === 'trainer' ? (
         <TrainerMembers gymId={gym.gymId} trainerId={person.id} />
@@ -175,6 +181,34 @@ export default function PersonScreen() {
         </>
       ) : null}
     </Screen>
+  );
+}
+
+/** The member's latest membership, and a shortcut to record their next payment. */
+function MemberMembership({ gymId, memberId }: { gymId: string; memberId: string }) {
+  const memberships = useMemberships(gymId);
+  const current = memberships.data ? latestByMember(memberships.data).get(memberId) : undefined;
+
+  return (
+    <View style={styles.field}>
+      <ThemedText type="label" themeColor="textSecondary">
+        Membership
+      </ThemedText>
+      {current ? (
+        <MembershipRow membership={current} />
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          {memberships.isPending ? 'Loading…' : 'No membership yet.'}
+        </ThemedText>
+      )}
+      <Button
+        label={current ? 'Renew or record a payment' : 'Record a payment'}
+        icon="receipt-outline"
+        variant="secondary"
+        size="compact"
+        onPress={() => router.push({ pathname: '/record-membership', params: { memberId } })}
+      />
+    </View>
   );
 }
 

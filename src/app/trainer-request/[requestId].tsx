@@ -20,6 +20,7 @@ import { membersOf, requestStatusLabel, trainersOf } from '@/features/coaching/r
 import type { TrainerRequest } from '@/features/coaching/types';
 import { usePeople } from '@/features/members/hooks';
 import { formatDate } from '@/lib/format';
+import { validateOptionalText } from '@/lib/validation';
 
 export default function TrainerRequestScreen() {
   const { requestId } = useLocalSearchParams<{ requestId: string }>();
@@ -109,6 +110,7 @@ function RequestDetail({ gymId, request }: { gymId: string; request: TrainerRequ
             onChangeText={setResponse}
             multiline
             maxLength={500}
+            error={validateOptionalText(response, 500)}
           />
           {resolve.error ? (
             <ThemedText themeColor="danger">{resolve.error.message}</ThemedText>

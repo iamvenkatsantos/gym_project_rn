@@ -26,6 +26,7 @@ import {
 } from '@/features/coaching/rules';
 import { useGymMembers } from '@/features/members/hooks';
 import { formatDate } from '@/lib/format';
+import { validateOptionalText } from '@/lib/validation';
 
 export default function RequestTrainerScreen() {
   const profile = useProfile();
@@ -152,6 +153,7 @@ function RequestForm({ gymId, memberId }: { gymId: string; memberId: string }) {
         onChangeText={setComments}
         multiline
         maxLength={MAX_COMMENTS}
+        error={validateOptionalText(comments, MAX_COMMENTS)}
       />
 
       {request.error ? <ThemedText themeColor="danger">{request.error.message}</ThemedText> : null}

@@ -15,18 +15,19 @@ import { Spacing } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { PersonRow } from '@/features/members/components/person-row';
 import { usePeople } from '@/features/members/hooks';
+import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useMemberships, usePlans, useRecordMembership } from '@/features/memberships/hooks';
 import {
   addDays,
   endDateFor,
   latestByMember,
-  parseRupees,
   renewalStart,
   toIsoDate,
 } from '@/features/memberships/rules';
 import type { MembershipPlan, PaymentMethod } from '@/features/memberships/types';
 import { formatDate, formatPrice } from '@/lib/format';
+import { parseAmount, validateAmount, validateOptionalText } from '@/lib/validation';
 
 const methods: { value: PaymentMethod; label: string }[] = [
   { value: 'upi', label: 'UPI' },
@@ -63,7 +64,10 @@ export default function RecordMembershipScreen() {
   const today = toIsoDate(new Date());
   const startsOn = startOverride ?? renewalStart(current);
   const endsOn = plan ? endDateFor(startsOn, plan.durationDays) : null;
-  const amountCents = method === 'complimentary' ? 0 : parseRupees(amount);
+  const amountError =
+    method === 'complimentary' ? null : validateAmount(amount, { label: 'amount received' });
+  const noteError = validateOptionalText(note, 200);
+  const amountCents = method === 'complimentary' ? 0 : amountError ? null : parseAmount(amount);
   const offset = Math.round(
     (new Date(`${startsOn}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) /
       86400000,
@@ -145,10 +149,8 @@ export default function RecordMembershipScreen() {
       </Card>
 
       <SectionHeader title="Plan" />
-      <QueryState
-        query={plans}
-        isEmpty={(list) => list.length === 0}
-        emptyText="Create a membership plan first, from the Memberships tab.">
+      {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
+      <QueryState query={plans}>
         {(list) =>
           list.map((p) => (
             <Pressable
@@ -200,6 +202,9 @@ export default function RecordMembershipScreen() {
           value={amount}
           onChangeText={setAmount}
           keyboardType="decimal-pad"
+          maxLength={12}
+          error={amountError}
+          showError={!!amount}
         />
       )}
       <TextField
@@ -208,6 +213,7 @@ export default function RecordMembershipScreen() {
         value={note}
         onChangeText={setNote}
         maxLength={200}
+        error={noteError}
       />
 
       {record.error ? (
@@ -220,7 +226,7 @@ export default function RecordMembershipScreen() {
             : 'Record payment'
         }
         icon="receipt-outline"
-        disabled={!plan || !endsOn || amountCents === null}
+        disabled={!plan || !endsOn || amountCents === null || !!noteError}
         loading={record.isPending}
         onPress={() =>
           plan &&

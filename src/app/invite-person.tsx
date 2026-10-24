@@ -12,8 +12,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
-import { useInvitePerson } from '@/features/members/hooks';
-import { isValidEmail, normalizeEmail } from '@/features/members/rules';
+import { useInvitePerson, usePeople, useUpdatePerson } from '@/features/members/hooks';
+import { normalizeEmail } from '@/features/members/rules';
+import { validateEmail } from '@/lib/validation';
 import type { InviteOutcome } from '@/features/members/types';
 
 function describe({ result, emailSent, emailError }: InviteOutcome, email: string) {
@@ -49,15 +50,27 @@ const ownerInviteRoles: { value: Role; label: string }[] = [
   { value: 'owner', label: 'Owner' },
 ];
 
+function roleLabel(role: Role) {
+  return role === 'owner' ? 'an owner' : `a ${role}`;
+}
+
 export default function InvitePersonScreen() {
   const gym = useActiveGym();
   const invite = useInvitePerson(gym.gymId);
+  const people = usePeople(gym.gymId);
+  const update = useUpdatePerson(gym.gymId);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('member');
   // Supervisors invite members and trainers; only owners add supervisors and owners.
   const roles = gym.role === 'owner' ? ownerInviteRoles : ownerInviteRoles.slice(0, 2);
-  const valid = isValidEmail(email);
+  const emailError = validateEmail(email);
   const result = invite.data ? describe(invite.data, invite.variables.email) : null;
+  // Inviting someone who's already here doesn't change their role, so offer that instead.
+  const existing =
+    invite.data?.result === 'already_member'
+      ? people.data?.find((p) => p.email === invite.variables?.email)
+      : undefined;
+  const roleDiffers = existing && existing.role !== invite.variables?.role;
 
   return (
     <Screen>
@@ -73,12 +86,15 @@ export default function InvitePersonScreen() {
         onChangeText={(text) => {
           setEmail(text);
           invite.reset();
+          update.reset();
         }}
         autoCapitalize="none"
         autoComplete="email"
         autoCorrect={false}
         keyboardType="email-address"
         textContentType="emailAddress"
+        maxLength={254}
+        error={emailError}
       />
       <View style={styles.field}>
         <ThemedText type="label" themeColor="textSecondary">
@@ -90,6 +106,7 @@ export default function InvitePersonScreen() {
           onChange={(next) => {
             setRole(next);
             invite.reset();
+            update.reset();
           }}
         />
         {role === 'owner' ? (
@@ -111,8 +128,37 @@ export default function InvitePersonScreen() {
             <ThemedText type="heading">{result.title}</ThemedText>
           </View>
           <ThemedText type="small" themeColor="textSecondary">
-            {result.detail}
+            {existing && roleDiffers
+              ? `${existing.fullName} is already here as ${roleLabel(existing.role)}, so their role didn't change.`
+              : result.detail}
           </ThemedText>
+          {existing && roleDiffers && invite.variables ? (
+            gym.role === 'owner' ? (
+              <Button
+                label={
+                  update.isSuccess
+                    ? `Now ${roleLabel(invite.variables.role)}`
+                    : `Make them ${roleLabel(invite.variables.role)}`
+                }
+                icon="swap-horizontal-outline"
+                size="compact"
+                disabled={update.isSuccess}
+                loading={update.isPending}
+                onPress={() =>
+                  update.mutate({ userId: existing.id, patch: { role: invite.variables!.role } })
+                }
+              />
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                Ask the owner to change their role.
+              </ThemedText>
+            )
+          ) : null}
+          {update.error ? (
+            <ThemedText type="small" themeColor="danger">
+              {update.error.message}
+            </ThemedText>
+          ) : null}
         </Card>
       ) : null}
       {invite.error ? <ThemedText themeColor="danger">{invite.error.message}</ThemedText> : null}
@@ -126,6 +172,7 @@ export default function InvitePersonScreen() {
               onPress={() => {
                 setEmail('');
                 invite.reset();
+                update.reset();
               }}
             />
           </View>
@@ -137,7 +184,7 @@ export default function InvitePersonScreen() {
         <Button
           label="Send invite"
           icon="person-add-outline"
-          disabled={!valid}
+          disabled={!!emailError}
           loading={invite.isPending}
           onPress={() => invite.mutate({ email: normalizeEmail(email), role })}
         />
