@@ -17,6 +17,7 @@ export default function MemberProfileScreen() {
 
   return (
     <Screen>
+      <SectionHeader title="Membership" />
       <QueryState
         query={membership}
         isEmpty={(m) => !m}

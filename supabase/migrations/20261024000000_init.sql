@@ -79,7 +79,7 @@ create table public.membership_plans (
   gym_id uuid not null references public.gyms (id) on delete cascade,
   name text not null,
   price_cents int not null check (price_cents >= 0),
-  currency text not null default 'USD',
+  currency text not null default 'INR',
   duration_days int not null check (duration_days > 0),
   active boolean not null default true
 );

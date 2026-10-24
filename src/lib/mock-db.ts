@@ -92,9 +92,9 @@ export const mockBookings: Booking[] = [
 ];
 
 export const mockPlans: MembershipPlan[] = [
-  { id: 'p-1', name: 'Monthly', priceCents: 4900, currency: 'USD', durationDays: 30 },
-  { id: 'p-2', name: 'Quarterly', priceCents: 12900, currency: 'USD', durationDays: 90 },
-  { id: 'p-3', name: 'Annual', priceCents: 44900, currency: 'USD', durationDays: 365 },
+  { id: 'p-1', name: 'Monthly', priceCents: 149900, currency: 'INR', durationDays: 30 },
+  { id: 'p-2', name: 'Quarterly', priceCents: 399900, currency: 'INR', durationDays: 90 },
+  { id: 'p-3', name: 'Annual', priceCents: 1299900, currency: 'INR', durationDays: 365 },
 ];
 
 export const mockMemberships: Membership[] = [

@@ -13,7 +13,7 @@ lands in their own area after signing in.
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
-  <img src="docs/screenshots/member-classes.png" width="200" alt="Class booking" />
+  <img src="docs/screenshots/member-classes.png" width="200" alt="Bookings" />
   <img src="docs/screenshots/owner-dashboard.png" width="200" alt="Owner dashboard" />
 </p>
 
