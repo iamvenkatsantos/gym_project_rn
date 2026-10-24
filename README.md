@@ -56,15 +56,13 @@ rows showing time, trainer and live spots left with a fill bar. Tokens live in
 
 ```bash
 npm install
-npm start          # then press i, a or w
+npm start          # real sign-in against CoreFit's Supabase project; press i, a or w
+npm run demo       # built-in demo data, pick a role instead of signing in
 ```
 
-In development (and EAS `preview` builds) without Supabase credentials the app runs on in-memory
-demo data, and the sign-in screen lets you continue as a member, trainer or owner.
-
-To use CoreFit's Supabase project locally, copy `.env.example` to `.env` (it already holds the
-project URL and anon key). For a new Supabase project, put its URL and anon key there and apply
-the schema:
+The app talks to CoreFit's Supabase project by default (the URL and anon key are public client
+values in `src/lib/env.ts`). For a different project, set `EXPO_PUBLIC_SUPABASE_URL` and
+`EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env` (see `.env.example`), then apply the schema:
 
 ```bash
 npx supabase link --project-ref <your-ref>
@@ -72,22 +70,41 @@ npx supabase db push
 ```
 
 Then run `supabase/seed.sql` in the SQL editor to load the shared exercise library, and deploy the
-account deletion function with `npx supabase functions deploy delete-account`.
+functions:
 
-People create their own account in the app. Owners add them from the **People** tab by email:
-someone who already has an account joins straight away, anyone else joins as soon as they sign up
-and confirm that email. A new gym's first owner is added in SQL:
+```bash
+npx supabase functions deploy delete-account   # account deletion (store requirement)
+npx supabase functions deploy invite-member    # emails invites from the People tab
+```
+
+A new gym's first owner is added in SQL:
 
 ```sql
 insert into gyms (name) values ('CoreFit Anna Nagar') returning id;
 insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>', 'owner');
 ```
 
-After sign-in the app opens the screens for the person's role at their gym (owner, trainer or
-member); the other roles' screens can't be reached. To try each role, invite two emails you own
-from **People** (one as Trainer, one as Member), then use **Create an account** with each. Role
-changes and suspensions apply the next time the app comes to the foreground. Set the Site URL
-under Supabase → Authentication → URL Configuration so confirmation emails link somewhere useful.
+### Inviting people and signing in
+
+Owners invite people from **People** by email and pick their role:
+
+- Someone with a CoreFit account joins straight away.
+- Anyone else gets an invite email. The link opens the app, they choose their name and a
+  password, and land on their role's screens. They can also just **Create an account** with that
+  email instead.
+- **Forgot password?** on the sign-in screen emails a link to the same set-password screen.
+
+After sign-in the app opens only the screens for the person's role at their gym (owner, trainer or
+member). Role changes and suspensions apply the next time the app comes to the foreground.
+
+Supabase settings these emails need (Dashboard → Authentication):
+
+1. **URL Configuration → Redirect URLs:** add `corefit://**` (installed builds) and `exp://**`
+   (Expo Go during development). Set **Site URL** to `corefit://`.
+2. **Emails → SMTP Settings:** turn on custom SMTP (Resend, Brevo, SendGrid, Amazon SES or your
+   domain's mail). Supabase's built-in sender only emails members of your Supabase team and
+   about 2 emails an hour, so invites to anyone else fail without it.
+3. Optional: **Emails → Templates → Invite user** to word the invite your way.
 
 ## Releasing
 

@@ -1,3 +1,6 @@
+import * as Linking from 'expo-linking';
+
+import type { LinkSession } from '@/features/auth/auth-link';
 import type { Profile, Role } from '@/features/auth/types';
 import { delay, mockProfiles } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -55,10 +58,50 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    // The confirmation link opens the app and signs them in.
+    options: { data: { full_name: fullName }, emailRedirectTo: Linking.createURL('/') },
   });
   if (error) throw error;
   return data.session && data.user ? fetchProfile(data.user.id) : null;
+}
+
+/** Where invite and password reset emails send people: the set-password screen. */
+export const setPasswordUrl = () => Linking.createURL('/set-password');
+
+/** Signs in with the session from an invite or reset link. */
+export async function signInWithLinkSession(session: LinkSession): Promise<Profile> {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  const { data, error } = await supabase.auth.setSession({
+    access_token: session.accessToken,
+    refresh_token: session.refreshToken,
+  });
+  if (error) throw error;
+  if (!data.user) throw new Error('That link has expired. Ask for a new one.');
+  return fetchProfile(data.user.id);
+}
+
+/** Sets the signed-in user's password, and their name if they haven't given one yet. */
+export async function setPassword(password: string, fullName?: string): Promise<Profile> {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+  if (fullName) {
+    const { error: nameError } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', data.user.id);
+    if (nameError) throw nameError;
+  }
+  return fetchProfile(data.user.id);
+}
+
+/** Emails a link that opens the app to choose a new password. */
+export async function sendPasswordReset(email: string) {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: setPasswordUrl(),
+  });
+  if (error) throw error;
 }
 
 /** Demo sign-in for mock mode: pick a role and get the seeded user who has it first. */

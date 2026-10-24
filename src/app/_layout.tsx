@@ -8,6 +8,7 @@ import { Colors } from '@/constants/theme';
 
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
+import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
@@ -41,8 +42,11 @@ export default function RootLayout() {
  */
 function RootNavigator() {
   useAuthBootstrap();
+  useAuthLinks();
   const status = useAuthStore((s) => s.status);
-  const role = useAuthStore((s) => selectActiveGym(s)?.role);
+  const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
+  // Nobody reaches their role's screens until they've chosen a password.
+  const role = useAuthStore((s) => (settingPassword ? undefined : selectActiveGym(s)?.role));
 
   useEffect(() => {
     if (status !== 'loading') SplashScreen.hideAsync();
@@ -56,7 +60,10 @@ function RootNavigator() {
       <Stack.Protected guard={status === 'signedOut'}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
-      <Stack.Protected guard={status === 'signedIn' && !role}>
+      <Stack.Protected guard={settingPassword}>
+        <Stack.Screen name="set-password" />
+      </Stack.Protected>
+      <Stack.Protected guard={status === 'signedIn' && !settingPassword && !role}>
         <Stack.Screen name="no-gym" />
       </Stack.Protected>
       <Stack.Protected guard={role === 'member'}>

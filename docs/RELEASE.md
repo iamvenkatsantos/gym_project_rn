@@ -15,8 +15,8 @@ folders are generated, so all native config lives in `app.json` and `eas.json`.
 The Supabase URL and anon key are set per profile in `eas.json`. Both are public client values;
 the database's row-level security is what protects data.
 
-Production builds refuse to show demo data (`isDemoMode` in `src/lib/env.ts`), so a store build
-without Supabase keys shows a configuration error instead of fake content.
+Only the `demo` profile (and `npm run demo`) sets `EXPO_PUBLIC_DEMO_MODE=true` (`isDemoMode` in
+`src/lib/env.ts`). Every other build, including store builds, opens on the real email sign-in.
 
 ```bash
 npx eas-cli@latest login
@@ -54,6 +54,10 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 
 **Still to do**
 
+- [ ] Auth emails: custom SMTP, redirect URLs and `npx supabase functions deploy invite-member`
+      (see "Inviting people and signing in" in the README).
+- [ ] App Review sign-in: the app is invite-only, so create a member and a trainer account at a test
+      gym and enter one in App Store Connect (App Review Information) and Play Console (App access).
 - [ ] Publish a real privacy policy and terms, then update `src/constants/legal.ts` and the store
       listings. Play also needs a web page for account deletion requests.
 - [ ] App Store privacy labels and Play Data safety form. Data collected today: name, email, gym

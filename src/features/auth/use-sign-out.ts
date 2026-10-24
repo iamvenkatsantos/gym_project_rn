@@ -8,6 +8,7 @@ export function useSignOut() {
   return async () => {
     await signOut();
     queryClient.clear();
+    useAuthStore.getState().setNeedsPassword(false);
     setProfile(null);
   };
 }
