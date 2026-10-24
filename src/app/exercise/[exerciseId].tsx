@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { difficultyTone } from '@/features/exercises/components/exercise-card';
+import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import { useExercise } from '@/features/exercises/hooks';
 
 export default function ExerciseScreen() {
@@ -38,13 +39,7 @@ export default function ExerciseScreen() {
         ))}
       </View>
 
-      {/* Media slot: licensed or original images/videos per the plan's workout-media decision. */}
-      <Card style={styles.media}>
-        <Icon name={exercise.videoUrl ? 'play-circle' : 'image-outline'} size={40} />
-        <ThemedText type="small" themeColor="textSecondary">
-          {exercise.videoUrl ? 'Watch demonstration' : 'Demonstration coming soon'}
-        </ThemedText>
-      </Card>
+      <ExerciseDemo exerciseId={exercise.id} imageUrl={exercise.imageUrl} name={exercise.name} />
 
       <SectionHeader title="How to do it" />
       <Card>
@@ -87,11 +82,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
-  },
-  media: {
-    aspectRatio: 16 / 9,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   step: {
     flexDirection: 'row',

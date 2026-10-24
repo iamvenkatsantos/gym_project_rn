@@ -8,6 +8,7 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import { useProfile } from '@/features/auth/use-profile';
 import { type DraftSet, useWorkoutDraft } from '@/features/progress/draft-store';
 import { useFinishWorkout } from '@/features/progress/hooks';
@@ -40,6 +41,7 @@ export default function WorkoutSessionScreen() {
   const finish = useFinishWorkout(profile.id);
   const now = useNow();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [openDemo, setOpenDemo] = useState<string | null>(null);
 
   if (!draft) {
     return (
@@ -95,11 +97,36 @@ export default function WorkoutSessionScreen() {
               })
             }
             style={styles.exerciseHeader}>
+            <ExerciseDemo
+              exerciseId={exercise.exerciseId}
+              name={exercise.name}
+              variant="thumb"
+              animate
+            />
             <ThemedText type="heading" style={styles.flex}>
               {exercise.name}
             </ThemedText>
             <Icon name="information-circle-outline" size={20} />
           </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: openDemo === exercise.exerciseId }}
+            onPress={() =>
+              setOpenDemo((id) => (id === exercise.exerciseId ? null : exercise.exerciseId))
+            }
+            style={styles.addSet}>
+            <Icon
+              name={openDemo === exercise.exerciseId ? 'chevron-up' : 'play-circle-outline'}
+              size={18}
+              color="primary"
+            />
+            <ThemedText type="linkPrimary">
+              {openDemo === exercise.exerciseId ? 'Hide demo' : 'Show demo'}
+            </ThemedText>
+          </Pressable>
+          {openDemo === exercise.exerciseId ? (
+            <ExerciseDemo exerciseId={exercise.exerciseId} name={exercise.name} />
+          ) : null}
 
           <View style={styles.setRow}>
             <ThemedText type="label" themeColor="textSecondary" style={styles.setNumber}>
@@ -233,7 +260,7 @@ const styles = StyleSheet.create({
   exerciseHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three,
     minHeight: 32,
   },
   setRow: {

@@ -1,9 +1,10 @@
 // Writes supabase/seed.sql from src/features/exercises/library.ts so the demo
 // data and the database seed stay in sync. Run: node scripts/generate-exercise-seed.js
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
+
+const { uuidFor } = require('./exercise-seed-id');
 
 const root = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'src/features/exercises/library.ts'), 'utf8');
@@ -14,11 +15,6 @@ const mod = { exports: {} };
 new Function('module', 'exports', 'require', outputText)(mod, mod.exports, () => ({}));
 const { starterExercises } = mod.exports;
 
-// Stable UUIDs derived from the library ids.
-function uuidFor(id) {
-  const hex = crypto.createHash('sha1').update(`corefit/${id}`).digest('hex');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
-}
 const text = (s) => `'${s.replace(/'/g, "''")}'`;
 const array = (xs) => `array[${xs.map(text).join(', ')}]::text[]`;
 
