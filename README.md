@@ -57,8 +57,9 @@ npm start          # then press i, a or w
 In development (and EAS `preview` builds) without Supabase credentials the app runs on in-memory
 demo data, and the sign-in screen lets you continue as a member, trainer or owner.
 
-To use a real backend, copy `.env.example` to `.env`, fill in your project's URL and anon key,
-and apply the schema:
+To use CoreFit's Supabase project locally, copy `.env.example` to `.env` (it already holds the
+project URL and anon key). For a new Supabase project, put its URL and anon key there and apply
+the schema:
 
 ```bash
 npx supabase link --project-ref <your-ref>

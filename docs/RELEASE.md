@@ -5,11 +5,15 @@ folders are generated, so all native config lives in `app.json` and `eas.json`.
 
 ## Build profiles (`eas.json`)
 
-| Profile       | Use                                        | Demo data | Distribution     |
-| ------------- | ------------------------------------------ | --------- | ---------------- |
-| `development` | Dev client for day-to-day work on a device | Allowed   | Internal         |
-| `preview`     | Installable test builds (APK, ad hoc iOS)  | Allowed   | Internal         |
-| `production`  | Store builds; build numbers auto-increment | Never     | App Store / Play |
+| Profile       | Use                                           | Backend          | Distribution     |
+| ------------- | --------------------------------------------- | ---------------- | ---------------- |
+| `development` | Dev client for day-to-day work on a device    | CoreFit Supabase | Internal         |
+| `preview`     | Installable test builds (APK, ad hoc iOS)     | CoreFit Supabase | Internal         |
+| `demo`        | Sales / walkthrough builds with built-in data | Demo data        | Internal         |
+| `production`  | Store builds; build numbers auto-increment    | CoreFit Supabase | App Store / Play |
+
+The Supabase URL and anon key are set per profile in `eas.json`. Both are public client values;
+the database's row-level security is what protects data.
 
 Production builds refuse to show demo data (`isDemoMode` in `src/lib/env.ts`), so a store build
 without Supabase keys shows a configuration error instead of fake content.
@@ -17,8 +21,6 @@ without Supabase keys shows a configuration error instead of fake content.
 ```bash
 npx eas-cli@latest login
 npx eas-cli@latest init                       # links the project, adds projectId to app.json
-npx eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value ...
-npx eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value ...
 npx eas-cli@latest build --profile production --platform all
 npx eas-cli@latest submit --profile production --platform ios
 npx eas-cli@latest submit --profile production --platform android   # goes to the internal track
