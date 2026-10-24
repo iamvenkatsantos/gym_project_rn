@@ -53,6 +53,7 @@ export default function SetPasswordScreen() {
       {askName ? (
         <TextField
           label="Your name"
+          icon="person-outline"
           placeholder="Full name"
           autoComplete="name"
           textContentType="name"
@@ -62,6 +63,7 @@ export default function SetPasswordScreen() {
       ) : null}
       <TextField
         label="Password"
+        icon="lock-closed-outline"
         placeholder={`At least ${MIN_LENGTH} characters`}
         autoComplete="new-password"
         textContentType="newPassword"
@@ -71,6 +73,7 @@ export default function SetPasswordScreen() {
       />
       <TextField
         label="Confirm password"
+        icon="lock-closed-outline"
         autoComplete="new-password"
         textContentType="newPassword"
         secureTextEntry

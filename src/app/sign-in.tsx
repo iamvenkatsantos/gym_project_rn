@@ -1,20 +1,30 @@
 import { useMutation } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
+import { SegmentedControl } from '@/components/segmented-control';
+import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { sendPasswordReset, signInAsDemo, signInWithPassword, signUp } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
 import { isDemoMode } from '@/lib/env';
+
+const MIN_PASSWORD = 8;
+
+const features: { label: string; icon: IconName }[] = [
+  { label: 'Classes', icon: 'calendar-outline' },
+  { label: 'Workouts', icon: 'barbell-outline' },
+  { label: 'Membership', icon: 'card-outline' },
+];
 
 const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[] = [
   { role: 'member', title: 'Member', detail: 'Book classes and track your plan', icon: 'person' },
@@ -22,14 +32,19 @@ const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[]
   { role: 'owner', title: 'Gym owner', detail: 'Members, classes and renewals', icon: 'business' },
 ];
 
+type Mode = 'signIn' | 'signUp';
+
 export default function SignInScreen() {
   const theme = useTheme();
   const setProfile = useAuthStore((s) => s.setProfile);
-  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
+  const linkError = useAuthStore((s) => s.linkError);
+  const [mode, setMode] = useState<Mode>('signIn');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [resetHint, setResetHint] = useState(false);
+  const emailRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const onSignedIn = (profile: Profile) => {
     setProfile(profile);
@@ -45,16 +60,25 @@ export default function SignInScreen() {
   });
   const resetPassword = useMutation({ mutationFn: () => sendPasswordReset(email.trim()) });
   const demoSignIn = useMutation({ mutationFn: signInAsDemo, onSuccess: onSignedIn });
-  const linkError = useAuthStore((s) => s.linkError);
+
   const error =
     (mode === 'signIn' ? (passwordSignIn.error ?? resetPassword.error) : createAccount.error) ??
     demoSignIn.error;
   const awaitingConfirmation = mode === 'signUp' && createAccount.isSuccess && !createAccount.data;
-
-  const inputStyle = [
-    styles.input,
-    { color: theme.text, borderColor: theme.border, backgroundColor: theme.backgroundElement },
-  ];
+  const canSubmit =
+    mode === 'signIn'
+      ? !!email.trim() && !!password
+      : !!fullName.trim() && !!email.trim() && password.length >= MIN_PASSWORD;
+  const submit = () => {
+    if (!canSubmit) return;
+    if (mode === 'signIn') passwordSignIn.mutate();
+    else createAccount.mutate();
+  };
+  const enterCode = (kind?: 'recovery' | 'signup') =>
+    router.push({
+      pathname: '/enter-code',
+      params: kind ? { email: email.trim(), kind } : { email: email.trim() },
+    });
 
   return (
     <Screen>
@@ -64,148 +88,27 @@ export default function SignInScreen() {
           <ThemedText type="heading">CoreFit</ThemedText>
         </View>
         <ThemedText type="display">
-          Train.{'\n'}Book.{'\n'}Repeat.
+          Train. Book.{'\n'}
+          <ThemedText type="display" themeColor="primary">
+            Repeat.
+          </ThemedText>
         </ThemedText>
         <ThemedText themeColor="textSecondary">
-          Classes, workouts and your membership in one place.
+          Your gym&apos;s classes, workouts and membership in one place.
         </ThemedText>
+        <View style={styles.features}>
+          {features.map((f) => (
+            <View
+              key={f.label}
+              style={[styles.feature, { backgroundColor: theme.backgroundElement }]}>
+              <Icon name={f.icon} size={14} color="primary" />
+              <ThemedText type="small">{f.label}</ThemedText>
+            </View>
+          ))}
+        </View>
       </View>
 
-      {!isDemoMode ? (
-        <View style={styles.form}>
-          {mode === 'signUp' ? (
-            <TextInput
-              style={inputStyle}
-              placeholder="Full name"
-              placeholderTextColor={theme.textSecondary}
-              autoComplete="name"
-              textContentType="name"
-              value={fullName}
-              onChangeText={setFullName}
-            />
-          ) : null}
-          <TextInput
-            style={inputStyle}
-            placeholder="Email"
-            placeholderTextColor={theme.textSecondary}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={inputStyle}
-            placeholder="Password"
-            placeholderTextColor={theme.textSecondary}
-            autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
-            textContentType={mode === 'signIn' ? 'password' : 'newPassword'}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          {linkError ? (
-            <Card>
-              <ThemedText type="smallBold">That email link didn&apos;t work</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {linkError}. Links work once and expire. If the email has a code, tap Enter it
-                below. Otherwise sign in, use Forgot password, or ask your gym to invite you again.
-              </ThemedText>
-            </Card>
-          ) : null}
-          {mode === 'signIn' ? (
-            <>
-              <Button
-                label="Sign in"
-                loading={passwordSignIn.isPending}
-                disabled={!email || !password}
-                onPress={() => passwordSignIn.mutate()}
-              />
-              {resetPassword.isSuccess ? (
-                <Card highlighted>
-                  <ThemedText type="heading">Check your email</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    If {email.trim()} has a CoreFit account, we sent it a link and a code. Open the
-                    link on this phone, or enter the code below.
-                  </ThemedText>
-                </Card>
-              ) : (
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={resetPassword.isPending}
-                  onPress={() => (email.trim() ? resetPassword.mutate() : setResetHint(true))}
-                  style={styles.switchMode}>
-                  <ThemedText type="linkPrimary">
-                    {resetPassword.isPending ? 'Sending…' : 'Forgot password?'}
-                  </ThemedText>
-                </Pressable>
-              )}
-              <Pressable
-                accessibilityRole="button"
-                onPress={() =>
-                  router.push({
-                    pathname: '/enter-code',
-                    params: resetPassword.isSuccess
-                      ? { email: email.trim(), kind: 'recovery' }
-                      : { email: email.trim() },
-                  })
-                }
-                style={styles.switchMode}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Got a code by email? <ThemedText type="linkPrimary">Enter it</ThemedText>
-                </ThemedText>
-              </Pressable>
-              {resetHint && !email.trim() ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  Enter your email above, then tap Forgot password.
-                </ThemedText>
-              ) : null}
-            </>
-          ) : awaitingConfirmation ? (
-            <Card highlighted>
-              <ThemedText type="heading">Check your email</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                We sent a link and a code to {email.trim()}. Open the link on this phone, or enter
-                the code. If your gym invited this email, you&apos;ll be in your gym straight away.
-              </ThemedText>
-              <Button
-                label="Enter the code"
-                variant="secondary"
-                onPress={() =>
-                  router.push({
-                    pathname: '/enter-code',
-                    params: { email: email.trim(), kind: 'signup' },
-                  })
-                }
-              />
-            </Card>
-          ) : (
-            <Button
-              label="Create account"
-              loading={createAccount.isPending}
-              disabled={!fullName.trim() || !email || password.length < 8}
-              onPress={() => createAccount.mutate()}
-            />
-          )}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setMode((m) => (m === 'signIn' ? 'signUp' : 'signIn'))}
-            style={styles.switchMode}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {mode === 'signIn' ? 'New to CoreFit? ' : 'Already have an account? '}
-              <ThemedText type="linkPrimary">
-                {mode === 'signIn' ? 'Create an account' : 'Sign in'}
-              </ThemedText>
-            </ThemedText>
-          </Pressable>
-          {mode === 'signUp' && !awaitingConfirmation ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              Use the email your gym has on file. Passwords need at least 8 characters.
-            </ThemedText>
-          ) : null}
-        </View>
-      ) : (
+      {isDemoMode ? (
         <View style={styles.form}>
           <ThemedText type="label" themeColor="textSecondary">
             Explore the demo as
@@ -222,7 +125,7 @@ export default function SignInScreen() {
                   <View style={[styles.roleIcon, { backgroundColor: theme.backgroundSelected }]}>
                     <Icon name={icon} size={22} color="primary" />
                   </View>
-                  <View style={styles.roleBody}>
+                  <View style={styles.flex}>
                     <ThemedText type="heading">{title}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {detail}
@@ -237,9 +140,168 @@ export default function SignInScreen() {
               )}
             </Pressable>
           ))}
+          {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
         </View>
+      ) : (
+        <>
+          <SegmentedControl<Mode>
+            options={[
+              { value: 'signIn', label: 'Sign in' },
+              { value: 'signUp', label: 'Create account' },
+            ]}
+            value={mode}
+            onChange={setMode}
+          />
+          <Card style={styles.form}>
+            {linkError ? (
+              <View style={[styles.notice, { borderColor: theme.warning }]}>
+                <ThemedText type="smallBold">That email link didn&apos;t work</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {linkError}. Links work once and expire. Use the code from the email instead, or
+                  ask your gym to invite you again.
+                </ThemedText>
+              </View>
+            ) : null}
+
+            {awaitingConfirmation ? (
+              <View style={styles.form}>
+                <Icon name="mail-unread-outline" size={28} color="primary" />
+                <ThemedText type="heading">Check your email</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  We sent a code to {email.trim()}. Enter it to finish. If your gym invited this
+                  email, you&apos;ll be in your gym straight away.
+                </ThemedText>
+                <Button
+                  label="Enter the code"
+                  icon="keypad-outline"
+                  onPress={() => enterCode('signup')}
+                />
+              </View>
+            ) : (
+              <>
+                {mode === 'signUp' ? (
+                  <TextField
+                    label="Full name"
+                    icon="person-outline"
+                    placeholder="Your name"
+                    autoComplete="name"
+                    textContentType="name"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => emailRef.current?.focus()}
+                    value={fullName}
+                    onChangeText={setFullName}
+                  />
+                ) : null}
+                <TextField
+                  ref={emailRef}
+                  label="Email"
+                  icon="mail-outline"
+                  placeholder="name@example.com"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  value={email}
+                  onChangeText={setEmail}
+                />
+                <TextField
+                  ref={passwordRef}
+                  label="Password"
+                  icon="lock-closed-outline"
+                  placeholder={
+                    mode === 'signUp' ? `At least ${MIN_PASSWORD} characters` : 'Password'
+                  }
+                  autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+                  textContentType={mode === 'signIn' ? 'password' : 'newPassword'}
+                  secureTextEntry
+                  returnKeyType="go"
+                  onSubmitEditing={submit}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+
+                {mode === 'signIn' ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={resetPassword.isPending || resetPassword.isSuccess}
+                    hitSlop={8}
+                    onPress={() => (email.trim() ? resetPassword.mutate() : setResetHint(true))}
+                    style={styles.forgot}>
+                    <ThemedText type="linkPrimary">
+                      {resetPassword.isPending
+                        ? 'Sending…'
+                        : resetPassword.isSuccess
+                          ? 'Reset email sent'
+                          : 'Forgot password?'}
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+                {mode === 'signIn' && resetHint && !email.trim() ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Enter your email above, then tap Forgot password.
+                  </ThemedText>
+                ) : null}
+                {mode === 'signIn' && resetPassword.isSuccess ? (
+                  <View style={[styles.notice, { borderColor: theme.primary }]}>
+                    <ThemedText type="smallBold">Check your email</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      If {email.trim()} has a CoreFit account, we sent it a code to choose a new
+                      password.
+                    </ThemedText>
+                    <Button
+                      label="Enter the code"
+                      icon="keypad-outline"
+                      size="compact"
+                      onPress={() => enterCode('recovery')}
+                    />
+                  </View>
+                ) : null}
+
+                {error ? (
+                  <View style={styles.errorRow}>
+                    <Icon name="alert-circle-outline" size={18} color="danger" />
+                    <ThemedText type="small" themeColor="danger" style={styles.flex}>
+                      {error.message}
+                    </ThemedText>
+                  </View>
+                ) : null}
+
+                <Button
+                  label={mode === 'signIn' ? 'Sign in' : 'Create account'}
+                  icon={mode === 'signIn' ? 'log-in-outline' : 'person-add-outline'}
+                  loading={passwordSignIn.isPending || createAccount.isPending}
+                  disabled={!canSubmit}
+                  onPress={submit}
+                />
+                {mode === 'signUp' ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Use the email your gym has on file, so you join your gym straight away.
+                  </ThemedText>
+                ) : null}
+              </>
+            )}
+          </Card>
+
+          <View style={styles.divider}>
+            <View style={[styles.rule, { backgroundColor: theme.border }]} />
+            <ThemedText type="small" themeColor="textSecondary">
+              Invited by your gym?
+            </ThemedText>
+            <View style={[styles.rule, { backgroundColor: theme.border }]} />
+          </View>
+          <Button
+            label="Enter a code from your email"
+            icon="keypad-outline"
+            variant="secondary"
+            onPress={() => enterCode()}
+          />
+        </>
       )}
-      {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
     </Screen>
   );
 }
@@ -247,8 +309,8 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   hero: {
     gap: Spacing.three,
-    paddingTop: Spacing.five,
-    paddingBottom: Spacing.three,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.two,
   },
   brand: {
     flexDirection: 'row',
@@ -259,15 +321,45 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
   },
+  features: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.one + Spacing.half,
+  },
+  feature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.two + Spacing.one,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+  },
   form: {
     gap: Spacing.three,
   },
-  input: {
-    minHeight: TapTarget,
+  notice: {
+    gap: Spacing.two,
+    padding: Spacing.three,
     borderWidth: 1,
     borderRadius: Radius.medium,
-    paddingHorizontal: Spacing.three,
-    fontSize: 16,
+  },
+  forgot: {
+    alignSelf: 'flex-end',
+    marginTop: -Spacing.one,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  rule: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
   },
   roleCard: {
     flexDirection: 'row',
@@ -281,15 +373,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  roleBody: {
+  flex: {
     flex: 1,
   },
   pressed: {
     opacity: 0.75,
-  },
-  switchMode: {
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -14,7 +15,13 @@ type ScreenProps = {
 export function Screen({ eyebrow, title, children }: ScreenProps) {
   return (
     <ThemedView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
+      {/* Scrolls the focused field above the keyboard; taps on buttons still land while it's open. */}
+      <KeyboardAwareScrollView
+        bottomOffset={Spacing.four}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic">
         {title ? (
           <View>
             {eyebrow ? (
@@ -26,7 +33,7 @@ export function Screen({ eyebrow, title, children }: ScreenProps) {
           </View>
         ) : null}
         {children}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </ThemedView>
   );
 }

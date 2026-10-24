@@ -3,6 +3,7 @@ import { DarkTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { Colors } from '@/constants/theme';
 
@@ -28,10 +29,12 @@ const navigationTheme: Theme = {
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={navigationTheme}>
-        <StatusBar style="light" />
-        <RootNavigator />
-      </ThemeProvider>
+      <KeyboardProvider>
+        <ThemeProvider value={navigationTheme}>
+          <StatusBar style="light" />
+          <RootNavigator />
+        </ThemeProvider>
+      </KeyboardProvider>
     </QueryClientProvider>
   );
 }
