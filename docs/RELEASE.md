@@ -28,11 +28,12 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 
 **Identity**
 
-- [ ] Final app name in `app.json` (`expo.name`) and store listings.
-- [ ] Confirm the bundle ID / package `com.iamvenkatsantos.gymapp`. It can't change after the first
-      upload to either store.
-- [ ] Replace the Expo placeholder icon (`assets/expo.icon`, `assets/images/icon.png`, Android
-      adaptive icon layers) and splash image. iOS needs a 1024×1024 icon without transparency.
+- [x] App name: CoreFit.
+- [x] Bundle ID / package: `com.corefit.gym`. It can't change after the first upload to either
+      store.
+- [x] Icon, Android adaptive icon and splash generated from the CoreFit logo. A sharper master
+      (vector or 1024px with an opaque white figure) would improve the store icon.
+- [ ] Android themed (monochrome) icon: needs a single-colour version of the logo.
 
 **Accounts**
 

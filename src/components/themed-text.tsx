@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 700,
-    color: '#C6F432',
+    color: '#3DDC5C',
   },
   code: {
     fontFamily: Fonts.mono,

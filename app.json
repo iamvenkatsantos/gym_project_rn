@@ -1,15 +1,14 @@
 {
   "expo": {
-    "name": "Gym App",
-    "slug": "gym-app",
+    "name": "CoreFit",
+    "slug": "corefit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "gymapp",
+    "scheme": "corefit",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.iamvenkatsantos.gymapp",
+      "bundleIdentifier": "com.corefit.gym",
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -19,11 +18,10 @@
       "adaptiveIcon": {
         "backgroundColor": "#0B0B0F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundImage": "./assets/images/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.iamvenkatsantos.gymapp"
+      "package": "com.corefit.gym"
     },
     "web": {
       "output": "single",
@@ -36,7 +34,7 @@
         {
           "backgroundColor": "#0B0B0F",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ]
     ],

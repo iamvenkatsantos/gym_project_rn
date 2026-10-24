@@ -1,4 +1,6 @@
-# Gym App
+# CoreFit
+
+<img src="assets/images/icon.png" width="96" alt="CoreFit icon" />
 
 A React Native app for gym members, trainers and owners. One app, three roles: each user
 lands in their own area after signing in.
@@ -17,7 +19,9 @@ lands in their own area after signing in.
 
 ## Design
 
-Dark-first with a volt accent and large (52pt) tap targets, since people use gym apps mid-workout
+The product plan is in [docs/product-plan.pdf](docs/product-plan.pdf).
+
+Dark-first with the CoreFit green accent and large (52pt) tap targets, since people use gym apps mid-workout
 in dim light. Class booking follows the common timetable pattern: a horizontal day picker, then
 rows showing time, trainer and live spots left with a fill bar. Tokens live in
 `src/constants/theme.ts`.

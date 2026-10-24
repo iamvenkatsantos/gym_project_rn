@@ -18,7 +18,7 @@ import { canBook, classesOnDay, upcomingDays } from '@/features/bookings/rules';
 
 const blockedLabel = { started: 'Started', full: 'Class full', alreadyBooked: 'Booked' } as const;
 
-export default function MemberClassesScreen() {
+export default function MemberBookingsScreen() {
   const profile = useProfile();
   const days = useMemo(() => upcomingDays(7), []);
   const [selectedDay, setSelectedDay] = useState(days[0]);

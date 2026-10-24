@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -46,9 +47,10 @@ export default function SignInScreen() {
   return (
     <Screen>
       <View style={styles.hero}>
-        <ThemedText type="label" themeColor="primary">
-          Gym App
-        </ThemedText>
+        <View style={styles.brand}>
+          <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
+          <ThemedText type="heading">CoreFit</ThemedText>
+        </View>
         <ThemedText type="display">
           Train.{'\n'}Book.{'\n'}Repeat.
         </ThemedText>
@@ -136,6 +138,15 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingTop: Spacing.five,
     paddingBottom: Spacing.three,
+  },
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  logo: {
+    width: 48,
+    height: 48,
   },
   form: {
     gap: Spacing.three,

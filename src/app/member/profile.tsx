@@ -1,3 +1,6 @@
+import { router } from 'expo-router';
+
+import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
@@ -7,7 +10,7 @@ import { MembershipCard } from '@/features/memberships/components/membership-car
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useCurrentMembership, usePlans } from '@/features/memberships/hooks';
 
-export default function MemberMembershipScreen() {
+export default function MemberProfileScreen() {
   const profile = useProfile();
   const membership = useCurrentMembership(profile.id);
   const plans = usePlans();
@@ -32,6 +35,14 @@ export default function MemberMembershipScreen() {
       <ThemedText type="small" themeColor="textSecondary">
         To start or renew a plan, speak to the front desk.
       </ThemedText>
+
+      <SectionHeader title="Settings" />
+      <Button
+        label="Account and privacy"
+        variant="secondary"
+        icon="settings-outline"
+        onPress={() => router.push('/account')}
+      />
     </Screen>
   );
 }

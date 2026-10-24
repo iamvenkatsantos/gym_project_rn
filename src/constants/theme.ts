@@ -1,5 +1,5 @@
 /**
- * Dark-first athletic theme. Gyms are often dimly lit and people use the app
+ * Dark-first CoreFit theme, green accent taken from the logo. Gyms are often dimly lit and people use the app
  * between sets, so the UI favours high contrast and large tap targets.
  */
 
@@ -14,9 +14,9 @@ export const Colors = {
   backgroundElement: '#17171E',
   backgroundSelected: '#23232C',
   border: '#2A2A33',
-  primary: '#C6F432',
+  primary: '#3DDC5C',
   onPrimary: '#0B0B0F',
-  success: '#4ADE80',
+  success: '#2DD4BF',
   warning: '#FBBF24',
   danger: '#F87171',
 } as const;

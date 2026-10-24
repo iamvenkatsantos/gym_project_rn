@@ -47,7 +47,7 @@ export default function MemberHomeScreen() {
       <Button
         label="Book a class"
         icon="add-circle-outline"
-        onPress={() => router.navigate('/member/classes')}
+        onPress={() => router.navigate('/member/bookings')}
       />
     </Screen>
   );
