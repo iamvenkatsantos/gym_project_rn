@@ -8,16 +8,21 @@ lands in their own area after signing in.
 People can belong to several gyms and hold a different role in each (say, a trainer at one branch
 and a member at another). The app shows one gym at a time and switches area with the role.
 
-| Role    | What they can do today                                                   |
-| ------- | ------------------------------------------------------------------------ |
-| Member  | Membership, workouts, book trainers 1:1 and group classes, cancel either |
-| Trainer | 1:1 sessions and classes on one schedule, mark sessions done, workouts   |
-| Owner   | Dashboard with renewals due, the class timetable, members and plans      |
+| Role    | What they can do today                                                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Member  | Membership, assigned and gym plans, log workouts (works offline), progress and PRs, book trainers 1:1 and classes     |
+| Trainer | Build plans from the exercise library and assign them to members, set weekly bookable hours, 1:1 sessions and classes |
+| Owner   | Dashboard with renewals due, the class timetable, members and plans                                                   |
 
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
   <img src="docs/screenshots/member-classes.png" width="200" alt="Bookings" />
   <img src="docs/screenshots/owner-dashboard.png" width="200" alt="Owner dashboard" />
+</p>
+<p>
+  <img src="docs/screenshots/plan-builder.png" width="200" alt="Trainer plan builder" />
+  <img src="docs/screenshots/assign-plan.png" width="200" alt="Assigning a plan to members" />
+  <img src="docs/screenshots/weekly-hours.png" width="200" alt="Trainer weekly hours" />
 </p>
 
 ## Design
@@ -55,8 +60,11 @@ npx supabase link --project-ref <your-ref>
 npx supabase db push
 ```
 
-New sign-ups get a `member` profile with no gym. Set `gym_id` and `role` on `profiles` to put
-someone in a gym or make them a trainer or owner.
+Then run `supabase/seed.sql` in the SQL editor to load the shared exercise library, and deploy the
+account deletion function with `npx supabase functions deploy delete-account`.
+
+New sign-ups get a profile with no gym. Add a row to `gym_members` (gym, user, role) to put
+someone in a gym as a member, trainer or owner.
 
 ## Releasing
 

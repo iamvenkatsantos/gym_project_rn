@@ -125,3 +125,65 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 insert into public.workout_exercises (workout_id, exercise_id, position, sets, reps) values ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,3,10);
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 insert into public.workout_exercises (workout_id, exercise_id, position, sets, reps) values ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,3,10) returning true as ok;
+
+-- Trainer tools ---------------------------------------------------------------
+reset role;
+insert into public.exercises (id, gym_id, name, muscle_groups, equipment) values
+ ('30000000-0000-0000-0000-000000000003', null, 'Push-up', '{chest}', 'none'),
+ ('30000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000002', 'Other gym secret', '{legs}', 'sled');
+set role authenticated;
+
+\echo '25 trainer creates a plan with save_workout (expect ok), exercises in the given order'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select set_config('test.plan', public.save_workout('10000000-0000-0000-0000-000000000001', null, ' Push day ', '', 'beginner', 40,
+  '[{"exercise_id":"30000000-0000-0000-0000-000000000003","sets":3,"reps":12,"target_weight_kg":null,"rest_seconds":60},
+    {"exercise_id":"30000000-0000-0000-0000-000000000001","sets":4,"reps":8,"target_weight_kg":16,"rest_seconds":90}]')::text, false) is not null as ok;
+select w.title, x.name, we.position from public.workout_exercises we
+  join public.workouts w on w.id = we.workout_id join public.exercises x on x.id = we.exercise_id
+  where w.id = current_setting('test.plan')::uuid order by we.position;
+\echo '26 trainer edits the plan, reordering and dropping an exercise (expect Goblet squat only, position 1)'
+select public.save_workout('10000000-0000-0000-0000-000000000001', current_setting('test.plan')::uuid, 'Push day v2', '', 'intermediate', 45,
+  '[{"exercise_id":"30000000-0000-0000-0000-000000000001","sets":4,"reps":8,"target_weight_kg":18,"rest_seconds":90}]') = current_setting('test.plan')::uuid as same_id;
+select x.name, we.position, we.target_weight_kg from public.workout_exercises we join public.exercises x on x.id = we.exercise_id
+  where we.workout_id = current_setting('test.plan')::uuid;
+\echo '27 plan with another gym''s private exercise (expect RLS error), plan unchanged (expect 1)'
+select public.save_workout('10000000-0000-0000-0000-000000000001', current_setting('test.plan')::uuid, 'Push day v3', '', 'beginner', 45,
+  '[{"exercise_id":"30000000-0000-0000-0000-000000000004","sets":3,"reps":10,"target_weight_kg":null,"rest_seconds":90}]');
+select count(*) from public.workout_exercises where workout_id = current_setting('test.plan')::uuid;
+\echo '28 the same exercise twice in a plan (expect unique violation)'
+select public.save_workout('10000000-0000-0000-0000-000000000001', current_setting('test.plan')::uuid, 'Push day', '', 'beginner', 45,
+  '[{"exercise_id":"30000000-0000-0000-0000-000000000001","sets":3,"reps":10,"target_weight_kg":null,"rest_seconds":90},
+    {"exercise_id":"30000000-0000-0000-0000-000000000001","sets":3,"reps":10,"target_weight_kg":null,"rest_seconds":90}]');
+\echo '29 a plan with no exercises (expect "Add at least one exercise")'
+select public.save_workout('10000000-0000-0000-0000-000000000001', null, 'Empty', '', 'beginner', 30, '[]');
+\echo '30 a member saves a plan (expect RLS error) or edits the trainer''s plan (expect "Plan not found")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.save_workout('10000000-0000-0000-0000-000000000001', null, 'Mine', '', 'beginner', 30,
+  '[{"exercise_id":"30000000-0000-0000-0000-000000000001","sets":3,"reps":10,"target_weight_kg":null,"rest_seconds":90}]');
+select public.save_workout('10000000-0000-0000-0000-000000000001', current_setting('test.plan')::uuid, 'Hijack', '', 'beginner', 30,
+  '[{"exercise_id":"30000000-0000-0000-0000-000000000001","sets":3,"reps":10,"target_weight_kg":null,"rest_seconds":90}]');
+\echo '31 trainer assigns without assigned_by; it defaults to the trainer (expect true). M2 sees it, M sees only own'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+insert into public.workout_assignments (workout_id, member_id) values (current_setting('test.plan')::uuid, '00000000-0000-0000-0000-00000000000d')
+  returning assigned_by = '00000000-0000-0000-0000-00000000000b' as defaulted;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d'); select count(*) as m2_assignments from public.workout_assignments;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c'); select count(*) as m_assignments from public.workout_assignments;
+\echo '32 trainer sets Tuesday hours and 45 min sessions (expect 2 windows), then M books Tue 17:45 IST (expect ok)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.set_trainer_availability('10000000-0000-0000-0000-000000000001', 45,
+  '[{"weekday":2,"start_time":"07:00","end_time":"09:00"},{"weekday":2,"start_time":"17:00","end_time":"19:00"}]');
+select count(*) as windows from public.trainer_availability;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.book_trainer_session('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b','2026-10-27 17:45+05:30') is not null as ok;
+\echo '33 Monday hours are gone now (expect not available)'
+select public.book_trainer_session('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b','2026-11-02 09:00+05:30');
+\echo '34 overlapping windows (expect "overlap"), and the old hours are kept (expect 2)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.set_trainer_availability('10000000-0000-0000-0000-000000000001', 60,
+  '[{"weekday":3,"start_time":"07:00","end_time":"10:00"},{"weekday":3,"start_time":"09:30","end_time":"11:00"}]');
+select count(*) as windows from public.trainer_availability;
+\echo '35 a member sets availability (expect "Only trainers"); trainer at gym 2 is only a member there (expect "Only trainers")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.set_trainer_availability('10000000-0000-0000-0000-000000000001', 60, '[]');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.set_trainer_availability('10000000-0000-0000-0000-000000000002', 60, '[]');

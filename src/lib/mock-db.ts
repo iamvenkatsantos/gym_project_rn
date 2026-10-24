@@ -1,5 +1,6 @@
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
+import type { GymMember } from '@/features/members/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
 import type { WorkoutLog } from '@/features/progress/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
@@ -42,6 +43,14 @@ export const mockProfiles: Profile[] = [
   },
 ];
 
+/** Everyone with the member role at the demo gym. */
+export const mockMembers: GymMember[] = [
+  { id: 'u-member', fullName: 'Maya Member' },
+  { id: 'u-member-2', fullName: 'Arjun Kumar' },
+  { id: 'u-member-3', fullName: 'Priya Sharma' },
+  { id: 'u-member-4', fullName: 'Leo Martins' },
+];
+
 const prescribe = (
   exerciseId: string,
   name: string,
@@ -65,6 +74,7 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-dumbbell-row', 'Dumbbell row', 3, 12, 14),
       prescribe('e-plank', 'Plank', 3, 30, null, 45),
     ],
+    assignedMemberIds: ['u-member'],
   },
   {
     id: 'w-2',
@@ -78,6 +88,7 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-romanian-deadlift', 'Romanian deadlift', 4, 8, 50, 120),
       prescribe('e-walking-lunge', 'Walking lunge', 3, 12),
     ],
+    assignedMemberIds: [],
   },
 ];
 

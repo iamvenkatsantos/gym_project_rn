@@ -10,6 +10,7 @@ const workout: Workout = {
   description: 'A balanced first session.',
   level: 'beginner',
   durationMinutes: 45,
+  assignedMemberIds: [],
   exercises: [
     {
       exerciseId: 'e-1',

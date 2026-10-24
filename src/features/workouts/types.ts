@@ -18,4 +18,6 @@ export type Workout = {
   level: WorkoutLevel;
   durationMinutes: number;
   exercises: PlanExercise[];
+  /** Members this plan is assigned to. Members only ever see their own id here. */
+  assignedMemberIds: string[];
 };

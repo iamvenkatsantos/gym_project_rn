@@ -3,10 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   bookSession,
   getTrainer,
+  getWeeklyHours,
   listBusySlots,
   listSessions,
   listTrainers,
+  saveWeeklyHours,
   updateSessionStatus,
+  type WeeklyHours,
 } from '@/features/trainers/api';
 import type { TrainerSession } from '@/features/trainers/types';
 
@@ -15,6 +18,8 @@ export const trainerKeys = {
   list: (gymId: string) => [...trainerKeys.all, gymId, 'list'] as const,
   detail: (gymId: string, trainerId: string) =>
     [...trainerKeys.all, gymId, 'detail', trainerId] as const,
+  hours: (gymId: string, trainerId: string) =>
+    [...trainerKeys.all, gymId, 'hours', trainerId] as const,
   busy: (trainerId: string, from: string) => [...trainerKeys.all, 'busy', trainerId, from] as const,
   sessions: (gymId: string, filter: { memberId?: string; trainerId?: string }) =>
     [...trainerKeys.all, gymId, 'sessions', filter] as const,
@@ -64,6 +69,21 @@ export function useUpdateSession() {
       sessionId: string;
       status: Exclude<TrainerSession['status'], 'booked'>;
     }) => updateSessionStatus(sessionId, status),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: trainerKeys.all }),
+  });
+}
+
+export function useWeeklyHours(gymId: string, trainerId: string) {
+  return useQuery({
+    queryKey: trainerKeys.hours(gymId, trainerId),
+    queryFn: () => getWeeklyHours(gymId, trainerId),
+  });
+}
+
+export function useSaveWeeklyHours(gymId: string, trainerId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hours: WeeklyHours) => saveWeeklyHours(gymId, trainerId, hours),
     onSettled: () => queryClient.invalidateQueries({ queryKey: trainerKeys.all }),
   });
 }

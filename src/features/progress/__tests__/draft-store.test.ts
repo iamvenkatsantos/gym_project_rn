@@ -10,6 +10,7 @@ const workout: Workout = {
   description: '',
   level: 'beginner',
   durationMinutes: 45,
+  assignedMemberIds: [],
   exercises: [
     {
       exerciseId: 'squat',

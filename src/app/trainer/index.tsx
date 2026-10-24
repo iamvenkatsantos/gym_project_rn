@@ -1,12 +1,20 @@
+import { router } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+
 import { Button } from '@/components/button';
+import { Card } from '@/components/card';
+import { Icon } from '@/components/icon';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
+import { ThemedText } from '@/components/themed-text';
+import { Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { SessionRow } from '@/features/trainers/components/session-row';
-import { useSessions, useUpdateSession } from '@/features/trainers/hooks';
+import { weeklyHours } from '@/features/trainers/availability-rules';
+import { useSessions, useUpdateSession, useWeeklyHours } from '@/features/trainers/hooks';
 
 export default function TrainerScheduleScreen() {
   const profile = useProfile();
@@ -14,9 +22,32 @@ export default function TrainerScheduleScreen() {
   const sessions = useSessions(gym.gymId, { trainerId: profile.id });
   const classes = useUpcomingClasses(gym.gymId, profile.id);
   const update = useUpdateSession();
+  const hours = useWeeklyHours(gym.gymId, profile.id);
 
   return (
     <Screen>
+      <Card>
+        <View style={styles.hours}>
+          <Icon name="time-outline" size={24} color="primary" />
+          <View style={styles.flex}>
+            <ThemedText type="smallBold">Bookable hours</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {hours.data
+                ? hours.data.availability.length
+                  ? `${weeklyHours(hours.data.availability)} h a week · ${hours.data.sessionMinutes} min sessions`
+                  : 'Not set, so members can’t book you yet'
+                : 'Loading…'}
+            </ThemedText>
+          </View>
+          <Button
+            label="Edit"
+            variant="secondary"
+            size="compact"
+            onPress={() => router.push('/weekly-hours')}
+          />
+        </View>
+      </Card>
+
       <SectionHeader
         title="1:1 sessions"
         detail={sessions.data ? `${sessions.data.length} upcoming` : undefined}
@@ -62,3 +93,14 @@ export default function TrainerScheduleScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  hours: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  flex: {
+    flex: 1,
+  },
+});

@@ -1,4 +1,5 @@
 import type {
+  AvailabilityWindow,
   BusySlot,
   Trainer,
   TrainerSession,
@@ -33,6 +34,12 @@ const TRAINER_COLUMNS =
   'trainer_id, bio, specialties, session_minutes, trainer:profiles!trainer_profiles_trainer_id_fkey(full_name)';
 const SESSION_COLUMNS =
   'id, gym_id, trainer_id, member_id, starts_at, ends_at, status, trainer:profiles!trainer_sessions_trainer_id_fkey(full_name), member:profiles!trainer_sessions_member_id_fkey(full_name)';
+
+const toWindow = (a: AvailabilityRow): AvailabilityWindow => ({
+  weekday: a.weekday,
+  startTime: a.start_time.slice(0, 5),
+  endTime: a.end_time.slice(0, 5),
+});
 
 function toTrainer(row: TrainerRow): Trainer {
   return {
@@ -90,12 +97,69 @@ export async function getTrainer(
   ]);
   return {
     ...toTrainer(unwrap(trainer) as unknown as TrainerRow),
-    availability: (unwrap(availability) as AvailabilityRow[]).map((a) => ({
-      weekday: a.weekday,
-      startTime: a.start_time.slice(0, 5),
-      endTime: a.end_time.slice(0, 5),
-    })),
+    availability: (unwrap(availability) as AvailabilityRow[]).map(toWindow),
   };
+}
+
+export type WeeklyHours = { sessionMinutes: number; availability: AvailabilityWindow[] };
+
+/** A trainer's own bookable hours, including before they've set any up. */
+export async function getWeeklyHours(gymId: string, trainerId: string): Promise<WeeklyHours> {
+  if (!supabase) {
+    const trainer = forGym(gymId, mockTrainers).find((t) => t.id === trainerId);
+    return delay({
+      sessionMinutes: trainer?.sessionMinutes ?? 60,
+      availability: trainer?.availability ?? [],
+    });
+  }
+  const [profile, availability] = await Promise.all([
+    supabase
+      .from('trainer_profiles')
+      .select('session_minutes')
+      .eq('gym_id', gymId)
+      .eq('trainer_id', trainerId)
+      .maybeSingle(),
+    supabase
+      .from('trainer_availability')
+      .select('weekday, start_time, end_time')
+      .eq('gym_id', gymId)
+      .eq('trainer_id', trainerId),
+  ]);
+  if (profile.error) throw profile.error;
+  return {
+    sessionMinutes: profile.data?.session_minutes ?? 60,
+    availability: (unwrap(availability) as AvailabilityRow[]).map(toWindow),
+  };
+}
+
+/** Replaces the signed-in trainer's weekly hours at a gym. Existing bookings are kept. */
+export async function saveWeeklyHours(gymId: string, trainerId: string, hours: WeeklyHours) {
+  if (!supabase) {
+    const trainer = forGym(gymId, mockTrainers).find((t) => t.id === trainerId);
+    if (trainer) {
+      trainer.sessionMinutes = hours.sessionMinutes;
+      trainer.availability = hours.availability;
+    } else {
+      mockTrainers.push({
+        id: trainerId,
+        fullName: mockProfiles.find((p) => p.id === trainerId)?.fullName ?? 'Trainer',
+        bio: '',
+        specialties: [],
+        ...hours,
+      });
+    }
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('set_trainer_availability', {
+    p_gym_id: gymId,
+    p_session_minutes: hours.sessionMinutes,
+    p_windows: hours.availability.map((w) => ({
+      weekday: w.weekday,
+      start_time: w.startTime,
+      end_time: w.endTime,
+    })),
+  });
+  if (error) throw error;
 }
 
 /** Booked times for a trainer in a range, without who booked them. */

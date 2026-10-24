@@ -72,6 +72,12 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" />
+        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen
+          name="assign-plan/[workoutId]"
+          options={{ headerShown: true, title: 'Assign' }}
+        />
+        <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
