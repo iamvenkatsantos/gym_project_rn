@@ -15,13 +15,15 @@ import { useTrainerLinks, useTrainerRequests } from '@/features/coaching/hooks';
 import { pendingRequests, unmappedMembers } from '@/features/coaching/rules';
 import { usePeople } from '@/features/members/hooks';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
-import { useMemberships } from '@/features/memberships/hooks';
+import { MembershipSetup } from '@/features/memberships/components/membership-setup';
+import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 
 /** The owner's and the supervisor's home: money, trainer matching and today's classes. */
 export default function OwnerDashboardScreen() {
   const gym = useActiveGym();
   const memberships = useMemberships(gym.gymId);
+  const plans = usePlans(gym.gymId);
   const classes = useUpcomingClasses(gym.gymId);
   const people = usePeople(gym.gymId);
   const links = useTrainerLinks(gym.gymId);
@@ -38,6 +40,7 @@ export default function OwnerDashboardScreen() {
 
   return (
     <Screen>
+      {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
       <View style={styles.grid}>
         <StatTile label="Active members" value={activeCount} icon="people" accent />
         <StatTile

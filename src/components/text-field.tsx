@@ -11,11 +11,16 @@ type TextFieldProps = TextInputProps & {
   /** Shown inside the field, before the text. */
   icon?: IconName;
   ref?: Ref<ComponentRef<typeof TextInput>>;
+  /** What's wrong with the value. Shown once the field loses focus, or straight away with showError. */
+  error?: string | null;
+  /** Show the error before the field has been left, e.g. after a submit attempt. */
+  showError?: boolean;
 };
 
 /**
  * A labelled text input in the app's style. Password fields (secureTextEntry)
- * get a show/hide button, since typos are easy on a phone keyboard.
+ * get a show/hide button, since typos are easy on a phone keyboard. An error
+ * shows under the field once the person moves on from it, not while typing.
  */
 export function TextField({
   label,
@@ -26,11 +31,15 @@ export function TextField({
   onFocus,
   onBlur,
   ref,
+  error,
+  showError,
   ...rest
 }: TextFieldProps) {
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const visibleError = error && (touched || showError) ? error : null;
 
   return (
     <View style={styles.field}>
@@ -42,7 +51,7 @@ export function TextField({
           styles.box,
           multiline && styles.multiline,
           {
-            borderColor: focused ? theme.primary : theme.border,
+            borderColor: visibleError ? theme.danger : focused ? theme.primary : theme.border,
             backgroundColor: theme.backgroundElement,
           },
         ]}>
@@ -50,6 +59,8 @@ export function TextField({
         <TextInput
           ref={ref}
           accessibilityLabel={label}
+          accessibilityHint={visibleError ?? undefined}
+          aria-invalid={!!visibleError}
           placeholderTextColor={theme.textSecondary}
           multiline={multiline}
           secureTextEntry={secureTextEntry && !revealed}
@@ -59,6 +70,7 @@ export function TextField({
           }}
           onBlur={(e) => {
             setFocused(false);
+            setTouched(true);
             onBlur?.(e);
           }}
           style={[styles.input, multiline && styles.multilineInput, { color: theme.text }, style]}
@@ -74,6 +86,11 @@ export function TextField({
           </Pressable>
         ) : null}
       </View>
+      {visibleError ? (
+        <ThemedText type="small" themeColor="danger" accessibilityLiveRegion="polite">
+          {visibleError}
+        </ThemedText>
+      ) : null}
     </View>
   );
 }

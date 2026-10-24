@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { fetchProfile, verifyEmailCode } from '@/features/auth/api';
 import type { LinkSession } from '@/features/auth/auth-link';
 import { useAuthStore } from '@/features/auth/auth-store';
+import { firstError, validateCode, validateEmail } from '@/lib/validation';
 
 type Kind = LinkSession['type'];
 const kinds: Kind[] = ['invite', 'recovery', 'signup'];
@@ -21,6 +22,8 @@ export default function EnterCodeScreen() {
   const params = useLocalSearchParams<{ email?: string; kind?: Kind }>();
   const [email, setEmail] = useState(params.email ?? '');
   const [code, setCode] = useState('');
+  const emailError = validateEmail(email);
+  const codeError = validateCode(code);
   // Try the kind of email they were just sent first.
   const order = params.kind ? [params.kind, ...kinds.filter((k) => k !== params.kind)] : kinds;
 
@@ -53,6 +56,8 @@ export default function EnterCodeScreen() {
         textContentType="emailAddress"
         value={email}
         onChangeText={setEmail}
+        maxLength={254}
+        error={emailError}
       />
       <TextField
         label="Code"
@@ -64,6 +69,7 @@ export default function EnterCodeScreen() {
         maxLength={10}
         value={code}
         onChangeText={(text) => setCode(text.replace(/\D/g, ''))}
+        error={codeError}
       />
       {verify.error ? (
         <ThemedText themeColor="danger">
@@ -73,7 +79,7 @@ export default function EnterCodeScreen() {
       <Button
         label="Continue"
         icon="arrow-forward"
-        disabled={!email.trim() || code.length < 6}
+        disabled={!!firstError(emailError, codeError)}
         loading={verify.isPending}
         onPress={() => verify.mutate()}
       />

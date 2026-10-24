@@ -69,6 +69,9 @@ Deno.serve(async (req) => {
   });
   if (error) return json({ error: error.message }, 400);
 
+  // invite_to_gym already refused unknown roles, so this only guards the email's wording.
+  const roleCopy = roles[role] ?? { label: role, blurb: '' };
+
   // Someone with a confirmed account was added straight away; there's nothing to accept.
   if (result !== 'invited') return json({ result, emailSent: false, emailError: null });
 
@@ -91,8 +94,8 @@ Deno.serve(async (req) => {
       // Stored as their user metadata; the invite template reads it as {{ .Data.* }}.
       data: {
         gym_name: gym?.name ?? 'your gym',
-        invite_role: (roles[role] ?? roles.member).label,
-        role_blurb: (roles[role] ?? roles.member).blurb,
+        invite_role: roleCopy.label,
+        role_blurb: roleCopy.blurb,
         invited_by: ownerProfile?.full_name || null,
         quote: quotes[Math.floor(Math.random() * quotes.length)],
       },

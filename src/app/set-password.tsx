@@ -10,8 +10,14 @@ import { setPassword } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { useProfile } from '@/features/auth/use-profile';
 import { useSignOut } from '@/features/auth/use-sign-out';
-
-const MIN_LENGTH = 8;
+import {
+  firstError,
+  MAX_PASSWORD,
+  MIN_PASSWORD,
+  validateName,
+  validateNewPassword,
+  validatePasswordMatch,
+} from '@/lib/validation';
 
 /** After an invite or password reset link: choose a password, then go to your gym. */
 export default function SetPasswordScreen() {
@@ -34,14 +40,10 @@ export default function SetPasswordScreen() {
     },
   });
 
-  const problem =
-    askName && !fullName.trim()
-      ? 'Enter your name'
-      : password.length < MIN_LENGTH
-        ? `Passwords need at least ${MIN_LENGTH} characters`
-        : password !== confirm
-          ? "The passwords don't match"
-          : null;
+  const nameError = askName ? validateName(fullName) : null;
+  const passwordError = validateNewPassword(password);
+  const confirmError = validatePasswordMatch(password, confirm);
+  const problem = firstError(nameError, passwordError, confirmError);
 
   return (
     <Screen title={askName ? 'Welcome to CoreFit' : 'Choose a new password'}>
@@ -59,17 +61,21 @@ export default function SetPasswordScreen() {
           textContentType="name"
           value={fullName}
           onChangeText={setFullName}
+          maxLength={60}
+          error={nameError}
         />
       ) : null}
       <TextField
         label="Password"
         icon="lock-closed-outline"
-        placeholder={`At least ${MIN_LENGTH} characters`}
+        placeholder={`${MIN_PASSWORD}+ characters, letters and a number`}
         autoComplete="new-password"
         textContentType="newPassword"
         secureTextEntry
         value={password}
         onChangeText={setNewPassword}
+        maxLength={MAX_PASSWORD}
+        error={passwordError}
       />
       <TextField
         label="Confirm password"
@@ -79,12 +85,9 @@ export default function SetPasswordScreen() {
         secureTextEntry
         value={confirm}
         onChangeText={setConfirm}
+        maxLength={MAX_PASSWORD}
+        error={confirmError}
       />
-      {problem && password ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {problem}
-        </ThemedText>
-      ) : null}
       {save.error ? <ThemedText themeColor="danger">{save.error.message}</ThemedText> : null}
       <Button
         label="Save password"

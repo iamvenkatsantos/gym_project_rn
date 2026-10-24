@@ -1,12 +1,10 @@
 import type { GymPerson, PeopleFilter } from '@/features/members/types';
+import { normalizeEmail, validateEmail } from '@/lib/validation';
 
-export function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
+export { normalizeEmail };
 
-/** Loose on purpose: the confirmation email is the real check. */
 export function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
+  return validateEmail(email) === null;
 }
 
 export function filterPeople(people: GymPerson[], filter: PeopleFilter, query = '') {

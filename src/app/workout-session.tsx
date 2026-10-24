@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -13,6 +13,7 @@ import { useProfile } from '@/features/auth/use-profile';
 import { type DraftSet, useWorkoutDraft } from '@/features/progress/draft-store';
 import { useFinishWorkout } from '@/features/progress/hooks';
 import { useTheme } from '@/hooks/use-theme';
+import { validateDecimal, validateWholeNumber } from '@/lib/validation';
 
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(() => Date.now());
@@ -29,9 +30,17 @@ function clock(ms: number) {
   return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function parseNumber(text: string) {
-  const value = Number(text.replace(',', '.'));
-  return Number.isFinite(value) && value >= 0 ? value : null;
+/** Reps typed in a set: a whole number, or an error to show under the set. */
+function parseReps(text: string): { value: number } | { error: string } {
+  const error = validateWholeNumber(text, { min: 0, max: 200, label: 'number of reps' });
+  return error ? { error } : { value: Number(text.trim()) };
+}
+
+/** Kilograms typed in a set; blank means bodyweight. */
+function parseWeight(text: string): { value: number | null } | { error: string } {
+  if (!text.trim()) return { value: null };
+  const error = validateDecimal(text, { min: 0, max: 500, label: 'weight in kg' });
+  return error ? { error } : { value: Number(text.trim().replace(',', '.')) };
 }
 
 export default function WorkoutSessionScreen() {
@@ -42,6 +51,13 @@ export default function WorkoutSessionScreen() {
   const now = useNow();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [openDemo, setOpenDemo] = useState<string | null>(null);
+  // A bad reps or weight entry keeps the set's last good value and says why.
+  const [inputErrors, setInputErrors] = useState<Record<string, string>>({});
+  const setInputError = (ei: number, si: number, error: string | null) =>
+    setInputErrors((errors) => {
+      const { [`${ei}-${si}`]: _, ...rest } = errors;
+      return error ? { ...rest, [`${ei}-${si}`]: error } : rest;
+    });
 
   if (!draft) {
     return (
@@ -147,44 +163,59 @@ export default function WorkoutSessionScreen() {
             <View style={styles.check} />
           </View>
           {exercise.sets.map((set: DraftSet, si) => (
-            <View key={si} style={styles.setRow}>
-              <ThemedText type="smallBold" style={styles.setNumber}>
-                {si + 1}
-              </ThemedText>
-              <TextInput
-                accessibilityLabel={`${exercise.name} set ${si + 1} reps`}
-                keyboardType="number-pad"
-                style={[inputStyle, styles.flex]}
-                defaultValue={String(set.reps)}
-                onEndEditing={(e) =>
-                  updateSet(ei, si, { reps: parseNumber(e.nativeEvent.text) ?? set.reps })
-                }
-              />
-              <TextInput
-                accessibilityLabel={`${exercise.name} set ${si + 1} weight in kg`}
-                keyboardType="decimal-pad"
-                placeholder="BW"
-                placeholderTextColor={theme.textSecondary}
-                style={[inputStyle, styles.flex]}
-                defaultValue={set.weightKg === null ? '' : String(set.weightKg)}
-                onEndEditing={(e) =>
-                  updateSet(ei, si, { weightKg: parseNumber(e.nativeEvent.text) })
-                }
-              />
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: set.done }}
-                accessibilityLabel={`${exercise.name} set ${si + 1} done`}
-                onPress={() => toggleSet(ei, si)}
-                style={[
-                  styles.check,
-                  {
-                    backgroundColor: set.done ? theme.primary : theme.backgroundSelected,
-                  },
-                ]}>
-                <Icon name="checkmark" size={22} color={set.done ? 'onPrimary' : 'textSecondary'} />
-              </Pressable>
-            </View>
+            <Fragment key={si}>
+              <View style={styles.setRow}>
+                <ThemedText type="smallBold" style={styles.setNumber}>
+                  {si + 1}
+                </ThemedText>
+                <TextInput
+                  accessibilityLabel={`${exercise.name} set ${si + 1} reps`}
+                  keyboardType="number-pad"
+                  style={[inputStyle, styles.flex]}
+                  defaultValue={String(set.reps)}
+                  onEndEditing={(e) => {
+                    const parsed = parseReps(e.nativeEvent.text);
+                    setInputError(ei, si, 'error' in parsed ? parsed.error : null);
+                    if ('value' in parsed) updateSet(ei, si, { reps: parsed.value });
+                  }}
+                />
+                <TextInput
+                  accessibilityLabel={`${exercise.name} set ${si + 1} weight in kg`}
+                  keyboardType="decimal-pad"
+                  placeholder="BW"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[inputStyle, styles.flex]}
+                  defaultValue={set.weightKg === null ? '' : String(set.weightKg)}
+                  onEndEditing={(e) => {
+                    const parsed = parseWeight(e.nativeEvent.text);
+                    setInputError(ei, si, 'error' in parsed ? parsed.error : null);
+                    if ('value' in parsed) updateSet(ei, si, { weightKg: parsed.value });
+                  }}
+                />
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: set.done }}
+                  accessibilityLabel={`${exercise.name} set ${si + 1} done`}
+                  onPress={() => toggleSet(ei, si)}
+                  style={[
+                    styles.check,
+                    {
+                      backgroundColor: set.done ? theme.primary : theme.backgroundSelected,
+                    },
+                  ]}>
+                  <Icon
+                    name="checkmark"
+                    size={22}
+                    color={set.done ? 'onPrimary' : 'textSecondary'}
+                  />
+                </Pressable>
+              </View>
+              {inputErrors[`${ei}-${si}`] ? (
+                <ThemedText type="small" themeColor="danger" accessibilityLiveRegion="polite">
+                  Set {si + 1}: {inputErrors[`${ei}-${si}`]}
+                </ThemedText>
+              ) : null}
+            </Fragment>
           ))}
           <Pressable accessibilityRole="button" onPress={() => addSet(ei)} style={styles.addSet}>
             <Icon name="add" size={18} color="primary" />
