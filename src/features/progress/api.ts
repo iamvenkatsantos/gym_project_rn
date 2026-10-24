@@ -1,5 +1,7 @@
-import type { WorkoutLog } from '@/features/progress/types';
-import { delay, forGym, mockLogs } from '@/lib/mock-db';
+import type { Role } from '@/features/auth/types';
+import { canViewWorkoutsOf } from '@/features/progress/rules';
+import type { GymWorkoutLog, WorkoutLog } from '@/features/progress/types';
+import { delay, forGym, mockLogs, mockPeople, mockTrainerLinks } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type LogRow = {
@@ -16,6 +18,9 @@ type LogRow = {
     exercise: { name: string };
   }[];
 };
+
+const LOG_COLUMNS =
+  'client_id, workout_id, title, started_at, completed_at, sets:workout_log_sets(exercise_id, set_number, reps, weight_kg, exercise:exercises(name))';
 
 function toLog(row: LogRow): WorkoutLog {
   return {
@@ -48,15 +53,69 @@ export async function listLogs(gymId: string, memberId: string): Promise<Workout
   const rows = unwrap(
     await supabase
       .from('workout_logs')
-      .select(
-        'client_id, workout_id, title, started_at, completed_at, sets:workout_log_sets(exercise_id, set_number, reps, weight_kg, exercise:exercises(name))',
-      )
+      .select(LOG_COLUMNS)
       .eq('gym_id', gymId)
       .eq('member_id', memberId)
       .order('completed_at', { ascending: false })
       .limit(100),
   ) as unknown as LogRow[];
   return rows.map(toLog);
+}
+
+type GymLogRow = LogRow & { member_id: string; person: { full_name: string } };
+
+/**
+ * Other people's workouts the viewer may see, newest first. The database
+ * decides who that is (see can_view_workout_logs): owners see everyone,
+ * supervisors see trainers and members, trainers see their mapped members.
+ */
+export async function listGymLogs(
+  gymId: string,
+  viewer: { id: string; role: Role },
+): Promise<GymWorkoutLog[]> {
+  if (!supabase) {
+    const logs = forGym(gymId, mockPeople).flatMap((person) =>
+      person.id !== viewer.id && canViewWorkoutsOf(viewer, person, mockTrainerLinks)
+        ? (mockLogs[person.id] ?? []).map((log) => ({
+            ...log,
+            personId: person.id,
+            personName: person.fullName,
+            personRole: person.role,
+          }))
+        : [],
+    );
+    return delay(logs.sort((a, b) => b.completedAt.localeCompare(a.completedAt)));
+  }
+  const rows = unwrap(
+    await supabase
+      .from('workout_logs')
+      .select(`member_id, person:profiles!workout_logs_member_id_fkey(full_name), ${LOG_COLUMNS}`)
+      .eq('gym_id', gymId)
+      .neq('member_id', viewer.id)
+      .order('completed_at', { ascending: false })
+      .limit(200),
+  ) as unknown as GymLogRow[];
+
+  const ids = [...new Set(rows.map((r) => r.member_id))];
+  const roles = new Map<string, Role>();
+  if (ids.length > 0) {
+    const memberships = unwrap(
+      await supabase
+        .from('gym_members')
+        .select('user_id, role')
+        .eq('gym_id', gymId)
+        .in('user_id', ids),
+    ) as { user_id: string; role: Role }[];
+    for (const m of memberships) roles.set(m.user_id, m.role);
+  }
+
+  return rows.map((r) => ({
+    ...toLog(r),
+    personId: r.member_id,
+    personName: r.person.full_name,
+    // Someone who has since left the gym keeps their history, shown as a member's.
+    personRole: roles.get(r.member_id) ?? 'member',
+  }));
 }
 
 /**

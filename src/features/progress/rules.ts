@@ -1,4 +1,6 @@
-import type { PersonalRecord, WorkoutLog } from '@/features/progress/types';
+import type { Role } from '@/features/auth/types';
+import type { TrainerLink } from '@/features/coaching/types';
+import type { GymWorkoutLog, PersonalRecord, WorkoutLog } from '@/features/progress/types';
 
 /** Local midnight on the Monday of the date's week. */
 export function startOfWeek(date: Date) {
@@ -62,4 +64,69 @@ export function personalRecords(logs: WorkoutLog[]): PersonalRecord[] {
     }
   }
   return [...best.values()].sort((a, b) => a.exerciseName.localeCompare(b.exerciseName));
+}
+
+type Person = { id: string; role: Role };
+
+/**
+ * Who may read whose workouts at a gym, mirroring can_view_workout_logs in the
+ * database: owners see everyone, supervisors see trainers and members,
+ * trainers see the members mapped to them, and everyone sees their own.
+ */
+export function canViewWorkoutsOf(viewer: Person, person: Person, links: TrainerLink[]) {
+  if (viewer.id === person.id || viewer.role === 'owner') return true;
+  if (viewer.role === 'supervisor') return person.role === 'member' || person.role === 'trainer';
+  if (viewer.role === 'trainer') {
+    return links.some((l) => l.trainerId === viewer.id && l.memberId === person.id);
+  }
+  return false;
+}
+
+/** Names of a member's trainers, alphabetically. */
+export function trainerNamesOf(memberId: string, links: TrainerLink[]) {
+  return links
+    .filter((l) => l.memberId === memberId)
+    .map((l) => l.trainerName)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+export type TrainerGroup = {
+  /** A trainer's id, or 'unassigned' for members without one, or 'staff' for staff workouts. */
+  key: string;
+  title: string;
+  logs: GymWorkoutLog[];
+};
+
+/**
+ * Members' workouts under each of their trainers, alphabetically, then members
+ * without a trainer, then staff. A member with two trainers shows under both.
+ */
+export function groupByTrainer(logs: GymWorkoutLog[], links: TrainerLink[]): TrainerGroup[] {
+  const trainers = new Map<string, TrainerGroup>();
+  const unassigned: TrainerGroup = { key: 'unassigned', title: 'No trainer yet', logs: [] };
+  const staff: TrainerGroup = { key: 'staff', title: 'Staff', logs: [] };
+
+  for (const log of logs) {
+    if (log.personRole !== 'member') {
+      staff.logs.push(log);
+      continue;
+    }
+    const mine = links.filter((l) => l.memberId === log.personId);
+    if (mine.length === 0) unassigned.logs.push(log);
+    for (const link of mine) {
+      const group = trainers.get(link.trainerId) ?? {
+        key: link.trainerId,
+        title: link.trainerName,
+        logs: [],
+      };
+      group.logs.push(log);
+      trainers.set(link.trainerId, group);
+    }
+  }
+
+  return [
+    ...[...trainers.values()].sort((a, b) => a.title.localeCompare(b.title)),
+    unassigned,
+    staff,
+  ].filter((g) => g.logs.length > 0);
 }

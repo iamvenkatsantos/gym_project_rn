@@ -359,10 +359,15 @@ function daysAgoAt(days: number, hour: number) {
   return date;
 }
 
-function pastLog(days: number, title: string, sets: WorkoutLog['sets']): WorkoutLog {
+function pastLog(
+  days: number,
+  title: string,
+  sets: WorkoutLog['sets'],
+  personId = 'u-member',
+): WorkoutLog {
   const completed = daysAgoAt(days, 8);
   return {
-    clientId: `log-${days}`,
+    clientId: `log-${personId}-${days}`,
     workoutId: title === 'Full body starter' ? 'w-1' : 'w-2',
     title,
     startedAt: new Date(completed.getTime() - 50 * 60 * 1000).toISOString(),
@@ -385,7 +390,7 @@ const set = (
   weightKg,
 });
 
-/** A few weeks of history for the demo member, keyed by member id. */
+/** A few weeks of history, keyed by the id of the person who trained. Staff train too. */
 export const mockLogs: Record<string, WorkoutLog[]> = {
   'u-member': [
     pastLog(2, 'Lower body strength', [
@@ -411,6 +416,46 @@ export const mockLogs: Record<string, WorkoutLog[]> = {
       set('e-goblet-squat', 'Goblet squat', 1, 12, 12),
       set('e-push-up', 'Push-up', 1, 10, null),
     ]),
+  ],
+  'u-member-2': [
+    pastLog(
+      1,
+      'Lower body strength',
+      [
+        set('e-back-squat', 'Back squat', 1, 5, 70),
+        set('e-back-squat', 'Back squat', 2, 5, 70),
+        set('e-romanian-deadlift', 'Romanian deadlift', 1, 8, 60),
+      ],
+      'u-member-2',
+    ),
+    pastLog(
+      6,
+      'Full body starter',
+      [set('e-goblet-squat', 'Goblet squat', 1, 12, 16), set('e-push-up', 'Push-up', 1, 15, null)],
+      'u-member-2',
+    ),
+  ],
+  'u-member-3': [
+    pastLog(3, 'Full body starter', [set('e-push-up', 'Push-up', 1, 8, null)], 'u-member-3'),
+  ],
+  'u-trainer': [
+    pastLog(
+      2,
+      'Lower body strength',
+      [set('e-back-squat', 'Back squat', 1, 5, 100), set('e-back-squat', 'Back squat', 2, 5, 100)],
+      'u-trainer',
+    ),
+  ],
+  'u-supervisor': [
+    pastLog(
+      4,
+      'Full body starter',
+      [set('e-dumbbell-row', 'Dumbbell row', 1, 10, 20)],
+      'u-supervisor',
+    ),
+  ],
+  'u-owner': [
+    pastLog(1, 'Full body starter', [set('e-goblet-squat', 'Goblet squat', 1, 12, 20)], 'u-owner'),
   ],
 };
 

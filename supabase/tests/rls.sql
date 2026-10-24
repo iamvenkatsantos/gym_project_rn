@@ -429,3 +429,65 @@ select public.cancel_class((select id from public.classes where title = 'Open gy
 reset role;
 delete from public.gym_members where user_id = '00000000-0000-0000-0000-00000000000c' and gym_id = '10000000-0000-0000-0000-000000000001';
 select count(*) as links_left from public.member_trainers where member_id = '00000000-0000-0000-0000-00000000000c';
+\echo '74 workout history by role: setup (owner A, supervisor S, trainers T and T2, members P and Q; P has T and T2, Q has no trainer)'
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000030', 'tina@example.com', now(), '{"full_name":"Tina Two"}'),
+  ('00000000-0000-0000-0000-000000000031', 'pia@example.com', now(), '{"full_name":"Pia Member"}'),
+  ('00000000-0000-0000-0000-000000000032', 'quinn@example.com', now(), '{"full_name":"Quinn Member"}');
+insert into public.gym_members (gym_id, user_id, role) values
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000030', 'trainer'),
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', 'member'),
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000032', 'member');
+insert into public.member_trainers (gym_id, member_id, trainer_id) values
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-00000000000b'),
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000030');
+delete from public.workout_logs;
+set role authenticated;
+\echo '75 owner, supervisor, trainer and members each log a workout (expect ok x6)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', 'Owner day', now() - interval '1 hour', now()) returning true as owner_ok;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000020', 'Sup day', now() - interval '1 hour', now()) returning true as supervisor_ok;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', 'Trainer day', now() - interval '1 hour', now()) returning true as trainer_ok;
+insert into public.workout_log_sets (log_id, exercise_id, set_number, reps, weight_kg)
+  select id, '30000000-0000-0000-0000-000000000001', 1, 5, 100 from public.workout_logs where title = 'Trainer day' returning true as trainer_set_ok;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000031');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', 'Pia day', now() - interval '1 hour', now()) returning true as pia_ok;
+insert into public.workout_log_sets (log_id, exercise_id, set_number, reps, weight_kg)
+  select id, '30000000-0000-0000-0000-000000000001', 1, 10, 20 from public.workout_logs where title = 'Pia day' returning true as pia_set_ok;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000032');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000032', 'Quinn day', now() - interval '1 hour', now()) returning true as quinn_ok;
+\echo '76 staff cannot log as someone else or at a gym they are not in (expect RLS error x2)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', 'x', now(), now());
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-00000000000a', 'x', now(), now());
+\echo '77 owner sees all 5 logs (expect Owner day, Pia day, Quinn day, Sup day, Trainer day)'
+select string_agg(title, ', ' order by title) as owner_sees from public.workout_logs;
+\echo '78 supervisor sees own, trainer and members, not the owner (expect Pia day, Quinn day, Sup day, Trainer day)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select string_agg(title, ', ' order by title) as supervisor_sees from public.workout_logs;
+\echo '79 trainer T sees own and mapped member P only (expect Pia day, Trainer day; sets 2)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select string_agg(title, ', ' order by title) as trainer_sees from public.workout_logs;
+select count(*) as trainer_sets from public.workout_log_sets;
+\echo '80 second trainer T2 also sees P (expect Pia day); member Q sees only own (expect Quinn day)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000030');
+select string_agg(title, ', ' order by title) as t2_sees from public.workout_logs;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000032');
+select string_agg(title, ', ' order by title) as quinn_sees from public.workout_logs;
+\echo '81 trainer cannot change a member''s log (expect UPDATE 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+update public.workout_logs set title = 'hacked' where title = 'Pia day';
+\echo '82 unmapping T from P hides P''s workouts from T (expect Trainer day)'
+reset role;
+delete from public.member_trainers where member_id = '00000000-0000-0000-0000-000000000031' and trainer_id = '00000000-0000-0000-0000-00000000000b';
+set role authenticated;
+select string_agg(title, ', ' order by title) as trainer_sees from public.workout_logs;
