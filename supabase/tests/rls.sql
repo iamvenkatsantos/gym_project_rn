@@ -187,3 +187,62 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 select public.set_trainer_availability('10000000-0000-0000-0000-000000000001', 60, '[]');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select public.set_trainer_availability('10000000-0000-0000-0000-000000000002', 60, '[]');
+
+-- Member management -------------------------------------------------------------
+reset role;
+update auth.users set email = 'xavier@example.com', email_confirmed_at = now()
+  where id = '00000000-0000-0000-0000-00000000000e';
+set role authenticated;
+
+\echo '36 owner invites an existing account (expect added), again (expect already_member)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', ' Xavier@Example.com ', 'member');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'xavier@example.com', 'trainer');
+\echo '37 owner invites a new email (expect invited), sees it pending (expect 1)'
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'New.Trainer@example.com', 'trainer');
+select email, role from public.gym_invites;
+\echo '38 member or trainer invites (expect "Only owners" twice), bad email (expect "valid email")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'friend@example.com', 'owner');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'friend@example.com', 'member');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'not-an-email', 'member');
+\echo '39 members cannot see invites (expect 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c'); select count(*) from public.gym_invites;
+\echo '40 sign-up claims the invite only once the email is confirmed (expect 0 then trainer)'
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-00000000000f', 'new.trainer@example.com', '{"full_name":"Nina New"}');
+select count(*) as before_confirm from public.gym_members where user_id = '00000000-0000-0000-0000-00000000000f';
+update auth.users set email_confirmed_at = now() where id = '00000000-0000-0000-0000-00000000000f';
+select role as after_confirm from public.gym_members where user_id = '00000000-0000-0000-0000-00000000000f';
+select count(*) as invites_left from public.gym_invites;
+set role authenticated;
+\echo '41 owner lists people with emails (expect 6 rows incl. Xavier and Nina); member gets none (expect 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select full_name, email, role from public.gym_people('10000000-0000-0000-0000-000000000001');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select count(*) from public.gym_people('10000000-0000-0000-0000-000000000001');
+\echo '42 owner suspends Xavier (expect UPDATE 1); Xavier loses gym 1 (expect 1 gym visible: Other Gym)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+update public.gym_members set status = 'suspended'
+  where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000e';
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select name from public.gyms;
+\echo '43 the only owner demotes or removes themselves (expect "at least one active owner" twice)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+update public.gym_members set role = 'member'
+  where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
+delete from public.gym_members
+  where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
+\echo '44 with a second owner, the first can step down (expect UPDATE 1 twice)'
+update public.gym_members set role = 'owner'
+  where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000f';
+update public.gym_members set role = 'trainer'
+  where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
+\echo '45 a member cannot change roles (expect UPDATE 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000-0000-00000000000d';
+\echo '46 deleting the last owner''s account still works (expect DELETE 1)'
+reset role;
+delete from auth.users where id = '00000000-0000-0000-0000-00000000000f';

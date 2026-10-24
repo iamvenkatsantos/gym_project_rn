@@ -78,9 +78,15 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Assign' }}
         />
         <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
+        <Stack.Screen name="member-progress/[memberId]" options={{ headerShown: true }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
+        <Stack.Screen
+          name="invite-person"
+          options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
+        />
+        <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: '' }} />
       </Stack.Protected>
       <Stack.Protected guard={!!role}>
         <Stack.Screen name="exercise/[exerciseId]" options={{ headerShown: true }} />

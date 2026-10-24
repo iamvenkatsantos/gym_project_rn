@@ -1,6 +1,6 @@
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
-import type { GymMember } from '@/features/members/types';
+import type { GymInvite, GymPerson } from '@/features/members/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
 import type { WorkoutLog } from '@/features/progress/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
@@ -20,6 +20,17 @@ function daysFromToday(days: number) {
 }
 
 const GYM_NAME = 'CoreFit Anna Nagar';
+
+function person(
+  id: string,
+  fullName: string,
+  role: GymPerson['role'],
+  joinedDaysAgo: number,
+  status: GymPerson['status'] = 'active',
+): GymPerson {
+  const email = `${fullName.split(' ')[0].toLowerCase()}@example.com`;
+  return { id, fullName, email, role, status, joinedAt: daysFromToday(-joinedDaysAgo) };
+}
 
 export const mockProfiles: Profile[] = [
   {
@@ -43,12 +54,30 @@ export const mockProfiles: Profile[] = [
   },
 ];
 
-/** Everyone with the member role at the demo gym. */
-export const mockMembers: GymMember[] = [
-  { id: 'u-member', fullName: 'Maya Member' },
-  { id: 'u-member-2', fullName: 'Arjun Kumar' },
-  { id: 'u-member-3', fullName: 'Priya Sharma' },
-  { id: 'u-member-4', fullName: 'Leo Martins' },
+/** Everyone at the demo gym, as the owner's People screen shows them. */
+export const mockPeople: GymPerson[] = [
+  person('u-owner', 'Olivia Owner', 'owner', 400),
+  person('u-trainer', 'Tom Trainer', 'trainer', 380),
+  person('u-trainer-2', 'Divya Raman', 'trainer', 200),
+  person('u-member', 'Maya Member', 'member', 120),
+  person('u-member-2', 'Arjun Kumar', 'member', 100),
+  person('u-member-3', 'Priya Sharma', 'member', 93),
+  person('u-member-4', 'Leo Martins', 'member', 28),
+  person('u-member-5', 'Rahul Verma', 'member', 60, 'suspended'),
+];
+
+export const mockInvites: GymInvite[] = [
+  {
+    id: 'inv-1',
+    email: 'karthik.s@example.com',
+    role: 'member',
+    createdAt: new Date(Date.now() - 2 * DAY).toISOString(),
+  },
+];
+
+/** Demo accounts that exist but aren't at the gym yet, so inviting them adds them at once. */
+export const mockAccounts: { id: string; fullName: string; email: string }[] = [
+  { id: 'u-sneha', fullName: 'Sneha Iyer', email: 'sneha@example.com' },
 ];
 
 const prescribe = (

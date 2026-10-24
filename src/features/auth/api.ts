@@ -41,6 +41,26 @@ export async function signInWithPassword(email: string, password: string): Promi
   return fetchProfile(data.user.id);
 }
 
+/**
+ * Creates an account. Returns the profile when the project signs people in
+ * straight away, or null when they first have to confirm their email. Any gym
+ * invites for that email are claimed once it's confirmed.
+ */
+export async function signUp(
+  fullName: string,
+  email: string,
+  password: string,
+): Promise<Profile | null> {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
+  if (error) throw error;
+  return data.session && data.user ? fetchProfile(data.user.id) : null;
+}
+
 /** Demo sign-in for mock mode: pick a role and get the seeded user who has it first. */
 export async function signInAsDemo(role: Role): Promise<Profile> {
   const profile = mockProfiles.find((p) => p.gyms[0]?.role === role);
