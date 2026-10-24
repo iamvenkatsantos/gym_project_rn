@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 
 import { fetchProfile, restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
@@ -25,6 +26,16 @@ export function useAuthBootstrap() {
           .catch(() => setProfile(null));
       }
     });
-    return () => data.subscription.unsubscribe();
+    // Owners can change someone's role or suspend them at any time, so pick that up on return.
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || useAuthStore.getState().status !== 'signedIn') return;
+      restoreProfile()
+        .then((profile) => profile && setProfile(profile))
+        .catch(() => {});
+    });
+    return () => {
+      data.subscription.unsubscribe();
+      appState.remove();
+    };
   }, [setProfile]);
 }
