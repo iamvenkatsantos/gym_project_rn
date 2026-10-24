@@ -6,6 +6,7 @@ import { Icon } from '@/components/icon';
 import { Pill, type PillTone } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import type { Difficulty, Exercise } from '@/features/exercises/types';
 
 export const difficultyTone: Record<Difficulty, PillTone> = {
@@ -24,6 +25,12 @@ export function ExerciseCard({ exercise }: { exercise: Exercise }) {
       }>
       {({ pressed }) => (
         <Card style={[styles.row, pressed && styles.pressed]}>
+          <ExerciseDemo
+            exerciseId={exercise.id}
+            imageUrl={exercise.imageUrl}
+            name={exercise.name}
+            variant="thumb"
+          />
           <View style={styles.body}>
             <ThemedText type="smallBold">{exercise.name}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.capitalize}>

@@ -51,6 +51,10 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 - [x] Privacy policy and terms links in the app (Account screen).
 - [x] `ITSAppUsesNonExemptEncryption: false`, so builds skip the export compliance question.
 - [x] No demo or placeholder content in production builds.
+- [x] Exercise demonstration photos are from Free Exercise DB
+      (github.com/yuhonas/free-exercise-db), public domain under the Unlicense, bundled in
+      `assets/exercises/` and credited under each demo. The dataset doesn't document where the
+      original photos came from; replace them with your own footage if you want zero doubt.
 
 **Still to do**
 
