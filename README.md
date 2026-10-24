@@ -63,6 +63,11 @@ someone in a gym or make them a trainer or owner.
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
 checklist.
 
+## Exercise library seed
+
+`supabase/seed.sql` loads the shared exercise library. It's generated from
+`src/features/exercises/library.ts` (also the demo data) with `node scripts/generate-exercise-seed.js`.
+
 ## Database checks
 
 `supabase/tests/rls.sql` exercises the RLS policies and booking rules (double-booking, availability,
@@ -95,12 +100,16 @@ src/
     member/               Member tabs: home, classes, workouts, membership
     trainer/              Trainer tabs: schedule (1:1 sessions and classes), workouts
     book-trainer/         Member: pick a trainer's slot and book
+    workout-session.tsx   Member: the workout in progress (sets, reps, rest timer)
+    exercise/             Exercise detail, shared by members and trainers
     owner/                Owner tabs: dashboard, classes, members
   features/
     auth/                 Session store, sign-in/out, profile
     workouts/             types, api, hooks, components, tests
     bookings/             classes, class bookings, booking rules
     trainers/             trainer profiles, availability slots, 1:1 sessions
+    exercises/            exercise library, search and filters
+    progress/             workout logs, offline draft, streaks and personal records
     memberships/          plans, memberships, status rules
   components/             Shared UI (Screen, Card, Button, QueryState, tabs)
   lib/                    Supabase client, query client, env, formatting, mock data

@@ -1,6 +1,7 @@
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
+import type { WorkoutLog } from '@/features/progress/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
 import type { Workout } from '@/features/workouts/types';
 
@@ -41,6 +42,15 @@ export const mockProfiles: Profile[] = [
   },
 ];
 
+const prescribe = (
+  exerciseId: string,
+  name: string,
+  sets: number,
+  reps: number,
+  targetWeightKg: number | null = null,
+  restSeconds = 90,
+) => ({ exerciseId, name, sets, reps, targetWeightKg, restSeconds });
+
 export const mockWorkouts: Workout[] = [
   {
     id: 'w-1',
@@ -50,9 +60,10 @@ export const mockWorkouts: Workout[] = [
     level: 'beginner',
     durationMinutes: 45,
     exercises: [
-      { name: 'Goblet squat', sets: 3, reps: 12 },
-      { name: 'Push-up', sets: 3, reps: 10 },
-      { name: 'Dumbbell row', sets: 3, reps: 12 },
+      prescribe('e-goblet-squat', 'Goblet squat', 3, 12, 12),
+      prescribe('e-push-up', 'Push-up', 3, 10, null, 60),
+      prescribe('e-dumbbell-row', 'Dumbbell row', 3, 12, 14),
+      prescribe('e-plank', 'Plank', 3, 30, null, 45),
     ],
   },
   {
@@ -63,9 +74,9 @@ export const mockWorkouts: Workout[] = [
     level: 'intermediate',
     durationMinutes: 60,
     exercises: [
-      { name: 'Back squat', sets: 5, reps: 5 },
-      { name: 'Romanian deadlift', sets: 4, reps: 8 },
-      { name: 'Walking lunge', sets: 3, reps: 12 },
+      prescribe('e-back-squat', 'Back squat', 5, 5, 60, 150),
+      prescribe('e-romanian-deadlift', 'Romanian deadlift', 4, 8, 50, 120),
+      prescribe('e-walking-lunge', 'Walking lunge', 3, 12),
     ],
   },
 ];
@@ -213,6 +224,68 @@ export const mockSessions: TrainerSession[] = [
     status: 'booked',
   },
 ];
+
+function daysAgoAt(days: number, hour: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  date.setHours(hour, 0, 0, 0);
+  return date;
+}
+
+function pastLog(days: number, title: string, sets: WorkoutLog['sets']): WorkoutLog {
+  const completed = daysAgoAt(days, 8);
+  return {
+    clientId: `log-${days}`,
+    workoutId: title === 'Full body starter' ? 'w-1' : 'w-2',
+    title,
+    startedAt: new Date(completed.getTime() - 50 * 60 * 1000).toISOString(),
+    completedAt: completed.toISOString(),
+    sets,
+  };
+}
+
+const set = (
+  exerciseId: string,
+  exerciseName: string,
+  setNumber: number,
+  reps: number,
+  weightKg: number | null,
+) => ({
+  exerciseId,
+  exerciseName,
+  setNumber,
+  reps,
+  weightKg,
+});
+
+/** A few weeks of history for the demo member, keyed by member id. */
+export const mockLogs: Record<string, WorkoutLog[]> = {
+  'u-member': [
+    pastLog(2, 'Lower body strength', [
+      set('e-back-squat', 'Back squat', 1, 5, 55),
+      set('e-back-squat', 'Back squat', 2, 5, 57.5),
+      set('e-back-squat', 'Back squat', 3, 5, 60),
+      set('e-romanian-deadlift', 'Romanian deadlift', 1, 8, 50),
+      set('e-romanian-deadlift', 'Romanian deadlift', 2, 8, 50),
+    ]),
+    pastLog(5, 'Full body starter', [
+      set('e-goblet-squat', 'Goblet squat', 1, 12, 14),
+      set('e-goblet-squat', 'Goblet squat', 2, 12, 14),
+      set('e-push-up', 'Push-up', 1, 12, null),
+      set('e-push-up', 'Push-up', 2, 10, null),
+      set('e-dumbbell-row', 'Dumbbell row', 1, 12, 16),
+    ]),
+    pastLog(9, 'Lower body strength', [
+      set('e-back-squat', 'Back squat', 1, 5, 55),
+      set('e-back-squat', 'Back squat', 2, 5, 55),
+      set('e-romanian-deadlift', 'Romanian deadlift', 1, 8, 45),
+    ]),
+    pastLog(16, 'Full body starter', [
+      set('e-goblet-squat', 'Goblet squat', 1, 12, 12),
+      set('e-push-up', 'Push-up', 1, 10, null),
+    ]),
+  ],
+};
 
 let nextId = 100;
 export function mockId(prefix: string) {
