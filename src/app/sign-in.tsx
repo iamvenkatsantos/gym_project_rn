@@ -10,11 +10,11 @@ import { Icon, type IconName } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
-import { signInAsDemo, signInWithPassword, signUp } from '@/features/auth/api';
+import { sendPasswordReset, signInAsDemo, signInWithPassword, signUp } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
-import { isDemoMode, isSupabaseConfigured } from '@/lib/env';
+import { isDemoMode } from '@/lib/env';
 
 const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[] = [
   { role: 'member', title: 'Member', detail: 'Book classes and track your plan', icon: 'person' },
@@ -29,6 +29,7 @@ export default function SignInScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [resetHint, setResetHint] = useState(false);
 
   const onSignedIn = (profile: Profile) => {
     setProfile(profile);
@@ -42,9 +43,12 @@ export default function SignInScreen() {
     mutationFn: () => signUp(fullName.trim(), email.trim(), password),
     onSuccess: (profile) => profile && onSignedIn(profile),
   });
+  const resetPassword = useMutation({ mutationFn: () => sendPasswordReset(email.trim()) });
   const demoSignIn = useMutation({ mutationFn: signInAsDemo, onSuccess: onSignedIn });
+  const linkError = useAuthStore((s) => s.linkError);
   const error =
-    (mode === 'signIn' ? passwordSignIn.error : createAccount.error) ?? demoSignIn.error;
+    (mode === 'signIn' ? (passwordSignIn.error ?? resetPassword.error) : createAccount.error) ??
+    demoSignIn.error;
   const awaitingConfirmation = mode === 'signUp' && createAccount.isSuccess && !createAccount.data;
 
   const inputStyle = [
@@ -67,7 +71,7 @@ export default function SignInScreen() {
         </ThemedText>
       </View>
 
-      {isSupabaseConfigured ? (
+      {!isDemoMode ? (
         <View style={styles.form}>
           {mode === 'signUp' ? (
             <TextInput
@@ -101,19 +105,54 @@ export default function SignInScreen() {
             value={password}
             onChangeText={setPassword}
           />
+          {linkError ? (
+            <Card>
+              <ThemedText type="smallBold">That email link didn&apos;t work</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {linkError}. Links work once and expire after a day. Sign in below, use Forgot
+                password, or ask your gym to invite you again.
+              </ThemedText>
+            </Card>
+          ) : null}
           {mode === 'signIn' ? (
-            <Button
-              label="Sign in"
-              loading={passwordSignIn.isPending}
-              disabled={!email || !password}
-              onPress={() => passwordSignIn.mutate()}
-            />
+            <>
+              <Button
+                label="Sign in"
+                loading={passwordSignIn.isPending}
+                disabled={!email || !password}
+                onPress={() => passwordSignIn.mutate()}
+              />
+              {resetPassword.isSuccess ? (
+                <Card highlighted>
+                  <ThemedText type="heading">Check your email</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    If {email.trim()} has a CoreFit account, we sent it a link. Open it on this
+                    phone to choose a new password.
+                  </ThemedText>
+                </Card>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={resetPassword.isPending}
+                  onPress={() => (email.trim() ? resetPassword.mutate() : setResetHint(true))}
+                  style={styles.switchMode}>
+                  <ThemedText type="linkPrimary">
+                    {resetPassword.isPending ? 'Sending…' : 'Forgot password?'}
+                  </ThemedText>
+                </Pressable>
+              )}
+              {resetHint && !email.trim() ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Enter your email above, then tap Forgot password.
+                </ThemedText>
+              ) : null}
+            </>
           ) : awaitingConfirmation ? (
             <Card highlighted>
               <ThemedText type="heading">Check your email</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                We sent a link to {email.trim()}. Confirm it, then sign in. If your gym invited this
-                email, you&apos;ll be in your gym straight away.
+                We sent a link to {email.trim()}. Open it on this phone to finish signing in. If
+                your gym invited this email, you&apos;ll be in your gym straight away.
               </ThemedText>
             </Card>
           ) : (
@@ -141,11 +180,6 @@ export default function SignInScreen() {
             </ThemedText>
           ) : null}
         </View>
-      ) : !isDemoMode ? (
-        <ThemedText themeColor="danger">
-          This build has no backend configured. Set EXPO_PUBLIC_SUPABASE_URL and
-          EXPO_PUBLIC_SUPABASE_ANON_KEY.
-        </ThemedText>
       ) : (
         <View style={styles.form}>
           <ThemedText type="label" themeColor="textSecondary">

@@ -1,8 +1,11 @@
+import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
+import { setPasswordUrl } from '@/features/auth/api';
 import type {
   CoachedMember,
   GymInvite,
   GymMember,
   GymPerson,
+  InviteOutcome,
   InviteResult,
 } from '@/features/members/types';
 import { normalizeEmail } from '@/features/members/rules';
@@ -85,42 +88,67 @@ export async function listInvites(gymId: string): Promise<GymInvite[]> {
 }
 
 /**
- * Adds someone who already has an account straight away, or leaves an invite
- * they pick up when they sign up and confirm that email.
+ * Adds someone who already has an account straight away. Anyone else gets an
+ * invite email whose link opens the app to set a password, and the invite is
+ * also kept so signing up with that email works too.
  */
 export async function invitePerson(
   gymId: string,
   email: string,
   role: GymPerson['role'],
-): Promise<InviteResult> {
-  if (!supabase) {
-    const normalized = normalizeEmail(email);
-    if (mockPeople.some((p) => p.email === normalized)) return delay('already_member');
-    const account = mockAccounts.find((a) => a.email === normalized);
-    if (account) {
-      mockPeople.push({
-        ...account,
-        role,
-        status: 'active',
-        joinedAt: new Date().toISOString(),
-      });
-      return delay('added');
-    }
-    const existing = mockInvites.find((i) => i.email === normalized);
-    if (existing) existing.role = role;
-    else {
-      mockInvites.unshift({
-        id: mockId('inv'),
-        email: normalized,
-        role,
-        createdAt: new Date().toISOString(),
-      });
-    }
-    return delay('invited');
-  }
-  return unwrap(
+): Promise<InviteOutcome> {
+  if (!supabase) return { result: await mockInvite(email, role), emailSent: false };
+
+  const { data, error } = await supabase.functions.invoke<
+    InviteOutcome & { emailError: string | null }
+  >('invite-member', {
+    body: { gymId, email, role, redirectTo: setPasswordUrl() },
+  });
+  if (!error && data) return { result: data.result, emailSent: data.emailSent };
+
+  // Before the invite-member function is deployed, still save the invite.
+  const notDeployed =
+    error instanceof FunctionsFetchError ||
+    (error instanceof FunctionsHttpError && error.context.status === 404);
+  if (!notDeployed) throw new Error(await functionErrorMessage(error));
+  const result = unwrap(
     await supabase.rpc('invite_to_gym', { p_gym_id: gymId, p_email: email, p_role: role }),
   ) as InviteResult;
+  return { result, emailSent: false };
+}
+
+async function functionErrorMessage(error: unknown): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    const body = await error.context.json().catch(() => null);
+    if (body?.error) return body.error;
+  }
+  return error instanceof Error ? error.message : 'Something went wrong';
+}
+
+async function mockInvite(email: string, role: GymPerson['role']): Promise<InviteResult> {
+  const normalized = normalizeEmail(email);
+  if (mockPeople.some((p) => p.email === normalized)) return delay('already_member');
+  const account = mockAccounts.find((a) => a.email === normalized);
+  if (account) {
+    mockPeople.push({
+      ...account,
+      role,
+      status: 'active',
+      joinedAt: new Date().toISOString(),
+    });
+    return delay('added');
+  }
+  const existing = mockInvites.find((i) => i.email === normalized);
+  if (existing) existing.role = role;
+  else {
+    mockInvites.unshift({
+      id: mockId('inv'),
+      email: normalized,
+      role,
+      createdAt: new Date().toISOString(),
+    });
+  }
+  return delay('invited');
 }
 
 export async function withdrawInvite(inviteId: string) {

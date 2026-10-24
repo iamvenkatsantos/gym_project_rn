@@ -14,24 +14,34 @@ import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useInvitePerson } from '@/features/members/hooks';
 import { isValidEmail, normalizeEmail } from '@/features/members/rules';
-import type { InviteResult } from '@/features/members/types';
+import type { InviteOutcome } from '@/features/members/types';
 
-const outcome: Record<InviteResult, { title: string; detail: string }> = {
-  added: {
-    title: 'Added to the gym',
-    detail:
-      'They already had a CoreFit account, so they can use this gym the next time they open the app.',
-  },
-  invited: {
-    title: 'Invite saved',
-    detail:
-      'Ask them to create a CoreFit account with this email. They join the gym as soon as they confirm it.',
-  },
-  already_member: {
-    title: 'Already at this gym',
-    detail: 'Find them under People to change their role or reactivate them.',
-  },
-};
+function describe({ result, emailSent }: InviteOutcome, email: string) {
+  switch (result) {
+    case 'added':
+      return {
+        title: 'Added to the gym',
+        detail:
+          'They already had a CoreFit account, so they can use this gym the next time they open the app.',
+      };
+    case 'already_member':
+      return {
+        title: 'Already at this gym',
+        detail: 'Find them under People to change their role or reactivate them.',
+      };
+    case 'invited':
+      return emailSent
+        ? {
+            title: 'Invite sent',
+            detail: `We emailed ${email} a link. It opens CoreFit to set a password, then signs them in to this gym.`,
+          }
+        : {
+            title: 'Invite saved',
+            detail:
+              "We couldn't email them, so ask them to install CoreFit and create an account with this email. They join the gym as soon as they confirm it.",
+          };
+  }
+}
 
 export default function InvitePersonScreen() {
   const gym = useActiveGym();
@@ -39,7 +49,7 @@ export default function InvitePersonScreen() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('member');
   const valid = isValidEmail(email);
-  const result = invite.data ? outcome[invite.data] : null;
+  const result = invite.data ? describe(invite.data, invite.variables.email) : null;
 
   return (
     <Screen>

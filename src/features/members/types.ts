@@ -28,6 +28,9 @@ export type GymInvite = {
 
 export type InviteResult = 'added' | 'invited' | 'already_member';
 
+/** What inviting did, and whether the invite email went out. */
+export type InviteOutcome = { result: InviteResult; emailSent: boolean };
+
 export type PeopleFilter = 'all' | Role | 'suspended';
 
 /** A member a trainer coaches through an assigned plan. */
