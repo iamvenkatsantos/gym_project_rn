@@ -55,9 +55,11 @@ export default function BookTrainerScreen() {
                   <TrainerAvatar name={t.fullName} size={56} />
                   <View style={styles.body}>
                     <ThemedText type="heading">{t.fullName}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {t.sessionMinutes} min sessions
-                    </ThemedText>
+                    {t.availability.length ? (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.sessionMinutes} min sessions
+                      </ThemedText>
+                    ) : null}
                   </View>
                 </View>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -81,7 +83,12 @@ export default function BookTrainerScreen() {
               />
 
               <SectionHeader title="Pick a time" />
-              {slots.length === 0 ? (
+              {t.availability.length === 0 ? (
+                <ThemedText themeColor="textSecondary">
+                  {t.fullName.split(' ')[0]} hasn&apos;t set bookable hours yet. Ask them at the gym
+                  or book a class meanwhile.
+                </ThemedText>
+              ) : slots.length === 0 ? (
                 <ThemedText themeColor="textSecondary">
                   {t.fullName.split(' ')[0]} isn&apos;t available this day.
                 </ThemedText>
