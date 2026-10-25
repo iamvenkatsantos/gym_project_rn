@@ -1,15 +1,26 @@
 import { isRunningInExpoGo } from 'expo';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
-import { AndroidImportance } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { removePushToken, savePushToken } from '@/features/notifications/api';
 import { supabase } from '@/lib/supabase';
 
+type NotificationsModule = typeof import('expo-notifications');
+
+/**
+ * expo-notifications, or null where loading it crashes the app: Expo Go on Android (push was
+ * removed from it in SDK 53) and the web. Everything else in the app goes through this.
+ */
+export const Notifications: NotificationsModule | null =
+  Platform.OS === 'web' || (Platform.OS === 'android' && isRunningInExpoGo())
+    ? null
+    : // Loaded lazily so the module isn't evaluated where its native side is missing.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('expo-notifications');
+
 // Pushes that arrive while the app is open still show as a banner.
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
     shouldShowList: true,
@@ -27,10 +38,9 @@ let savedToken: string | null = null;
  */
 export function pushUnavailableReason(): string | null {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return 'Push only works on phones.';
+  if (!Notifications) return 'Expo Go on Android has no push. Use a development build.';
   if (!Device.isDevice) return 'Push needs a real phone, not a simulator.';
   if (!supabase) return 'The demo has no backend to send pushes.';
-  if (Platform.OS === 'android' && isRunningInExpoGo())
-    return 'Expo Go on Android has no push. Use a development build.';
   if (!projectId()) return 'Run `eas init` so the app has an EAS project id.';
   return null;
 }
@@ -44,13 +54,13 @@ function projectId(): string | undefined {
  * for the signed-in person. Returns whether pushes are on.
  */
 export async function registerForPush({ ask }: { ask: boolean }): Promise<boolean> {
-  if (pushUnavailableReason()) return false;
+  if (!Notifications || pushUnavailableReason()) return false;
 
   if (Platform.OS === 'android') {
     // Android 13+ only shows the permission prompt once a channel exists.
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Gym updates',
-      importance: AndroidImportance.HIGH,
+      importance: Notifications.AndroidImportance.HIGH,
       lightColor: '#3DDC5C',
     });
   }
@@ -73,11 +83,18 @@ export async function unregisterForPush() {
   savedToken = null;
   if (!token) return;
   await removePushToken(token).catch(() => {});
-  await Notifications.setBadgeCountAsync(0).catch(() => {});
+  await Notifications?.setBadgeCountAsync(0).catch(() => {});
 }
 
 /** Clears the app icon badge, e.g. once the inbox has been read. */
 export function clearBadge() {
-  if (pushUnavailableReason()) return;
+  if (!Notifications || pushUnavailableReason()) return;
   Notifications.setBadgeCountAsync(0).catch(() => {});
+}
+
+/** Whether this phone allows notifications, and whether the app may still ask. */
+export async function getPushPermission() {
+  if (!Notifications) return { status: 'undetermined', canAskAgain: false };
+  const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+  return { status, canAskAgain };
 }
