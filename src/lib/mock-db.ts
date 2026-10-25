@@ -1,3 +1,4 @@
+import type { AttendanceDay } from '@/features/attendance/types';
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
 import type { TrainerLink, TrainerRequest } from '@/features/coaching/types';
@@ -458,6 +459,57 @@ export const mockLogs: Record<string, WorkoutLog[]> = {
     pastLog(1, 'Full body starter', [set('e-goblet-squat', 'Goblet squat', 1, 12, 20)], 'u-owner'),
   ],
 };
+
+/** A local calendar day, YYYY-MM-DD. The demo gym's day is the phone's day. */
+export function mockDay(daysAgo = 0) {
+  const d = new Date(Date.now() - daysAgo * DAY);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function visit(
+  userId: string,
+  role: AttendanceDay['role'],
+  daysAgo: number,
+  inAt: [number, number],
+  outAt: [number, number] | null,
+  workouts = 0,
+): AttendanceDay & { userId: string } {
+  const at = ([h, m]: [number, number]) => {
+    const d = new Date(Date.now() - daysAgo * DAY);
+    d.setHours(h, m, 0, 0);
+    return d.toISOString();
+  };
+  return {
+    userId,
+    day: mockDay(daysAgo),
+    role,
+    checkedInAt: at(inAt),
+    checkedOutAt: outAt ? at(outAt) : null,
+    workouts,
+  };
+}
+
+/**
+ * Check-ins at the demo gym over the past week. Today's are only those well
+ * before now, so nobody seems to arrive in the future.
+ */
+export const mockAttendance: (AttendanceDay & { userId: string })[] = [
+  ...[1, 2, 3, 4, 5, 6].flatMap((d) => [
+    visit('u-trainer', 'trainer', d, [6, 0], [14, 0]),
+    visit('u-trainer-2', 'trainer', d, [14, 0], [21, 0]),
+  ]),
+  visit('u-member', 'member', 2, [7, 10], [8, 15], 1),
+  visit('u-member', 'member', 5, [18, 0], [19, 5], 1),
+  visit('u-member-2', 'member', 1, [6, 30], [7, 40], 1),
+  visit('u-member-2', 'member', 3, [6, 35], [7, 30], 1),
+  visit('u-member-3', 'member', 4, [19, 0], [20, 0], 1),
+  ...(new Date().getHours() >= 8
+    ? [
+        visit('u-trainer', 'trainer', 0, [6, 0], null),
+        visit('u-member-2', 'member', 0, [6, 40], [7, 45], 1),
+      ]
+    : []),
+];
 
 let nextId = 100;
 export function mockId(prefix: string) {

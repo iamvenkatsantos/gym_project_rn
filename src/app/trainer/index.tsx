@@ -9,6 +9,7 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { CheckInCard } from '@/features/attendance/components/check-in-card';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
@@ -26,6 +27,7 @@ export default function TrainerScheduleScreen() {
 
   return (
     <Screen>
+      <CheckInCard gymId={gym.gymId} userId={profile.id} role="trainer" />
       <Card>
         <View style={styles.hours}>
           <Icon name="time-outline" size={24} color="primary" />
