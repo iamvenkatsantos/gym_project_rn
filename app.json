@@ -36,6 +36,14 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#3DDC5C",
+          "defaultChannel": "default"
+        }
       ]
     ],
     "experiments": {

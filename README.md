@@ -81,6 +81,7 @@ functions:
 ```bash
 npx supabase functions deploy delete-account   # account deletion (store requirement)
 npx supabase functions deploy invite-member    # emails invites from the People tab
+npx supabase functions deploy send-push --no-verify-jwt   # push notifications, see below
 ```
 
 A new gym's first owner is added in SQL:
@@ -118,6 +119,70 @@ Supabase settings these emails need (Dashboard → Authentication):
 
 Every one of these emails has a code as well as a link. The link only opens the app on a phone
 that has it; the code works anywhere: on the sign-in screen tap **Got a code by email? Enter it**.
+
+### Push notifications
+
+Everything that lands in the inbox is also pushed to the person's phones, and tapping it opens the
+inbox (switching to that gym if they belong to several):
+
+| When                                   | Who hears                                                  |
+| -------------------------------------- | ---------------------------------------------------------- |
+| A class starts within the hour         | Booked members, and the trainer with the head count        |
+| A 1:1 session starts within the hour   | The member and the trainer                                 |
+| A class is moved or cancelled          | Booked members, and the trainer if someone else changed it |
+| A 1:1 session is booked or cancelled   | The trainer when booked; whoever didn't cancel it          |
+| A membership is recorded               | The member                                                 |
+| A membership ends in 3 days, or today  | The member (from 9 am gym time, skipped if they renewed)   |
+| Trainer messages, requests and matches | As before (PR #14)                                         |
+
+How it works: the app saves each phone's Expo push token (`push_tokens`, via
+`register_push_token`). A statement trigger on `notifications` posts new ids through `pg_net` to
+the `send-push` edge function, which sends them with Expo's push service and drops tokens that
+Expo reports as `DeviceNotRegistered`. Reminders come from `send_reminders()`, which pg_cron runs
+every five minutes; each reminder has a dedupe key so it's sent once.
+
+One-time setup:
+
+1. `npx supabase db push` (enables `pg_cron` and `pg_net` and schedules the reminders job).
+2. Pick a random secret (`openssl rand -hex 32`) and give it to both sides:
+
+   ```bash
+   npx supabase secrets set PUSH_WEBHOOK_SECRET=<secret>
+   npx supabase functions deploy send-push --no-verify-jwt
+   ```
+
+   then in the SQL editor:
+
+   ```sql
+   select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');
+   select vault.create_secret('<secret>', 'push_webhook_secret');
+   ```
+
+   Until both Vault secrets exist, the inbox works and nothing is pushed.
+
+3. `npx eas-cli@latest init` if `app.json` has no `extra.eas.projectId` yet; push tokens need it.
+4. **Android:** create a Firebase project, add an Android app with package `com.corefit.gym`,
+   download `google-services.json` to the project root and add
+   `"googleServicesFile": "./google-services.json"` under `expo.android` in `app.json`. Then upload
+   an FCM V1 service account key with `npx eas-cli@latest credentials` (Android → production →
+   Push Notifications: FCM V1). **iOS:** `eas build` offers to create the APNs key; say yes.
+5. Optional: turn on **Enhanced security for push notifications** in your Expo account and set the
+   access token with `npx supabase secrets set EXPO_ACCESS_TOKEN=<token>`.
+
+Where you can test it:
+
+- **Expo Go on Android:** no push at all (removed in SDK 53). The inbox, bell and all the new
+  inbox messages still work; Account → Push notifications explains why it's off.
+- **Expo Go on iOS:** pushes work after `eas init`, but use a development build for anything you
+  ship.
+- **Development build** (`npx eas-cli@latest build --profile development`) or **preview/production
+  builds** on a real phone: everything, including taps opening the inbox. Simulators and emulators
+  can't get push tokens.
+
+To check the server side without a phone, insert a reminder-like row for yourself in the SQL editor
+(`select public.notify('<gym id>', '<your user id>', 'message', 'Test push', 'Hello');`) and
+look at **Edge Functions → send-push → Logs**; `select * from net._http_response order by id desc
+limit 5;` shows what `pg_net` got back.
 
 ## Releasing
 
