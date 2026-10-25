@@ -21,7 +21,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.corefit.gym"
+      "package": "com.corefit.gym",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "single",
@@ -53,6 +54,17 @@
     "backgroundColor": "#0B0B0F",
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "cc12e196-74fe-44e1-90db-abe2d1efc871"
+      }
+    },
+    "owner": "venkatesh_company"
   }
 }

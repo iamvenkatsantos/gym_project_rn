@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "916406157595",
+    "project_id": "corefit-gym",
+    "storage_bucket": "corefit-gym.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:916406157595:android:20d8f13ae7a35fb086d3be",
+        "android_client_info": {
+          "package_name": "com.corefit.gym"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeyuPsld9IWHZyhP6gxay-xv5_A7pCj5M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
