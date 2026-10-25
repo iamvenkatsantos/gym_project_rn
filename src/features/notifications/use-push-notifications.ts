@@ -1,12 +1,18 @@
-import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { notificationKeys } from '@/features/notifications/hooks';
-import { pushUnavailableReason, registerForPush } from '@/features/notifications/push';
+import {
+  Notifications,
+  pushUnavailableReason,
+  registerForPush,
+} from '@/features/notifications/push';
 import { gymForPush, parsePushData } from '@/features/notifications/rules';
 import { queryClient } from '@/lib/query-client';
+
+// Without expo-notifications (Expo Go on Android) nothing is ever tapped.
+const useLastNotificationResponse = Notifications?.useLastNotificationResponse ?? (() => null);
 
 /**
  * Registers the signed-in person's phone for pushes, refreshes the inbox when one arrives while
@@ -17,10 +23,10 @@ export function usePushNotifications() {
     s.status === 'signedIn' && !s.needsPassword ? s.profile?.id : undefined,
   );
   const hasRole = useAuthStore((s) => !s.needsPassword && !!selectActiveGym(s));
-  const lastResponse = Notifications.useLastNotificationResponse();
+  const lastResponse = useLastNotificationResponse();
 
   useEffect(() => {
-    if (!userId || pushUnavailableReason()) return;
+    if (!userId || !Notifications || pushUnavailableReason()) return;
     registerForPush({ ask: true }).catch((e) => console.warn('Push registration failed', e));
     // The OS can rotate the device token; the Expo token follows it.
     const tokens = Notifications.addPushTokenListener(() => {
@@ -37,7 +43,7 @@ export function usePushNotifications() {
 
   // A tap can arrive before sign-in is restored on a cold start, so wait for a role.
   useEffect(() => {
-    if (!lastResponse || !hasRole) return;
+    if (!lastResponse || !hasRole || !Notifications) return;
     if (lastResponse.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
     Notifications.clearLastNotificationResponse();
     const push = parsePushData(lastResponse.notification.request.content.data);

@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { AppState, Linking, StyleSheet, View } from 'react-native';
 
@@ -8,14 +7,18 @@ import { Card } from '@/components/card';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { pushUnavailableReason, registerForPush } from '@/features/notifications/push';
+import {
+  getPushPermission,
+  pushUnavailableReason,
+  registerForPush,
+} from '@/features/notifications/push';
 
 /** Shows whether pushes are on for this phone, with a way to turn them on. */
 export function PushSettings() {
   const unavailable = pushUnavailableReason();
   const permission = useQuery({
     queryKey: ['push-permission'],
-    queryFn: () => Notifications.getPermissionsAsync(),
+    queryFn: getPushPermission,
     enabled: !unavailable,
     staleTime: 0,
   });
