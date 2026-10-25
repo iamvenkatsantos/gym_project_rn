@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- modules are loaded per test, after their mocks */
 // Expo Go on Android has no native push module, so loading expo-notifications there crashes
 // the app on start. push.ts must not load it.
 describe('push in Expo Go on Android', () => {
