@@ -1,11 +1,15 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
+import { DayAttendanceList } from '@/features/attendance/components/day-attendance';
+import { useDayAttendance } from '@/features/attendance/hooks';
+import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
@@ -19,7 +23,7 @@ import { MembershipSetup } from '@/features/memberships/components/membership-se
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 
-/** The owner's and the supervisor's home: money, trainer matching and today's classes. */
+/** The owner's and the supervisor's home: money, attendance, trainer matching and today's classes. */
 export default function OwnerDashboardScreen() {
   const gym = useActiveGym();
   const memberships = useMemberships(gym.gymId);
@@ -28,6 +32,8 @@ export default function OwnerDashboardScreen() {
   const people = usePeople(gym.gymId);
   const links = useTrainerLinks(gym.gymId);
   const requests = useTrainerRequests(gym.gymId);
+  const attendance = useDayAttendance(gym.gymId, 0);
+  const present = attendance.data ? countByRole(attendance.data) : undefined;
 
   const latest = memberships.data ? [...latestByMember(memberships.data).values()] : undefined;
   const statuses = latest?.map((m) => membershipStatus(m));
@@ -52,7 +58,31 @@ export default function OwnerDashboardScreen() {
         <StatTile label="Booked today" value={bookedToday} icon="checkmark-done-outline" />
         <StatTile label="Trainer requests" value={waiting?.length} icon="hand-right-outline" />
         <StatTile label="No trainer yet" value={noTrainer} icon="person-outline" />
+        <StatTile
+          label="Members came today"
+          value={present?.member.present}
+          icon="log-in-outline"
+        />
+        <StatTile
+          label="Trainers in today"
+          value={present && `${present.trainer.present}/${present.trainer.total}`}
+          icon="barbell-outline"
+        />
       </View>
+
+      {attendance.data ? (
+        <DayAttendanceList
+          title="Trainers today"
+          entries={attendance.data.filter((e) => e.role === 'trainer')}
+          emptyText="No trainers at this gym yet."
+        />
+      ) : null}
+      <Button
+        label="Attendance report"
+        icon="calendar-number-outline"
+        variant="secondary"
+        onPress={() => router.push('/attendance')}
+      />
 
       {waiting?.length ? (
         <>

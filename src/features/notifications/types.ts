@@ -1,5 +1,11 @@
 export type NotificationKind =
-  'message' | 'trainer_request' | 'trainer_assigned' | 'reminder' | 'booking' | 'membership';
+  | 'message'
+  | 'trainer_request'
+  | 'trainer_assigned'
+  | 'reminder'
+  | 'booking'
+  | 'membership'
+  | 'attendance';
 
 /**
  * An in-app message: a nudge from the gym, news about trainer matching or bookings, or a

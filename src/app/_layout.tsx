@@ -109,6 +109,7 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
         />
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}

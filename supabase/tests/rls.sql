@@ -566,3 +566,54 @@ select public.send_reminders('2026-10-30 10:00+05:30');
 select count(*) as last_day from public.notifications where title = 'Membership ends today';
 \echo '90 statement push trigger runs without Vault or pg_net (expect INSERT ok, no error)'
 select public.notify('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', 'message', 'Push check', '');
+\echo '91 Pia (mapped to T and T2) starts a workout without checking in today (expect Check in first)'
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000031');
+select public.start_workout_attendance('10000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 'Leg day');
+\echo '92 Pia checks in (expect member, not checked out), starts the same workout twice (T was unmapped in 82, so T2 is told once: 1)'
+select role, checked_out_at is null as in_gym from public.check_in('10000000-0000-0000-0000-000000000001');
+select public.start_workout_attendance('10000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 'Leg day');
+select public.start_workout_attendance('10000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 'Leg day');
+reset role;
+select count(*) as told_started from public.notifications
+  where kind = 'attendance' and dedupe_key = 'workout-start:40000000-0000-0000-0000-000000000001';
+set role authenticated;
+\echo '93 Pia finishes it; T2 hears it once and her day counts 2 workouts with Pia day (expect 2, 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000031');
+insert into public.workout_logs (client_id, gym_id, member_id, title, started_at, completed_at)
+  values ('40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', 'Leg day', now() - interval '45 minutes', now());
+select workouts from public.my_attendance('10000000-0000-0000-0000-000000000001');
+reset role;
+select count(*) as told_finished from public.notifications
+  where kind = 'attendance' and dedupe_key = 'workout-end:40000000-0000-0000-0000-000000000001';
+set role authenticated;
+\echo '94 Pia checks out (expect checked out), then starting another workout is refused (expect Check in first)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000031');
+select checked_out_at is not null as out from public.check_out('10000000-0000-0000-0000-000000000001');
+select public.start_workout_attendance('10000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000002', 'Arms');
+\echo '95 trainer T checks in and out (expect trainer, out), out again (expect Check in first); owner checks in (expect Only members and trainers)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select role from public.check_in('10000000-0000-0000-0000-000000000001');
+select checked_out_at is not null as out from public.check_out('10000000-0000-0000-0000-000000000001');
+select public.check_out('10000000-0000-0000-0000-000000000001');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.check_in('10000000-0000-0000-0000-000000000001');
+\echo '96 supervisor reads today: Pia, Quinn (from Quinn day) and T present, absentees listed (expect 3, t); yesterday nobody (expect 0); member cannot (expect Only owners and supervisors)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select string_agg(full_name || ':' || role, ', ' order by full_name) filter (where checked_in_at is not null) as present,
+       count(*) filter (where checked_in_at is null) > 0 as lists_absent
+  from public.gym_attendance('10000000-0000-0000-0000-000000000001');
+select count(*) filter (where checked_in_at is not null) as yesterday
+  from public.gym_attendance('10000000-0000-0000-0000-000000000001', 1);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select count(*) from public.gym_attendance('10000000-0000-0000-0000-000000000001');
+\echo '97 attendance rows: member M2 sees none, owner sees Maya, Pia, Quinn and T (expect 0, 4); members cannot write rows (expect RLS error)'
+select count(*) as m2_rows from public.attendance;
+insert into public.attendance (gym_id, user_id, day, role, checked_in_at)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', current_date, 'member', now());
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select count(*) as owner_rows from public.attendance;
+\echo '98 7-day report for the owner: Pia 1 day 2 workouts, T 1 day; a 0-day report is refused (expect Pia Member|1|2, Tom Trainer|1|0, then Pick between)'
+select full_name, days_present, workouts from public.attendance_report('10000000-0000-0000-0000-000000000001', 7)
+  where full_name in ('Pia Member', 'Tom Trainer') order by full_name;
+select public.attendance_report('10000000-0000-0000-0000-000000000001', 0);

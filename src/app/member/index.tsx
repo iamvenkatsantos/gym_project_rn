@@ -7,6 +7,7 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { CheckInCard } from '@/features/attendance/components/check-in-card';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { YourTrainers } from '@/features/coaching/components/your-trainers';
@@ -32,6 +33,8 @@ export default function MemberHomeScreen() {
       <ThemedText type="small" themeColor="textSecondary" style={styles.gym}>
         {gym.gymName}
       </ThemedText>
+
+      <CheckInCard gymId={gym.gymId} userId={profile.id} role="member" />
 
       <SectionHeader title="Membership" />
       <QueryState
