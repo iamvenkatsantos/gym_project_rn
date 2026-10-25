@@ -88,16 +88,30 @@ export async function getTrainer(
       .select(TRAINER_COLUMNS)
       .eq('gym_id', gymId)
       .eq('trainer_id', trainerId)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('trainer_availability')
       .select('weekday, start_time, end_time')
       .eq('gym_id', gymId)
       .eq('trainer_id', trainerId),
   ]);
+  if (trainer.error) throw trainer.error;
+  const windows = (unwrap(availability) as AvailabilityRow[]).map(toWindow);
+  if (trainer.data) {
+    return { ...toTrainer(trainer.data as unknown as TrainerRow), availability: windows };
+  }
+  // A trainer only gets a profile row once they set their weekly hours, so a newly
+  // mapped trainer has none yet: show them with no bookable hours instead of failing.
+  const { full_name } = unwrap(
+    await supabase.from('profiles').select('full_name').eq('id', trainerId).single(),
+  );
   return {
-    ...toTrainer(unwrap(trainer) as unknown as TrainerRow),
-    availability: (unwrap(availability) as AvailabilityRow[]).map(toWindow),
+    id: trainerId,
+    fullName: full_name as string,
+    bio: '',
+    specialties: [],
+    sessionMinutes: 60,
+    availability: windows,
   };
 }
 
