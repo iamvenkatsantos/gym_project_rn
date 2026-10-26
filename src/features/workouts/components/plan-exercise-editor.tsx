@@ -69,7 +69,7 @@ export function PlanExerciseEditor({
   return (
     <Card>
       <View style={styles.header}>
-        <ThemedText type="smallBold" themeColor="primary" style={styles.position}>
+        <ThemedText type="smallBold" themeColor="accent" style={styles.position}>
           {position}
         </ThemedText>
         <ThemedText type="heading" style={styles.name} numberOfLines={2}>

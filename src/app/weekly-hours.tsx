@@ -136,7 +136,7 @@ function HoursForm({
                 accessibilityRole="button"
                 onPress={() => setWindows((all) => addWindow(all, weekday))}
                 style={styles.link}>
-                <Icon name="add" size={18} color="primary" />
+                <Icon name="add" size={18} color="accent" />
                 <ThemedText type="linkPrimary">Add hours</ThemedText>
               </Pressable>
               {day.length > 0 && weekday !== 0 ? (

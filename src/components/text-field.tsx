@@ -51,11 +51,16 @@ export function TextField({
           styles.box,
           multiline && styles.multiline,
           {
-            borderColor: visibleError ? theme.danger : focused ? theme.primary : theme.border,
+            borderColor: visibleError ? theme.danger : focused ? theme.accent : theme.border,
             backgroundColor: theme.backgroundElement,
           },
         ]}>
-        {icon ? <Icon name={icon} size={18} color={focused ? 'primary' : 'textSecondary'} /> : null}
+        {icon ? (
+          // Multiline boxes align to the top, so line the icon up with the first line of text.
+          <View style={multiline && styles.multilineIcon}>
+            <Icon name={icon} size={18} color={focused ? 'accent' : 'textSecondary'} />
+          </View>
+        ) : null}
         <TextInput
           ref={ref}
           accessibilityLabel={label}
@@ -117,6 +122,9 @@ const styles = StyleSheet.create({
   },
   multiline: {
     alignItems: 'flex-start',
+  },
+  multilineIcon: {
+    paddingTop: Spacing.three + 1,
   },
   multilineInput: {
     minHeight: 88,

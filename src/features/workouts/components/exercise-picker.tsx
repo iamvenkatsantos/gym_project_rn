@@ -64,7 +64,7 @@ export function ExercisePicker({ gymId, excludeIds, onPick }: ExercisePickerProp
                       {exercise.equipment === 'none' ? 'no equipment' : exercise.equipment}
                     </ThemedText>
                   </View>
-                  <Icon name="add-circle" size={26} color="primary" />
+                  <Icon name="add-circle" size={26} color="accent" />
                 </Pressable>
               ))}
               {matches.length > MAX_RESULTS ? (

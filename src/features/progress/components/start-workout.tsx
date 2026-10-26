@@ -88,7 +88,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
       ) : null}
       {draft ? (
         <Card highlighted>
-          <ThemedText type="label" themeColor="primary">
+          <ThemedText type="label" themeColor="accent">
             In progress
           </ThemedText>
           <ThemedText type="heading">{draft.title}</ThemedText>

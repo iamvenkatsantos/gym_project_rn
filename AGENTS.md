@@ -49,9 +49,13 @@ Docs: https://docs.expo.dev/eas/index.md
   `components/`, `__tests__/`). Keep screens thin and put logic in hooks and rules.
 - `api.ts` functions fall back to `src/lib/mock-db.ts` when Supabase env vars are missing. Keep the
   mock path working when adding API calls.
-- UI uses the single dark theme in `src/constants/theme.ts` and shared components in
-  `src/components/` (Button, Card, Pill, ProgressBar, SectionHeader, StatTile). Keep tap targets at
-  `TapTarget` or larger.
+- UI has light and dark themes in `src/constants/theme.ts`, picked by `useTheme()` from the phone's
+  setting or the Appearance choice in Account. Never hard-code colours or read `Colors` directly in a
+  screen. `primary` is the brand green for fills (with `onPrimary` on top); use `accent` for green
+  text, icons and outlines so it stays readable in light mode. Shared components live in
+  `src/components/` (Button, Card, ListRow, Pill, ProgressBar, SectionHeader, StatTile). Keep tap
+  targets at `TapTarget` or larger.
+- Give every `Stack.Screen` a `title`: iOS uses it as the back button label of the next screen.
 - Demo data is only allowed when `isDemoMode` is true (dev or `EXPO_PUBLIC_DEMO_MODE`); store
   builds must never show it. See `docs/RELEASE.md` before changing store-facing config.
 - Schema changes go in a new file under `supabase/migrations/`, with RLS policies for every table.

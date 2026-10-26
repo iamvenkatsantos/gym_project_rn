@@ -15,7 +15,7 @@ export function MembershipSetup({ isOwner }: { isOwner: boolean }) {
   return (
     <Card highlighted>
       <View style={styles.row}>
-        <Icon name="card-outline" size={22} color="primary" />
+        <Icon name="card-outline" size={22} color="accent" />
         <ThemedText type="heading">Set up memberships</ThemedText>
       </View>
       {isOwner ? (

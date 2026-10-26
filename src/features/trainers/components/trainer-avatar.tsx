@@ -11,9 +11,9 @@ export function TrainerAvatar({ name, size = 48 }: { name: string; size?: number
     <View
       style={[
         styles.avatar,
-        { width: size, height: size, borderRadius: size / 2, borderColor: theme.primary },
+        { width: size, height: size, borderRadius: size / 2, borderColor: theme.accent },
       ]}>
-      <ThemedText type="smallBold" themeColor="primary">
+      <ThemedText type="smallBold" themeColor="accent">
         {initials(name)}
       </ThemedText>
     </View>

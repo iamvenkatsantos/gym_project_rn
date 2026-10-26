@@ -52,7 +52,7 @@ export default function NotificationsScreen() {
                 <Icon
                   name={kindIcon[n.kind]}
                   size={22}
-                  color={n.readAt ? 'textSecondary' : 'primary'}
+                  color={n.readAt ? 'textSecondary' : 'accent'}
                 />
                 <View style={styles.flex}>
                   <ThemedText type="smallBold">{n.title}</ThemedText>

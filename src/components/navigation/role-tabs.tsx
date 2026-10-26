@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Tabs } from 'expo-router';
+import { Tabs, useNavigation } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { type IconName } from '@/components/icon';
@@ -17,13 +17,22 @@ export type RoleTab = {
 /** Shared tab navigator for the member, trainer, supervisor and owner areas. */
 export function RoleTabs({ tabs }: { tabs: RoleTab[] }) {
   const theme = useTheme();
+  // The tabs live in one screen of the root stack. Naming that screen after the open tab means
+  // screens pushed on top say "< People" or "< Home" on iOS, rather than the route ("< owner").
+  const stackScreen = useNavigation();
 
   return (
     <Tabs
+      screenListeners={({ route }) => ({
+        focus: () => {
+          const tab = tabs.find((t) => t.name === route.name);
+          if (tab) stackScreen.setOptions({ title: tab.title });
+        },
+      })}
       screenOptions={{
-        tabBarActiveTintColor: theme.primary,
+        tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: { backgroundColor: theme.background, borderTopColor: theme.border },
+        tabBarStyle: { backgroundColor: theme.backgroundElement, borderTopColor: theme.border },
         tabBarLabelStyle: { fontSize: 11, fontWeight: 600 },
         headerStyle: { backgroundColor: theme.background },
         headerShadowVisible: false,

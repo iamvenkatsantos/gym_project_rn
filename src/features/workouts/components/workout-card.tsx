@@ -43,7 +43,7 @@ export function WorkoutCard({ workout, action }: { workout: Workout; action?: Re
         {workout.exercises.map((exercise) => (
           <View key={exercise.exerciseId} style={styles.exercise}>
             <ThemedText type="small">{exercise.name}</ThemedText>
-            <ThemedText type="smallBold" themeColor="primary">
+            <ThemedText type="smallBold" themeColor="accent">
               {exercise.sets} × {exercise.reps}
               {exercise.targetWeightKg ? ` · ${exercise.targetWeightKg} kg` : ''}
             </ThemedText>

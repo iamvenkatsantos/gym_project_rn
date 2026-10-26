@@ -109,7 +109,7 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
             <ThemedText type="heading" style={styles.flex}>
               {name.trim()}
             </ThemedText>
-            <ThemedText type="heading" themeColor="primary">
+            <ThemedText type="heading" themeColor="accent">
               {formatPrice(priceCents, plan?.currency ?? 'INR')}
             </ThemedText>
           </View>

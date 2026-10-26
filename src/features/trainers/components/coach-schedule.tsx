@@ -31,7 +31,7 @@ export function CoachSchedule() {
     <>
       <Card>
         <View style={styles.hours}>
-          <Icon name="time-outline" size={24} color="primary" />
+          <Icon name="time-outline" size={24} color="accent" />
           <View style={styles.flex}>
             <ThemedText type="smallBold">Bookable hours</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">

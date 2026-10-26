@@ -1,20 +1,24 @@
 import { useMutation } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
+import { ListGroup, ListRow } from '@/components/list-row';
 import { Pill } from '@/components/pill';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/constants/legal';
+import { AppearancePicker } from '@/features/appearance/components/appearance-picker';
 import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
+import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { useCanSetUpGym } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
@@ -41,15 +45,7 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      <Card>
-        <ThemedText type="heading">{profile.fullName}</ThemedText>
-        {activeGym ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            {activeGym.gymName}
-          </ThemedText>
-        ) : null}
-        {activeGym ? <Pill label={activeGym.role} tone="accent" /> : null}
-      </Card>
+      <ProfileHeader profile={profile} gym={activeGym} />
 
       {profile.gyms.length > 1 ? (
         <>
@@ -72,7 +68,7 @@ export default function AccountScreen() {
                     <Pill label={g.role} tone={active ? 'accent' : 'neutral'} />
                   </View>
                   {active ? (
-                    <Icon name="checkmark-circle" size={22} color="primary" />
+                    <Icon name="checkmark-circle" size={22} color="accent" />
                   ) : (
                     <Icon name="swap-horizontal" size={20} />
                   )}
@@ -92,28 +88,38 @@ export default function AccountScreen() {
         />
       ) : null}
 
+      <SectionHeader title="Appearance" />
+      <AppearancePicker />
+
       <SectionHeader title="Notifications" />
       <PushSettings />
 
-      <SectionHeader title="Legal" />
-      <Button
-        label="Privacy policy"
-        variant="secondary"
-        icon="shield-checkmark-outline"
-        onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}
-      />
-      <Button
-        label="Terms of service"
-        variant="secondary"
-        icon="document-text-outline"
-        onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}
-      />
-      <ThemedText type="small" themeColor="textSecondary">
-        Questions? Email {SUPPORT_EMAIL}
-      </ThemedText>
+      <SectionHeader title="Help and legal" />
+      <ListGroup>
+        <ListRow
+          label="Contact support"
+          detail={SUPPORT_EMAIL}
+          icon="chatbubble-ellipses-outline"
+          onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+        />
+        <ListRow
+          divider
+          label="Privacy policy"
+          icon="shield-checkmark-outline"
+          onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}
+        />
+        <ListRow
+          divider
+          label="Terms of service"
+          icon="document-text-outline"
+          onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}
+        />
+      </ListGroup>
 
       <SectionHeader title="Account" />
-      <Button label="Sign out" variant="secondary" icon="log-out-outline" onPress={signOut} />
+      <ListGroup>
+        <ListRow label="Sign out" icon="log-out-outline" onPress={signOut} />
+      </ListGroup>
       {confirmingDelete ? (
         <Card style={styles.confirm}>
           <ThemedText type="smallBold">Delete your account?</ThemedText>
@@ -145,13 +151,19 @@ export default function AccountScreen() {
           ) : null}
         </Card>
       ) : (
-        <Button
-          label="Delete account"
-          variant="danger"
-          icon="trash-outline"
-          onPress={() => setConfirmingDelete(true)}
-        />
+        <ListGroup>
+          <ListRow
+            label="Delete account"
+            detail="Removes your profile and history for good"
+            icon="trash-outline"
+            tone="danger"
+            onPress={() => setConfirmingDelete(true)}
+          />
+        </ListGroup>
       )}
+      <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
+        CoreFit Gym {Constants.expoConfig?.version ?? ''}
+      </ThemedText>
     </Screen>
   );
 }
@@ -167,6 +179,10 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
     gap: Spacing.one,
+  },
+  version: {
+    textAlign: 'center',
+    marginTop: Spacing.two,
   },
   gymRow: {
     flexDirection: 'row',
