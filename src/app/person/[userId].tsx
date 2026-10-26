@@ -78,6 +78,17 @@ export default function PersonScreen() {
       {person.role === 'member' && !suspended ? (
         <>
           <MemberMembership gymId={gym.gymId} memberId={person.id} />
+          <Button
+            label="Workouts, measurements and photos"
+            icon="trending-up-outline"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: '/member-progress/[memberId]',
+                params: { memberId: person.id, name: person.fullName },
+              })
+            }
+          />
           <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
         </>
       ) : null}

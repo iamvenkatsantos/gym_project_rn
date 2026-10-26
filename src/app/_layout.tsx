@@ -195,6 +195,19 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Exercise' }}
         />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Inbox' }} />
+        {/* Everyone can track their body; the database decides whose they may see. */}
+        <Stack.Screen
+          name="log-measurements"
+          options={{ presentation: 'modal', headerShown: true, title: 'Log measurements' }}
+        />
+        <Stack.Screen
+          name="add-progress-photo"
+          options={{ presentation: 'modal', headerShown: true, title: 'Add a photo' }}
+        />
+        <Stack.Screen
+          name="progress-photo/[photoId]"
+          options={{ headerShown: true, title: 'Photo' }}
+        />
         <Stack.Screen
           name="announcements"
           options={{ headerShown: true, title: 'Announcements' }}
