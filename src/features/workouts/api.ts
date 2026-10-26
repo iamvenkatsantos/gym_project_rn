@@ -6,6 +6,7 @@ import { supabase, unwrap } from '@/lib/supabase';
 type WorkoutRow = {
   id: string;
   trainer_id: string;
+  trainer: { full_name: string } | null;
   title: string;
   description: string;
   level: Workout['level'];
@@ -25,6 +26,7 @@ function toWorkout(row: WorkoutRow): Workout {
   return {
     id: row.id,
     trainerId: row.trainer_id,
+    trainerName: row.trainer?.full_name,
     title: row.title,
     description: row.description,
     level: row.level,
@@ -40,6 +42,7 @@ function toWorkout(row: WorkoutRow): Workout {
         restSeconds: e.rest_seconds,
       })),
     // RLS only returns the caller's own assignment to members, and all of them to the plan's author.
+    // Plans themselves reach members only from their own trainers (or when assigned).
     assignedMemberIds: row.assignments.map((a) => a.member_id),
   };
 }
@@ -58,7 +61,7 @@ export async function listWorkouts(
   let query = supabase
     .from('workouts')
     .select(
-      'id, trainer_id, title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id)',
+      'id, trainer_id, trainer:profiles(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id)',
     )
     .eq('gym_id', gymId)
     .order('created_at', { ascending: false });

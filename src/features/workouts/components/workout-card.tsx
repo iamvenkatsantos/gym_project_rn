@@ -15,7 +15,16 @@ const levelTone: Record<WorkoutLevel, PillTone> = {
   advanced: 'danger',
 };
 
-export function WorkoutCard({ workout, action }: { workout: Workout; action?: ReactNode }) {
+export function WorkoutCard({
+  workout,
+  action,
+  showAuthor = false,
+}: {
+  workout: Workout;
+  action?: ReactNode;
+  /** Names the coach who wrote the plan, for people looking at other coaches' plans. */
+  showAuthor?: boolean;
+}) {
   const theme = useTheme();
 
   return (
@@ -35,6 +44,14 @@ export function WorkoutCard({ workout, action }: { workout: Workout; action?: Re
             {workout.exercises.length} exercises
           </ThemedText>
         </View>
+        {showAuthor && workout.trainerName ? (
+          <View style={styles.metaItem}>
+            <Icon name="person-outline" size={16} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {workout.trainerName}
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
         {workout.description}

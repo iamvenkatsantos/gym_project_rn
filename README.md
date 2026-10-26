@@ -219,6 +219,7 @@ createdb corefit_test
 psql -d corefit_test -f supabase/tests/plain-postgres-auth-stub.sql
 for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
 psql -d corefit_test -f supabase/tests/rls.sql
+psql -d corefit_test -f supabase/tests/workout-plans.sql
 ```
 
 ## Scripts
