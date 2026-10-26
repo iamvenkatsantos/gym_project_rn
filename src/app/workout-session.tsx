@@ -99,12 +99,12 @@ export default function WorkoutSessionScreen() {
 
       {resting ? (
         <Card highlighted style={styles.rest}>
-          <Icon name="timer-outline" size={28} color="primary" />
+          <Icon name="timer-outline" size={28} color="accent" />
           <View style={styles.flex}>
             <ThemedText type="label" themeColor="textSecondary">
               Rest
             </ThemedText>
-            <ThemedText type="title" themeColor="primary">
+            <ThemedText type="title" themeColor="accent">
               {clock(restUntil - now)}
             </ThemedText>
           </View>
@@ -144,7 +144,7 @@ export default function WorkoutSessionScreen() {
             <Icon
               name={openDemo === exercise.exerciseId ? 'chevron-up' : 'play-circle-outline'}
               size={18}
-              color="primary"
+              color="accent"
             />
             <ThemedText type="linkPrimary">
               {openDemo === exercise.exerciseId ? 'Hide demo' : 'Show demo'}
@@ -228,7 +228,7 @@ export default function WorkoutSessionScreen() {
             </Fragment>
           ))}
           <Pressable accessibilityRole="button" onPress={() => addSet(ei)} style={styles.addSet}>
-            <Icon name="add" size={18} color="primary" />
+            <Icon name="add" size={18} color="accent" />
             <ThemedText type="linkPrimary">Add set</ThemedText>
           </Pressable>
         </Card>

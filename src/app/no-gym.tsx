@@ -38,7 +38,7 @@ export default function NoGymScreen() {
     return (
       <Screen title="Welcome to CoreFit Gym">
         <Card>
-          <Icon name="business-outline" size={28} color="primary" />
+          <Icon name="business-outline" size={28} color="accent" />
           <ThemedText type="heading">Set up your gym</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             You&apos;ve been invited to run a gym of your own. Add its name and contact details,
@@ -58,7 +58,7 @@ export default function NoGymScreen() {
   return (
     <Screen title="Join your gym">
       <Card>
-        <Icon name="mail-unread-outline" size={28} color="primary" />
+        <Icon name="mail-unread-outline" size={28} color="accent" />
         <ThemedText type="heading">Waiting for an invite</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           Your account isn&apos;t linked to a gym yet. Ask the front desk to invite the email you

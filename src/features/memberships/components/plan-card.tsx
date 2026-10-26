@@ -14,7 +14,7 @@ export function PlanCard({ plan, current }: { plan: MembershipPlan; current?: bo
           {plan.durationDays} days{current ? ' · your plan' : ''}
         </ThemedText>
       </View>
-      <ThemedText type="heading" themeColor="primary">
+      <ThemedText type="heading" themeColor="accent">
         {formatPrice(plan.priceCents, plan.currency)}
       </ThemedText>
     </Card>

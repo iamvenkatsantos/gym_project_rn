@@ -35,7 +35,7 @@ export function CheckInCard({
         <Icon
           name={status === 'inGym' ? 'location' : 'location-outline'}
           size={24}
-          color={status === 'inGym' ? 'primary' : 'textSecondary'}
+          color={status === 'inGym' ? 'accent' : 'textSecondary'}
         />
         <View style={styles.flex}>
           <ThemedText type="smallBold">

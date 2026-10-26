@@ -35,7 +35,7 @@ export function MembershipCard({ membership }: { membership: Membership }) {
         <Pill label={pill.label} tone={pill.tone} />
       </View>
       <View style={styles.days}>
-        <ThemedText type="display" themeColor={status === 'active' ? 'primary' : 'text'}>
+        <ThemedText type="display" themeColor={status === 'active' ? 'accent' : 'text'}>
           {left}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">

@@ -46,7 +46,7 @@ export default function AssignPlanScreen() {
   return (
     <Screen>
       <View>
-        <ThemedText type="label" themeColor="primary">
+        <ThemedText type="label" themeColor="accent">
           Assign plan
         </ThemedText>
         <ThemedText type="title">{workout.title}</ThemedText>
@@ -117,7 +117,7 @@ export default function AssignPlanScreen() {
                       )}
                     </View>
                     {saving ? (
-                      <ActivityIndicator color={theme.primary} />
+                      <ActivityIndicator color={theme.accent} />
                     ) : (
                       <View
                         style={[

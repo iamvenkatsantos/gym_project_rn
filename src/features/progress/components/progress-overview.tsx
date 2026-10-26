@@ -32,7 +32,7 @@ export function ProgressOverview({ logs }: { logs: WorkoutLog[] }) {
             <ThemedText type="small" style={styles.flex}>
               {record.exerciseName}
             </ThemedText>
-            <ThemedText type="smallBold" themeColor="primary">
+            <ThemedText type="smallBold" themeColor="accent">
               {record.weightKg ? `${record.weightKg} kg × ${record.reps}` : `${record.reps} reps`}
             </ThemedText>
           </View>

@@ -23,7 +23,7 @@ export function TrainerRequestRow({
       onPress={onPress}>
       <Card highlighted={request.status === 'pending'}>
         <View style={styles.row}>
-          <Icon name="hand-right-outline" size={22} color="primary" />
+          <Icon name="hand-right-outline" size={22} color="accent" />
           <View style={styles.flex}>
             <ThemedText type="smallBold">{request.memberName}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>

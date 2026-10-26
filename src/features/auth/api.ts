@@ -146,6 +146,13 @@ export async function deleteAccount() {
   await supabase.auth.signOut();
 }
 
+/** The email the person signs in with, for showing on their profile. */
+export async function fetchAccountEmail(): Promise<string | null> {
+  if (!supabase) return delay('demo@corefit.app');
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user.email ?? null;
+}
+
 export async function restoreProfile(): Promise<Profile | null> {
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();

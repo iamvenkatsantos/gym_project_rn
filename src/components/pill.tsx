@@ -2,12 +2,13 @@ import { StyleSheet, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export type PillTone = 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
 
 const toneColor = {
-  accent: 'primary',
+  accent: 'accent',
   success: 'success',
   warning: 'warning',
   danger: 'danger',
@@ -21,10 +22,11 @@ type PillProps = {
 };
 
 export function Pill({ label, tone = 'neutral', icon }: PillProps) {
+  const theme = useTheme();
   const color = toneColor[tone];
 
   return (
-    <View style={styles.pill}>
+    <View style={[styles.pill, { backgroundColor: withAlpha(theme[color], 0.12) }]}>
       {icon ? <Icon name={icon} size={12} color={color} /> : null}
       <ThemedText type="label" themeColor={color} style={styles.text}>
         {label}
@@ -42,7 +44,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: Spacing.one,
     borderRadius: Radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   text: {
     fontSize: 11,

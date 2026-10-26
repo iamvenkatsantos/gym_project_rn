@@ -17,7 +17,7 @@ export function Card({ style, highlighted, ...rest }: CardProps) {
       type="backgroundElement"
       style={[
         styles.card,
-        highlighted && { borderLeftWidth: 4, borderLeftColor: theme.primary },
+        highlighted && { borderLeftWidth: 4, borderLeftColor: theme.accent },
         style,
       ]}
       {...rest}

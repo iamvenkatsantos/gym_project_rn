@@ -183,7 +183,7 @@ export default function InvitePersonScreen() {
       {result ? (
         <Card highlighted>
           <View style={styles.result}>
-            <Icon name="checkmark-circle" size={22} color="primary" />
+            <Icon name="checkmark-circle" size={22} color="accent" />
             <ThemedText type="heading">{result.title}</ThemedText>
           </View>
           <ThemedText type="small" themeColor="textSecondary">

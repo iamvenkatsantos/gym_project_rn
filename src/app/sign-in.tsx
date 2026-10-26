@@ -103,7 +103,7 @@ export default function SignInScreen() {
         </View>
         <ThemedText type="display">
           Train. Book.{'\n'}
-          <ThemedText type="display" themeColor="primary">
+          <ThemedText type="display" themeColor="accent">
             Repeat.
           </ThemedText>
         </ThemedText>
@@ -115,7 +115,7 @@ export default function SignInScreen() {
             <View
               key={f.label}
               style={[styles.feature, { backgroundColor: theme.backgroundElement }]}>
-              <Icon name={f.icon} size={14} color="primary" />
+              <Icon name={f.icon} size={14} color="accent" />
               <ThemedText type="small">{f.label}</ThemedText>
             </View>
           ))}
@@ -137,7 +137,7 @@ export default function SignInScreen() {
               {({ pressed }) => (
                 <Card style={[styles.roleCard, pressed && styles.pressed]}>
                   <View style={[styles.roleIcon, { backgroundColor: theme.backgroundSelected }]}>
-                    <Icon name={icon} size={22} color="primary" />
+                    <Icon name={icon} size={22} color="accent" />
                   </View>
                   <View style={styles.flex}>
                     <ThemedText type="heading">{title}</ThemedText>
@@ -146,7 +146,7 @@ export default function SignInScreen() {
                     </ThemedText>
                   </View>
                   {demoSignIn.isPending && demoSignIn.variables === role ? (
-                    <ActivityIndicator color={theme.primary} />
+                    <ActivityIndicator color={theme.accent} />
                   ) : (
                     <Icon name="chevron-forward" size={20} />
                   )}
@@ -179,7 +179,7 @@ export default function SignInScreen() {
 
             {awaitingConfirmation ? (
               <View style={styles.form}>
-                <Icon name="mail-unread-outline" size={28} color="primary" />
+                <Icon name="mail-unread-outline" size={28} color="accent" />
                 <ThemedText type="heading">Check your email</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   We sent a code to {email.trim()}. Enter it to finish. If your gym invited this
@@ -269,7 +269,7 @@ export default function SignInScreen() {
                   </ThemedText>
                 ) : null}
                 {mode === 'signIn' && resetPassword.isSuccess ? (
-                  <View style={[styles.notice, { borderColor: theme.primary }]}>
+                  <View style={[styles.notice, { borderColor: theme.accent }]}>
                     <ThemedText type="smallBold">Check your email</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       If {email.trim()} has a CoreFit Gym account, we sent it a code to choose a new

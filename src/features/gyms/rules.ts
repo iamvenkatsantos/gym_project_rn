@@ -1,8 +1,8 @@
 import type { GymDetails } from '@/features/gyms/types';
 import {
+  validateContactPhone,
   validateEmail,
   validateOptionalText,
-  validatePhone,
   validateTitle,
 } from '@/lib/validation';
 
@@ -16,13 +16,16 @@ export const emptyGymDetails: GymDetails = {
 
 export type GymDetailsErrors = Record<keyof GymDetails, string | null>;
 
-/** The name is required; the phone and email only need to be valid when given. */
+/**
+ * The name is required; the phone and email only need to be valid when given.
+ * The phone can be a landline, since many gyms list their front-desk number.
+ */
 export function validateGymDetails(details: GymDetails): GymDetailsErrors {
   return {
     name: validateTitle(details.name, { label: 'gym name', max: 80 }),
     address: validateOptionalText(details.address, 200),
     city: validateOptionalText(details.city, 60),
-    phone: details.phone.trim() ? validatePhone(details.phone) : null,
+    phone: details.phone.trim() ? validateContactPhone(details.phone) : null,
     email: details.email.trim() ? validateEmail(details.email) : null,
   };
 }
@@ -33,7 +36,7 @@ export function cleanGymDetails(details: GymDetails): GymDetails {
     name: details.name.trim(),
     address: details.address.trim(),
     city: details.city.trim(),
-    phone: details.phone.replace(/\s/g, ''),
+    phone: details.phone.replace(/[\s()-]/g, ''),
     email: details.email.trim().toLowerCase(),
   };
 }

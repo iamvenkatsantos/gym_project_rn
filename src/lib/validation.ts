@@ -66,6 +66,17 @@ export function validatePhone(phone: string): string | null {
   return PHONE_PATTERN.test(value) ? null : 'Enter a 10-digit mobile number.';
 }
 
+/** Front-desk numbers: a mobile, or a landline with its STD code, e.g. 044 2345 6789. */
+export const CONTACT_PHONE_PATTERN = /^(\+91|0)?[1-9]\d{9}$/;
+
+export function validateContactPhone(phone: string): string | null {
+  const value = phone.replace(/[\s()-]/g, '');
+  if (!value) return 'Enter a phone number.';
+  return CONTACT_PHONE_PATTERN.test(value)
+    ? null
+    : 'Enter a 10-digit mobile, or a landline with its STD code.';
+}
+
 /** Rupee amounts in paise, or null when the text isn't a valid amount. */
 export function parseAmount(text: string): number | null {
   const cleaned = text.replace(/[,\s₹]/g, '');

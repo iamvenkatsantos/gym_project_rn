@@ -45,7 +45,7 @@ export default function ExerciseScreen() {
       <Card>
         {exercise.instructions.map((step, i) => (
           <View key={step} style={styles.step}>
-            <ThemedText type="smallBold" themeColor="primary" style={styles.stepNumber}>
+            <ThemedText type="smallBold" themeColor="accent" style={styles.stepNumber}>
               {i + 1}
             </ThemedText>
             <ThemedText type="small" style={styles.flex}>

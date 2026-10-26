@@ -25,7 +25,7 @@ export function Screen({ eyebrow, title, children }: ScreenProps) {
         {title ? (
           <View>
             {eyebrow ? (
-              <ThemedText type="label" themeColor="primary">
+              <ThemedText type="label" themeColor="accent">
                 {eyebrow}
               </ThemedText>
             ) : null}

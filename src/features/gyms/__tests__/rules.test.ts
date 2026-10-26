@@ -22,7 +22,29 @@ describe('validateGymDetails', () => {
   });
 });
 
+describe('gym phone', () => {
+  it.each(['98400 12345', '+91 98400 12345', '044 2345 6789', '044-23456789', '(044) 2345 6789'])(
+    'accepts %s',
+    (phone) =>
+      expect(
+        validateGymDetails({ ...emptyGymDetails, name: 'Iron House', phone }).phone,
+      ).toBeNull(),
+  );
+
+  it.each(['12345', '0000000000', '98400 1234'])('rejects %s', (phone) =>
+    expect(
+      validateGymDetails({ ...emptyGymDetails, name: 'Iron House', phone }).phone,
+    ).not.toBeNull(),
+  );
+});
+
 describe('cleanGymDetails', () => {
+  it('drops brackets and hyphens from a landline', () => {
+    expect(cleanGymDetails({ ...emptyGymDetails, phone: '(044) 2345-6789' }).phone).toBe(
+      '04423456789',
+    );
+  });
+
   it('trims fields, drops spaces in the phone and lowercases the email', () => {
     expect(
       cleanGymDetails({
