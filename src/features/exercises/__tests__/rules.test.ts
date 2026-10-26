@@ -1,12 +1,15 @@
 import { starterExercises } from '@/features/exercises/library';
 import { emptyFilter, facets, filterExercises } from '@/features/exercises/rules';
 
+// The original twelve, so these expectations don't change as the library grows.
+const sample = starterExercises.slice(0, 12);
+
 const names = (filter: Partial<typeof emptyFilter>) =>
-  filterExercises(starterExercises, { ...emptyFilter, ...filter }).map((e) => e.name);
+  filterExercises(sample, { ...emptyFilter, ...filter }).map((e) => e.name);
 
 describe('filterExercises', () => {
   it('returns everything with no filter', () => {
-    expect(names({})).toHaveLength(starterExercises.length);
+    expect(names({})).toHaveLength(sample.length);
   });
 
   it('searches names, muscle groups and equipment, ignoring case and spaces', () => {

@@ -208,6 +208,10 @@ See [web/README.md](web/README.md).
 
 `supabase/seed.sql` loads the shared exercise library. It's generated from
 `src/features/exercises/library.ts` (also the demo data) with `node scripts/generate-exercise-seed.js`.
+When you add exercises, also pass a new migration path
+(`node scripts/generate-exercise-seed.js supabase/migrations/<timestamp>_<name>.sql`) so `supabase db push`
+loads them into existing projects; the insert skips rows that already exist. Every library exercise
+needs two demo frames in `assets/exercises/<id>/` and an entry in `src/features/exercises/demos.ts`.
 
 ## Database checks
 
