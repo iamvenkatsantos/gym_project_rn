@@ -20,10 +20,13 @@ import { pendingRequests, unmappedMembers } from '@/features/coaching/rules';
 import { useEnquiries } from '@/features/enquiries/hooks';
 import { countEnquiries } from '@/features/enquiries/rules';
 import { usePeople } from '@/features/members/hooks';
-import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
+import { RenewalRow } from '@/features/memberships/components/renewal-row';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
+
+/** How many renewals the dashboard lists before "See all". */
+const RENEWALS_SHOWN = 3;
 
 /** The owner's and the supervisor's home: money, attendance, trainer matching and today's classes. */
 export default function OwnerDashboardScreen() {
@@ -42,6 +45,7 @@ export default function OwnerDashboardScreen() {
   const latest = memberships.data ? [...latestByMember(memberships.data).values()] : undefined;
   const statuses = latest?.map((m) => membershipStatus(m));
   const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;
+  const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
   const bookedToday = today?.reduce((sum, c) => sum + c.bookedCount, 0);
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
@@ -53,11 +57,7 @@ export default function OwnerDashboardScreen() {
       {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
       <View style={styles.grid}>
         <StatTile label="Active members" value={activeCount} icon="people" accent />
-        <StatTile
-          label="Renewals due"
-          value={memberships.data && renewalsDue(memberships.data).length}
-          icon="alert-circle-outline"
-        />
+        <StatTile label="Renewals due" value={renewals?.length} icon="alert-circle-outline" />
         <StatTile label="Classes today" value={today?.length} icon="calendar-outline" />
         <StatTile label="Booked today" value={bookedToday} icon="checkmark-done-outline" />
         <StatTile label="Trainer requests" value={waiting?.length} icon="hand-right-outline" />
@@ -90,6 +90,12 @@ export default function OwnerDashboardScreen() {
         icon="chatbubbles-outline"
         variant="secondary"
         onPress={() => router.push('/enquiries')}
+      />
+      <Button
+        label="Announcements"
+        icon="megaphone-outline"
+        variant="secondary"
+        onPress={() => router.push('/announcements')}
       />
       <Button
         label="Attendance report"
@@ -132,23 +138,33 @@ export default function OwnerDashboardScreen() {
         </>
       ) : null}
 
-      <SectionHeader title="Renewals due" />
+      <SectionHeader
+        title="Renewals due"
+        detail={renewals?.length ? `${renewals.length} members` : undefined}
+      />
       <QueryState
         query={memberships}
         isEmpty={(list) => renewalsDue(list).length === 0}
         emptyText="No renewals due this week.">
         {(list) =>
-          renewalsDue(list).map((m) => (
-            <MembershipRow
-              key={m.id}
-              membership={m}
-              onRenew={() =>
-                router.push({ pathname: '/record-membership', params: { memberId: m.memberId } })
-              }
-            />
-          ))
+          renewalsDue(list)
+            .slice(0, RENEWALS_SHOWN)
+            .map((m) => <RenewalRow key={m.id} gymId={gym.gymId} membership={m} />)
         }
       </QueryState>
+      {renewals?.length ? (
+        <Button
+          label={
+            renewals.length > RENEWALS_SHOWN
+              ? `See all ${renewals.length} renewals`
+              : 'See all renewals'
+          }
+          icon="alert-circle-outline"
+          variant="secondary"
+          size="compact"
+          onPress={() => router.push('/renewals')}
+        />
+      ) : null}
 
       <SectionHeader title="Up next" />
       <QueryState

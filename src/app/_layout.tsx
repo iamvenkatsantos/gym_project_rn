@@ -132,6 +132,7 @@ function RootNavigator() {
         />
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: 'Person' }} />
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
+        <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
         <Stack.Screen
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
@@ -153,6 +154,10 @@ function RootNavigator() {
         <Stack.Screen
           name="enquiry-editor"
           options={{ presentation: 'modal', headerShown: true, title: 'New enquiry' }}
+        />
+        <Stack.Screen
+          name="new-announcement"
+          options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
         />
       </Stack.Protected>
       {/*
@@ -184,6 +189,10 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Exercise' }}
         />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Inbox' }} />
+        <Stack.Screen
+          name="announcements"
+          options={{ headerShown: true, title: 'Announcements' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen

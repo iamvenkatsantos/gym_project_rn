@@ -17,6 +17,7 @@ const useLastNotificationResponse = Notifications?.useLastNotificationResponse ?
 /**
  * Registers the signed-in person's phone for pushes, refreshes the inbox when one arrives while
  * the app is open, and opens the inbox (switching to the push's gym) when one is tapped.
+ * Announcements open the gym's announcements list instead.
  */
 export function usePushNotifications() {
   const userId = useAuthStore((s) =>
@@ -49,9 +50,9 @@ export function usePushNotifications() {
     const push = parsePushData(lastResponse.notification.request.content.data);
     const { profile, setActiveGym } = useAuthStore.getState();
     const gymId = push && profile ? gymForPush(push, profile.gyms) : null;
-    if (!gymId) return;
+    if (!gymId || !push) return;
     setActiveGym(gymId);
     queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-    router.push('/notifications');
+    router.push(push.kind === 'announcement' ? '/announcements' : '/notifications');
   }, [lastResponse, hasRole]);
 }
