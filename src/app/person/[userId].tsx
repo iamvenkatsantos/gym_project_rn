@@ -10,14 +10,14 @@ import { Screen } from '@/components/screen';
 import { SegmentedControl } from '@/components/segmented-control';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import type { Role } from '@/features/auth/types';
+import { canCoach, type Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useSetTrainer, useTrainerLinks } from '@/features/coaching/hooks';
 import { membersOf, trainersOf } from '@/features/coaching/rules';
 import type { GymPerson } from '@/features/members/types';
 import { roleTone } from '@/features/members/components/person-row';
 import { usePeople, useRemovePerson, useUpdatePerson } from '@/features/members/hooks';
-import { isLastActiveOwner } from '@/features/members/rules';
+import { activeCoaches, coachLabel, isLastActiveOwner } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { useMemberships } from '@/features/memberships/hooks';
@@ -78,7 +78,7 @@ export default function PersonScreen() {
           <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
         </>
       ) : null}
-      {person.role === 'trainer' ? (
+      {canCoach(person.role) ? (
         <TrainerMembers gymId={gym.gymId} trainerId={person.id} />
       ) : null}
 
@@ -109,7 +109,11 @@ export default function PersonScreen() {
             ) : person.role === 'supervisor' ? (
               <ThemedText type="small" themeColor="textSecondary">
                 Supervisors record payments, invite members and trainers, and match members with
-                trainers.
+                trainers. They can also coach members themselves.
+              </ThemedText>
+            ) : person.role === 'owner' ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Owners can do everything, including supervisor and trainer work.
               </ThemedText>
             ) : null}
           </View>
@@ -222,9 +226,11 @@ function MemberTrainers({
   member: GymPerson;
   people: GymPerson[];
 }) {
+  const profile = useProfile();
   const links = useTrainerLinks(gymId);
   const setTrainer = useSetTrainer(gymId);
-  const trainers = people.filter((p) => p.role === 'trainer' && p.status === 'active');
+  // Owners and supervisors can coach too, for gyms without (enough) trainers.
+  const trainers = activeCoaches(people);
   const assigned = new Set(trainersOf(links.data ?? [], member.id).map((l) => l.trainerId));
 
   return (
@@ -239,7 +245,7 @@ function MemberTrainers({
             return (
               <Chip
                 key={t.id}
-                label={`${t.fullName} · ${membersOf(links.data ?? [], t.id).length}`}
+                label={`${coachLabel(t, profile.id)} · ${membersOf(links.data ?? [], t.id).length}`}
                 selected={on}
                 onPress={() =>
                   !setTrainer.isPending &&
@@ -251,12 +257,13 @@ function MemberTrainers({
         </View>
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
-          Invite a trainer first.
+          Nobody active can coach yet.
         </ThemedText>
       )}
       <ThemedText type="small" themeColor="textSecondary">
-        Tap to add or remove. The number is each trainer&apos;s members. Removing a trainer also
-        takes their plans off {member.fullName.split(' ')[0]}.
+        Tap to add or remove. Pick yourself to train {member.fullName.split(' ')[0]} when there&apos;s
+        no trainer free. The number is each trainer&apos;s members. Removing a trainer also takes
+        their plans off {member.fullName.split(' ')[0]}.
       </ThemedText>
       {setTrainer.error ? (
         <ThemedText themeColor="danger">{setTrainer.error.message}</ThemedText>

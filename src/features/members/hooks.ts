@@ -10,26 +10,32 @@ import {
   updatePerson,
   withdrawInvite,
 } from '@/features/members/api';
+import type { MemberKind } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
 
 export const memberKeys = {
   all: ['members'] as const,
-  list: (gymId: string, role: 'member' | 'trainer') => [...memberKeys.all, gymId, role] as const,
+  list: (gymId: string, kind: MemberKind) => [...memberKeys.all, gymId, kind] as const,
   people: (gymId: string) => [...memberKeys.all, gymId, 'people'] as const,
   invites: (gymId: string) => [...memberKeys.all, gymId, 'invites'] as const,
   coached: (gymId: string, trainerId: string) =>
     [...memberKeys.all, gymId, 'coached', trainerId] as const,
 };
 
-export function useGymMembers(gymId: string, role: 'member' | 'trainer' = 'member') {
+export function useGymMembers(gymId: string, kind: MemberKind = 'member') {
   return useQuery({
-    queryKey: memberKeys.list(gymId, role),
-    queryFn: () => listGymMembers(gymId, role),
+    queryKey: memberKeys.list(gymId, kind),
+    queryFn: () => listGymMembers(gymId, kind),
   });
 }
 
-export function usePeople(gymId: string) {
-  return useQuery({ queryKey: memberKeys.people(gymId), queryFn: () => listPeople(gymId) });
+/** Everyone at the gym; pass enabled: false for roles that can't list people. */
+export function usePeople(gymId: string, { enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: memberKeys.people(gymId),
+    queryFn: () => listPeople(gymId),
+    enabled,
+  });
 }
 
 export function useInvites(gymId: string) {

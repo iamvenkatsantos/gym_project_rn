@@ -9,7 +9,7 @@ import type {
   InviteOutcome,
   InviteResult,
 } from '@/features/members/types';
-import { normalizeEmail } from '@/features/members/rules';
+import { coachRoles, normalizeEmail, sortCoaches, type MemberKind } from '@/features/members/rules';
 import {
   delay,
   forGym,
@@ -21,7 +21,7 @@ import {
 } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
-type MemberRow = { user_id: string; profile: { full_name: string } };
+type MemberRow = { user_id: string; role: GymPerson['role']; profile: { full_name: string } };
 
 type PersonRow = {
   user_id: string;
@@ -36,29 +36,35 @@ type InviteRow = { id: string; email: string; role: GymInvite['role']; created_a
 
 type CoachedRow = { member_id: string; workout: { title: string } };
 
-/** Active members (or trainers) of a gym, by name. Anyone at the gym can read this. */
+/**
+ * Active members of a gym, or its coaches (trainers, plus the owners and
+ * supervisors who can coach too), by name. Anyone at the gym can read this.
+ */
 export async function listGymMembers(
   gymId: string,
-  role: 'member' | 'trainer' = 'member',
+  kind: MemberKind = 'member',
 ): Promise<GymMember[]> {
+  const roles: GymPerson['role'][] = kind === 'coach' ? coachRoles : ['member'];
   if (!supabase) {
     return delay(
-      forGym(gymId, mockPeople)
-        .filter((p) => p.role === role && p.status === 'active')
-        .map(({ id, fullName }) => ({ id, fullName })),
+      sortCoaches(
+        forGym(gymId, mockPeople)
+          .filter((p) => roles.includes(p.role) && p.status === 'active')
+          .map(({ id, fullName, role }) => ({ id, fullName, role })),
+      ),
     );
   }
   const rows = unwrap(
     await supabase
       .from('gym_members')
-      .select('user_id, profile:profiles!gym_members_user_id_fkey(full_name)')
+      .select('user_id, role, profile:profiles!gym_members_user_id_fkey(full_name)')
       .eq('gym_id', gymId)
-      .eq('role', role)
+      .in('role', roles)
       .eq('status', 'active'),
   ) as unknown as MemberRow[];
-  return rows
-    .map((r) => ({ id: r.user_id, fullName: r.profile.full_name }))
-    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+  return sortCoaches(
+    rows.map((r) => ({ id: r.user_id, fullName: r.profile.full_name, role: r.role })),
+  );
 }
 
 /** Everyone at the gym with their email. Owners and supervisors only. */

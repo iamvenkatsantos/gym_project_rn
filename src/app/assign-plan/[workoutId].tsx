@@ -11,10 +11,13 @@ import { SectionHeader } from '@/components/section-header';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { canManageGym } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
-import { useCoachedMembers } from '@/features/members/hooks';
+import { useAssignPlan } from '@/features/coaching/hooks';
+import { assignableMembers } from '@/features/coaching/rules';
+import { useCoachedMembers, usePeople } from '@/features/members/hooks';
 import { initials } from '@/features/trainers/rules';
-import { useSetAssignment, useWorkout } from '@/features/workouts/hooks';
+import { useWorkout } from '@/features/workouts/hooks';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function AssignPlanScreen() {
@@ -23,8 +26,11 @@ export default function AssignPlanScreen() {
   const profile = useProfile();
   const gym = useActiveGym();
   const { workout, isPending } = useWorkout(gym.gymId, profile.id, workoutId);
+  // Owners and supervisors can coach anyone; trainers only their mapped members.
+  const manager = canManageGym(gym.role);
   const members = useCoachedMembers(gym.gymId, profile.id);
-  const assign = useSetAssignment();
+  const people = usePeople(gym.gymId, { enabled: manager });
+  const assign = useAssignPlan(gym.gymId, profile.id);
   const [query, setQuery] = useState('');
 
   if (!workout) {
@@ -45,8 +51,10 @@ export default function AssignPlanScreen() {
         </ThemedText>
         <ThemedText type="title">{workout.title}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Members you assign see this plan first. You can assign it to the members your gym matched
-          with you.
+          Members you assign see this plan first.{' '}
+          {manager
+            ? 'Assigning someone you don’t coach yet also makes you their trainer.'
+            : 'You can assign it to the members your gym matched with you.'}
         </ThemedText>
       </View>
       <TextField
@@ -59,11 +67,13 @@ export default function AssignPlanScreen() {
       <SectionHeader title="Members" detail={`${workout.assignedMemberIds.length} assigned`} />
       <QueryState
         query={members}
-        isEmpty={(list) => list.length === 0}
+        isEmpty={(list) => !manager && list.length === 0}
         emptyText="No members matched with you yet. Ask the owner or a supervisor to assign some.">
         {(list) => {
           const q = query.trim().toLowerCase();
-          const matches = list.filter((m) => m.fullName.toLowerCase().includes(q));
+          const matches = assignableMembers(list, manager ? people.data : []).filter((m) =>
+            m.fullName.toLowerCase().includes(q),
+          );
           if (matches.length === 0) {
             return <ThemedText themeColor="textSecondary">No members match.</ThemedText>;
           }
@@ -84,6 +94,7 @@ export default function AssignPlanScreen() {
                         workoutId: workout.id,
                         memberId: member.id,
                         assigned: !assigned,
+                        mapFirst: !member.coached,
                       })
                     }
                     style={({ pressed }) => [
@@ -97,9 +108,14 @@ export default function AssignPlanScreen() {
                     <View style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}>
                       <ThemedText type="smallBold">{initials(member.fullName)}</ThemedText>
                     </View>
-                    <ThemedText type="smallBold" style={styles.name}>
-                      {member.fullName}
-                    </ThemedText>
+                    <View style={styles.name}>
+                      <ThemedText type="smallBold">{member.fullName}</ThemedText>
+                      {member.coached ? null : (
+                        <ThemedText type="small" themeColor="textSecondary">
+                          Not your member yet
+                        </ThemedText>
+                      )}
+                    </View>
                     {saving ? (
                       <ActivityIndicator color={theme.primary} />
                     ) : (

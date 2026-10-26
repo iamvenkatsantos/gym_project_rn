@@ -29,6 +29,24 @@ export function unmappedMembers(people: GymPerson[], links: TrainerLink[]) {
   return people.filter((p) => p.role === 'member' && p.status === 'active' && !mapped.has(p.id));
 }
 
+/**
+ * Members a coach can assign plans to: their own first, then, for owners and
+ * supervisors, every other active member, flagged so assigning maps them too.
+ */
+export function assignableMembers(
+  coached: { id: string; fullName: string }[],
+  others: GymPerson[] = [],
+) {
+  const mine = new Set(coached.map((m) => m.id));
+  return [
+    ...coached.map(({ id, fullName }) => ({ id, fullName, coached: true })),
+    ...others
+      .filter((p) => p.role === 'member' && p.status === 'active' && !mine.has(p.id))
+      .sort((a, b) => a.fullName.localeCompare(b.fullName))
+      .map(({ id, fullName }) => ({ id, fullName, coached: false })),
+  ];
+}
+
 export function pendingRequests(requests: TrainerRequest[]) {
   return requests
     .filter((r) => r.status === 'pending')

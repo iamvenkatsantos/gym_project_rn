@@ -13,6 +13,7 @@ import { SectionHeader } from '@/components/section-header';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing, TapTarget } from '@/constants/theme';
+import { canCoach } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useTrainerLinks } from '@/features/coaching/hooks';
 import { membersOf, trainersOf } from '@/features/coaching/rules';
@@ -154,8 +155,10 @@ function coachingDetail(person: GymPerson, links: TrainerLink[]) {
     const trainers = trainersOf(links, person.id).map((l) => l.trainerName);
     return trainers.length ? `Trainer: ${trainers.join(', ')}` : 'No trainer yet';
   }
-  if (person.role === 'trainer') {
+  if (canCoach(person.role)) {
     const count = membersOf(links, person.id).length;
+    // Owners and supervisors only show it when they coach someone.
+    if (person.role !== 'trainer' && count === 0) return undefined;
     return `${count} member${count === 1 ? '' : 's'}`;
   }
   return undefined;
