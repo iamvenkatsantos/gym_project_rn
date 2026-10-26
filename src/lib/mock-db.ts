@@ -1,5 +1,6 @@
 import type { AttendanceDay } from '@/features/attendance/types';
 import type { Profile } from '@/features/auth/types';
+import type { BodyMeasurement, ProgressPhoto } from '@/features/body/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
 import type { TrainerLink, TrainerRequest } from '@/features/coaching/types';
 import type { GymInvite, GymPerson } from '@/features/members/types';
@@ -510,6 +511,50 @@ export const mockAttendance: (AttendanceDay & { userId: string })[] = [
       ]
     : []),
 ];
+
+function measurement(
+  daysAgo: number,
+  values: Partial<Omit<BodyMeasurement, 'id' | 'measuredOn'>>,
+): BodyMeasurement {
+  return {
+    id: `bm-${daysAgo}`,
+    measuredOn: daysFromToday(-daysAgo),
+    weightKg: null,
+    heightCm: null,
+    bodyFatPct: null,
+    chestCm: null,
+    waistCm: null,
+    hipsCm: null,
+    armCm: null,
+    thighCm: null,
+    note: null,
+    ...values,
+  };
+}
+
+/** Two months of check-ins for Maya, keyed by member id. */
+export const mockMeasurements: Record<string, BodyMeasurement[]> = {
+  'u-member': [
+    measurement(63, {
+      weightKg: 74.2,
+      heightCm: 165,
+      bodyFatPct: 31,
+      waistCm: 88,
+      chestCm: 96,
+      hipsCm: 104,
+      armCm: 31,
+      thighCm: 58,
+      note: 'Starting point',
+    }),
+    measurement(49, { weightKg: 73.4, bodyFatPct: 30.4, waistCm: 87 }),
+    measurement(35, { weightKg: 72.9, waistCm: 85.5 }),
+    measurement(21, { weightKg: 71.8, bodyFatPct: 29.1, waistCm: 84, hipsCm: 102 }),
+    measurement(7, { weightKg: 71.1, waistCm: 83, armCm: 31.5 }),
+  ],
+};
+
+/** Uploaded photos. Demo uploads keep the picked file's local uri as their url. */
+export const mockPhotos: Record<string, ProgressPhoto[]> = {};
 
 let nextId = 100;
 export function mockId(prefix: string) {

@@ -122,11 +122,12 @@ select count(*) from public.workout_log_sets;
 \echo '22 trainer cannot assign a plan to someone outside the gym (expect RLS error)'
 insert into public.workout_assignments (workout_id, member_id)
   values ('40000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000e');
-\echo '23 body measurements stay private (member 1, trainer 0)'
+\echo '23 body measurements: member 1, their trainer 1, another member 0'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
-insert into public.body_measurements (member_id, metric, value) values ('00000000-0000-0000-0000-00000000000c','weight_kg',62.5);
+insert into public.body_measurements (gym_id, member_id, weight_kg) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000c',62.5);
 select count(*) from public.body_measurements;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b'); select count(*) from public.body_measurements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d'); select count(*) from public.body_measurements;
 \echo '24 member cannot edit plan exercises (expect RLS error), trainer can (expect ok)'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 insert into public.workout_exercises (workout_id, exercise_id, position, sets, reps) values ('40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,3,10);
@@ -735,3 +736,42 @@ update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000
 update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
 \echo '117 nobody makes themselves an admin from the app (expect permission denied)'
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-000000000099');
+
+-- Body progress (checks 118+). Uma (21) is mapped to Tom (b); Ravi (22) has no trainer; Sam is a supervisor again.
+reset role;
+update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-000000000020';
+set role authenticated;
+\echo '118 Uma logs today again (expect INSERT 0 1, 1 row), an empty entry (expect check violation), a 500 kg weight (expect check violation)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000021');
+insert into public.body_measurements (gym_id, member_id, measured_on, weight_kg, waist_cm) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021',current_date,62,80)
+  on conflict (gym_id, member_id, measured_on) do update set weight_kg = excluded.weight_kg, waist_cm = excluded.waist_cm;
+select count(*) as uma_entries from public.body_measurements where member_id = '00000000-0000-0000-0000-000000000021';
+insert into public.body_measurements (gym_id, member_id, measured_on) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021',current_date - 1);
+insert into public.body_measurements (gym_id, member_id, weight_kg, measured_on) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021',500,current_date - 2);
+\echo '119 Uma cannot log for Ravi (expect RLS error) or at a gym she is not in (expect RLS error)'
+insert into public.body_measurements (gym_id, member_id, weight_kg) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000022',70);
+insert into public.body_measurements (gym_id, member_id, weight_kg) values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000021',70);
+\echo '120 Tom cannot change Uma''s entry (expect UPDATE 0); owner and supervisor see it (expect 1, 1); outsider sees 0'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+update public.body_measurements set weight_kg = 90 where member_id = '00000000-0000-0000-0000-000000000021';
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a'); select count(*) as owner_sees from public.body_measurements where member_id = '00000000-0000-0000-0000-000000000021';
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020'); select count(*) as supervisor_sees from public.body_measurements where member_id = '00000000-0000-0000-0000-000000000021';
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select count(*) as outsider_sees from public.body_measurements;
+\echo '121 Uma uploads a photo to her folder (expect INSERT x2), not to Ravi''s (expect RLS error x2)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000021');
+insert into storage.objects (bucket_id, name) values ('progress-photos', '10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000021/p1.jpg');
+insert into public.progress_photos (gym_id, member_id, storage_path, pose) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021','10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000021/p1.jpg','front');
+insert into storage.objects (bucket_id, name) values ('progress-photos', '10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000022/p1.jpg');
+insert into public.progress_photos (gym_id, member_id, storage_path) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000022','10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000022/p1.jpg');
+\echo '122 Tom sees the photo and file (expect 1, 1) but cannot delete it (expect DELETE 0); Ravi sees nothing (expect 0, 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select count(*) as tom_photos from public.progress_photos;
+select count(*) as tom_files from storage.objects where bucket_id = 'progress-photos';
+delete from storage.objects where bucket_id = 'progress-photos';
+select pg_temp.as_user('00000000-0000-0000-0000-000000000022');
+select count(*) as ravi_photos from public.progress_photos;
+select count(*) as ravi_files from storage.objects where bucket_id = 'progress-photos';
+\echo '123 Uma deletes her photo (expect DELETE 1, DELETE 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000021');
+delete from storage.objects where bucket_id = 'progress-photos';
+delete from public.progress_photos;
