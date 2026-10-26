@@ -18,6 +18,9 @@ insert into public.gym_members (gym_id, user_id, role) values
 insert into public.trainer_profiles (gym_id, trainer_id, specialties) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b','{strength}');
 insert into public.trainer_availability (gym_id, trainer_id, weekday, start_time, end_time) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b',1,'09:00','12:00');
 
+-- Olivia also runs CoreFit Gym itself, so she can add owners; checks 109+ cover owners who don't.
+insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-00000000000a');
+
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 set role authenticated;
 
@@ -256,6 +259,8 @@ delete from auth.users where id = '00000000-0000-0000-0000-00000000000f';
 
 -- Gym setup -------------------------------------------------------------------------
 reset role;
+-- As the SQL editor would: no signed-in user.
+select pg_temp.as_user('');
 update public.gym_members set role = 'owner', status = 'active'
   where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
 set role authenticated;
@@ -328,7 +333,7 @@ insert into public.gym_members (gym_id, user_id, role) values
   ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000022', 'member');
 set role authenticated;
 
-\echo '56 supervisor invites a member and a trainer (expect invited twice), not a supervisor or owner (expect "Only owners can invite supervisors" twice)'
+\echo '56 supervisor invites a member and a trainer (expect invited twice), not a supervisor (expect "Only owners can invite supervisors") or owner (expect "Only CoreFit Gym admins")'
 select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
 select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'new.member@example.com', 'member');
 select public.invite_to_gym('10000000-0000-0000-0000-000000000001', 'new.coach@example.com', 'trainer');
@@ -683,7 +688,7 @@ update public.gym_members set role = 'trainer' where user_id = '00000000-0000-00
 select count(*) as kept from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
 update public.gym_members set role = 'member' where user_id = '00000000-0000-0000-0000-000000000020';
 select count(*) as dropped from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
-\echo '109 member cannot invite a gym owner (expect "Only gym owners") or set up a gym (expect "Ask CoreFit Gym")'
+\echo '109 member cannot invite a gym owner (expect "Only CoreFit Gym admins") or set up a gym (expect "Ask CoreFit Gym")'
 reset role;
 insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000099', 'grace@example.com', now(), '{"full_name":"Grace Newowner"}');
@@ -691,15 +696,15 @@ set role authenticated;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
 select public.invite_gym_owner('grace@example.com');
 select public.create_gym('Sneaky Gym', '', '', '', '');
-\echo '110 owner invites Grace to run a new gym (expect added); Grace can set one up (expect t)'
+\echo '110 admin invites Grace to run a new gym (expect added); Grace can set one up (expect t)'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select public.invite_gym_owner('Grace@Example.com ');
 select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
 select public.can_set_up_gym();
-\echo '111 Grace creates her gym (expect ok), is its owner, invite used up (expect 0 left), sees only her gym and herself'
+\echo '111 Grace creates her gym (expect ok), is its owner, invite used up (expect f and 0 left), sees only her gym and herself'
 select public.create_gym(' Iron House ', '12 Main Rd', 'Chennai', '9840012345', 'Desk@IronHouse.in') is not null as ok;
 select g.name, g.city, g.email, gm.role from public.gyms g join public.gym_members gm on gm.gym_id = g.id;
-select public.can_set_up_gym() as can_still_set_up_through_ownership;
+select public.can_set_up_gym() as can_set_up_another;
 reset role;
 select count(*) as invite_left from public.gym_setup_invites;
 set role authenticated;
@@ -714,3 +719,19 @@ select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
 update public.gyms set phone = '9840099999' where name = 'Iron House';
 update public.gyms set name = 'Hacked' where id = '10000000-0000-0000-0000-000000000001';
 update public.gyms set created_by = null where name = 'Iron House';
+\echo '114 Grace is an owner but not an admin (expect f, and Olivia t)'
+select public.is_platform_admin() as grace_admin;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.is_platform_admin() as olivia_admin;
+\echo '115 Grace cannot invite a new gym owner, add an owner, or set up another gym (expect "Only CoreFit Gym admins" x2, f, "Ask CoreFit Gym")'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
+select public.invite_gym_owner('friend.gym@example.com');
+select public.invite_to_gym((select id from public.gyms where name = 'Iron House'), 'friend.gym@example.com', 'owner');
+select public.can_set_up_gym();
+select public.create_gym('Second Branch', '', '', '', '');
+\echo '116 Grace adds Xavier as a member (expect added), cannot make him owner (expect "Only CoreFit Gym admins") but can make him supervisor (expect UPDATE 1)'
+select public.invite_to_gym((select id from public.gyms where name = 'Iron House'), 'xavier@example.com', 'member');
+update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
+update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
+\echo '117 nobody makes themselves an admin from the app (expect permission denied)'
+insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-000000000099');
