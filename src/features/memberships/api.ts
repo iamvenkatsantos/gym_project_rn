@@ -163,3 +163,14 @@ export async function recordMembership(gymId: string, input: MembershipInput) {
   });
   if (error) throw error;
 }
+
+/**
+ * Pushes a member a reminder to renew. Each member hears once a day however
+ * many staff tap it; false means they were already reminded today.
+ */
+export async function remindRenewal(gymId: string, memberId: string): Promise<boolean> {
+  if (!supabase) return delay(true);
+  return unwrap(
+    await supabase.rpc('remind_renewal', { p_gym_id: gymId, p_member_id: memberId }),
+  ) as boolean;
+}
