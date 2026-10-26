@@ -21,6 +21,7 @@ const kindIcon: Record<NotificationKind, IconName> = {
   booking: 'calendar-outline',
   membership: 'card-outline',
   attendance: 'barbell-outline',
+  announcement: 'megaphone-outline',
 };
 
 export default function NotificationsScreen() {

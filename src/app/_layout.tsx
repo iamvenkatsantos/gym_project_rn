@@ -144,6 +144,10 @@ function RootNavigator() {
           name="message-trainer"
           options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
         />
+        <Stack.Screen
+          name="new-announcement"
+          options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
+        />
       </Stack.Protected>
       {/*
         Coaching tools. Owners and supervisors coach too, so a gym without trainers still runs.
@@ -174,6 +178,10 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Exercise' }}
         />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Inbox' }} />
+        <Stack.Screen
+          name="announcements"
+          options={{ headerShown: true, title: 'Announcements' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen
