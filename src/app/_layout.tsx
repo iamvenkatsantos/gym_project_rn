@@ -144,6 +144,16 @@ function RootNavigator() {
           name="message-trainer"
           options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
         />
+        {/* The front desk: walk-in enquiries, follow-ups and trial passes. */}
+        <Stack.Screen name="enquiries" options={{ headerShown: true, title: 'Enquiries' }} />
+        <Stack.Screen
+          name="enquiry/[enquiryId]"
+          options={{ headerShown: true, title: 'Enquiry' }}
+        />
+        <Stack.Screen
+          name="enquiry-editor"
+          options={{ presentation: 'modal', headerShown: true, title: 'New enquiry' }}
+        />
       </Stack.Protected>
       {/*
         Coaching tools. Owners and supervisors coach too, so a gym without trainers still runs.
