@@ -120,6 +120,7 @@ function RootNavigator() {
         />
         {/* Only owners take reports out of the app; the server enforces it too. */}
         <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
+        <Stack.Screen name="insights" options={{ headerShown: true, title: 'Insights' }} />
         <Stack.Screen name="gym-details" options={{ headerShown: true, title: 'Gym details' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>

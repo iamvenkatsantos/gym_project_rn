@@ -105,6 +105,14 @@ export default function OwnerDashboardScreen() {
       />
       {gym.role === 'owner' ? (
         <Button
+          label="Insights"
+          icon="stats-chart-outline"
+          variant="secondary"
+          onPress={() => router.push('/insights')}
+        />
+      ) : null}
+      {gym.role === 'owner' ? (
+        <Button
           label="Export reports"
           icon="download-outline"
           variant="secondary"
