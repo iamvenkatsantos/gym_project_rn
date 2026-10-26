@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople, useUpdatePerson } from '@/features/members/hooks';
 import { normalizeEmail } from '@/features/members/rules';
 import { validateEmail } from '@/lib/validation';
@@ -86,8 +87,12 @@ export default function InvitePersonScreen() {
   // An owner invite usually means someone opening their own gym, not a partner in this one.
   const [ownerOf, setOwnerOf] = useState<OwnerOf>('new');
   const inviteRole: InviteRole = role === 'owner' && ownerOf === 'new' ? 'gym_owner' : role;
-  // Supervisors invite members and trainers; only owners add supervisors and owners.
-  const roles = gym.role === 'owner' ? ownerInviteRoles : ownerInviteRoles.slice(0, 2);
+  // Supervisors invite members and trainers, owners add supervisors too, and only
+  // CoreFit Gym admins add owners. The server checks all of this again.
+  const isAdmin = useIsPlatformAdmin().data === true;
+  const roles = isAdmin
+    ? ownerInviteRoles
+    : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : 2);
   const emailError = validateEmail(email);
   const result = invite.data
     ? describe(invite.data, invite.variables.email, invite.variables.role)
@@ -103,9 +108,11 @@ export default function InvitePersonScreen() {
   return (
     <Screen>
       <ThemedText type="small" themeColor="textSecondary">
-        {gym.role === 'owner'
+        {isAdmin
           ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address, or invite someone to set up a gym of their own.`
-          : `Add a member or trainer to ${gym.gymName} by their email address.`}
+          : gym.role === 'owner'
+            ? `Add a member, trainer or supervisor to ${gym.gymName} by their email address.`
+            : `Add a member or trainer to ${gym.gymName} by their email address.`}
       </ThemedText>
       <TextField
         label="Email"

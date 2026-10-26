@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { canCoach, type Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useSetTrainer, useTrainerLinks } from '@/features/coaching/hooks';
 import { membersOf, trainersOf } from '@/features/coaching/rules';
 import type { GymPerson } from '@/features/members/types';
@@ -32,6 +33,8 @@ export default function PersonScreen() {
   const update = useUpdatePerson(gym.gymId);
   const remove = useRemovePerson(gym.gymId);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  // Only CoreFit Gym admins make someone an owner; the server refuses anyone else.
+  const isAdmin = useIsPlatformAdmin().data === true;
   const person = people.data?.find((p) => p.id === userId);
 
   if (!person) {
@@ -78,9 +81,7 @@ export default function PersonScreen() {
           <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
         </>
       ) : null}
-      {canCoach(person.role) ? (
-        <TrainerMembers gymId={gym.gymId} trainerId={person.id} />
-      ) : null}
+      {canCoach(person.role) ? <TrainerMembers gymId={gym.gymId} trainerId={person.id} /> : null}
 
       {isOwner ? (
         <>
@@ -93,7 +94,9 @@ export default function PersonScreen() {
                 { value: 'member', label: 'Member' },
                 { value: 'trainer', label: 'Trainer' },
                 { value: 'supervisor', label: 'Supervisor' },
-                { value: 'owner', label: 'Owner' },
+                ...(isAdmin || person.role === 'owner'
+                  ? [{ value: 'owner' as const, label: 'Owner' }]
+                  : []),
               ]}
               value={person.role}
               onChange={(role) => {
@@ -122,7 +125,8 @@ export default function PersonScreen() {
             <Card>
               <ThemedText type="small" themeColor="textSecondary">
                 {isSelf ? 'You are' : 'This is'} the only owner, so this account can&apos;t be
-                demoted, suspended or removed. Make someone else an owner first.
+                demoted, suspended or removed. {isAdmin ? 'Make' : 'Ask CoreFit Gym to make'}{' '}
+                someone else an owner first.
               </ThemedText>
             </Card>
           ) : null}
@@ -261,9 +265,9 @@ function MemberTrainers({
         </ThemedText>
       )}
       <ThemedText type="small" themeColor="textSecondary">
-        Tap to add or remove. Pick yourself to train {member.fullName.split(' ')[0]} when there&apos;s
-        no trainer free. The number is each trainer&apos;s members. Removing a trainer also takes
-        their plans off {member.fullName.split(' ')[0]}.
+        Tap to add or remove. Pick yourself to train {member.fullName.split(' ')[0]} when
+        there&apos;s no trainer free. The number is each trainer&apos;s members. Removing a trainer
+        also takes their plans off {member.fullName.split(' ')[0]}.
       </ThemedText>
       {setTrainer.error ? (
         <ThemedText themeColor="danger">{setTrainer.error.message}</ThemedText>
