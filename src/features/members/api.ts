@@ -8,6 +8,7 @@ import type {
   GymPerson,
   InviteOutcome,
   InviteResult,
+  InviteRole,
 } from '@/features/members/types';
 import { coachRoles, normalizeEmail, sortCoaches, type MemberKind } from '@/features/members/rules';
 import {
@@ -100,15 +101,19 @@ export async function listInvites(gymId: string): Promise<GymInvite[]> {
 /**
  * Adds someone who already has an account straight away. Anyone else gets an
  * invite email whose link opens the app to set a password, and the invite is
- * also kept so signing up with that email works too.
+ * also kept so signing up with that email works too. A 'gym_owner' invite
+ * doesn't add them here: it lets them set up a new gym of their own.
  */
 export async function invitePerson(
   gymId: string,
   email: string,
-  role: GymPerson['role'],
+  role: InviteRole,
 ): Promise<InviteOutcome> {
-  if (!supabase)
-    return { result: await mockInvite(email, role), emailSent: false, emailError: null };
+  if (!supabase) {
+    const result =
+      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(email, role);
+    return { result, emailSent: false, emailError: null };
+  }
 
   const { data, error } = await supabase.functions.invoke<InviteOutcome>('invite-member', {
     body: { gymId, email, role, redirectTo: setPasswordUrl() },
@@ -121,7 +126,9 @@ export async function invitePerson(
     (error instanceof FunctionsHttpError && error.context.status === 404);
   if (!notDeployed) throw new Error(await functionErrorMessage(error));
   const result = unwrap(
-    await supabase.rpc('invite_to_gym', { p_gym_id: gymId, p_email: email, p_role: role }),
+    role === 'gym_owner'
+      ? await supabase.rpc('invite_gym_owner', { p_email: email })
+      : await supabase.rpc('invite_to_gym', { p_gym_id: gymId, p_email: email, p_role: role }),
   ) as InviteResult;
   return {
     result,

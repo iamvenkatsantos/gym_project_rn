@@ -15,9 +15,29 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import { useInvitePerson, usePeople, useUpdatePerson } from '@/features/members/hooks';
 import { normalizeEmail } from '@/features/members/rules';
 import { validateEmail } from '@/lib/validation';
-import type { InviteOutcome } from '@/features/members/types';
+import type { InviteOutcome, InviteRole } from '@/features/members/types';
 
-function describe({ result, emailSent, emailError }: InviteOutcome, email: string) {
+function describe(
+  { result, emailSent, emailError }: InviteOutcome,
+  email: string,
+  role: InviteRole,
+) {
+  if (role === 'gym_owner') {
+    const next =
+      "After signing in they add their gym's details and get a new, empty gym of their own.";
+    if (result === 'added') {
+      return {
+        title: 'Ready to set up their gym',
+        detail: `They already have a CoreFit Gym account. ${next}`,
+      };
+    }
+    return emailSent
+      ? { title: 'Invite sent', detail: `We emailed ${email} a link. ${next}` }
+      : {
+          title: 'Invite saved',
+          detail: `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit Gym and create an account with this email. ${next}`,
+        };
+  }
   switch (result) {
     case 'added':
       return {
@@ -50,6 +70,8 @@ const ownerInviteRoles: { value: Role; label: string }[] = [
   { value: 'owner', label: 'Owner' },
 ];
 
+type OwnerOf = 'new' | 'this';
+
 function roleLabel(role: Role) {
   return role === 'owner' ? 'an owner' : `a ${role}`;
 }
@@ -61,22 +83,28 @@ export default function InvitePersonScreen() {
   const update = useUpdatePerson(gym.gymId);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('member');
+  // An owner invite usually means someone opening their own gym, not a partner in this one.
+  const [ownerOf, setOwnerOf] = useState<OwnerOf>('new');
+  const inviteRole: InviteRole = role === 'owner' && ownerOf === 'new' ? 'gym_owner' : role;
   // Supervisors invite members and trainers; only owners add supervisors and owners.
   const roles = gym.role === 'owner' ? ownerInviteRoles : ownerInviteRoles.slice(0, 2);
   const emailError = validateEmail(email);
-  const result = invite.data ? describe(invite.data, invite.variables.email) : null;
+  const result = invite.data
+    ? describe(invite.data, invite.variables.email, invite.variables.role)
+    : null;
   // Inviting someone who's already here doesn't change their role, so offer that instead.
   const existing =
     invite.data?.result === 'already_member'
       ? people.data?.find((p) => p.email === invite.variables?.email)
       : undefined;
-  const roleDiffers = existing && existing.role !== invite.variables?.role;
+  const invitedRole = invite.variables?.role === 'gym_owner' ? undefined : invite.variables?.role;
+  const roleDiffers = existing && invitedRole && existing.role !== invitedRole;
 
   return (
     <Screen>
       <ThemedText type="small" themeColor="textSecondary">
         {gym.role === 'owner'
-          ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address.`
+          ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address, or invite someone to set up a gym of their own.`
           : `Add a member or trainer to ${gym.gymName} by their email address.`}
       </ThemedText>
       <TextField
@@ -110,9 +138,33 @@ export default function InvitePersonScreen() {
           }}
         />
         {role === 'owner' ? (
-          <ThemedText type="small" themeColor="warning">
-            Owners can manage everyone at this gym, including you.
-          </ThemedText>
+          <>
+            <ThemedText type="label" themeColor="textSecondary">
+              Owner of
+            </ThemedText>
+            <SegmentedControl<OwnerOf>
+              options={[
+                { value: 'new', label: 'A new gym' },
+                { value: 'this', label: 'This gym' },
+              ]}
+              value={ownerOf}
+              onChange={(next) => {
+                setOwnerOf(next);
+                invite.reset();
+                update.reset();
+              }}
+            />
+            {ownerOf === 'new' ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                They set up a gym of their own with its details. It starts empty, and they
+                won&apos;t see anyone from {gym.gymName}.
+              </ThemedText>
+            ) : (
+              <ThemedText type="small" themeColor="warning">
+                Co-owners can manage everyone at {gym.gymName}, including you.
+              </ThemedText>
+            )}
+          </>
         ) : role === 'supervisor' ? (
           <ThemedText type="small" themeColor="textSecondary">
             Supervisors record payments, invite members and trainers, and match members with
@@ -132,21 +184,19 @@ export default function InvitePersonScreen() {
               ? `${existing.fullName} is already here as ${roleLabel(existing.role)}, so their role didn't change.`
               : result.detail}
           </ThemedText>
-          {existing && roleDiffers && invite.variables ? (
+          {existing && roleDiffers && invitedRole ? (
             gym.role === 'owner' ? (
               <Button
                 label={
                   update.isSuccess
-                    ? `Now ${roleLabel(invite.variables.role)}`
-                    : `Make them ${roleLabel(invite.variables.role)}`
+                    ? `Now ${roleLabel(invitedRole)}`
+                    : `Make them ${roleLabel(invitedRole)}`
                 }
                 icon="swap-horizontal-outline"
                 size="compact"
                 disabled={update.isSuccess}
                 loading={update.isPending}
-                onPress={() =>
-                  update.mutate({ userId: existing.id, patch: { role: invite.variables!.role } })
-                }
+                onPress={() => update.mutate({ userId: existing.id, patch: { role: invitedRole } })}
               />
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
@@ -186,7 +236,7 @@ export default function InvitePersonScreen() {
           icon="person-add-outline"
           disabled={!!emailError}
           loading={invite.isPending}
-          onPress={() => invite.mutate({ email: normalizeEmail(email), role })}
+          onPress={() => invite.mutate({ email: normalizeEmail(email), role: inviteRole })}
         />
       )}
     </Screen>

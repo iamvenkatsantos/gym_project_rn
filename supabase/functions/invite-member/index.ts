@@ -1,5 +1,6 @@
-// Invites someone to a gym by email. The owner check and the invite itself run as
-// the caller through invite_to_gym(); this function only adds the email, which
+// Invites someone to a gym by email, or (role 'gym_owner') to set up a gym of their
+// own. The owner check and the invite itself run as the caller through
+// invite_to_gym() / invite_gym_owner(); this function only adds the email, which
 // needs the service role. Deploy with:
 //   npx supabase functions deploy invite-member
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -38,6 +39,11 @@ const roles: Record<string, { label: string; blurb: string }> = {
     label: 'Co-owner',
     blurb: 'Run members, classes and memberships for the gym from your phone.',
   },
+  gym_owner: {
+    label: 'Gym owner',
+    blurb:
+      "Add your gym's details, then invite your members and trainers. Only your people see your gym.",
+  },
 };
 
 function json(body: unknown, status = 200) {
@@ -54,7 +60,12 @@ Deno.serve(async (req) => {
   if (!authorization) return json({ error: 'Unauthorized' }, 401);
 
   const { gymId, email, role, redirectTo } = await req.json().catch(() => ({}));
-  if (typeof gymId !== 'string' || typeof email !== 'string' || typeof role !== 'string') {
+  const newGym = role === 'gym_owner';
+  if (
+    (!newGym && typeof gymId !== 'string') ||
+    typeof email !== 'string' ||
+    typeof role !== 'string'
+  ) {
     return json({ error: 'gymId, email and role are required' }, 400);
   }
 
@@ -62,11 +73,9 @@ Deno.serve(async (req) => {
   const caller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: authorization } },
   });
-  const { data: result, error } = await caller.rpc('invite_to_gym', {
-    p_gym_id: gymId,
-    p_email: email,
-    p_role: role,
-  });
+  const { data: result, error } = newGym
+    ? await caller.rpc('invite_gym_owner', { p_email: email })
+    : await caller.rpc('invite_to_gym', { p_gym_id: gymId, p_email: email, p_role: role });
   if (error) return json({ error: error.message }, 400);
 
   // invite_to_gym already refused unknown roles, so this only guards the email's wording.
@@ -76,7 +85,9 @@ Deno.serve(async (req) => {
   if (result !== 'invited') return json({ result, emailSent: false, emailError: null });
 
   // Details for the email template, read as the owner so RLS still applies.
-  const { data: gym } = await caller.from('gyms').select('name').eq('id', gymId).maybeSingle();
+  const { data: gym } = newGym
+    ? { data: { name: 'your new gym' } }
+    : await caller.from('gyms').select('name').eq('id', gymId).maybeSingle();
   const {
     data: { user: owner },
   } = await caller.auth.getUser();
