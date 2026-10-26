@@ -1,17 +1,27 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
-import { demoFor } from '@/features/exercises/demos';
+import { demoFor, type DemoFrame } from '@/features/exercises/demos';
 import type { Exercise } from '@/features/exercises/types';
 import { useTheme } from '@/hooks/use-theme';
 
-/** Time on each position; long enough to read the pose between sets. */
-const FRAME_MS = 1100;
+/** Time held on each position; long enough to read the pose between sets. */
+const HOLD_MS = 900;
+/** Crossfade between positions, eased so it reads as one movement rather than a cut. */
+const FADE_MS = 700;
+const FADE = { duration: FADE_MS, easing: Easing.inOut(Easing.cubic) };
 
 type ExerciseDemoProps = {
   exerciseId: string;
@@ -24,8 +34,9 @@ type ExerciseDemoProps = {
 };
 
 /**
- * Loops an exercise's start and end positions. Pauses for people who ask the
- * system to reduce motion; they can still step through by tapping.
+ * Loops an exercise's start and end positions, crossfading between them. Pauses
+ * for people who ask the system to reduce motion; they can still step through
+ * by tapping, and then the positions switch without a fade.
  */
 export function ExerciseDemo({
   exerciseId,
@@ -45,9 +56,15 @@ export function ExerciseDemo({
 
   useEffect(() => {
     if (!animating) return;
-    const id = setInterval(() => setFrame((f) => (f + 1) % frameCount), FRAME_MS);
+    const id = setInterval(() => setFrame((f) => (f + 1) % frameCount), HOLD_MS + FADE_MS);
     return () => clearInterval(id);
   }, [animating, frameCount]);
+
+  // Which frame is showing, as a float while fading: 0.5 is halfway from the first to the second.
+  const shown = useSharedValue(0);
+  useEffect(() => {
+    shown.value = reduceMotion ? frame : withTiming(frame, FADE);
+  }, [frame, reduceMotion, shown]);
 
   const box = [thumb ? styles.thumb : styles.full, { backgroundColor: theme.backgroundSelected }];
 
@@ -66,14 +83,13 @@ export function ExerciseDemo({
     );
   }
 
+  // Every frame stays mounted, stacked in order, so a fade never waits on an image to decode.
   const image = (
-    <Image
-      source={media.frames[frame % frameCount]}
-      style={StyleSheet.absoluteFill}
-      contentFit="cover"
-      transition={thumb ? 0 : 250}
-      accessibilityIgnoresInvertColors
-    />
+    <>
+      {media.frames.map((source, i) => (
+        <DemoLayer key={i} source={source} index={i} shown={shown} />
+      ))}
+    </>
   );
 
   if (thumb) {
@@ -131,6 +147,32 @@ export function ExerciseDemo({
         </ThemedText>
       ) : null}
     </View>
+  );
+}
+
+/** One position, faded in over the ones below it as `shown` passes its index. */
+function DemoLayer({
+  source,
+  index,
+  shown,
+}: {
+  source: DemoFrame;
+  index: number;
+  shown: SharedValue<number>;
+}) {
+  const style = useAnimatedStyle(() => ({
+    opacity: index === 0 ? 1 : Math.min(Math.max(shown.value - (index - 1), 0), 1),
+  }));
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, style]}>
+      <Image
+        source={source}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={0}
+        accessibilityIgnoresInvertColors
+      />
+    </Animated.View>
   );
 }
 
