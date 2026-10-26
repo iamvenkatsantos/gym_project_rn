@@ -15,13 +15,13 @@ function parseDate(isoDate: string) {
 }
 
 /** Whole days left including today; 0 once the end date has passed. */
-export function daysRemaining(membership: Membership, today: Date = new Date()) {
+export function daysRemaining(membership: Pick<Membership, 'endsOn'>, today: Date = new Date()) {
   const diff = Math.round((parseDate(membership.endsOn) - startOfDay(today)) / DAY);
   return Math.max(diff + 1, 0);
 }
 
 export function membershipStatus(
-  membership: Membership,
+  membership: Pick<Membership, 'startsOn' | 'endsOn'>,
   today: Date = new Date(),
 ): MembershipStatus {
   if (parseDate(membership.startsOn) > startOfDay(today)) return 'upcoming';

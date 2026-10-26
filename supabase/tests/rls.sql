@@ -617,11 +617,31 @@ select count(*) as owner_rows from public.attendance;
 select full_name, days_present, workouts from public.attendance_report('10000000-0000-0000-0000-000000000001', 7)
   where full_name in ('Pia Member', 'Tom Trainer') order by full_name;
 select public.attendance_report('10000000-0000-0000-0000-000000000001', 0);
+\echo '99 owner exports today: payments (expect > 0, every row from gym 1 plans), memberships per active member (expect > 0), attendance (expect 4 rows)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select count(*) > 0 as payments from public.export_payments('10000000-0000-0000-0000-000000000001', current_date - 1, current_date + 1);
+select count(*) > 0 as members from public.export_memberships('10000000-0000-0000-0000-000000000001');
+select count(*) as attendance from public.export_attendance('10000000-0000-0000-0000-000000000001', current_date - 1, current_date + 1);
+\echo '100 owner exports a backwards period and over a year (expect Pick a start date, Export at most a year)'
+select public.export_payments('10000000-0000-0000-0000-000000000001', current_date, current_date - 1);
+select public.export_attendance('10000000-0000-0000-0000-000000000001', current_date - 400, current_date);
+\echo '101 supervisor, trainer and member cannot export (expect Only the gym owner x4); owner of gym 1 cannot export gym 2 (expect Only the gym owner)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.export_payments('10000000-0000-0000-0000-000000000001', current_date, current_date);
+select public.export_memberships('10000000-0000-0000-0000-000000000001');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.export_attendance('10000000-0000-0000-0000-000000000001', current_date, current_date);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.export_payments('10000000-0000-0000-0000-000000000001', current_date, current_date);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.export_payments('10000000-0000-0000-0000-000000000002', current_date, current_date);
+\echo '102 nobody calls the access check directly (expect permission denied)'
+select public.check_report_access('10000000-0000-0000-0000-000000000001', current_date, current_date);
 
 -- Owners and supervisors cover missing roles -----------------------------------------
 set role authenticated;
 select set_config('test.monday', ((date_trunc('week', now() at time zone 'Asia/Kolkata') + interval '7 days 07:00') at time zone 'Asia/Kolkata')::text, false) is not null as next_monday;
-\echo '99 owner sets bookable hours (expect 1 window); Quinn books the owner (expect ok); the owner cannot book as a member (expect "Only members")'
+\echo '103 owner sets bookable hours (expect 1 window); Quinn books the owner (expect ok); the owner cannot book as a member (expect "Only members")'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select public.set_trainer_availability('10000000-0000-0000-0000-000000000001', 60, '[{"weekday":1,"start_time":"06:00","end_time":"09:00"}]');
 select count(*) as owner_hours from public.trainer_availability where trainer_id = '00000000-0000-0000-0000-00000000000a';
@@ -629,7 +649,7 @@ select pg_temp.as_user('00000000-0000-0000-0000-000000000032');
 select public.book_trainer_session('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', current_setting('test.monday')::timestamptz) is not null as ok;
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select public.book_trainer_session('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', current_setting('test.monday')::timestamptz);
-\echo '100 owner maps Quinn to themself (expect INSERT), writes a plan and assigns it to her (expect ok)'
+\echo '104 owner maps Quinn to themself (expect INSERT), writes a plan and assigns it to her (expect ok)'
 insert into public.member_trainers (gym_id, member_id, trainer_id)
   values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-00000000000a');
 select set_config('test.owner_plan', (
@@ -638,7 +658,7 @@ select set_config('test.owner_plan', (
 )::text, false) is not null as ok;
 insert into public.workout_assignments (workout_id, member_id)
   values (current_setting('test.owner_plan')::uuid, '00000000-0000-0000-0000-000000000032') returning true as ok;
-\echo '101 Quinn checks in and starts a workout; the owner, her coach, is told (expect 1)'
+\echo '105 Quinn checks in and starts a workout; the owner, her coach, is told (expect 1)'
 select pg_temp.as_user('00000000-0000-0000-0000-000000000032');
 select role from public.check_in('10000000-0000-0000-0000-000000000001');
 select public.start_workout_attendance('10000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000003', 'Owner plan');
@@ -646,18 +666,18 @@ reset role;
 select count(*) as owner_told from public.notifications
   where recipient_id = '00000000-0000-0000-0000-00000000000a' and dedupe_key = 'workout-start:40000000-0000-0000-0000-000000000003';
 set role authenticated;
-\echo '102 supervisor maps Ravi to themself (expect INSERT), schedules their own class (expect 1), still not one for the trainer (expect RLS error)'
+\echo '106 supervisor maps Ravi to themself (expect INSERT), schedules their own class (expect 1), still not one for the trainer (expect RLS error)'
 select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
 insert into public.member_trainers (gym_id, member_id, trainer_id)
   values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000020');
 select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Sam circuit', '00000000-0000-0000-0000-000000000020', now() + interval '2 days', 45, 10, 1);
 select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Sup class 2', '00000000-0000-0000-0000-00000000000b', now() + interval '2 days', 45, 10, 1);
-\echo '103 supervisor messages the owner (expect ok) but not themself (expect "Pick a trainer"); Ravi asks for the owner by name (expect ok)'
+\echo '107 supervisor messages the owner (expect ok) but not themself (expect "Pick a trainer"); Ravi asks for the owner by name (expect ok)'
 select public.message_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', 'Your Monday client', '');
 select public.message_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000020', 'Note to self', '');
 select pg_temp.as_user('00000000-0000-0000-0000-000000000022');
 select public.request_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', array['Strength'], '') is not null as ok;
-\echo '104 supervisor made trainer keeps Ravi (expect 1); made member loses him (expect 0)'
+\echo '108 supervisor made trainer keeps Ravi (expect 1); made member loses him (expect 0)'
 reset role;
 update public.gym_members set role = 'trainer' where user_id = '00000000-0000-0000-0000-000000000020';
 select count(*) as kept from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
