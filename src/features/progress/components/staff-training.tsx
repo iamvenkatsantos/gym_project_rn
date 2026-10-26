@@ -13,6 +13,7 @@ import { StartWorkout } from '@/features/progress/components/start-workout';
 import { useWorkoutLogs } from '@/features/progress/hooks';
 import { CoachSchedule } from '@/features/trainers/components/coach-schedule';
 import { MyPlans } from '@/features/workouts/components/my-plans';
+import { TrainerPlans } from '@/features/workouts/components/trainer-plans';
 
 type Tab = 'mine' | 'coaching' | 'members';
 
@@ -56,6 +57,8 @@ export function StaffTraining() {
           <CoachSchedule />
           <SectionHeader title="Your plans" />
           <MyPlans />
+          <SectionHeader title="Trainers' plans" />
+          <TrainerPlans />
           <SectionHeader title="Diet plans" />
           <MyMealPlans />
           <CoachedMembers />

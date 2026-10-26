@@ -14,8 +14,9 @@ import { useWorkouts } from '@/features/workouts/hooks';
 import type { Workout } from '@/features/workouts/types';
 
 /**
- * The workout in progress, or the gym's plans to start one from. Anyone at the gym can train;
- * members have to check in first, and starting tells their trainers.
+ * The workout in progress, or the plans to start one from: a member's trainers' plans, or a
+ * coach's own. Anyone at the gym can train; members have to check in first, and starting
+ * tells their trainers.
  */
 export function StartWorkout({ gymId }: { gymId: string }) {
   const profile = useProfile();
@@ -52,6 +53,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
     <WorkoutCard
       key={workout.id}
       workout={workout}
+      showAuthor={isMember}
       action={
         draft ? undefined : (
           <Button
@@ -99,10 +101,24 @@ export function StartWorkout({ gymId }: { gymId: string }) {
           />
         </Card>
       ) : null}
-      <QueryState query={workouts} isEmpty={(w) => w.length === 0} emptyText="No plans yet.">
+      <QueryState
+        query={workouts}
+        isEmpty={(w) => w.length === 0}
+        emptyText={isMember ? 'Your trainer hasn’t shared any plans yet.' : 'No plans yet.'}>
         {(list) => {
           const mine = list.filter((w) => w.assignedMemberIds.includes(profile.id));
-          const others = list.filter((w) => !mine.includes(w));
+          // Staff train from their own plans here; owners and supervisors review
+          // other coaches' plans under Coaching.
+          const others = list.filter(
+            (w) => !mine.includes(w) && (isMember || w.trainerId === profile.id),
+          );
+          if (mine.length + others.length === 0) {
+            return (
+              <ThemedText type="small" themeColor="textSecondary">
+                Plans you write under Coaching show up here.
+              </ThemedText>
+            );
+          }
           return (
             <>
               {mine.length > 0 ? (
@@ -113,7 +129,15 @@ export function StartWorkout({ gymId }: { gymId: string }) {
               ) : null}
               {others.length > 0 ? (
                 <>
-                  <SectionHeader title={mine.length > 0 ? 'More plans' : 'Gym plans'} />
+                  <SectionHeader
+                    title={
+                      isMember
+                        ? mine.length > 0
+                          ? 'More from your trainers'
+                          : 'From your trainers'
+                        : 'Your plans'
+                    }
+                  />
                   {others.map(card)}
                 </>
               ) : null}

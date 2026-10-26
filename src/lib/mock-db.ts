@@ -194,6 +194,7 @@ export const mockWorkouts: Workout[] = [
   {
     id: 'w-1',
     trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
     title: 'Full body starter',
     description: 'A balanced session for your first weeks in the gym.',
     level: 'beginner',
@@ -209,6 +210,7 @@ export const mockWorkouts: Workout[] = [
   {
     id: 'w-2',
     trainerId: 'u-trainer',
+    trainerName: 'Tom Trainer',
     title: 'Lower body strength',
     description: 'Heavy compound lifts for legs and glutes.',
     level: 'intermediate',

@@ -13,6 +13,8 @@ export type PlanExercise = {
 export type Workout = {
   id: string;
   trainerId: string;
+  /** The coach who wrote the plan. */
+  trainerName?: string;
   title: string;
   description: string;
   level: WorkoutLevel;
