@@ -38,7 +38,7 @@ export function presetPeriod(preset: PeriodPreset, today: Date = new Date()): Re
   }
 }
 
-const METHOD_LABELS: Record<PaymentMethod, string> = {
+export const METHOD_LABELS: Record<PaymentMethod, string> = {
   cash: 'Cash',
   upi: 'UPI',
   card: 'Card',
@@ -47,7 +47,7 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   complimentary: 'Complimentary',
 };
 
-const STATUS_LABELS = {
+export const STATUS_LABELS = {
   active: 'Active',
   expiringSoon: 'Expiring soon',
   expired: 'Expired',

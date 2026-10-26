@@ -194,6 +194,12 @@ limit 5;` shows what `pg_net` got back.
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
 checklist.
 
+## Owner web dashboard
+
+`web/` is a browser dashboard for gym owners: overview, members, payments, attendance and CSV
+exports. It signs in with the same accounts and reads the same Supabase RLS and RPCs as the app.
+See [web/README.md](web/README.md).
+
 ## Exercise library seed
 
 `supabase/seed.sql` loads the shared exercise library. It's generated from
@@ -216,6 +222,7 @@ psql -d corefit_test -f supabase/tests/rls.sql
 | Command             | What it does              |
 | ------------------- | ------------------------- |
 | `npm start`         | Start the Expo dev server |
+| `npm run web`       | Start the owner dashboard |
 | `npm test`          | Run Jest                  |
 | `npm run typecheck` | `tsc --noEmit`            |
 | `npm run lint`      | ESLint via `expo lint`    |
