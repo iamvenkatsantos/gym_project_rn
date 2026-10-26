@@ -46,7 +46,7 @@ export function MyMealPlans() {
                     </View>
                     <View style={styles.flex}>
                       <Button
-                        label={assigned ? `Assigned · ${assigned}` : 'Assign'}
+                        label={assigned ? `${assigned} assigned` : 'Assign'}
                         icon="people-outline"
                         size="compact"
                         onPress={() =>

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ListGroup, ListRow } from '@/components/list-row';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
@@ -47,7 +48,6 @@ export default function OwnerDashboardScreen() {
   const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;
   const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
-  const bookedToday = today?.reduce((sum, c) => sum + c.bookedCount, 0);
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
   const noTrainer =
     people.data && links.data ? unmappedMembers(people.data, links.data).length : undefined;
@@ -55,23 +55,29 @@ export default function OwnerDashboardScreen() {
   return (
     <Screen>
       {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
+      {/* Three across so the numbers fit on the first screen of a small phone. */}
       <View style={styles.grid}>
-        <StatTile label="Active members" value={activeCount} icon="people" accent />
-        <StatTile label="Renewals due" value={renewals?.length} icon="alert-circle-outline" />
-        <StatTile label="Classes today" value={today?.length} icon="calendar-outline" />
-        <StatTile label="Booked today" value={bookedToday} icon="checkmark-done-outline" />
-        <StatTile label="Trainer requests" value={waiting?.length} icon="hand-right-outline" />
-        <StatTile label="No trainer yet" value={noTrainer} icon="person-outline" />
+        <StatTile label="Active members" value={activeCount} icon="people" accent compact />
         <StatTile
-          label="Members came today"
+          label="Renewals due"
+          value={renewals?.length}
+          icon="alert-circle-outline"
+          compact
+        />
+        <StatTile label="No trainer yet" value={noTrainer} icon="person-outline" compact />
+        <StatTile
+          label="Came today"
           value={present?.member.present}
           icon="log-in-outline"
+          compact
         />
         <StatTile
-          label="Trainers in today"
+          label="Trainers in"
           value={present && `${present.trainer.present}/${present.trainer.total}`}
           icon="barbell-outline"
+          compact
         />
+        <StatTile label="Classes today" value={today?.length} icon="calendar-outline" compact />
       </View>
 
       {attendance.data ? (
@@ -81,52 +87,50 @@ export default function OwnerDashboardScreen() {
           emptyText="No trainers at this gym yet."
         />
       ) : null}
-      <Button
-        label={
-          enquiryCounts?.due
-            ? `Enquiries · ${enquiryCounts.due} to follow up today`
-            : 'Enquiries and trials'
-        }
-        icon="chatbubbles-outline"
-        variant="secondary"
-        onPress={() => router.push('/enquiries')}
-      />
-      <Button
-        label="Announcements"
-        icon="megaphone-outline"
-        variant="secondary"
-        onPress={() => router.push('/announcements')}
-      />
-      <Button
-        label="Attendance report"
-        icon="calendar-number-outline"
-        variant="secondary"
-        onPress={() => router.push('/attendance')}
-      />
-      {gym.role === 'owner' ? (
-        <Button
-          label="Insights"
-          icon="stats-chart-outline"
-          variant="secondary"
-          onPress={() => router.push('/insights')}
+
+      <SectionHeader title="Manage" />
+      <ListGroup>
+        <ListRow
+          label="Enquiries and trials"
+          detail={enquiryCounts?.due ? `${enquiryCounts.due} to follow up today` : undefined}
+          icon="chatbubbles-outline"
+          onPress={() => router.push('/enquiries')}
         />
-      ) : null}
-      {gym.role === 'owner' ? (
-        <Button
-          label="Export reports"
-          icon="download-outline"
-          variant="secondary"
-          onPress={() => router.push('/reports')}
+        <ListRow
+          label="Announcements"
+          icon="megaphone-outline"
+          divider
+          onPress={() => router.push('/announcements')}
         />
-      ) : null}
-      {gym.role === 'owner' ? (
-        <Button
-          label="Gym details"
-          icon="business-outline"
-          variant="secondary"
-          onPress={() => router.push('/gym-details')}
+        <ListRow
+          label="Attendance report"
+          icon="calendar-number-outline"
+          divider
+          onPress={() => router.push('/attendance')}
         />
-      ) : null}
+        {gym.role === 'owner' ? (
+          <>
+            <ListRow
+              label="Insights"
+              icon="stats-chart-outline"
+              divider
+              onPress={() => router.push('/insights')}
+            />
+            <ListRow
+              label="Export reports"
+              icon="download-outline"
+              divider
+              onPress={() => router.push('/reports')}
+            />
+            <ListRow
+              label="Gym details"
+              icon="business-outline"
+              divider
+              onPress={() => router.push('/gym-details')}
+            />
+          </>
+        ) : null}
+      </ListGroup>
 
       {waiting?.length ? (
         <>
