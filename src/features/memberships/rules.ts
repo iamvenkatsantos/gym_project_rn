@@ -2,6 +2,8 @@ import type { Membership } from '@/features/memberships/types';
 
 const DAY = 24 * 60 * 60 * 1000;
 export const EXPIRING_SOON_DAYS = 7;
+/** Members whose membership ended longer ago than this have lapsed and leave the renewals list. */
+export const RECENTLY_ENDED_DAYS = 30;
 
 export type MembershipStatus = 'active' | 'expiringSoon' | 'expired' | 'upcoming';
 
@@ -39,16 +41,28 @@ export function remainingFraction(membership: Membership, today: Date = new Date
 }
 
 /**
- * Memberships that need a renewal conversation, soonest first. Only each
- * member's latest membership counts, so someone who already renewed drops off.
+ * Memberships that need a renewal conversation, soonest first: ending within a
+ * week, or ended in the last 30 days. Only each member's latest membership
+ * counts, so someone who already renewed drops off.
  */
 export function renewalsDue(memberships: Membership[], today: Date = new Date()) {
+  const cutoff = addDays(toIsoDate(today), -RECENTLY_ENDED_DAYS);
   return [...latestByMember(memberships).values()]
     .filter((m) => {
       const status = membershipStatus(m, today);
-      return status === 'expiringSoon' || status === 'expired';
+      return status === 'expiringSoon' || (status === 'expired' && m.endsOn >= cutoff);
     })
     .sort((a, b) => a.endsOn.localeCompare(b.endsOn));
+}
+
+/** Renewals due, split into those still running and those that have ended. */
+export function groupRenewals(memberships: Membership[], today: Date = new Date()) {
+  const due = renewalsDue(memberships, today);
+  return {
+    endingSoon: due.filter((m) => membershipStatus(m, today) === 'expiringSoon'),
+    // Most recently ended first: they're the likeliest to come back.
+    ended: due.filter((m) => membershipStatus(m, today) === 'expired').reverse(),
+  };
 }
 
 /** A date as YYYY-MM-DD in local time, the format the database's date columns use. */

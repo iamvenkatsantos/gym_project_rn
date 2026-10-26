@@ -132,6 +132,7 @@ function RootNavigator() {
         />
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: 'Person' }} />
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
+        <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
         <Stack.Screen
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
@@ -144,6 +145,20 @@ function RootNavigator() {
           name="message-trainer"
           options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
         />
+        {/* The front desk: walk-in enquiries, follow-ups and trial passes. */}
+        <Stack.Screen name="enquiries" options={{ headerShown: true, title: 'Enquiries' }} />
+        <Stack.Screen
+          name="enquiry/[enquiryId]"
+          options={{ headerShown: true, title: 'Enquiry' }}
+        />
+        <Stack.Screen
+          name="enquiry-editor"
+          options={{ presentation: 'modal', headerShown: true, title: 'New enquiry' }}
+        />
+        <Stack.Screen
+          name="new-announcement"
+          options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
+        />
       </Stack.Protected>
       {/*
         Coaching tools. Owners and supervisors coach too, so a gym without trainers still runs.
@@ -154,6 +169,11 @@ function RootNavigator() {
         <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
         <Stack.Screen
           name="assign-plan/[workoutId]"
+          options={{ headerShown: true, title: 'Assign' }}
+        />
+        <Stack.Screen name="meal-plan-editor" options={{ headerShown: true, title: 'Diet plan' }} />
+        <Stack.Screen
+          name="assign-meal-plan/[planId]"
           options={{ headerShown: true, title: 'Assign' }}
         />
         <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
@@ -186,6 +206,10 @@ function RootNavigator() {
         <Stack.Screen
           name="progress-photo/[photoId]"
           options={{ headerShown: true, title: 'Photo' }}
+        />
+        <Stack.Screen
+          name="announcements"
+          options={{ headerShown: true, title: 'Announcements' }}
         />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>

@@ -53,13 +53,22 @@ export function MembershipCard({ membership }: { membership: Membership }) {
   );
 }
 
-/** Compact row for staff lists of members. */
+/** Compact row for staff lists of members, with Renew and, on renewals lists, Remind. */
 export function MembershipRow({
   membership,
   onRenew,
+  onRemind,
+  reminding,
+  note,
+  noteTone = 'textSecondary',
 }: {
   membership: Membership;
   onRenew?: () => void;
+  onRemind?: () => void;
+  reminding?: boolean;
+  /** A line under the status, such as "Reminded today". */
+  note?: string;
+  noteTone?: 'textSecondary' | 'danger';
 }) {
   const status = membershipStatus(membership);
   const pill = statusPill[status];
@@ -69,15 +78,33 @@ export function MembershipRow({
       <View style={styles.rowBody}>
         <ThemedText type="smallBold">{membership.memberName}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {membership.plan.name} · ends {formatDate(membership.endsOn)}
+          {membership.plan.name} · {status === 'expired' ? 'ended' : 'ends'}{' '}
+          {formatDate(membership.endsOn)}
         </ThemedText>
         <View style={styles.pill}>
           <Pill label={pill.label} tone={pill.tone} />
         </View>
+        {note ? (
+          <ThemedText type="small" themeColor={noteTone}>
+            {note}
+          </ThemedText>
+        ) : null}
       </View>
-      {onRenew ? (
-        <Button label="Renew" icon="refresh-outline" size="compact" onPress={onRenew} />
-      ) : null}
+      <View style={styles.actions}>
+        {onRenew ? (
+          <Button label="Renew" icon="refresh-outline" size="compact" onPress={onRenew} />
+        ) : null}
+        {onRemind ? (
+          <Button
+            label="Remind"
+            icon="notifications-outline"
+            variant="secondary"
+            size="compact"
+            loading={reminding}
+            onPress={onRemind}
+          />
+        ) : null}
+      </View>
     </Card>
   );
 }
@@ -105,5 +132,8 @@ const styles = StyleSheet.create({
   },
   pill: {
     flexDirection: 'row',
+  },
+  actions: {
+    gap: Spacing.two,
   },
 });

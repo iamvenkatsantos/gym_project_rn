@@ -137,7 +137,11 @@ inbox (switching to that gym if they belong to several):
 | A class is moved or cancelled          | Booked members, and the trainer if someone else changed it |
 | A 1:1 session is booked or cancelled   | The trainer when booked; whoever didn't cancel it          |
 | A membership is recorded               | The member                                                 |
-| A membership ends in 3 days, or today  | The member (from 9 am gym time, skipped if they renewed)   |
+| A membership ends in 7, 3, 1 or 0 days | The member (from 9 am gym time, skipped if they renewed)   |
+| A membership ended yesterday           | The member (from 9 am, skipped if they renewed)            |
+| A membership enters its last week      | Owners and supervisors, with who ends this week            |
+| A membership ends today                | Owners and supervisors (same morning push)                 |
+| Staff tap Remind on a renewal          | The member (once a day at most)                            |
 | Trainer messages, requests and matches | As before (PR #14)                                         |
 
 How it works: the app saves each phone's Expo push token (`push_tokens`, via
@@ -194,6 +198,12 @@ limit 5;` shows what `pg_net` got back.
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
 checklist.
 
+## Owner web dashboard
+
+`web/` is a browser dashboard for gym owners: overview, members, payments, attendance and CSV
+exports. It signs in with the same accounts and reads the same Supabase RLS and RPCs as the app.
+See [web/README.md](web/README.md).
+
 ## Exercise library seed
 
 `supabase/seed.sql` loads the shared exercise library. It's generated from
@@ -216,6 +226,7 @@ psql -d corefit_test -f supabase/tests/rls.sql
 | Command             | What it does              |
 | ------------------- | ------------------------- |
 | `npm start`         | Start the Expo dev server |
+| `npm run web`       | Start the owner dashboard |
 | `npm test`          | Run Jest                  |
 | `npm run typecheck` | `tsc --noEmit`            |
 | `npm run lint`      | ESLint via `expo lint`    |

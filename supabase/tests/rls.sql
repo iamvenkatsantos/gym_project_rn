@@ -570,6 +570,35 @@ insert into public.memberships (member_id, plan_id, starts_on, ends_on)
   where gym_id = '10000000-0000-0000-0000-000000000001' limit 1;
 select public.send_reminders('2026-10-30 10:00+05:30');
 select count(*) as last_day from public.notifications where title = 'Membership ends today';
+\echo '89c Pia''s membership ends 05 Nov: reminded 7 days, 3 days and 1 day before, on the day and the day after, once each (expect ends soon 2, today 1, tomorrow 1, has ended 1)'
+insert into public.memberships (member_id, plan_id, starts_on, ends_on)
+  select '00000000-0000-0000-0000-000000000031', id, '2026-10-07', '2026-11-05' from public.membership_plans
+  where gym_id = '10000000-0000-0000-0000-000000000001' limit 1;
+select public.send_reminders('2026-10-29 10:00+05:30');
+select public.send_reminders('2026-10-29 11:00+05:30');
+select public.send_reminders('2026-11-02 10:00+05:30');
+select public.send_reminders('2026-11-04 10:00+05:30');
+select public.send_reminders('2026-11-05 10:00+05:30');
+select public.send_reminders('2026-11-06 10:00+05:30');
+select title, count(*) from public.notifications
+  where kind = 'membership' and recipient_id = '00000000-0000-0000-0000-000000000031' and dedupe_key like 'membership:%'
+  group by title order by title;
+\echo '89d the owner hears when Pia enters her last week (30 Oct) and on her last day (05 Nov), not in between or before (expect 2 rows naming Pia Member)'
+select public.send_reminders('2026-10-30 10:00+05:30');
+select public.send_reminders('2026-10-31 10:00+05:30');
+select dedupe_key like 'renewals:%:2026-10-30' or dedupe_key like 'renewals:%:2026-11-05' as on_the_right_days, title, body like '%Pia Member%' as names_pia
+  from public.notifications
+  where recipient_id = '00000000-0000-0000-0000-00000000000a' and dedupe_key like 'renewals:%' order by created_at;
+\echo '89e the owner reminds Pia to renew twice in a day (expect t, then f), cannot remind someone without a membership (expect no membership); Pia cannot remind herself (expect Only owners)'
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.remind_renewal('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031') as sent;
+select public.remind_renewal('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031') as sent_again;
+select public.remind_renewal('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b');
+select pg_temp.as_user('00000000-0000-0000-0000-000000000031');
+select public.remind_renewal('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031');
+select title, body like 'Your % membership at CoreFit Anna Nagar % 05 Nov. Renew%' as body_ok from public.notifications where title = 'Time to renew';
+reset role;
 \echo '90 statement push trigger runs without Vault or pg_net (expect INSERT ok, no error)'
 select public.notify('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000d', 'message', 'Push check', '');
 \echo '91 Pia (mapped to T and T2) starts a workout without checking in today (expect Check in first)'
@@ -737,33 +766,137 @@ update public.gym_members set role = 'supervisor' where user_id = '00000000-0000
 \echo '117 nobody makes themselves an admin from the app (expect permission denied)'
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-000000000099');
 
--- Body progress (checks 118+). Uma (21) is mapped to Tom (b); Ravi (22) has no trainer; Sam is a supervisor again.
+-- Enquiries ---------------------------------------------------------------------------
+-- Numbered E1+ so checks added by other features don't clash.
+\echo 'E1 owner adds an enquiry (expect INSERT 0 1), trainer and member see none (expect 0, 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.enquiries (id, gym_id, full_name, phone, email, interest, next_follow_up_at)
+values ('50000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '  Kavya Nair ', '9840011111',
+        'Kavya@Example.com', 'Weight loss, evenings', now() + interval '1 hour');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select count(*) as trainer_sees from public.enquiries;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select count(*) as member_sees from public.enquiries;
+\echo 'E2 member cannot add one (expect "Assign an owner or supervisor")'
+insert into public.enquiries (gym_id, full_name, phone) values ('10000000-0000-0000-0000-000000000001', 'Sneaky', '9840022222');
+\echo 'E3 stored tidy and assigned to Olivia (expect Kavya Nair | kavya@example.com | t)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select full_name, email, assigned_to = created_by as assigned_to_creator from public.enquiries;
+\echo 'E4 assigning a trainer, moving gyms, or linking by hand fail (expect 3 errors)'
+update public.enquiries set assigned_to = '00000000-0000-0000-0000-00000000000b' where id = '50000000-0000-0000-0000-000000000001';
+update public.enquiries set gym_id = '10000000-0000-0000-0000-000000000002' where id = '50000000-0000-0000-0000-000000000001';
+update public.enquiries set member_id = '00000000-0000-0000-0000-00000000000c' where id = '50000000-0000-0000-0000-000000000001';
+\echo 'E5 a call moves it to following up with two timeline lines (expect following_up | 2)'
+select public.log_enquiry_follow_up('50000000-0000-0000-0000-000000000001', 'call', 'Wants a morning slot', now() + interval '2 hours');
+select status, (select count(*) from public.enquiry_notes) as notes from public.enquiries;
+\echo 'E6 follow-up in the past (expect "Pick a follow-up time"), trainer logs (expect "Enquiry not found")'
+select public.log_enquiry_follow_up('50000000-0000-0000-0000-000000000001', 'note', '', now() - interval '1 day');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.log_enquiry_follow_up('50000000-0000-0000-0000-000000000001', 'note', 'hi', null);
+\echo 'E7 reminders: none before it is due, one when due, still one on a rerun (expect 0, 1, 1)'
+reset role;
+select public.send_enquiry_reminders(now() + interval '1 hour');
+select count(*) from public.notifications where dedupe_key like 'enquiry:%';
+select public.send_enquiry_reminders(now() + interval '3 hours');
+select count(*) from public.notifications where dedupe_key like 'enquiry:%';
+select public.send_enquiry_reminders(now() + interval '3 hours 5 minutes');
+select title, count(*) over () from public.notifications where dedupe_key like 'enquiry:%';
+set role authenticated;
+\echo 'E8 trial without dates (expect "Give the trial pass dates"), with dates (expect UPDATE 1 and a trial line)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+update public.enquiries set status = 'trial' where id = '50000000-0000-0000-0000-000000000001';
+update public.enquiries set status = 'trial', trial_starts_on = current_date, trial_ends_on = current_date + 2
+  where id = '50000000-0000-0000-0000-000000000001';
+select body like 'Trial pass%' as trial_logged from public.enquiry_notes where kind = 'status' order by created_at desc limit 1;
+\echo 'E9 she joins with the same email: linked and joined, follow-up cleared (expect joined | t | t | Joined the gym)'
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000050', 'kavya@example.com', '{"full_name":"Kavya Nair"}');
+insert into public.gym_members (gym_id, user_id, role) values
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000050', 'member');
+select status, member_id = '00000000-0000-0000-0000-000000000050' as linked, next_follow_up_at is null as cleared,
+       (select body from public.enquiry_notes where kind = 'status' order by created_at desc, body limit 1)
+from public.enquiries where id = '50000000-0000-0000-0000-000000000001';
+set role authenticated;
+\echo 'E10 owner of another gym sees none, and only owners delete (Grace 0; Tom DELETE 0; Olivia DELETE 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
+select count(*) as other_gym_sees from public.enquiries;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+delete from public.enquiries;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+delete from public.enquiries;
+-- Announcements ------------------------------------------------------------------------
+-- Numbered A1+ so checks added by other features don't clash.
+
+reset role;
+delete from public.notifications where kind = 'announcement';
+-- Sam is a supervisor again; Xavier stays suspended, so he hears nothing.
+update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-000000000020' and gym_id = '10000000-0000-0000-0000-000000000001';
+set role authenticated;
+\echo 'A1 member cannot send (expect "Only owners and supervisors"), owner sends to a bad audience (expect "Pick who") or blank title (expect "Add a title")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'everyone', 'Free pizza', '');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'owners', 'Hi', '');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'everyone', '   ', '');
+\echo 'A2 owner tells everyone (expect ok); every active person but the owner gets it once (expect told = active people - 1)'
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'everyone', ' Diwali holiday ', 'Closed on 1 Nov.') is not null as ok;
+reset role;
+select (select count(*) from public.notifications where kind = 'announcement') as told,
+       (select count(*) - 1 from public.gym_members
+         where gym_id = '10000000-0000-0000-0000-000000000001' and status = 'active') as expected,
+       (select count(*) from public.notifications where kind = 'announcement'
+         and recipient_id = '00000000-0000-0000-0000-00000000000a') as owner_told,
+       (select string_agg(distinct title, ',') from public.notifications where kind = 'announcement') as title;
+set role authenticated;
+\echo 'A3 supervisor tells staff only (expect ok); members get nothing new (expect member_told 1), trainer does (expect 2)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'staff', 'Staff meeting', 'Sunday 10 am.') is not null as ok;
+reset role;
+select (select count(*) from public.notifications where kind = 'announcement'
+         and recipient_id = '00000000-0000-0000-0000-00000000000d') as member_told,
+       (select count(*) from public.notifications where kind = 'announcement'
+         and recipient_id = '00000000-0000-0000-0000-00000000000b') as trainer_told;
+set role authenticated;
+\echo 'A4 lists: member sees 1, trainer 2, owner 2, suspended Xavier 0'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d'); select count(*) as member from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b'); select count(*) as trainer from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a'); select count(*) as owner from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select count(*) as suspended from public.announcements where gym_id = '10000000-0000-0000-0000-000000000001';
+\echo 'A5 member cannot post directly (expect row-level security) or take one down (expect DELETE 0); owner can (expect DELETE 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+insert into public.announcements (gym_id, title) values ('10000000-0000-0000-0000-000000000001', 'Fake');
+delete from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+delete from public.announcements where title = 'Staff meeting';
+
+-- Body progress (checks B1+). Uma (21) is mapped to Tom (b); Ravi (22) has no trainer; Sam is a supervisor again.
 reset role;
 update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-000000000020';
 set role authenticated;
-\echo '118 Uma logs today again (expect INSERT 0 1, 1 row), an empty entry (expect check violation), a 500 kg weight (expect check violation)'
+\echo 'B1 Uma logs today again (expect INSERT 0 1, 1 row), an empty entry (expect check violation), a 500 kg weight (expect check violation)'
 select pg_temp.as_user('00000000-0000-0000-0000-000000000021');
 insert into public.body_measurements (gym_id, member_id, measured_on, weight_kg, waist_cm) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021',current_date,62,80)
   on conflict (gym_id, member_id, measured_on) do update set weight_kg = excluded.weight_kg, waist_cm = excluded.waist_cm;
 select count(*) as uma_entries from public.body_measurements where member_id = '00000000-0000-0000-0000-000000000021';
 insert into public.body_measurements (gym_id, member_id, measured_on) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021',current_date - 1);
 insert into public.body_measurements (gym_id, member_id, weight_kg, measured_on) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021',500,current_date - 2);
-\echo '119 Uma cannot log for Ravi (expect RLS error) or at a gym she is not in (expect RLS error)'
+\echo 'B2 Uma cannot log for Ravi (expect RLS error) or at a gym she is not in (expect RLS error)'
 insert into public.body_measurements (gym_id, member_id, weight_kg) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000022',70);
 insert into public.body_measurements (gym_id, member_id, weight_kg) values ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000021',70);
-\echo '120 Tom cannot change Uma''s entry (expect UPDATE 0); owner and supervisor see it (expect 1, 1); outsider sees 0'
+\echo 'B3 Tom cannot change Uma''s entry (expect UPDATE 0); owner and supervisor see it (expect 1, 1); outsider sees 0'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 update public.body_measurements set weight_kg = 90 where member_id = '00000000-0000-0000-0000-000000000021';
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a'); select count(*) as owner_sees from public.body_measurements where member_id = '00000000-0000-0000-0000-000000000021';
 select pg_temp.as_user('00000000-0000-0000-0000-000000000020'); select count(*) as supervisor_sees from public.body_measurements where member_id = '00000000-0000-0000-0000-000000000021';
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select count(*) as outsider_sees from public.body_measurements;
-\echo '121 Uma uploads a photo to her folder (expect INSERT x2), not to Ravi''s (expect RLS error x2)'
+\echo 'B4 Uma uploads a photo to her folder (expect INSERT x2), not to Ravi''s (expect RLS error x2)'
 select pg_temp.as_user('00000000-0000-0000-0000-000000000021');
 insert into storage.objects (bucket_id, name) values ('progress-photos', '10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000021/p1.jpg');
 insert into public.progress_photos (gym_id, member_id, storage_path, pose) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000021','10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000021/p1.jpg','front');
 insert into storage.objects (bucket_id, name) values ('progress-photos', '10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000022/p1.jpg');
 insert into public.progress_photos (gym_id, member_id, storage_path) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000022','10000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000022/p1.jpg');
-\echo '122 Tom sees the photo and file (expect 1, 1) but cannot delete it (expect DELETE 0); Ravi sees nothing (expect 0, 0)'
+\echo 'B5 Tom sees the photo and file (expect 1, 1) but cannot delete it (expect DELETE 0); Ravi sees nothing (expect 0, 0)'
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select count(*) as tom_photos from public.progress_photos;
 select count(*) as tom_files from storage.objects where bucket_id = 'progress-photos';
@@ -771,7 +904,7 @@ delete from storage.objects where bucket_id = 'progress-photos';
 select pg_temp.as_user('00000000-0000-0000-0000-000000000022');
 select count(*) as ravi_photos from public.progress_photos;
 select count(*) as ravi_files from storage.objects where bucket_id = 'progress-photos';
-\echo '123 Uma deletes her photo (expect DELETE 1, DELETE 1)'
+\echo 'B6 Uma deletes her photo (expect DELETE 1, DELETE 1)'
 select pg_temp.as_user('00000000-0000-0000-0000-000000000021');
 delete from storage.objects where bucket_id = 'progress-photos';
 delete from public.progress_photos;

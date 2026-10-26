@@ -5,6 +5,7 @@ import {
   parseRupees,
   remainingFraction,
   renewalStart,
+  groupRenewals,
   renewalsDue,
   toIsoDate,
 } from '@/features/memberships/rules';
@@ -65,12 +66,34 @@ describe('renewalsDue', () => {
     expect(renewalsDue(list, today).map((m) => m.id)).toEqual(['expired', 'soon']);
   });
 
+  it('leaves out memberships that ended more than 30 days ago', () => {
+    const list = [
+      { ...membership('2026-08-01', '2026-09-24'), id: 'recent', memberId: 'a' },
+      { ...membership('2026-08-01', '2026-09-23'), id: 'lapsed', memberId: 'b' },
+    ];
+    expect(renewalsDue(list, today).map((m) => m.id)).toEqual(['recent']);
+  });
+
   it('drops members who have already renewed', () => {
     const list = [
       { ...membership('2026-09-01', '2026-10-20'), id: 'old' },
       { ...membership('2026-10-21', '2026-11-19'), id: 'renewed' },
     ];
     expect(renewalsDue(list, today)).toEqual([]);
+  });
+});
+
+describe('groupRenewals', () => {
+  it('splits running from ended, ending soonest and ended most recently first', () => {
+    const list = [
+      { ...membership('2026-10-01', '2026-10-28'), id: 'later', memberId: 'a' },
+      { ...membership('2026-10-01', '2026-10-24'), id: 'today', memberId: 'b' },
+      { ...membership('2026-09-01', '2026-10-10'), id: 'older', memberId: 'c' },
+      { ...membership('2026-09-01', '2026-10-23'), id: 'yesterday', memberId: 'd' },
+    ];
+    const { endingSoon, ended } = groupRenewals(list, today);
+    expect(endingSoon.map((m) => m.id)).toEqual(['today', 'later']);
+    expect(ended.map((m) => m.id)).toEqual(['yesterday', 'older']);
   });
 });
 

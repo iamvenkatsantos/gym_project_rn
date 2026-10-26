@@ -7,6 +7,7 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { LatestAnnouncement } from '@/features/announcements/components/latest-announcement';
 import { CheckInCard } from '@/features/attendance/components/check-in-card';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { ClassRow } from '@/features/bookings/components/class-row';
@@ -35,6 +36,7 @@ export default function MemberHomeScreen() {
       </ThemedText>
 
       <CheckInCard gymId={gym.gymId} userId={profile.id} role="member" />
+      <LatestAnnouncement />
 
       <SectionHeader title="Membership" />
       <QueryState
