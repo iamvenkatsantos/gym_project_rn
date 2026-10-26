@@ -6,6 +6,7 @@ import {
   listMemberships,
   listPlans,
   recordMembership,
+  remindRenewal,
   savePlan,
 } from '@/features/memberships/api';
 import type { MembershipInput, PlanInput } from '@/features/memberships/types';
@@ -61,4 +62,8 @@ export function useRecordMembership(gymId: string) {
     mutationFn: (input: MembershipInput) => recordMembership(gymId, input),
     onSettled: invalidate,
   });
+}
+
+export function useRemindRenewal(gymId: string) {
+  return useMutation({ mutationFn: (memberId: string) => remindRenewal(gymId, memberId) });
 }

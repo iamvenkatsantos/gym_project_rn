@@ -137,7 +137,11 @@ inbox (switching to that gym if they belong to several):
 | A class is moved or cancelled          | Booked members, and the trainer if someone else changed it |
 | A 1:1 session is booked or cancelled   | The trainer when booked; whoever didn't cancel it          |
 | A membership is recorded               | The member                                                 |
-| A membership ends in 3 days, or today  | The member (from 9 am gym time, skipped if they renewed)   |
+| A membership ends in 7, 3, 1 or 0 days | The member (from 9 am gym time, skipped if they renewed)   |
+| A membership ended yesterday           | The member (from 9 am, skipped if they renewed)            |
+| A membership enters its last week      | Owners and supervisors, with who ends this week            |
+| A membership ends today                | Owners and supervisors (same morning push)                 |
+| Staff tap Remind on a renewal          | The member (once a day at most)                            |
 | Trainer messages, requests and matches | As before (PR #14)                                         |
 
 How it works: the app saves each phone's Expo push token (`push_tokens`, via
