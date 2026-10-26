@@ -1,3 +1,4 @@
+import type { Announcement } from '@/features/announcements/types';
 import type { AttendanceDay } from '@/features/attendance/types';
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
@@ -120,6 +121,25 @@ export const mockTrainerRequests: TrainerRequest[] = [
     response: '',
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     resolvedAt: null,
+  },
+];
+
+export const mockAnnouncements: Announcement[] = [
+  {
+    id: 'a-1',
+    senderName: 'Olivia Owner',
+    audience: 'everyone',
+    title: 'Gym closed for the holiday',
+    body: 'We are closed on 1 Nov for Diwali and open as usual from 2 Nov, 5 am.',
+    createdAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'a-2',
+    senderName: 'Sam Supervisor',
+    audience: 'staff',
+    title: 'Staff meeting on Sunday',
+    body: '10 am at the front desk. We will plan the new batch timings.',
+    createdAt: new Date(Date.now() - 3 * DAY).toISOString(),
   },
 ];
 
