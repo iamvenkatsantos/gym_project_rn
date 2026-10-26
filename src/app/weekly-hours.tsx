@@ -93,42 +93,55 @@ function HoursForm({
               ) : null}
             </View>
             {day.map((w) => (
+              // Two steppers and a remove button don't fit on one line of a small phone, so the
+              // labels and the remove button sit on a line above the steppers.
               <View key={`${w.startTime}-${w.endTime}`} style={styles.window}>
-                <View style={styles.flex}>
-                  <Stepper
-                    label={`${weekdayNames[weekday]} start`}
-                    value={toMinutes(w.startTime)}
-                    step={TimeStep}
-                    min={0}
-                    max={toMinutes(w.endTime) - TimeStep}
-                    format={fromMinutes}
-                    onChange={(m) =>
-                      setWindows((all) => updateWindow(all, w, { startTime: fromMinutes(m) }))
-                    }
-                  />
+                <View style={styles.steppers}>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                    From
+                  </ThemedText>
+                  <View style={[styles.flex, styles.windowHeader]}>
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                      To
+                    </ThemedText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${weekdayNames[weekday]} ${w.startTime} to ${w.endTime}`}
+                      onPress={() => setWindows((all) => removeWindow(all, w))}
+                      hitSlop={8}
+                      style={styles.remove}>
+                      <Icon name="close-circle" size={22} />
+                    </Pressable>
+                  </View>
                 </View>
-                <ThemedText themeColor="textSecondary">to</ThemedText>
-                <View style={styles.flex}>
-                  <Stepper
-                    label={`${weekdayNames[weekday]} end`}
-                    value={toMinutes(w.endTime)}
-                    step={TimeStep}
-                    min={toMinutes(w.startTime) + TimeStep}
-                    max={23 * 60 + 30}
-                    format={fromMinutes}
-                    onChange={(m) =>
-                      setWindows((all) => updateWindow(all, w, { endTime: fromMinutes(m) }))
-                    }
-                  />
+                <View style={styles.steppers}>
+                  <View style={styles.flex}>
+                    <Stepper
+                      label={`${weekdayNames[weekday]} start`}
+                      value={toMinutes(w.startTime)}
+                      step={TimeStep}
+                      min={0}
+                      max={toMinutes(w.endTime) - TimeStep}
+                      format={fromMinutes}
+                      onChange={(m) =>
+                        setWindows((all) => updateWindow(all, w, { startTime: fromMinutes(m) }))
+                      }
+                    />
+                  </View>
+                  <View style={styles.flex}>
+                    <Stepper
+                      label={`${weekdayNames[weekday]} end`}
+                      value={toMinutes(w.endTime)}
+                      step={TimeStep}
+                      min={toMinutes(w.startTime) + TimeStep}
+                      max={23 * 60 + 30}
+                      format={fromMinutes}
+                      onChange={(m) =>
+                        setWindows((all) => updateWindow(all, w, { endTime: fromMinutes(m) }))
+                      }
+                    />
+                  </View>
                 </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${weekdayNames[weekday]} ${w.startTime} to ${w.endTime}`}
-                  onPress={() => setWindows((all) => removeWindow(all, w))}
-                  hitSlop={8}
-                  style={styles.remove}>
-                  <Icon name="close-circle" size={24} />
-                </Pressable>
               </View>
             ))}
             <View style={styles.dayActions}>
@@ -189,13 +202,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   window: {
+    gap: Spacing.one,
+  },
+  windowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  steppers: {
+    flexDirection: 'row',
     gap: Spacing.two,
   },
   remove: {
     width: 32,
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   dayActions: {
     flexDirection: 'row',

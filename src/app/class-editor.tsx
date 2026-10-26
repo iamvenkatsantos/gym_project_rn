@@ -204,7 +204,7 @@ function ClassForm({
               value={weeks}
               min={1}
               max={26}
-              format={(w) => (w === 1 ? 'Just once' : `${w} weeks`)}
+              format={(w) => (w === 1 ? 'Once' : `${w} weeks`)}
               onChange={setWeeks}
             />
           </View>

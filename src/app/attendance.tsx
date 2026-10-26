@@ -50,17 +50,25 @@ function DayView({ gymId }: { gymId: string }) {
         />
       </View>
       <View style={styles.grid}>
-        <StatTile label="Members came" value={counts?.member.present} icon="people" accent />
+        <StatTile
+          label="Members came"
+          value={counts?.member.present}
+          icon="people"
+          accent
+          compact
+        />
         <StatTile
           label="Trainers came"
           value={counts && `${counts.trainer.present}/${counts.trainer.total}`}
           icon="barbell-outline"
+          compact
         />
         {daysAgo === 0 ? (
           <StatTile
             label="In the gym now"
             value={counts && counts.member.inGym + counts.trainer.inGym}
             icon="location-outline"
+            compact
           />
         ) : null}
       </View>

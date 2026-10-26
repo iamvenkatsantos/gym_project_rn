@@ -20,9 +20,14 @@ export function ProgressOverview({ logs }: { logs: WorkoutLog[] }) {
   return (
     <>
       <View style={styles.grid}>
-        <StatTile label="This week" value={workoutsThisWeek(logs)} icon="flame" accent />
-        <StatTile label="Week streak" value={weekStreak(logs)} icon="calendar-number-outline" />
-        <StatTile label="Workouts" value={logs.length} icon="barbell-outline" />
+        <StatTile label="This week" value={workoutsThisWeek(logs)} icon="flame" accent compact />
+        <StatTile
+          label="Week streak"
+          value={weekStreak(logs)}
+          icon="calendar-number-outline"
+          compact
+        />
+        <StatTile label="Workouts" value={logs.length} icon="barbell-outline" compact />
       </View>
 
       <SectionHeader title="Personal records" />

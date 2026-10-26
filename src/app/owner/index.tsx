@@ -5,9 +5,9 @@ import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
+import { ShortcutGrid, type Shortcut } from '@/components/shortcut-grid';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
-import { DayAttendanceList } from '@/features/attendance/components/day-attendance';
 import { useDayAttendance } from '@/features/attendance/hooks';
 import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
@@ -25,8 +25,10 @@ import { RenewalRow } from '@/features/memberships/components/renewal-row';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 
-/** How many renewals the dashboard lists before "See all". */
-const RENEWALS_SHOWN = 3;
+/** How much of each list the dashboard shows before the screen behind it. */
+const RENEWALS_SHOWN = 2;
+const REQUESTS_SHOWN = 2;
+const CLASSES_SHOWN = 2;
 
 /** The owner's and the supervisor's home: money, attendance, trainer matching and today's classes. */
 export default function OwnerDashboardScreen() {
@@ -47,91 +49,97 @@ export default function OwnerDashboardScreen() {
   const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;
   const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
-  const bookedToday = today?.reduce((sum, c) => sum + c.bookedCount, 0);
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
   const noTrainer =
     people.data && links.data ? unmappedMembers(people.data, links.data).length : undefined;
 
+  const shortcuts: Shortcut[] = [
+    {
+      label: 'Enquiries',
+      icon: 'chatbubbles-outline',
+      badge: enquiryCounts?.due,
+      onPress: () => router.push('/enquiries'),
+    },
+    {
+      label: 'Announce',
+      icon: 'megaphone-outline',
+      onPress: () => router.push('/announcements'),
+    },
+    {
+      label: 'Attendance',
+      icon: 'calendar-number-outline',
+      onPress: () => router.push('/attendance'),
+    },
+  ];
+  if (gym.role === 'owner') {
+    shortcuts.push(
+      { label: 'Insights', icon: 'stats-chart-outline', onPress: () => router.push('/insights') },
+      { label: 'Reports', icon: 'download-outline', onPress: () => router.push('/reports') },
+      {
+        label: 'Gym details',
+        icon: 'business-outline',
+        onPress: () => router.push('/gym-details'),
+      },
+    );
+  }
+
   return (
     <Screen>
       {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
+      {/* Three across so the numbers fit on the first screen of a small phone. Each one opens
+          the screen behind it, so the dashboard doesn't need a row of buttons as well. */}
       <View style={styles.grid}>
-        <StatTile label="Active members" value={activeCount} icon="people" accent />
-        <StatTile label="Renewals due" value={renewals?.length} icon="alert-circle-outline" />
-        <StatTile label="Classes today" value={today?.length} icon="calendar-outline" />
-        <StatTile label="Booked today" value={bookedToday} icon="checkmark-done-outline" />
-        <StatTile label="Trainer requests" value={waiting?.length} icon="hand-right-outline" />
-        <StatTile label="No trainer yet" value={noTrainer} icon="person-outline" />
         <StatTile
-          label="Members came today"
-          value={present?.member.present}
-          icon="log-in-outline"
+          label="Active members"
+          value={activeCount}
+          icon="people"
+          accent
+          compact
+          onPress={() => router.push('/owner/people')}
         />
         <StatTile
-          label="Trainers in today"
+          label="Renewals due"
+          value={renewals?.length}
+          icon="alert-circle-outline"
+          compact
+          onPress={() => router.push('/renewals')}
+        />
+        <StatTile
+          label="No trainer yet"
+          value={noTrainer}
+          icon="person-outline"
+          compact
+          onPress={() => router.push('/owner/training')}
+        />
+        <StatTile
+          label="Came today"
+          value={present?.member.present}
+          icon="log-in-outline"
+          compact
+          onPress={() => router.push('/attendance')}
+        />
+        <StatTile
+          label="Trainers in"
           value={present && `${present.trainer.present}/${present.trainer.total}`}
           icon="barbell-outline"
+          compact
+          onPress={() => router.push('/attendance')}
+        />
+        <StatTile
+          label="Classes today"
+          value={today?.length}
+          icon="calendar-outline"
+          compact
+          onPress={() => router.push('/owner/classes')}
         />
       </View>
 
-      {attendance.data ? (
-        <DayAttendanceList
-          title="Trainers today"
-          entries={attendance.data.filter((e) => e.role === 'trainer')}
-          emptyText="No trainers at this gym yet."
-        />
-      ) : null}
-      <Button
-        label={
-          enquiryCounts?.due
-            ? `Enquiries · ${enquiryCounts.due} to follow up today`
-            : 'Enquiries and trials'
-        }
-        icon="chatbubbles-outline"
-        variant="secondary"
-        onPress={() => router.push('/enquiries')}
-      />
-      <Button
-        label="Announcements"
-        icon="megaphone-outline"
-        variant="secondary"
-        onPress={() => router.push('/announcements')}
-      />
-      <Button
-        label="Attendance report"
-        icon="calendar-number-outline"
-        variant="secondary"
-        onPress={() => router.push('/attendance')}
-      />
-      {gym.role === 'owner' ? (
-        <Button
-          label="Insights"
-          icon="stats-chart-outline"
-          variant="secondary"
-          onPress={() => router.push('/insights')}
-        />
-      ) : null}
-      {gym.role === 'owner' ? (
-        <Button
-          label="Export reports"
-          icon="download-outline"
-          variant="secondary"
-          onPress={() => router.push('/reports')}
-        />
-      ) : null}
-      {gym.role === 'owner' ? (
-        <Button
-          label="Gym details"
-          icon="business-outline"
-          variant="secondary"
-          onPress={() => router.push('/gym-details')}
-        />
-      ) : null}
+      <ShortcutGrid shortcuts={shortcuts} />
 
       {waiting?.length ? (
         <>
           <SectionHeader title="Trainer requests" detail={`${waiting.length} waiting`} />
-          {waiting.map((request) => (
+          {waiting.slice(0, REQUESTS_SHOWN).map((request) => (
             <TrainerRequestRow
               key={request.id}
               request={request}
@@ -160,13 +168,9 @@ export default function OwnerDashboardScreen() {
             .map((m) => <RenewalRow key={m.id} gymId={gym.gymId} membership={m} />)
         }
       </QueryState>
-      {renewals?.length ? (
+      {renewals && renewals.length > RENEWALS_SHOWN ? (
         <Button
-          label={
-            renewals.length > RENEWALS_SHOWN
-              ? `See all ${renewals.length} renewals`
-              : 'See all renewals'
-          }
+          label={`See all ${renewals.length} renewals`}
           icon="alert-circle-outline"
           variant="secondary"
           size="compact"
@@ -174,14 +178,14 @@ export default function OwnerDashboardScreen() {
         />
       ) : null}
 
-      <SectionHeader title="Up next" />
+      <SectionHeader title="Up next" detail="Today's classes" />
       <QueryState
         query={classes}
         isEmpty={(list) => list.length === 0}
         emptyText="No classes scheduled.">
         {(list) =>
           list
-            .slice(0, 3)
+            .slice(0, CLASSES_SHOWN)
             .map((gymClass) => <ClassRow key={gymClass.id} gymClass={gymClass} showDay />)
         }
       </QueryState>
