@@ -10,6 +10,7 @@ import {
   withdrawTrainerRequest,
 } from '@/features/coaching/api';
 import type { TrainerRequestInput } from '@/features/coaching/types';
+import { dietKeys } from '@/features/diet/keys';
 import { memberKeys } from '@/features/members/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
 import { setAssignment } from '@/features/workouts/api';
@@ -39,14 +40,18 @@ export function useTrainerRequests(gymId: string) {
   });
 }
 
-/** Mapping changes what trainers coach and which plans members have, so refresh those too. */
-function useInvalidateCoaching() {
+/**
+ * Mapping changes what trainers coach and which workout and diet plans members have, so
+ * refresh those too.
+ */
+export function useInvalidateCoaching() {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: coachingKeys.all }),
       queryClient.invalidateQueries({ queryKey: memberKeys.all }),
       queryClient.invalidateQueries({ queryKey: workoutKeys.all }),
+      queryClient.invalidateQueries({ queryKey: dietKeys.all }),
       queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
     ]);
 }

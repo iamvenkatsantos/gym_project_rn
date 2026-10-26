@@ -791,6 +791,65 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select public.revenue_by_month('10000000-0000-0000-0000-000000000002', 6);
 \echo '122 nobody calls the insights check directly (expect permission denied)'
 select public.check_insights_access('10000000-0000-0000-0000-000000000001');
+-- Enquiries ---------------------------------------------------------------------------
+-- Numbered E1+ so checks added by other features don't clash.
+\echo 'E1 owner adds an enquiry (expect INSERT 0 1), trainer and member see none (expect 0, 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.enquiries (id, gym_id, full_name, phone, email, interest, next_follow_up_at)
+values ('50000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '  Kavya Nair ', '9840011111',
+        'Kavya@Example.com', 'Weight loss, evenings', now() + interval '1 hour');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select count(*) as trainer_sees from public.enquiries;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select count(*) as member_sees from public.enquiries;
+\echo 'E2 member cannot add one (expect "Assign an owner or supervisor")'
+insert into public.enquiries (gym_id, full_name, phone) values ('10000000-0000-0000-0000-000000000001', 'Sneaky', '9840022222');
+\echo 'E3 stored tidy and assigned to Olivia (expect Kavya Nair | kavya@example.com | t)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select full_name, email, assigned_to = created_by as assigned_to_creator from public.enquiries;
+\echo 'E4 assigning a trainer, moving gyms, or linking by hand fail (expect 3 errors)'
+update public.enquiries set assigned_to = '00000000-0000-0000-0000-00000000000b' where id = '50000000-0000-0000-0000-000000000001';
+update public.enquiries set gym_id = '10000000-0000-0000-0000-000000000002' where id = '50000000-0000-0000-0000-000000000001';
+update public.enquiries set member_id = '00000000-0000-0000-0000-00000000000c' where id = '50000000-0000-0000-0000-000000000001';
+\echo 'E5 a call moves it to following up with two timeline lines (expect following_up | 2)'
+select public.log_enquiry_follow_up('50000000-0000-0000-0000-000000000001', 'call', 'Wants a morning slot', now() + interval '2 hours');
+select status, (select count(*) from public.enquiry_notes) as notes from public.enquiries;
+\echo 'E6 follow-up in the past (expect "Pick a follow-up time"), trainer logs (expect "Enquiry not found")'
+select public.log_enquiry_follow_up('50000000-0000-0000-0000-000000000001', 'note', '', now() - interval '1 day');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.log_enquiry_follow_up('50000000-0000-0000-0000-000000000001', 'note', 'hi', null);
+\echo 'E7 reminders: none before it is due, one when due, still one on a rerun (expect 0, 1, 1)'
+reset role;
+select public.send_enquiry_reminders(now() + interval '1 hour');
+select count(*) from public.notifications where dedupe_key like 'enquiry:%';
+select public.send_enquiry_reminders(now() + interval '3 hours');
+select count(*) from public.notifications where dedupe_key like 'enquiry:%';
+select public.send_enquiry_reminders(now() + interval '3 hours 5 minutes');
+select title, count(*) over () from public.notifications where dedupe_key like 'enquiry:%';
+set role authenticated;
+\echo 'E8 trial without dates (expect "Give the trial pass dates"), with dates (expect UPDATE 1 and a trial line)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+update public.enquiries set status = 'trial' where id = '50000000-0000-0000-0000-000000000001';
+update public.enquiries set status = 'trial', trial_starts_on = current_date, trial_ends_on = current_date + 2
+  where id = '50000000-0000-0000-0000-000000000001';
+select body like 'Trial pass%' as trial_logged from public.enquiry_notes where kind = 'status' order by created_at desc limit 1;
+\echo 'E9 she joins with the same email: linked and joined, follow-up cleared (expect joined | t | t | Joined the gym)'
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000050', 'kavya@example.com', '{"full_name":"Kavya Nair"}');
+insert into public.gym_members (gym_id, user_id, role) values
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000050', 'member');
+select status, member_id = '00000000-0000-0000-0000-000000000050' as linked, next_follow_up_at is null as cleared,
+       (select body from public.enquiry_notes where kind = 'status' order by created_at desc, body limit 1)
+from public.enquiries where id = '50000000-0000-0000-0000-000000000001';
+set role authenticated;
+\echo 'E10 owner of another gym sees none, and only owners delete (Grace 0; Tom DELETE 0; Olivia DELETE 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
+select count(*) as other_gym_sees from public.enquiries;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+delete from public.enquiries;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+delete from public.enquiries;
 -- Announcements ------------------------------------------------------------------------
 -- Numbered A1+ so checks added by other features don't clash.
 

@@ -146,6 +146,16 @@ function RootNavigator() {
           name="message-trainer"
           options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
         />
+        {/* The front desk: walk-in enquiries, follow-ups and trial passes. */}
+        <Stack.Screen name="enquiries" options={{ headerShown: true, title: 'Enquiries' }} />
+        <Stack.Screen
+          name="enquiry/[enquiryId]"
+          options={{ headerShown: true, title: 'Enquiry' }}
+        />
+        <Stack.Screen
+          name="enquiry-editor"
+          options={{ presentation: 'modal', headerShown: true, title: 'New enquiry' }}
+        />
         <Stack.Screen
           name="new-announcement"
           options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
@@ -160,6 +170,11 @@ function RootNavigator() {
         <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
         <Stack.Screen
           name="assign-plan/[workoutId]"
+          options={{ headerShown: true, title: 'Assign' }}
+        />
+        <Stack.Screen name="meal-plan-editor" options={{ headerShown: true, title: 'Diet plan' }} />
+        <Stack.Screen
+          name="assign-meal-plan/[planId]"
           options={{ headerShown: true, title: 'Assign' }}
         />
         <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
