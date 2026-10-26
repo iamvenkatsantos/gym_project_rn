@@ -17,6 +17,8 @@ import { classesOnDay } from '@/features/bookings/rules';
 import { TrainerRequestRow } from '@/features/coaching/components/trainer-request-row';
 import { useTrainerLinks, useTrainerRequests } from '@/features/coaching/hooks';
 import { pendingRequests, unmappedMembers } from '@/features/coaching/rules';
+import { useEnquiries } from '@/features/enquiries/hooks';
+import { countEnquiries } from '@/features/enquiries/rules';
 import { usePeople } from '@/features/members/hooks';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { RenewalRow } from '@/features/memberships/components/renewal-row';
@@ -36,6 +38,8 @@ export default function OwnerDashboardScreen() {
   const links = useTrainerLinks(gym.gymId);
   const requests = useTrainerRequests(gym.gymId);
   const attendance = useDayAttendance(gym.gymId, 0);
+  const enquiries = useEnquiries(gym.gymId);
+  const enquiryCounts = enquiries.data ? countEnquiries(enquiries.data) : undefined;
   const present = attendance.data ? countByRole(attendance.data) : undefined;
 
   const latest = memberships.data ? [...latestByMember(memberships.data).values()] : undefined;
@@ -77,6 +81,16 @@ export default function OwnerDashboardScreen() {
           emptyText="No trainers at this gym yet."
         />
       ) : null}
+      <Button
+        label={
+          enquiryCounts?.due
+            ? `Enquiries · ${enquiryCounts.due} to follow up today`
+            : 'Enquiries and trials'
+        }
+        icon="chatbubbles-outline"
+        variant="secondary"
+        onPress={() => router.push('/enquiries')}
+      />
       <Button
         label="Announcements"
         icon="megaphone-outline"
