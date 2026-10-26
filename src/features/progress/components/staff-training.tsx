@@ -5,6 +5,7 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { SectionHeader } from '@/components/section-header';
 import { canManageGym } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { MyMealPlans } from '@/features/diet/components/my-meal-plans';
 import { CoachedMembers } from '@/features/members/components/coached-members';
 import { GymHistory } from '@/features/progress/components/gym-history';
 import { ProgressOverview } from '@/features/progress/components/progress-overview';
@@ -55,6 +56,8 @@ export function StaffTraining() {
           <CoachSchedule />
           <SectionHeader title="Your plans" />
           <MyPlans />
+          <SectionHeader title="Diet plans" />
+          <MyMealPlans />
           <CoachedMembers />
         </>
       ) : (
