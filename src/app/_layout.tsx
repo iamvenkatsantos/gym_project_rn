@@ -99,6 +99,8 @@ function RootNavigator() {
           name="membership-plan-editor"
           options={{ headerShown: true, title: 'Membership plan' }}
         />
+        {/* Only owners take reports out of the app; the server enforces it too. */}
+        <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>
         <Stack.Screen name="supervisor" />

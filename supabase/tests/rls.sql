@@ -617,3 +617,23 @@ select count(*) as owner_rows from public.attendance;
 select full_name, days_present, workouts from public.attendance_report('10000000-0000-0000-0000-000000000001', 7)
   where full_name in ('Pia Member', 'Tom Trainer') order by full_name;
 select public.attendance_report('10000000-0000-0000-0000-000000000001', 0);
+\echo '99 owner exports today: payments (expect > 0, every row from gym 1 plans), memberships per active member (expect > 0), attendance (expect 4 rows)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select count(*) > 0 as payments from public.export_payments('10000000-0000-0000-0000-000000000001', current_date - 1, current_date + 1);
+select count(*) > 0 as members from public.export_memberships('10000000-0000-0000-0000-000000000001');
+select count(*) as attendance from public.export_attendance('10000000-0000-0000-0000-000000000001', current_date - 1, current_date + 1);
+\echo '100 owner exports a backwards period and over a year (expect Pick a start date, Export at most a year)'
+select public.export_payments('10000000-0000-0000-0000-000000000001', current_date, current_date - 1);
+select public.export_attendance('10000000-0000-0000-0000-000000000001', current_date - 400, current_date);
+\echo '101 supervisor, trainer and member cannot export (expect Only the gym owner x4); owner of gym 1 cannot export gym 2 (expect Only the gym owner)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.export_payments('10000000-0000-0000-0000-000000000001', current_date, current_date);
+select public.export_memberships('10000000-0000-0000-0000-000000000001');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.export_attendance('10000000-0000-0000-0000-000000000001', current_date, current_date);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.export_payments('10000000-0000-0000-0000-000000000001', current_date, current_date);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.export_payments('10000000-0000-0000-0000-000000000002', current_date, current_date);
+\echo '102 nobody calls the access check directly (expect permission denied)'
+select public.check_report_access('10000000-0000-0000-0000-000000000001', current_date, current_date);

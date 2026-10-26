@@ -83,6 +83,14 @@ export default function OwnerDashboardScreen() {
         variant="secondary"
         onPress={() => router.push('/attendance')}
       />
+      {gym.role === 'owner' ? (
+        <Button
+          label="Export reports"
+          icon="download-outline"
+          variant="secondary"
+          onPress={() => router.push('/reports')}
+        />
+      ) : null}
 
       {waiting?.length ? (
         <>
