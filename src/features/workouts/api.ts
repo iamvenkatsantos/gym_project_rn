@@ -61,7 +61,7 @@ export async function listWorkouts(
   let query = supabase
     .from('workouts')
     .select(
-      'id, trainer_id, trainer:profiles(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id)',
+      'id, trainer_id, trainer:profiles!workouts_trainer_id_fkey(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id)',
     )
     .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
