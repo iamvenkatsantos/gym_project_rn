@@ -73,6 +73,10 @@ function RootNavigator() {
       <Stack.Protected guard={status === 'signedIn' && !settingPassword && !role}>
         <Stack.Screen name="no-gym" />
       </Stack.Protected>
+      {/* New owners set up their gym here; owners can add another one. The server checks who may. */}
+      <Stack.Protected guard={status === 'signedIn' && !settingPassword}>
+        <Stack.Screen name="set-up-gym" options={{ headerShown: true, title: 'Set up your gym' }} />
+      </Stack.Protected>
       <Stack.Protected guard={role === 'member'}>
         <Stack.Screen name="member" />
         <Stack.Screen
@@ -95,6 +99,7 @@ function RootNavigator() {
         />
         {/* Only owners take reports out of the app; the server enforces it too. */}
         <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
+        <Stack.Screen name="gym-details" options={{ headerShown: true, title: 'Gym details' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>
         <Stack.Screen name="supervisor" />

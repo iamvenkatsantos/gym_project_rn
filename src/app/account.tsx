@@ -16,6 +16,7 @@ import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/constants/legal'
 import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { useSignOut } from '@/features/auth/use-sign-out';
+import { useCanSetUpGym } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
 import { queryClient } from '@/lib/query-client';
 
@@ -25,6 +26,8 @@ export default function AccountScreen() {
   const activeGym = useAuthStore(selectActiveGym);
   const setActiveGym = useAuthStore((s) => s.setActiveGym);
   const signOut = useSignOut();
+  // Owners can add a branch; people invited to run a gym can set theirs up from here too.
+  const canSetUpGym = useCanSetUpGym();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const removeAccount = useMutation({
     mutationFn: deleteAccount,
@@ -78,6 +81,15 @@ export default function AccountScreen() {
             );
           })}
         </>
+      ) : null}
+
+      {canSetUpGym.data ? (
+        <Button
+          label="Set up another gym"
+          icon="add-circle-outline"
+          variant="secondary"
+          onPress={() => router.push('/set-up-gym')}
+        />
       ) : null}
 
       <SectionHeader title="Notifications" />

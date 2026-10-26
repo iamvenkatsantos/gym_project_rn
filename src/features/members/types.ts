@@ -27,6 +27,9 @@ export type GymInvite = {
   createdAt: string;
 };
 
+/** A role at this gym, or 'gym_owner': the owner of a new gym of their own. */
+export type InviteRole = Role | 'gym_owner';
+
 export type InviteResult = 'added' | 'invited' | 'already_member';
 
 /** What inviting did, and whether the invite email went out. */

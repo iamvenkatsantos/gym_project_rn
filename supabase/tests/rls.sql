@@ -683,3 +683,34 @@ update public.gym_members set role = 'trainer' where user_id = '00000000-0000-00
 select count(*) as kept from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
 update public.gym_members set role = 'member' where user_id = '00000000-0000-0000-0000-000000000020';
 select count(*) as dropped from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
+\echo '109 member cannot invite a gym owner (expect "Only gym owners") or set up a gym (expect "Ask CoreFit Gym")'
+reset role;
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+ ('00000000-0000-0000-0000-000000000099', 'grace@example.com', now(), '{"full_name":"Grace Newowner"}');
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.invite_gym_owner('grace@example.com');
+select public.create_gym('Sneaky Gym', '', '', '', '');
+\echo '110 owner invites Grace to run a new gym (expect added); Grace can set one up (expect t)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.invite_gym_owner('Grace@Example.com ');
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
+select public.can_set_up_gym();
+\echo '111 Grace creates her gym (expect ok), is its owner, invite used up (expect 0 left), sees only her gym and herself'
+select public.create_gym(' Iron House ', '12 Main Rd', 'Chennai', '9840012345', 'Desk@IronHouse.in') is not null as ok;
+select g.name, g.city, g.email, gm.role from public.gyms g join public.gym_members gm on gm.gym_id = g.id;
+select public.can_set_up_gym() as can_still_set_up_through_ownership;
+reset role;
+select count(*) as invite_left from public.gym_setup_invites;
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
+select count(*) as members_seen from public.gym_members;
+select full_name from public.profiles order by full_name;
+\echo '112 Anna Nagar owner sees none of Grace''s gym (expect 0)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select count(*) as grace_gym_seen from public.gyms where name = 'Iron House';
+\echo '113 Grace edits her gym (expect UPDATE 1), cannot rename the other gym (expect UPDATE 0) or change created_by (expect permission denied)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
+update public.gyms set phone = '9840099999' where name = 'Iron House';
+update public.gyms set name = 'Hacked' where id = '10000000-0000-0000-0000-000000000001';
+update public.gyms set created_by = null where name = 'Iron House';

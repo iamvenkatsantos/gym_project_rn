@@ -11,7 +11,7 @@ import {
   withdrawInvite,
 } from '@/features/members/api';
 import type { MemberKind } from '@/features/members/rules';
-import type { GymPerson } from '@/features/members/types';
+import type { GymPerson, InviteRole } from '@/features/members/types';
 
 export const memberKeys = {
   all: ['members'] as const,
@@ -57,7 +57,7 @@ function useInvalidateMembers() {
 export function useInvitePerson(gymId: string) {
   const invalidate = useInvalidateMembers();
   return useMutation({
-    mutationFn: ({ email, role }: { email: string; role: GymPerson['role'] }) =>
+    mutationFn: ({ email, role }: { email: string; role: InviteRole }) =>
       invitePerson(gymId, email, role),
     onSettled: invalidate,
   });
