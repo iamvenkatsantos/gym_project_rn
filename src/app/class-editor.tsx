@@ -28,11 +28,12 @@ import {
 } from '@/features/bookings/rules';
 import type { GymClass } from '@/features/bookings/types';
 import { usePeople } from '@/features/members/hooks';
+import { activeCoaches, coachLabel } from '@/features/members/rules';
 import { formatDate } from '@/lib/format';
 import { firstError, validateTitle } from '@/lib/validation';
 
 export default function ClassEditorScreen() {
-  const { classId } = useLocalSearchParams<{ classId?: string }>();
+  const { classId, trainerId } = useLocalSearchParams<{ classId?: string; trainerId?: string }>();
   const gym = useActiveGym();
   const classes = useUpcomingClasses(gym.gymId);
   const gymClass = classes.data?.find((c) => c.id === classId);
@@ -46,20 +47,35 @@ export default function ClassEditorScreen() {
       </Screen>
     );
   }
-  return <ClassForm key={gymClass?.id ?? 'new'} gymId={gym.gymId} gymClass={gymClass} />;
+  return (
+    <ClassForm
+      key={gymClass?.id ?? 'new'}
+      gymId={gym.gymId}
+      gymClass={gymClass}
+      defaultTrainerId={trainerId}
+    />
+  );
 }
 
-function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) {
+function ClassForm({
+  gymId,
+  gymClass,
+  defaultTrainerId,
+}: {
+  gymId: string;
+  gymClass?: GymClass;
+  defaultTrainerId?: string;
+}) {
   const profile = useProfile();
   const gym = useActiveGym();
-  // Trainers schedule and edit their own classes; owners can pick any trainer.
-  const asTrainer = gym.role === 'trainer';
+  // Trainers and supervisors schedule and edit their own classes; owners can pick any coach.
+  const asTrainer = gym.role !== 'owner';
   const people = usePeople(gymId);
   const days = useMemo(() => upcomingDays(28), []);
   const initialStart = gymClass ? new Date(gymClass.startsAt) : null;
   const [title, setTitle] = useState(gymClass?.title ?? '');
   const [trainerId, setTrainerId] = useState<string | null>(
-    asTrainer ? profile.id : (gymClass?.trainerId ?? null),
+    asTrainer ? profile.id : (gymClass?.trainerId ?? defaultTrainerId ?? null),
   );
   const [day, setDay] = useState(
     initialStart
@@ -75,7 +91,7 @@ function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) 
   const update = useUpdateClass();
   const cancel = useCancelClass();
 
-  const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
+  const trainers = activeCoaches(people.data ?? []);
   const startsAt = atMinutes(day, minutes);
   const titleError = validateTitle(title, { label: 'class name', max: 40 });
   const problem = firstError(titleError, classProblem({ title, startsAt }));
@@ -118,7 +134,7 @@ function ClassForm({ gymId, gymClass }: { gymId: string; gymClass?: GymClass }) 
             {trainers.map((t) => (
               <Chip
                 key={t.id}
-                label={t.fullName}
+                label={coachLabel(t, profile.id)}
                 selected={trainerId === t.id}
                 onPress={() => setTrainerId(t.id)}
               />

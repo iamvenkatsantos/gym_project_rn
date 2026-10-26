@@ -1,5 +1,6 @@
-import { canManageGym } from '@/features/auth/types';
+import { canCoach, canManageGym } from '@/features/auth/types';
 import {
+  assignableMembers,
   membersOf,
   openRequest,
   pendingRequests,
@@ -109,5 +110,35 @@ describe('roles', () => {
     expect(canManageGym('supervisor')).toBe(true);
     expect(canManageGym('trainer')).toBe(false);
     expect(canManageGym('member')).toBe(false);
+  });
+
+  it('lets owners and supervisors coach as well as trainers', () => {
+    expect(canCoach('owner')).toBe(true);
+    expect(canCoach('supervisor')).toBe(true);
+    expect(canCoach('trainer')).toBe(true);
+    expect(canCoach('member')).toBe(false);
+  });
+});
+
+describe('assigning plans', () => {
+  const coached = [{ id: 'maya', fullName: 'Maya' }];
+  const people = [
+    person('arjun', 'member'),
+    person('maya', 'member'),
+    person('bea', 'member'),
+    person('gone', 'member', 'suspended'),
+    person('tom', 'trainer'),
+  ];
+
+  it('lists a coach’s own members, then other active members for managers', () => {
+    expect(assignableMembers(coached, people)).toEqual([
+      { id: 'maya', fullName: 'Maya', coached: true },
+      { id: 'arjun', fullName: 'arjun', coached: false },
+      { id: 'bea', fullName: 'bea', coached: false },
+    ]);
+  });
+
+  it('only lists a trainer’s own members', () => {
+    expect(assignableMembers(coached)).toEqual([{ id: 'maya', fullName: 'Maya', coached: true }]);
   });
 });

@@ -25,6 +25,7 @@ import {
   trainerNeeds,
 } from '@/features/coaching/rules';
 import { useGymMembers } from '@/features/members/hooks';
+import { coachLabel } from '@/features/members/rules';
 import { formatDate } from '@/lib/format';
 import { validateOptionalText } from '@/lib/validation';
 
@@ -88,7 +89,8 @@ function PendingRequest({ requestId }: { requestId: string }) {
 }
 
 function RequestForm({ gymId, memberId }: { gymId: string; memberId: string }) {
-  const trainers = useGymMembers(gymId, 'trainer');
+  // Owners and supervisors who coach can be asked for by name too.
+  const trainers = useGymMembers(gymId, 'coach');
   const links = useTrainerLinks(gymId, { memberId });
   const request = useRequestTrainer(gymId, memberId);
   const [needs, setNeeds] = useState<string[]>([]);
@@ -138,7 +140,7 @@ function RequestForm({ gymId, memberId }: { gymId: string; memberId: string }) {
           {choices.map((t) => (
             <Chip
               key={t.id}
-              label={t.fullName}
+              label={coachLabel(t)}
               selected={trainerId === t.id}
               onPress={() => setTrainerId(t.id)}
             />

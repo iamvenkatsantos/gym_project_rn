@@ -1,4 +1,6 @@
 import {
+  activeCoaches,
+  coachLabel,
   countPeople,
   filterPeople,
   isLastActiveOwner,
@@ -66,5 +68,26 @@ describe('member rules', () => {
     expect(isLastActiveOwner(twoOwners, 'olivia')).toBe(false);
     const suspendedSecond = [...people, person('sam', 'Sam Second', 'owner', 'suspended')];
     expect(isLastActiveOwner(suspendedSecond, 'olivia')).toBe(true);
+  });
+});
+
+describe('coaches', () => {
+  const staff = [
+    person('olivia', 'Olivia Owner', 'owner'),
+    person('sam', 'Sam Supervisor', 'supervisor'),
+    person('zara', 'Zara Trainer', 'trainer'),
+    person('tom', 'Tom Trainer', 'trainer'),
+    person('maya', 'Maya Member', 'member'),
+    person('rita', 'Rita Trainer', 'trainer', 'suspended'),
+  ];
+
+  it('lists active trainers first, then supervisors and owners', () => {
+    expect(activeCoaches(staff).map((p) => p.id)).toEqual(['tom', 'zara', 'sam', 'olivia']);
+  });
+
+  it('says when a coach is an owner or supervisor, or the viewer', () => {
+    expect(coachLabel(staff[3])).toBe('Tom Trainer');
+    expect(coachLabel(staff[0])).toBe('Olivia Owner (owner)');
+    expect(coachLabel(staff[1], 'sam')).toBe('You');
   });
 });

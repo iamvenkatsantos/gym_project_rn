@@ -12,6 +12,7 @@ import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { usePeople } from '@/features/members/hooks';
+import { activeCoaches, coachLabel } from '@/features/members/rules';
 import { useMessageTrainer } from '@/features/notifications/hooks';
 import {
   MAX_BODY,
@@ -35,7 +36,8 @@ export default function MessageTrainerScreen() {
     params.classId ? messageTemplates[1] : messageTemplates[0],
   );
   const [body, setBody] = useState('');
-  const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
+  // Any other coach, so a supervisor can reach an owner who teaches and vice versa.
+  const trainers = activeCoaches(people.data ?? []).filter((p) => p.id !== profile.id);
   const problem = firstError(
     messageProblem({ trainerId, title, body }),
     validateTitle(title, { label: 'subject', max: MAX_TITLE }),
@@ -56,7 +58,7 @@ export default function MessageTrainerScreen() {
           {trainers.map((t) => (
             <Chip
               key={t.id}
-              label={t.fullName}
+              label={coachLabel(t)}
               selected={trainerId === t.id}
               onPress={() => setTrainerId(t.id)}
             />

@@ -12,6 +12,7 @@ import {
 import type { TrainerRequestInput } from '@/features/coaching/types';
 import { memberKeys } from '@/features/members/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
+import { setAssignment } from '@/features/workouts/api';
 import { workoutKeys } from '@/features/workouts/hooks';
 
 export const coachingKeys = {
@@ -65,6 +66,32 @@ export function useSetTrainer(gymId: string) {
       assigned
         ? assignTrainer(gymId, memberId, trainerId)
         : unassignTrainer(gymId, memberId, trainerId),
+    onSettled: invalidate,
+  });
+}
+
+/**
+ * Assigns or unassigns a coach's plan. Owners and supervisors can assign to any
+ * member: one they don't coach yet is mapped to them first, since plans only go
+ * to a coach's own members.
+ */
+export function useAssignPlan(gymId: string, coachId: string) {
+  const invalidate = useInvalidateCoaching();
+  return useMutation({
+    mutationFn: async ({
+      workoutId,
+      memberId,
+      assigned,
+      mapFirst,
+    }: {
+      workoutId: string;
+      memberId: string;
+      assigned: boolean;
+      mapFirst: boolean;
+    }) => {
+      if (assigned && mapFirst) await assignTrainer(gymId, memberId, coachId);
+      await setAssignment(workoutId, memberId, assigned);
+    },
     onSettled: invalidate,
   });
 }

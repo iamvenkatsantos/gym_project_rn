@@ -15,6 +15,11 @@ and a member at another). The app shows one gym at a time and switches area with
 | Supervisor | The owner's second-in-command: see and record payments and renewals, invite members and trainers, match members with one or more trainers, answer trainer requests, follow classes and message trainers |
 | Owner      | Invite people by email, change roles, suspend or remove access; set up membership plans, schedule weekly classes, record cash or UPI payments and renewals; dashboard with renewals due                 |
 
+Staff roles nest, so a small gym can run without a supervisor or trainer: owners can do all
+supervisor and trainer work, and supervisors can do trainer work. Owners and supervisors coach
+under **Training → Coaching** (bookable hours, 1:1 sessions, their classes, plans and members),
+can be picked as a member's trainer, and get the same workout pushes a trainer would.
+
 <p>
   <img src="docs/screenshots/member-home.png" width="200" alt="Member home" />
   <img src="docs/screenshots/member-classes.png" width="200" alt="Bookings" />

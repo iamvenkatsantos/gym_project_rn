@@ -10,7 +10,7 @@ import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useActiveGym } from '@/features/auth/use-profile';
+import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import {
   useResolveTrainerRequest,
   useTrainerLinks,
@@ -19,6 +19,7 @@ import {
 import { membersOf, requestStatusLabel, trainersOf } from '@/features/coaching/rules';
 import type { TrainerRequest } from '@/features/coaching/types';
 import { usePeople } from '@/features/members/hooks';
+import { activeCoaches, coachLabel } from '@/features/members/rules';
 import { formatDate } from '@/lib/format';
 import { validateOptionalText } from '@/lib/validation';
 
@@ -41,13 +42,14 @@ export default function TrainerRequestScreen() {
 }
 
 function RequestDetail({ gymId, request }: { gymId: string; request: TrainerRequest }) {
+  const profile = useProfile();
   const people = usePeople(gymId);
   const links = useTrainerLinks(gymId);
   const resolve = useResolveTrainerRequest(gymId);
   const [trainerId, setTrainerId] = useState<string | null>(request.trainerId);
   const [response, setResponse] = useState('');
   const pending = request.status === 'pending';
-  const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
+  const trainers = activeCoaches(people.data ?? []);
   const current = trainersOf(links.data ?? [], request.memberId);
 
   return (
@@ -92,7 +94,7 @@ function RequestDetail({ gymId, request }: { gymId: string; request: TrainerRequ
                 return (
                   <Chip
                     key={t.id}
-                    label={`${t.fullName} · ${load}`}
+                    label={`${coachLabel(t, profile.id)} · ${load}`}
                     selected={trainerId === t.id}
                     onPress={() => setTrainerId(t.id)}
                   />

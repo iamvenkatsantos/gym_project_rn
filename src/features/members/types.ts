@@ -1,9 +1,10 @@
 import type { Role } from '@/features/auth/types';
 
-/** Someone with the member role at a gym. */
+/** An active person at a gym, as anyone there can list them. */
 export type GymMember = {
   id: string;
   fullName: string;
+  role: Role;
 };
 
 export type MemberStatus = 'active' | 'invited' | 'suspended';
@@ -39,4 +40,4 @@ export type InviteOutcome = {
 export type PeopleFilter = 'all' | Role | 'suspended';
 
 /** A member mapped to a trainer, with the plans that trainer assigned them. */
-export type CoachedMember = GymMember & { plans: string[] };
+export type CoachedMember = { id: string; fullName: string; plans: string[] };

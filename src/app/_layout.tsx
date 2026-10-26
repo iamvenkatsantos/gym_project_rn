@@ -8,7 +8,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Colors } from '@/constants/theme';
 
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
-import { canManageGym } from '@/features/auth/types';
+import { canCoach, canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
@@ -86,12 +86,6 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" />
-        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
-        <Stack.Screen
-          name="assign-plan/[workoutId]"
-          options={{ headerShown: true, title: 'Assign' }}
-        />
-        <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" />
@@ -125,12 +119,19 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'Message a trainer' }}
         />
       </Stack.Protected>
-      {/* Trainers follow their members; owners and supervisors follow everyone they oversee. */}
-      <Stack.Protected guard={role === 'trainer' || (!!role && canManageGym(role))}>
+      {/*
+        Coaching tools. Owners and supervisors coach too, so a gym without trainers still runs.
+        Trainers follow their members; owners and supervisors follow everyone they oversee.
+        Owners schedule any class; trainers and supervisors schedule and edit their own.
+      */}
+      <Stack.Protected guard={!!role && canCoach(role)}>
+        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen
+          name="assign-plan/[workoutId]"
+          options={{ headerShown: true, title: 'Assign' }}
+        />
+        <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
         <Stack.Screen name="member-progress/[memberId]" options={{ headerShown: true }} />
-      </Stack.Protected>
-      {/* Owners schedule any class; trainers schedule and edit their own. */}
-      <Stack.Protected guard={role === 'owner' || role === 'trainer'}>
         <Stack.Screen name="class-editor" options={{ headerShown: true, title: 'Class' }} />
       </Stack.Protected>
       <Stack.Protected guard={!!role}>

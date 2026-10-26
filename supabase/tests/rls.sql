@@ -637,3 +637,49 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select public.export_payments('10000000-0000-0000-0000-000000000002', current_date, current_date);
 \echo '102 nobody calls the access check directly (expect permission denied)'
 select public.check_report_access('10000000-0000-0000-0000-000000000001', current_date, current_date);
+
+-- Owners and supervisors cover missing roles -----------------------------------------
+set role authenticated;
+select set_config('test.monday', ((date_trunc('week', now() at time zone 'Asia/Kolkata') + interval '7 days 07:00') at time zone 'Asia/Kolkata')::text, false) is not null as next_monday;
+\echo '103 owner sets bookable hours (expect 1 window); Quinn books the owner (expect ok); the owner cannot book as a member (expect "Only members")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.set_trainer_availability('10000000-0000-0000-0000-000000000001', 60, '[{"weekday":1,"start_time":"06:00","end_time":"09:00"}]');
+select count(*) as owner_hours from public.trainer_availability where trainer_id = '00000000-0000-0000-0000-00000000000a';
+select pg_temp.as_user('00000000-0000-0000-0000-000000000032');
+select public.book_trainer_session('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', current_setting('test.monday')::timestamptz) is not null as ok;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.book_trainer_session('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', current_setting('test.monday')::timestamptz);
+\echo '104 owner maps Quinn to themself (expect INSERT), writes a plan and assigns it to her (expect ok)'
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-00000000000a');
+select set_config('test.owner_plan', (
+  select public.save_workout('10000000-0000-0000-0000-000000000001', null, 'Owner plan', '', 'beginner', 30,
+    jsonb_build_array(jsonb_build_object('exercise_id', (select id from public.exercises limit 1), 'sets', 3, 'reps', 10, 'rest_seconds', 60)))
+)::text, false) is not null as ok;
+insert into public.workout_assignments (workout_id, member_id)
+  values (current_setting('test.owner_plan')::uuid, '00000000-0000-0000-0000-000000000032') returning true as ok;
+\echo '105 Quinn checks in and starts a workout; the owner, her coach, is told (expect 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000032');
+select role from public.check_in('10000000-0000-0000-0000-000000000001');
+select public.start_workout_attendance('10000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000003', 'Owner plan');
+reset role;
+select count(*) as owner_told from public.notifications
+  where recipient_id = '00000000-0000-0000-0000-00000000000a' and dedupe_key = 'workout-start:40000000-0000-0000-0000-000000000003';
+set role authenticated;
+\echo '106 supervisor maps Ravi to themself (expect INSERT), schedules their own class (expect 1), still not one for the trainer (expect RLS error)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+insert into public.member_trainers (gym_id, member_id, trainer_id)
+  values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000020');
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Sam circuit', '00000000-0000-0000-0000-000000000020', now() + interval '2 days', 45, 10, 1);
+select public.schedule_classes('10000000-0000-0000-0000-000000000001', 'Sup class 2', '00000000-0000-0000-0000-00000000000b', now() + interval '2 days', 45, 10, 1);
+\echo '107 supervisor messages the owner (expect ok) but not themself (expect "Pick a trainer"); Ravi asks for the owner by name (expect ok)'
+select public.message_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', 'Your Monday client', '');
+select public.message_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000020', 'Note to self', '');
+select pg_temp.as_user('00000000-0000-0000-0000-000000000022');
+select public.request_trainer('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000a', array['Strength'], '') is not null as ok;
+\echo '108 supervisor made trainer keeps Ravi (expect 1); made member loses him (expect 0)'
+reset role;
+update public.gym_members set role = 'trainer' where user_id = '00000000-0000-0000-0000-000000000020';
+select count(*) as kept from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
+update public.gym_members set role = 'member' where user_id = '00000000-0000-0000-0000-000000000020';
+select count(*) as dropped from public.member_trainers where trainer_id = '00000000-0000-0000-0000-000000000020';
