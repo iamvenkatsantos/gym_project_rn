@@ -2,6 +2,7 @@ import type { AttendanceDay } from '@/features/attendance/types';
 import type { Profile } from '@/features/auth/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
 import type { TrainerLink, TrainerRequest } from '@/features/coaching/types';
+import type { MealPlan } from '@/features/diet/types';
 import type { GymInvite, GymPerson } from '@/features/members/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
 import type { AppNotification } from '@/features/notifications/types';
@@ -197,6 +198,79 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-walking-lunge', 'Walking lunge', 3, 12),
     ],
     assignedMemberIds: [],
+  },
+];
+
+export const mockMealPlans: MealPlan[] = [
+  {
+    id: 'mp-1',
+    coachId: 'u-trainer',
+    coachName: 'Tom Trainer',
+    title: 'Lean muscle, vegetarian',
+    notes: 'Drink 3 litres of water a day. Swap paneer for tofu if you like. No sugary drinks.',
+    foodType: 'veg',
+    targets: { calories: 2300, proteinG: 120, carbsG: 280, fatG: 70 },
+    meals: [
+      {
+        name: 'Breakfast',
+        time: '7:30 AM',
+        foods: 'Oats with milk, 1 banana, 10 almonds',
+        calories: 500,
+      },
+      { name: 'Mid-morning', time: '11:00 AM', foods: 'Sprouts salad, buttermilk', calories: 250 },
+      {
+        name: 'Lunch',
+        time: '1:30 PM',
+        foods: '2 rotis, dal, paneer bhurji, salad',
+        calories: 650,
+      },
+      {
+        name: 'Post-workout',
+        time: 'After workout',
+        foods: 'Whey shake with water, 1 fruit',
+        calories: 250,
+      },
+      {
+        name: 'Dinner',
+        time: '8:30 PM',
+        foods: 'Brown rice, rajma, curd, vegetables',
+        calories: 600,
+      },
+    ],
+    assignedMemberIds: ['u-member'],
+    updatedAt: new Date(Date.now() - 3 * DAY).toISOString(),
+  },
+  {
+    id: 'mp-2',
+    coachId: 'u-trainer',
+    coachName: 'Tom Trainer',
+    title: 'Fat loss, high protein',
+    notes: 'Walk 8,000 steps a day.',
+    foodType: 'non_veg',
+    targets: { calories: 1800, proteinG: 140, carbsG: 160, fatG: 55 },
+    meals: [
+      {
+        name: 'Breakfast',
+        time: '8:00 AM',
+        foods: '3 egg whites, 1 whole egg, 2 slices brown bread',
+        calories: 400,
+      },
+      {
+        name: 'Lunch',
+        time: '1:00 PM',
+        foods: 'Grilled chicken, 1 cup rice, salad',
+        calories: 600,
+      },
+      { name: 'Evening snack', time: '5:00 PM', foods: 'Greek yoghurt, green tea', calories: 200 },
+      {
+        name: 'Dinner',
+        time: '8:00 PM',
+        foods: 'Fish curry, 2 rotis, sautéed vegetables',
+        calories: 600,
+      },
+    ],
+    assignedMemberIds: [],
+    updatedAt: new Date(Date.now() - 10 * DAY).toISOString(),
   },
 ];
 

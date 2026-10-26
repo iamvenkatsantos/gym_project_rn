@@ -156,6 +156,11 @@ function RootNavigator() {
           name="assign-plan/[workoutId]"
           options={{ headerShown: true, title: 'Assign' }}
         />
+        <Stack.Screen name="meal-plan-editor" options={{ headerShown: true, title: 'Diet plan' }} />
+        <Stack.Screen
+          name="assign-meal-plan/[planId]"
+          options={{ headerShown: true, title: 'Assign' }}
+        />
         <Stack.Screen name="weekly-hours" options={{ headerShown: true, title: 'Weekly hours' }} />
         <Stack.Screen
           name="member-progress/[memberId]"
