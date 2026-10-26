@@ -48,6 +48,7 @@ const kinds: readonly NotificationKind[] = [
   'booking',
   'membership',
   'attendance',
+  'announcement',
 ];
 
 /** The data a tapped push carries, or null if it isn't one of ours. */

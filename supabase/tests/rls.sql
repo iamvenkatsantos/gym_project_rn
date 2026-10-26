@@ -764,3 +764,48 @@ update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000
 update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
 \echo '117 nobody makes themselves an admin from the app (expect permission denied)'
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-000000000099');
+
+-- Announcements ------------------------------------------------------------------------
+-- Numbered A1+ so checks added by other features don't clash.
+
+reset role;
+delete from public.notifications where kind = 'announcement';
+-- Sam is a supervisor again; Xavier stays suspended, so he hears nothing.
+update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-000000000020' and gym_id = '10000000-0000-0000-0000-000000000001';
+set role authenticated;
+\echo 'A1 member cannot send (expect "Only owners and supervisors"), owner sends to a bad audience (expect "Pick who") or blank title (expect "Add a title")'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'everyone', 'Free pizza', '');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'owners', 'Hi', '');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'everyone', '   ', '');
+\echo 'A2 owner tells everyone (expect ok); every active person but the owner gets it once (expect told = active people - 1)'
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'everyone', ' Diwali holiday ', 'Closed on 1 Nov.') is not null as ok;
+reset role;
+select (select count(*) from public.notifications where kind = 'announcement') as told,
+       (select count(*) - 1 from public.gym_members
+         where gym_id = '10000000-0000-0000-0000-000000000001' and status = 'active') as expected,
+       (select count(*) from public.notifications where kind = 'announcement'
+         and recipient_id = '00000000-0000-0000-0000-00000000000a') as owner_told,
+       (select string_agg(distinct title, ',') from public.notifications where kind = 'announcement') as title;
+set role authenticated;
+\echo 'A3 supervisor tells staff only (expect ok); members get nothing new (expect member_told 1), trainer does (expect 2)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.send_announcement('10000000-0000-0000-0000-000000000001', 'staff', 'Staff meeting', 'Sunday 10 am.') is not null as ok;
+reset role;
+select (select count(*) from public.notifications where kind = 'announcement'
+         and recipient_id = '00000000-0000-0000-0000-00000000000d') as member_told,
+       (select count(*) from public.notifications where kind = 'announcement'
+         and recipient_id = '00000000-0000-0000-0000-00000000000b') as trainer_told;
+set role authenticated;
+\echo 'A4 lists: member sees 1, trainer 2, owner 2, suspended Xavier 0'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d'); select count(*) as member from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b'); select count(*) as trainer from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a'); select count(*) as owner from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000e'); select count(*) as suspended from public.announcements where gym_id = '10000000-0000-0000-0000-000000000001';
+\echo 'A5 member cannot post directly (expect row-level security) or take one down (expect DELETE 0); owner can (expect DELETE 1)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000d');
+insert into public.announcements (gym_id, title) values ('10000000-0000-0000-0000-000000000001', 'Fake');
+delete from public.announcements;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+delete from public.announcements where title = 'Staff meeting';

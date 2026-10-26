@@ -78,6 +78,12 @@ export default function OwnerDashboardScreen() {
         />
       ) : null}
       <Button
+        label="Announcements"
+        icon="megaphone-outline"
+        variant="secondary"
+        onPress={() => router.push('/announcements')}
+      />
+      <Button
         label="Attendance report"
         icon="calendar-number-outline"
         variant="secondary"
