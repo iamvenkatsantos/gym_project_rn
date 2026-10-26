@@ -45,7 +45,8 @@
           "color": "#3DDC5C",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
