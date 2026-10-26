@@ -735,3 +735,30 @@ update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000
 update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
 \echo '117 nobody makes themselves an admin from the app (expect permission denied)'
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-000000000099');
+
+-- Owner insights ---------------------------------------------------------------------
+\echo '118 owner sees 6 months of revenue ending this month, with this month''s payments and new members (expect 6, t, t)'
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select count(*) as months,
+       bool_and(month <= current_date) and max(month) = date_trunc('month', now() at time zone 'Asia/Kolkata')::date as ends_this_month,
+       (array_agg(payments order by month desc))[1] > 0 and (array_agg(new_members order by month desc))[1] > 0 as this_month
+  from public.revenue_by_month('10000000-0000-0000-0000-000000000001', 6);
+\echo '119 member insights list only gym 1 members, with a visit for Pia (expect t, f, t)'
+select count(*) > 0 as members,
+       bool_or(full_name = 'Xavier Outsider') as outsider,
+       bool_or(full_name = 'Pia Member' and last_visit is not null and visits_30d > 0) as pia_came
+  from public.member_insights('10000000-0000-0000-0000-000000000001');
+\echo '120 busiest hours has member check-ins (expect t); a 0-month revenue trend is refused (expect Pick between)'
+select sum(check_ins) > 0 as check_ins from public.busiest_hours('10000000-0000-0000-0000-000000000001', 30);
+select public.revenue_by_month('10000000-0000-0000-0000-000000000001', 0);
+\echo '121 supervisor, trainer and member see no insights (expect Only the gym owner x3); gym 2 is refused too (expect Only the gym owner)'
+select pg_temp.as_user('00000000-0000-0000-0000-000000000020');
+select public.revenue_by_month('10000000-0000-0000-0000-000000000001', 6);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+select public.member_insights('10000000-0000-0000-0000-000000000001');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.busiest_hours('10000000-0000-0000-0000-000000000001', 30);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.revenue_by_month('10000000-0000-0000-0000-000000000002', 6);
+\echo '122 nobody calls the insights check directly (expect permission denied)'
+select public.check_insights_access('10000000-0000-0000-0000-000000000001');
