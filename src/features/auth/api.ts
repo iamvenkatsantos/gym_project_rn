@@ -8,7 +8,11 @@ import { supabase, unwrap } from '@/lib/supabase';
 type ProfileRow = {
   id: string;
   full_name: string;
-  gyms: { role: Role; status: string; gym: { id: string; name: string } }[];
+  gyms: {
+    role: Role;
+    status: string;
+    gym: { id: string; name: string; brand: { id: string; name: string } | null };
+  }[];
 };
 
 function toProfile(row: ProfileRow): Profile {
@@ -17,7 +21,13 @@ function toProfile(row: ProfileRow): Profile {
     fullName: row.full_name,
     gyms: row.gyms
       .filter((g) => g.status === 'active')
-      .map((g) => ({ gymId: g.gym.id, gymName: g.gym.name, role: g.role })),
+      .map((g) => ({
+        gymId: g.gym.id,
+        gymName: g.gym.name,
+        role: g.role,
+        brandId: g.gym.brand?.id,
+        brandName: g.gym.brand?.name,
+      })),
   };
 }
 
@@ -30,7 +40,9 @@ export async function fetchProfile(userId: string): Promise<Profile> {
   const row = unwrap(
     await supabase
       .from('profiles')
-      .select('id, full_name, gyms:gym_members(role, status, gym:gyms(id, name))')
+      .select(
+        'id, full_name, gyms:gym_members(role, status, gym:gyms(id, name, brand:brands(id, name)))',
+      )
       .eq('id', userId)
       .single(),
   ) as unknown as ProfileRow;

@@ -20,7 +20,8 @@ import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useSignOut } from '@/features/auth/use-sign-out';
-import { useCanSetUpGym } from '@/features/gyms/hooks';
+import { branchLabel } from '@/features/branches/rules';
+import { useCanSetUpGym, useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
 import { queryClient } from '@/lib/query-client';
 
@@ -30,8 +31,10 @@ export default function AccountScreen() {
   const activeGym = useAuthStore(selectActiveGym);
   const setActiveGym = useAuthStore((s) => s.setActiveGym);
   const signOut = useSignOut();
-  // Owners can add a branch; people invited to run a gym can set theirs up from here too.
+  // Admins, and people an admin invited to run a gym, can set one up from here.
   const canSetUpGym = useCanSetUpGym();
+  // Only CoreFit Gym admins add branches, since each branch is billed.
+  const isAdmin = useIsPlatformAdmin().data === true;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const removeAccount = useMutation({
     mutationFn: deleteAccount,
@@ -65,6 +68,11 @@ export default function AccountScreen() {
                 <Card highlighted={active} style={styles.gymRow}>
                   <View style={styles.flex}>
                     <ThemedText type="smallBold">{g.gymName}</ThemedText>
+                    {g.brandName && branchLabel(g.gymName, g.brandName) !== g.gymName ? (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {g.brandName} branch
+                      </ThemedText>
+                    ) : null}
                     <Pill label={g.role} tone={active ? 'accent' : 'neutral'} />
                   </View>
                   {active ? (
@@ -86,6 +94,17 @@ export default function AccountScreen() {
           variant="secondary"
           onPress={() => router.push('/set-up-gym')}
         />
+      ) : null}
+
+      {isAdmin ? (
+        <ListGroup>
+          <ListRow
+            label="CoreFit Gym admin"
+            detail="Brands, branches and branch counts for billing"
+            icon="shield-outline"
+            onPress={() => router.push('/admin')}
+          />
+        </ListGroup>
       ) : null}
 
       <SectionHeader title="Appearance" />

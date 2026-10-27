@@ -19,6 +19,9 @@ export type GymRole = {
   gymId: string;
   gymName: string;
   role: Role;
+  /** The brand the gym is a branch of. Every gym has one; a single gym is a one-branch brand. */
+  brandId?: string;
+  brandName?: string;
 };
 
 export type Profile = {

@@ -26,6 +26,9 @@ function daysFromToday(days: number) {
 }
 
 const GYM_NAME = 'Pulse Fitness Anna Nagar';
+/** Both demo gyms are branches of one brand. */
+export const MOCK_BRAND_ID = 'brand-1';
+const BRAND = { brandId: MOCK_BRAND_ID, brandName: 'Pulse Fitness' };
 
 function person(
   id: string,
@@ -42,26 +45,30 @@ export const mockProfiles: Profile[] = [
   {
     id: 'u-member',
     fullName: 'Nandini Ravi',
-    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'member' }],
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'member', ...BRAND }],
   },
   {
     id: 'u-trainer',
     fullName: 'Karthik Raja',
     // Trains at one branch and works out as a member at another.
     gyms: [
-      { gymId: GYM_ID, gymName: GYM_NAME, role: 'trainer' },
-      { gymId: 'gym-2', gymName: 'Pulse Fitness Velachery', role: 'member' },
+      { gymId: GYM_ID, gymName: GYM_NAME, role: 'trainer', ...BRAND },
+      { gymId: 'gym-2', gymName: 'Pulse Fitness Velachery', role: 'member', ...BRAND },
     ],
   },
   {
     id: 'u-supervisor',
     fullName: 'Meena Sundaram',
-    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'supervisor' }],
+    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'supervisor', ...BRAND }],
   },
   {
     id: 'u-owner',
     fullName: 'Rajesh Kannan',
-    gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'owner' }],
+    // Owns both branches of the brand.
+    gyms: [
+      { gymId: GYM_ID, gymName: GYM_NAME, role: 'owner', ...BRAND },
+      { gymId: 'gym-2', gymName: 'Pulse Fitness Velachery', role: 'owner', ...BRAND },
+    ],
   },
 ];
 
