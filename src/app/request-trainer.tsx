@@ -37,7 +37,7 @@ export default function RequestTrainerScreen() {
 
   if (requests.isPending) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">Loading…</ThemedText>
       </Screen>
     );
@@ -54,7 +54,7 @@ function PendingRequest({ requestId }: { requestId: string }) {
   if (!request) return null;
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Card highlighted>
         <Pill label="Waiting for the gym" tone="warning" icon="time-outline" />
         <ThemedText type="heading">
@@ -102,7 +102,7 @@ function RequestForm({ gymId, memberId }: { gymId: string; memberId: string }) {
   const choices = (trainers.data ?? []).filter((t) => !current.has(t.id));
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <ThemedText type="small" themeColor="textSecondary">
         Tell your gym what you’d like help with. A supervisor or the owner will match you with a
         trainer.

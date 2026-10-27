@@ -31,7 +31,7 @@ export default function MembershipPlanEditorScreen() {
 
   if (planId && !plan) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">
           {plans.isPending ? 'Loading…' : 'Plan not found.'}
         </ThemedText>
@@ -54,7 +54,7 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
   const problem = firstError(nameError, priceError);
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stack.Screen options={{ title: plan ? 'Edit plan' : 'New membership plan' }} />
       <TextField
         label="Plan name"

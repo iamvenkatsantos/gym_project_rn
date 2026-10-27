@@ -44,7 +44,7 @@ export default function MealPlanEditorScreen() {
 
   if (!plan) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">
           {isPending ? 'Loading…' : 'Plan not found.'}
         </ThemedText>
@@ -100,7 +100,7 @@ function MealPlanForm({
   };
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stack.Screen options={{ title: planId ? 'Edit diet plan' : 'New diet plan' }} />
       <TextField
         label="Plan name"

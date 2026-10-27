@@ -56,7 +56,7 @@ export default function AddProgressPhotoScreen() {
   const choosePhoto = async () => keep(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS));
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <SectionHeader title="Pose" />
       <ScrollView
         horizontal

@@ -40,7 +40,7 @@ export default function EnquiryEditorScreen() {
 
   if (enquiryId && !enquiry) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">
           {enquiries.isPending ? 'Loading…' : 'This enquiry was deleted.'}
         </ThemedText>
@@ -109,7 +109,7 @@ function EnquiryForm({ gymId, enquiry }: { gymId: string; enquiry?: Enquiry }) {
   };
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stack.Screen options={{ title: enquiry ? 'Edit enquiry' : 'New enquiry' }} />
       <TextField
         label="Name"
