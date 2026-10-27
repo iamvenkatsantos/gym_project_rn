@@ -1,5 +1,6 @@
 import type { GymRole } from '@/features/auth/types';
 import {
+  branchBill,
   branchFee,
   branchLabel,
   groupBrands,
@@ -14,13 +15,14 @@ import type { AdminBranch, BranchStats } from '@/features/branches/types';
 const raj = { id: 'u1', fullName: 'Rajesh', email: 'raj@example.com' };
 const priya = { id: 'u2', fullName: 'Priya', email: 'priya@example.com' };
 
-const billing = { branchFeeCents: 150000, currency: 'INR' };
+const billing = { branchFeeCents: 150000, onlineAddonCents: 50000, currency: 'INR' };
 
 function branch(
   gymId: string,
   brandId: string,
   owners = [raj],
   feeCents: number | null = null,
+  onlinePayments = false,
 ): AdminBranch {
   return {
     brandId,
@@ -28,6 +30,8 @@ function branch(
     gymId,
     gymName: gymId,
     feeCents,
+    onlinePayments,
+    razorpayAccountId: null,
     address: '',
     city: '',
     phone: '',
@@ -67,6 +71,14 @@ describe('billing', () => {
     expect(branchFee(list[0], billing)).toBe(150000);
     expect(branchFee(list[2], billing)).toBe(100000);
     expect(branchFee({ feeCents: 0 }, billing)).toBe(0);
+  });
+
+  it('adds the online payments add-on to branches that have it', () => {
+    expect(branchBill(list[0], billing)).toBe(150000);
+    expect(branchBill(branch('g6', 'b1', [raj], null, true), billing)).toBe(200000);
+    expect(monthlyTotal([...list, branch('g6', 'b1', [], 100000, true)], billing)).toBe(
+      150000 * 2 + 100000 * 4 + 50000,
+    );
   });
 
   it('totals every branch once, owned or not', () => {

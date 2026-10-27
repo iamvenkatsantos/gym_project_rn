@@ -233,6 +233,11 @@ function RootNavigator() {
           name="announcements"
           options={{ headerShown: true, title: 'Announcements' }}
         />
+        <Stack.Screen
+          name="payment/[paymentId]"
+          options={{ headerShown: true, title: 'Payment' }}
+        />
+        <Stack.Screen name="payment-return" options={{ title: 'Payment' }} />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen

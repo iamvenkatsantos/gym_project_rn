@@ -15,6 +15,7 @@ import { YourTrainers } from '@/features/coaching/components/your-trainers';
 import { useMyBookings } from '@/features/bookings/hooks';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { useCurrentMembership } from '@/features/memberships/hooks';
+import { RenewOnline } from '@/features/payments/components/renew-online';
 import { SessionRow } from '@/features/trainers/components/session-row';
 import { useSessions } from '@/features/trainers/hooks';
 import { greeting } from '@/lib/greeting';
@@ -43,7 +44,14 @@ export default function MemberHomeScreen() {
         query={membership}
         isEmpty={(m) => !m}
         emptyText="You don't have a membership yet.">
-        {(m) => m && <MembershipCard membership={m} />}
+        {(m) =>
+          m && (
+            <>
+              <MembershipCard membership={m} />
+              <RenewOnline gymId={gym.gymId} membership={m} />
+            </>
+          )
+        }
       </QueryState>
 
       <YourTrainers gymId={gym.gymId} memberId={profile.id} />

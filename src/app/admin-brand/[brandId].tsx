@@ -12,7 +12,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useAdminBranches, useBillingSettings, useRenameBrand } from '@/features/branches/hooks';
-import { branchFee, groupBrands, ownerNames } from '@/features/branches/rules';
+import { branchBill, groupBrands, ownerNames } from '@/features/branches/rules';
 import type { AdminBrand } from '@/features/branches/types';
 import { formatAmount } from '@/lib/format';
 import { validateTitle } from '@/lib/validation';
@@ -61,7 +61,7 @@ function BrandDetails({ brand }: { brand: AdminBrand }) {
               b.city,
               `${b.members} members`,
               settings.data &&
-                `${formatAmount(branchFee(b, settings.data), settings.data.currency)}/month`,
+                `${formatAmount(branchBill(b, settings.data), settings.data.currency)}/month`,
             ]
               .filter(Boolean)
               .join(' · ')}

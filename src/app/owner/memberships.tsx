@@ -11,6 +11,7 @@ import { MembershipSetup } from '@/features/memberships/components/membership-se
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
+import { OnlinePaymentsSection } from '@/features/payments/components/online-payments-section';
 
 export default function OwnerMembershipsScreen() {
   const gym = useActiveGym();
@@ -66,6 +67,8 @@ export default function OwnerMembershipsScreen() {
           />
         </>
       ) : null}
+
+      <OnlinePaymentsSection gymId={gym.gymId} />
 
       <SectionHeader
         title="Members"

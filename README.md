@@ -87,6 +87,8 @@ functions:
 npx supabase functions deploy delete-account   # account deletion (store requirement)
 npx supabase functions deploy invite-member    # emails invites from the People tab
 npx supabase functions deploy send-push --no-verify-jwt   # push notifications, see below
+npx supabase functions deploy create-payment                # online payments, see below
+npx supabase functions deploy razorpay-webhook --no-verify-jwt
 ```
 
 A new gym's first owner is added in SQL:
@@ -193,6 +195,43 @@ To check the server side without a phone, insert a reminder-like row for yoursel
 look at **Edge Functions → send-push → Logs**; `select * from net._http_response order by id desc
 limit 5;` shows what `pg_net` got back.
 
+### Online payments (Razorpay)
+
+Members can pay for a plan in the app when the CoreFit Gym admin switches **Online payments** on
+for their branch (Admin → branch → Online payments). It's a paid add-on per branch
+(`platform_settings.online_addon_cents`, ₹500 a month by default) and off by default. Cash and UPI
+entries at the front desk keep working.
+
+How a payment works:
+
+1. **Pay** on a plan (Profile) or **Renew now** (Home, when a membership is ending) calls
+   `create-payment`, which creates a Razorpay payment link and opens it in the in-app browser. UPI,
+   cards and netbanking work there, so there's no Razorpay SDK and no new build.
+2. Razorpay calls `razorpay-webhook` (`payment_link.paid`), signed with the webhook secret.
+   `complete_online_payment()` then records the membership with method `online`, starting the day
+   after the current one ends, so it shows in Payments, Insights and exports. The member gets the
+   usual "Membership active" push and owners and supervisors get "Online payment received".
+3. The browser comes back through `razorpay-webhook` (GET, signed with the key secret), which sends
+   it to `corefit://payment-return`; the app shows the payment's status and then its receipt.
+4. If the branch has the owner's Route linked account (`acc_...`), the gym's share (amount less
+   Razorpay's fee and CoreFit Gym's cut, `online_cut_bps`, 0 by default) is transferred to it. Money
+   never stays with CoreFit Gym. With live keys, a branch without a linked account can't take
+   payments.
+
+Setup:
+
+```bash
+npx supabase secrets set RAZORPAY_KEY_ID=rzp_test_xxx RAZORPAY_KEY_SECRET=xxx
+npx supabase secrets set RAZORPAY_WEBHOOK_SECRET=<a long random string>
+npx supabase functions deploy create-payment
+npx supabase functions deploy razorpay-webhook --no-verify-jwt
+```
+
+In the Razorpay dashboard, add a webhook at `https://<project-ref>.supabase.co/functions/v1/razorpay-webhook`
+with the same secret and the events `payment_link.paid`, `payment_link.expired` and
+`payment_link.cancelled`. Test cards and UPI IDs (`success@razorpay`) are in Razorpay's test mode
+docs.
+
 ## Releasing
 
 See [docs/RELEASE.md](docs/RELEASE.md) for EAS build profiles and the App Store / Play Store
@@ -224,6 +263,7 @@ psql -d corefit_test -f supabase/tests/plain-postgres-auth-stub.sql
 for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
 psql -d corefit_test -f supabase/tests/rls.sql
 psql -d corefit_test -f supabase/tests/workout-plans.sql
+psql -d corefit_test -f supabase/tests/online-payments.sql
 ```
 
 ## Scripts
