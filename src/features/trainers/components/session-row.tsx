@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import type { TrainerSession } from '@/features/trainers/types';
+import { useLargeText } from '@/hooks/use-large-text';
 import { formatRelativeDay, formatTime } from '@/lib/format';
 
 type SessionRowProps = {
@@ -17,6 +18,7 @@ type SessionRowProps = {
 };
 
 export function SessionRow({ session, show, highlighted, action }: SessionRowProps) {
+  const largeText = useLargeText();
   const name = show === 'trainer' ? session.trainerName : session.memberName;
   const minutes = Math.round(
     (new Date(session.endsAt).getTime() - new Date(session.startsAt).getTime()) / 60000,
@@ -26,7 +28,9 @@ export function SessionRow({ session, show, highlighted, action }: SessionRowPro
     <Card highlighted={highlighted}>
       <View style={styles.row}>
         <View style={styles.time}>
-          <ThemedText type="heading">{formatTime(session.startsAt)}</ThemedText>
+          <ThemedText type="heading" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {formatTime(session.startsAt)}
+          </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {formatRelativeDay(session.startsAt)}
           </ThemedText>
@@ -38,7 +42,7 @@ export function SessionRow({ session, show, highlighted, action }: SessionRowPro
             {name} · {minutes} min
           </ThemedText>
         </View>
-        <TrainerAvatar name={name} size={40} />
+        {largeText ? null : <TrainerAvatar name={name} size={40} />}
       </View>
       {action}
     </Card>
@@ -53,6 +57,8 @@ const styles = StyleSheet.create({
   },
   time: {
     minWidth: 72,
+    // With a large phone font the time would otherwise squeeze the session name to one word a line.
+    maxWidth: '35%',
   },
   body: {
     flex: 1,

@@ -5,7 +5,7 @@ import { Chip } from '@/components/chip';
 import { Icon } from '@/components/icon';
 import { QueryState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { MaxFontScale, Radius, Spacing, TapTarget } from '@/constants/theme';
 import { ExerciseCard } from '@/features/exercises/components/exercise-card';
 import { useExercises } from '@/features/exercises/hooks';
 import { emptyFilter, facets, filterExercises } from '@/features/exercises/rules';
@@ -34,6 +34,7 @@ export function ExerciseLibrary({ gymId }: { gymId: string }) {
         ]}>
         <Icon name="search" size={18} />
         <TextInput
+          maxFontSizeMultiplier={MaxFontScale}
           accessibilityLabel="Search exercises"
           placeholder="Search exercises, muscles, equipment"
           placeholderTextColor={theme.textSecondary}

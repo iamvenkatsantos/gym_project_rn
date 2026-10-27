@@ -102,4 +102,10 @@ export const Radius = {
 /** Minimum touch target, above the 44pt/48dp platform guidelines. */
 export const TapTarget = 52;
 
+/**
+ * How far text follows the phone's font size setting. Some phones (vivo/iQOO) ship with a large
+ * font by default; beyond this, rows and tiles built for a 360dp screen break words apart.
+ */
+export const MaxFontScale = 1.3;
+
 export const MaxContentWidth = 800;

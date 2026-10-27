@@ -36,8 +36,8 @@ export function ExerciseCard({ exercise }: { exercise: Exercise }) {
             <ThemedText type="small" themeColor="textSecondary" style={styles.capitalize}>
               {exercise.muscleGroups.join(', ')} · {exercise.equipment}
             </ThemedText>
+            <Pill label={exercise.difficulty} tone={difficultyTone[exercise.difficulty]} />
           </View>
-          <Pill label={exercise.difficulty} tone={difficultyTone[exercise.difficulty]} />
           <Icon name="chevron-forward" size={18} />
         </Card>
       )}

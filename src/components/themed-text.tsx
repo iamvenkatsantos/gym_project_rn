@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, MaxFontScale, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
@@ -17,12 +17,24 @@ export type ThemedTextProps = TextProps & {
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({
+  style,
+  type = 'default',
+  themeColor,
+  maxFontSizeMultiplier = MaxFontScale,
+  ...rest
+}: ThemedTextProps) {
   const theme = useTheme();
 
   const color = theme[themeColor ?? (type === 'linkPrimary' ? 'accent' : 'text')];
 
-  return <Text style={[{ color }, styles[type], style]} {...rest} />;
+  return (
+    <Text
+      style={[{ color }, styles[type], style]}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      {...rest}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

@@ -30,7 +30,12 @@ export function SegmentedControl<T extends string>({
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
             style={[styles.segment, selected && { backgroundColor: theme.backgroundSelected }]}>
-            <ThemedText type="smallBold" themeColor={selected ? 'text' : 'textSecondary'}>
+            <ThemedText
+              type="smallBold"
+              themeColor={selected ? 'text' : 'textSecondary'}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}>
               {option.label}
             </ThemedText>
           </Pressable>
@@ -49,6 +54,7 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     minHeight: 40,
+    paddingHorizontal: Spacing.one,
     borderRadius: Radius.medium - 4,
     alignItems: 'center',
     justifyContent: 'center',
