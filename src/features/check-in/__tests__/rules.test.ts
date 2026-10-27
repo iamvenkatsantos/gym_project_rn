@@ -3,6 +3,7 @@ import {
   autoOutHint,
   checkInLink,
   parseCheckInLink,
+  qrFileName,
   scanDetail,
   scanHeadline,
 } from '@/features/check-in/rules';
@@ -74,5 +75,13 @@ describe('qrRows', () => {
     expect(rows[0][0]).toEqual([0, 7]);
     expect(rows[0].at(-1)).toEqual([size - 7, 7]);
     expect(rows[size - 1][0]).toEqual([0, 7]);
+  });
+});
+
+describe('qrFileName', () => {
+  it('names the image after the branch', () => {
+    expect(qrFileName('Pulse Fitness Velachery')).toBe('Pulse Fitness Velachery check-in QR.png');
+    expect(qrFileName('A/B: Gym?')).toBe('AB Gym check-in QR.png');
+    expect(qrFileName('///')).toBe('Branch check-in QR.png');
   });
 });

@@ -183,13 +183,33 @@ export async function saveCheckInSettings(gymId: string, settings: CheckInSettin
   if (error) throw error;
 }
 
-/** Owners only. Old posters (or display links) stop working. */
-export async function resetCheckInCode(gymId: string, which: 'poster' | 'display') {
+export type AdminBranchQr = { gymName: string; posterCode: string; posterEnabled: boolean };
+
+/** CoreFit Gym admins: a branch's printed QR, to send to its owner. */
+export async function getAdminBranchQr(gymId: string): Promise<AdminBranchQr> {
   if (!supabase) {
-    if (which === 'poster') mockQr.posterCode = `demo-poster-${Date.now()}`;
-    else mockQr.displayKey = `demo-display-${Date.now()}`;
+    return delay({
+      gymName: mockQr.gymName,
+      posterCode: mockQr.posterCode,
+      posterEnabled: mockQr.posterEnabled,
+    });
+  }
+  const rows = unwrap(await supabase.rpc('admin_check_in_qr', { p_gym_id: gymId })) as {
+    gym_name: string;
+    poster_code: string;
+    poster_enabled: boolean;
+  }[];
+  const r = rows[0];
+  return { gymName: r.gym_name, posterCode: r.poster_code, posterEnabled: r.poster_enabled };
+}
+
+/** CoreFit Gym admins: a new printed QR for the branch, switched on. Old printouts stop working. */
+export async function resetAdminBranchQr(gymId: string) {
+  if (!supabase) {
+    mockQr.posterCode = `demo-poster-${Date.now()}`;
+    mockQr.posterEnabled = true;
     return delay(undefined);
   }
-  const { error } = await supabase.rpc('reset_check_in_code', { p_gym_id: gymId, p_which: which });
+  const { error } = await supabase.rpc('admin_reset_check_in_qr', { p_gym_id: gymId });
   if (error) throw error;
 }
