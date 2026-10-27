@@ -16,6 +16,7 @@ export type OnlinePayment = {
   linkUrl: string | null;
   razorpayPaymentId: string | null;
   /** The membership it paid for, once paid. */
+  membershipId: string | null;
   startsOn: string | null;
   endsOn: string | null;
   feeCents: number | null;

@@ -156,6 +156,10 @@ function RootNavigator() {
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
         <Stack.Screen
+          name="payment-history/[memberId]"
+          options={{ headerShown: true, title: 'Payments' }}
+        />
+        <Stack.Screen
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
         />
@@ -248,6 +252,10 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Payment' }}
         />
         <Stack.Screen name="payment-return" options={{ title: 'Payment' }} />
+        <Stack.Screen
+          name="payment-history/index"
+          options={{ headerShown: true, title: 'Payment history' }}
+        />
         {/* Where a branch QR's corefit://check-in link lands. The server says who may check in. */}
         <Stack.Screen name="check-in" options={{ headerShown: true, title: 'Check in' }} />
       </Stack.Protected>

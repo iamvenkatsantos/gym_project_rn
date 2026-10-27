@@ -16,12 +16,7 @@ import { MembershipCard } from '@/features/memberships/components/membership-car
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useCurrentMembership, usePlans } from '@/features/memberships/hooks';
 import { membershipStatus } from '@/features/memberships/rules';
-import { PaymentRow } from '@/features/payments/components/payment-row';
-import {
-  useOnlinePayments,
-  useOnlinePaymentsEnabled,
-  usePayOnline,
-} from '@/features/payments/hooks';
+import { useOnlinePaymentsEnabled, usePayOnline } from '@/features/payments/hooks';
 import { useWorkoutLogs } from '@/features/progress/hooks';
 import { weekStreak, workoutsThisWeek } from '@/features/progress/rules';
 import { formatAmount } from '@/lib/format';
@@ -33,7 +28,6 @@ export default function MemberProfileScreen() {
   const plans = usePlans(gym.gymId);
   const logs = useWorkoutLogs(gym.gymId, profile.id).data;
   const online = useOnlinePaymentsEnabled(gym.gymId).data === true;
-  const myPayments = useOnlinePayments(gym.gymId, profile.id).data ?? [];
   const pay = usePayOnline(gym.gymId);
   // A plan bought while one is running starts the day after it ends.
   const running = !!membership.data && membershipStatus(membership.data) !== 'expired';
@@ -110,21 +104,19 @@ export default function MemberProfileScreen() {
         </ThemedText>
       ) : null}
 
-      {myPayments.length ? (
-        <>
-          <SectionHeader title="Your payments" />
-          {myPayments.slice(0, 3).map((p) => (
-            <PaymentRow key={p.id} payment={p} />
-          ))}
-        </>
-      ) : null}
-
       <SectionHeader title="Appearance" />
       <AppearancePicker />
 
       <SectionHeader title="More" />
       <ListGroup>
         <ListRow
+          label="Payment history"
+          detail="Every payment, with receipts for in-app ones"
+          icon="receipt-outline"
+          onPress={() => router.push('/payment-history')}
+        />
+        <ListRow
+          divider
           label="Inbox"
           detail="Reminders, booking changes and messages"
           icon="notifications-outline"

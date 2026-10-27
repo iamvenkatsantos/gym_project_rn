@@ -39,7 +39,7 @@ export default function LogMeasurementsScreen() {
   );
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stepper
         label="Date"
         value={offset}

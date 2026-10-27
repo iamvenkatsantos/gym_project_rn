@@ -81,7 +81,7 @@ export default function RecordMembershipScreen() {
   if (!member) {
     const q = query.trim().toLowerCase();
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText type="small" themeColor="textSecondary">
           Who is paying? Invite new people from the People tab first.
         </ThemedText>
@@ -121,7 +121,7 @@ export default function RecordMembershipScreen() {
   }
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Card>
         <View style={styles.row}>
           <View style={styles.flex}>

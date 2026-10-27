@@ -41,7 +41,7 @@ export default function EnterCodeScreen() {
   });
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <ThemedText themeColor="textSecondary">
         Enter the email the code was sent to and the code from that email. Codes work once.
       </ThemedText>

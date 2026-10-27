@@ -14,6 +14,7 @@ type OnlinePaymentRow = {
   status: OnlinePayment['status'];
   link_url: string | null;
   razorpay_payment_id: string | null;
+  membership_id: string | null;
   fee_cents: number | null;
   transfer_error: string | null;
   created_at: string;
@@ -24,7 +25,7 @@ type OnlinePaymentRow = {
 };
 
 const COLUMNS =
-  'id, gym_id, member_id, plan_id, amount_cents, currency, status, link_url, razorpay_payment_id, fee_cents, transfer_error, created_at, paid_at, member:profiles(full_name), plan:membership_plans(name), membership:memberships(starts_on, ends_on)';
+  'id, gym_id, member_id, plan_id, amount_cents, currency, status, link_url, razorpay_payment_id, membership_id, fee_cents, transfer_error, created_at, paid_at, member:profiles(full_name), plan:membership_plans(name), membership:memberships(starts_on, ends_on)';
 
 function toPayment(row: OnlinePaymentRow): OnlinePayment {
   return {
@@ -39,6 +40,7 @@ function toPayment(row: OnlinePaymentRow): OnlinePayment {
     status: row.status,
     linkUrl: row.link_url,
     razorpayPaymentId: row.razorpay_payment_id,
+    membershipId: row.membership_id,
     startsOn: row.membership?.starts_on ?? null,
     endsOn: row.membership?.ends_on ?? null,
     feeCents: row.fee_cents,
@@ -98,7 +100,7 @@ export async function fetchOnlinePayment(paymentId: string): Promise<OnlinePayme
 export async function listOnlinePayments(
   gymId: string,
   memberId?: string,
-  limit = 20,
+  limit = 200,
 ): Promise<OnlinePayment[]> {
   if (!supabase) return delay([]);
   let query = supabase.from('online_payments').select(COLUMNS).eq('gym_id', gymId);

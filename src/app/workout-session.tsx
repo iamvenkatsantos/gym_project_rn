@@ -72,7 +72,7 @@ export default function WorkoutSessionScreen() {
 
   if (!draft) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">No workout in progress.</ThemedText>
         <Button label="Back" variant="secondary" onPress={() => router.back()} />
       </Screen>
@@ -89,7 +89,7 @@ export default function WorkoutSessionScreen() {
   ];
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stack.Screen options={{ title: clock(now - new Date(draft.startedAt).getTime()) }} />
       <View>
         <ThemedText type="title">{draft.title}</ThemedText>

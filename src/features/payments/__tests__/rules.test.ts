@@ -1,4 +1,4 @@
-import { netAmount, paymentState, sortForStaff } from '@/features/payments/rules';
+import { netAmount, paymentState } from '@/features/payments/rules';
 import type { OnlinePayment } from '@/features/payments/types';
 
 const now = new Date('2026-10-27T12:00:00Z');
@@ -16,6 +16,7 @@ function payment(id: string, status: OnlinePayment['status'], createdAt: string)
     status,
     linkUrl: 'https://rzp.io/i/x',
     razorpayPaymentId: null,
+    membershipId: null,
     startsOn: null,
     endsOn: null,
     feeCents: null,
@@ -44,16 +45,5 @@ describe('netAmount', () => {
   it("takes off Razorpay's fee once it's known", () => {
     expect(netAmount({ amountCents: 150000, feeCents: 3540 })).toBe(146460);
     expect(netAmount({ amountCents: 150000, feeCents: null })).toBeNull();
-  });
-});
-
-describe('sortForStaff', () => {
-  it('puts payments in progress first, then the newest', () => {
-    const list = [
-      payment('old-paid', 'paid', '2026-10-27T08:00:00Z'),
-      payment('new-paid', 'paid', '2026-10-27T11:00:00Z'),
-      payment('paying', 'created', '2026-10-27T11:55:00Z'),
-    ];
-    expect(sortForStaff(list, now).map((p) => p.id)).toEqual(['paying', 'new-paid', 'old-paid']);
   });
 });

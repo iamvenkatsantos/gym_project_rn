@@ -38,7 +38,7 @@ export default function AddBranchScreen() {
   };
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <View style={styles.intro}>
         <ThemedText type="heading">New {brandName ?? ''} branch</ThemedText>
         <Card>
