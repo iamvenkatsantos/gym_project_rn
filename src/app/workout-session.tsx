@@ -7,7 +7,7 @@ import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { MaxFontScale, Radius, Spacing, TapTarget } from '@/constants/theme';
 import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
@@ -179,6 +179,7 @@ export default function WorkoutSessionScreen() {
                   {si + 1}
                 </ThemedText>
                 <TextInput
+                  maxFontSizeMultiplier={MaxFontScale}
                   accessibilityLabel={`${exercise.name} set ${si + 1} reps`}
                   keyboardType="number-pad"
                   style={[inputStyle, styles.flex]}
@@ -190,6 +191,7 @@ export default function WorkoutSessionScreen() {
                   }}
                 />
                 <TextInput
+                  maxFontSizeMultiplier={MaxFontScale}
                   accessibilityLabel={`${exercise.name} set ${si + 1} weight in kg`}
                   keyboardType="decimal-pad"
                   placeholder="BW"

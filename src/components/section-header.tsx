@@ -15,7 +15,7 @@ export function SectionHeader({ title, detail }: SectionHeaderProps) {
         {title}
       </ThemedText>
       {detail ? (
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" themeColor="textSecondary" style={styles.detail}>
           {detail}
         </ThemedText>
       ) : null}
@@ -26,8 +26,14 @@ export function SectionHeader({ title, detail }: SectionHeaderProps) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'baseline',
+    columnGap: Spacing.three,
     marginTop: Spacing.two,
+  },
+  // Drops under the title when both don't fit on one line, as with a large font.
+  detail: {
+    flexShrink: 1,
   },
 });

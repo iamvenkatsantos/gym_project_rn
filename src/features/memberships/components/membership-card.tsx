@@ -31,7 +31,9 @@ export function MembershipCard({ membership }: { membership: Membership }) {
   return (
     <Card>
       <View style={styles.header}>
-        <ThemedText type="heading">{membership.plan.name} plan</ThemedText>
+        <ThemedText type="heading" style={styles.title}>
+          {membership.plan.name} plan
+        </ThemedText>
         <Pill label={pill.label} tone={pill.tone} />
       </View>
       <View style={styles.days}>
@@ -112,9 +114,13 @@ export function MembershipRow({
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  title: {
+    flexShrink: 1,
   },
   days: {
     flexDirection: 'row',

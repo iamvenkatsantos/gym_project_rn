@@ -37,6 +37,8 @@ export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: bool
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: { backgroundColor: theme.backgroundElement, borderTopColor: theme.border },
         tabBarLabelStyle: { fontSize: 11, fontWeight: 600 },
+        // Five labels across a 360dp phone only fit at the set size, not at a large phone font.
+        tabBarAllowFontScaling: false,
         headerStyle: { backgroundColor: theme.background },
         headerShadowVisible: false,
         headerTintColor: theme.text,

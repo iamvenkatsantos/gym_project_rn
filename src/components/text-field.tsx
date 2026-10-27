@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'rea
 
 import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { MaxFontScale, Radius, Spacing, TapTarget } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type TextFieldProps = TextInputProps & {
@@ -62,6 +62,7 @@ export function TextField({
           </View>
         ) : null}
         <TextInput
+          maxFontSizeMultiplier={MaxFontScale}
           ref={ref}
           accessibilityLabel={label}
           accessibilityHint={visibleError ?? undefined}

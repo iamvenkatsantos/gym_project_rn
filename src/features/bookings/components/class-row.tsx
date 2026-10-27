@@ -28,7 +28,9 @@ export function ClassRow({ gymClass, showDay, highlighted, badge, action }: Clas
     <Card highlighted={highlighted}>
       <View style={styles.top}>
         <View style={styles.time}>
-          <ThemedText type="heading">{formatTime(gymClass.startsAt)}</ThemedText>
+          <ThemedText type="heading" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {formatTime(gymClass.startsAt)}
+          </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {showDay ? formatRelativeDay(gymClass.startsAt) : `${gymClass.durationMinutes} min`}
           </ThemedText>
@@ -75,6 +77,8 @@ const styles = StyleSheet.create({
   },
   time: {
     minWidth: 72,
+    // With a large phone font the time would otherwise squeeze the class name.
+    maxWidth: '35%',
   },
   body: {
     flex: 1,

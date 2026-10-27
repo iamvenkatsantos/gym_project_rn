@@ -39,7 +39,13 @@ export function ShortcutGrid({ shortcuts }: { shortcuts: Shortcut[] }) {
               </View>
             ) : null}
           </View>
-          <ThemedText type="smallBold" numberOfLines={2} style={styles.label}>
+          {/* One line per word, shrunk to fit, so a large font never splits "Attendance". */}
+          <ThemedText
+            type="smallBold"
+            numberOfLines={label.includes(' ') ? 2 : 1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            style={styles.label}>
             {label}
           </ThemedText>
         </Pressable>

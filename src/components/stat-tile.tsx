@@ -23,10 +23,19 @@ export function StatTile({ label, value, icon, accent, compact, onPress }: StatT
   const content = (
     <>
       <Icon name={icon} size={20} color={accent ? 'accent' : 'textSecondary'} />
-      <ThemedText type={compact ? 'heading' : 'title'} themeColor={accent ? 'accent' : 'text'}>
+      <ThemedText
+        type={compact ? 'heading' : 'title'}
+        themeColor={accent ? 'accent' : 'text'}
+        numberOfLines={1}
+        adjustsFontSizeToFit>
         {value ?? '–'}
       </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText
+        type="small"
+        themeColor="textSecondary"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}>
         {label}
       </ThemedText>
     </>
