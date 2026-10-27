@@ -85,3 +85,100 @@ from public.online_payments op join public.memberships m on m.id = op.membership
 select public.complete_online_payment((select id from public.online_payments limit 1), 'pay_TEST123', 150000, 3540) is not null as same;
 select count(*) from public.memberships where member_id = 'f0000000-0000-0000-0000-00000000000c';
 select count(*) from public.notifications where dedupe_key like 'online-payment:%';
+
+-- More members and plans for the cases below (as the database owner).
+insert into auth.users (id, raw_user_meta_data) values
+ ('f0000000-0000-0000-0000-000000000010','{"full_name":"Neha New"}'),
+ ('f0000000-0000-0000-0000-000000000011','{"full_name":"Ravi Lapsed"}'),
+ ('f0000000-0000-0000-0000-000000000012','{"full_name":"Lata Left"}'),
+ ('f0000000-0000-0000-0000-000000000013','{"full_name":"Tanu Tapper"}');
+insert into public.gym_members (gym_id, user_id, role, status) values
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000010','member','active'),
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000011','member','active'),
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000012','member','suspended'),
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000013','member','active');
+insert into public.membership_plans (id, gym_id, name, price_cents, duration_days) values
+ ('f2000000-0000-0000-0000-000000000002','f1000000-0000-0000-0000-000000000001','Free trial',0,7),
+ ('f2000000-0000-0000-0000-000000000003','f1000000-0000-0000-0000-000000000001','Quarterly',400000,90);
+-- Ravi's membership ended two months ago.
+insert into public.memberships (member_id, plan_id, starts_on, ends_on, amount_paid_cents, payment_method)
+values ('f0000000-0000-0000-0000-000000000011','f2000000-0000-0000-0000-000000000001',
+        current_date - 90, current_date - 60, 150000, 'cash');
+
+set role authenticated;
+
+\echo 'P13 A free plan can''t be paid online (expect This plan is free)'
+select pg_temp.as_user('f0000000-0000-0000-0000-000000000010');
+select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000002');
+
+\echo 'P14 A member who left the gym can''t pay (expect Only members of this gym)'
+select pg_temp.as_user('f0000000-0000-0000-0000-000000000012');
+select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001');
+
+\echo 'P15 Neha and Ravi start payments; Ravi''s plan is then taken off sale (expect t, t)'
+select pg_temp.as_user('f0000000-0000-0000-0000-000000000010');
+select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000003') is not null as neha;
+select pg_temp.as_user('f0000000-0000-0000-0000-000000000011');
+select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000003') is not null as ravi;
+
+\echo 'P16 Ten attempts in an hour, then no more (expect 10, then Too many payment attempts)'
+select pg_temp.as_user('f0000000-0000-0000-0000-000000000013');
+select count(public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001'))
+from generate_series(1, 10);
+select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001');
+
+reset role;
+update public.membership_plans set active = false where id = 'f2000000-0000-0000-0000-000000000003';
+
+\echo 'P17 Neha had no membership: hers starts today and runs 90 days (expect t t)'
+select public.complete_online_payment(
+  (select id from public.online_payments where member_id = 'f0000000-0000-0000-0000-000000000010'),
+  'pay_NEHA', 400000, 9440) is not null as recorded;
+select m.starts_on = current_date as starts_today, m.ends_on = current_date + 89 as ends_right
+from public.memberships m where m.member_id = 'f0000000-0000-0000-0000-000000000010';
+
+\echo 'P18 Ravi''s lapsed membership: the new one starts today, not after the old end (expect t)'
+-- The link expired (webhook) but Razorpay still took his money: it must still count.
+update public.online_payments set status = 'expired' where member_id = 'f0000000-0000-0000-0000-000000000011';
+select public.complete_online_payment(
+  (select id from public.online_payments where member_id = 'f0000000-0000-0000-0000-000000000011'),
+  'pay_RAVI', 400000, 9440) is not null as recorded;
+select m.starts_on = current_date as starts_today
+from public.memberships m
+where m.member_id = 'f0000000-0000-0000-0000-000000000011' and m.payment_method = 'online';
+
+\echo 'P19 Meena pays again: it stacks after her last online one (expect t)'
+insert into public.online_payments (gym_id, member_id, plan_id, amount_cents, currency) values
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-00000000000c','f2000000-0000-0000-0000-000000000001',150000,'INR');
+select public.complete_online_payment(
+  (select id from public.online_payments where member_id = 'f0000000-0000-0000-0000-00000000000c' and status = 'created'),
+  'pay_MEENA2', 150000, 3540) is not null as recorded;
+select max(starts_on) = current_date + 41 as stacked
+from public.memberships where member_id = 'f0000000-0000-0000-0000-00000000000c';
+
+\echo 'P20 The same Razorpay payment can''t be used for a second payment (expect duplicate key)'
+insert into public.online_payments (gym_id, member_id, plan_id, amount_cents, currency) values
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000013','f2000000-0000-0000-0000-000000000001',150000,'INR');
+select public.complete_online_payment(
+  (select id from public.online_payments
+   where member_id = 'f0000000-0000-0000-0000-000000000013' order by created_at desc limit 1),
+  'pay_NEHA', 150000, 3540);
+
+\echo 'P21 Online payments show in the payments export with method online (expect 4)'
+select count(*) from public.memberships m
+join public.membership_plans mp on mp.id = m.plan_id
+where mp.gym_id = 'f1000000-0000-0000-0000-000000000001' and m.payment_method = 'online';
+
+set role authenticated;
+
+\echo 'P22 The admin switches it off; nobody can start a payment (expect f, then doesn''t take online payments)'
+select pg_temp.as_user('f0000000-0000-0000-0000-00000000000b');
+select public.admin_set_online_payments('f1000000-0000-0000-0000-000000000001', false, 'acc_TestOwner01');
+select online_payments from public.admin_branches() where gym_id = 'f1000000-0000-0000-0000-000000000001';
+select pg_temp.as_user('f0000000-0000-0000-0000-000000000010');
+select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001');
+
+\echo 'P23 Members see only their own online payments (expect 1 for Neha)'
+select count(*) from public.online_payments;
+
+reset role;
