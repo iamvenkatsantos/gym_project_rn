@@ -56,8 +56,8 @@ select pg_temp.live() as live_now, pg_temp.live(2) as live_old, pg_temp.live(3) 
 select display_key from public.gym_check_in_codes
 where gym_id = 'e1000000-0000-0000-0000-000000000001' \gset
 
-\echo 'Q5 Signed out, the display shows the current code (expect QR Gym Velachery, t, t)'
-set role anon;
+\echo 'Q5 The display shows the current code (expect QR Gym Velachery, t, t)'
+set role authenticated;
 select d.gym_name, d.code = :'live_now' as current, d.refresh_at > now() as later
 from public.check_in_display(:'display_key') d;
 \echo 'Q6 A wrong display key is refused (expect This display link no longer works)'
@@ -136,7 +136,7 @@ select (public.check_out('e1000000-0000-0000-0000-000000000001')).checked_out_at
 select pg_temp.as_user('e0000000-0000-0000-0000-00000000000a');
 select public.reset_check_in_code('e1000000-0000-0000-0000-000000000001', 'display');
 reset role;
-set role anon;
+set role authenticated;
 select * from public.check_in_display(:'live_now');
 reset role;
 
@@ -171,4 +171,32 @@ set role authenticated;
 select pg_temp.as_user('e0000000-0000-0000-0000-00000000000d');
 select full_name, auto_checked_out from public.gym_attendance('e1000000-0000-0000-0000-000000000001')
 where checked_in_at is not null order by full_name;
+reset role;
+
+-- The admin hands out each branch's printed QR.
+insert into auth.users (id, raw_user_meta_data) values
+ ('e0000000-0000-0000-0000-00000000000f','{"full_name":"Asha Admin"}');
+insert into public.platform_admins (user_id) values ('e0000000-0000-0000-0000-00000000000f');
+set role authenticated;
+
+\echo 'Q29 The owner can''t use the admin QR functions (expect Only CoreFit Gym admins, twice)'
+select pg_temp.as_user('e0000000-0000-0000-0000-00000000000a');
+select * from public.admin_check_in_qr('e1000000-0000-0000-0000-000000000001');
+select public.admin_reset_check_in_qr('e1000000-0000-0000-0000-000000000001');
+
+\echo 'Q30 The admin reads Adyar''s QR, made on first read (expect QR Gym Adyar, 20, t)'
+select pg_temp.as_user('e0000000-0000-0000-0000-00000000000f');
+select gym_name, length(poster_code), poster_enabled
+from public.admin_check_in_qr('e1000000-0000-0000-0000-000000000002');
+
+\echo 'Q31 Resetting Velachery''s QR gives a new code and switches it back on (expect t, t)'
+select poster_code as old_code from public.admin_check_in_qr('e1000000-0000-0000-0000-000000000001') \gset
+select public.admin_reset_check_in_qr('e1000000-0000-0000-0000-000000000001');
+select poster_code <> :'old_code', poster_enabled
+from public.admin_check_in_qr('e1000000-0000-0000-0000-000000000001');
+reset role;
+
+\echo 'Q32 The display link no longer works signed out (expect permission denied)'
+set role anon;
+select * from public.check_in_display(:'display_key');
 reset role;

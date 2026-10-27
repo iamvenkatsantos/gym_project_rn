@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -14,28 +14,11 @@ import { Spacing } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
 import type { CheckInSettings } from '@/features/check-in/api';
 import { QrCode } from '@/features/check-in/components/qr-code';
-import {
-  useCheckInQr,
-  useResetCheckInCode,
-  useSaveCheckInSettings,
-} from '@/features/check-in/hooks';
+import { useCheckInQr, useSaveCheckInSettings } from '@/features/check-in/hooks';
 import { checkInLink } from '@/features/check-in/rules';
 import type { CheckInQr } from '@/features/check-in/types';
 
 const hours = (h: number) => `${h} h`;
-
-function confirmReset(which: 'poster' | 'display', onConfirm: () => void) {
-  Alert.alert(
-    which === 'poster' ? 'Reset the poster code?' : 'Reset the display link?',
-    which === 'poster'
-      ? 'Printed posters stop working. Print the new one straight away.'
-      : 'Screens showing the old link stop working. Open the new link on them.',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: onConfirm },
-    ],
-  );
-}
 
 function Settings({ gymId, qr, isOwner }: { gymId: string; qr: CheckInQr; isOwner: boolean }) {
   const [draft, setDraft] = useState<CheckInSettings>({
@@ -57,7 +40,7 @@ function Settings({ gymId, qr, isOwner }: { gymId: string; qr: CheckInQr; isOwne
           {qr.qrOnly
             ? 'Members and trainers have to scan the QR to check in.'
             : 'Members and trainers scan the QR, or tap Check in on Home.'}{' '}
-          The poster is {qr.posterEnabled ? 'on' : 'off'}. Members are checked out after{' '}
+          The printed QR is {qr.posterEnabled ? 'on' : 'off'}. Members are checked out after{' '}
           {hours(qr.memberAutoOutHours)}, trainers after {hours(qr.trainerAutoOutHours)}. Only
           owners change these.
         </ThemedText>
@@ -82,7 +65,7 @@ function Settings({ gymId, qr, isOwner }: { gymId: string; qr: CheckInQr; isOwne
           : 'The Check in button on Home stays as a backup.'}
       </ThemedText>
 
-      <ThemedText type="smallBold">Printed poster</ThemedText>
+      <ThemedText type="smallBold">Printed QR</ThemedText>
       <SegmentedControl
         options={[
           { value: 'on', label: 'On' },
@@ -142,7 +125,6 @@ export default function CheckInQrScreen() {
   const gym = useActiveGym();
   const isOwner = gym.role === 'owner';
   const qr = useCheckInQr(gym.gymId);
-  const reset = useResetCheckInCode(gym.gymId);
   const { width } = useWindowDimensions();
   const posterSize = Math.min(width - Spacing.three * 4, 260);
 
@@ -151,31 +133,7 @@ export default function CheckInQrScreen() {
       <QueryState query={qr}>
         {(data) => (
           <>
-            <SectionHeader title="Live QR at the front desk" />
-            <Card>
-              <ThemedText type="small" themeColor="textSecondary">
-                The safest option. The code changes every 30 seconds, so a photo sent to a friend
-                stops working almost at once. Show it on a spare phone or tablet at the desk signed
-                in as you or a supervisor, or open the web dashboard&apos;s Check-in QR page on a
-                tablet or TV.
-              </ThemedText>
-              <Button
-                label="Show live QR"
-                icon="qr-code-outline"
-                onPress={() => router.push('/check-in-display')}
-              />
-              {isOwner ? (
-                <Button
-                  label="Reset display link"
-                  icon="refresh"
-                  variant="secondary"
-                  loading={reset.isPending && reset.variables === 'display'}
-                  onPress={() => confirmReset('display', () => reset.mutate('display'))}
-                />
-              ) : null}
-            </Card>
-
-            <SectionHeader title="Printed poster" />
+            <SectionHeader title="Printed QR" />
             <Card>
               {data.posterEnabled ? (
                 <>
@@ -187,30 +145,30 @@ export default function CheckInQrScreen() {
                     />
                   </View>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Print it from the web dashboard, or take a screenshot and print that. Simpler
-                    than a screen, but a photo of it works from anywhere, so reset it if it gets
-                    shared.
+                    The QR CoreFit Gym sent you for this branch. Put the printout at the front desk.
+                    A photo of it works from anywhere, so if it gets shared, ask CoreFit Gym for a
+                    new one.
                   </ThemedText>
-                  {isOwner ? (
-                    <Button
-                      label="Reset poster code"
-                      icon="refresh"
-                      variant="secondary"
-                      loading={reset.isPending && reset.variables === 'poster'}
-                      onPress={() => confirmReset('poster', () => reset.mutate('poster'))}
-                    />
-                  ) : null}
                 </>
               ) : (
                 <ThemedText type="small" themeColor="textSecondary">
-                  The poster is switched off, so only the live QR works.
+                  The printed QR is switched off, so only the live QR works.
                 </ThemedText>
               )}
-              {reset.error ? (
-                <ThemedText type="small" themeColor="danger">
-                  Couldn&apos;t reset: {reset.error.message}
-                </ThemedText>
-              ) : null}
+            </Card>
+
+            <SectionHeader title="Live QR (optional)" />
+            <Card>
+              <ThemedText type="small" themeColor="textSecondary">
+                Safer than a printout. The code changes every 30 seconds, so a photo sent to a
+                friend stops working almost at once. Show it on a spare phone or tablet at the desk,
+                signed in as you or a supervisor.
+              </ThemedText>
+              <Button
+                label="Show live QR"
+                icon="qr-code-outline"
+                onPress={() => router.push('/check-in-display')}
+              />
             </Card>
 
             <SectionHeader title="Settings" />

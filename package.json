@@ -38,6 +38,7 @@
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
+    "react-native-view-shot": "6.1.1",
     "react-native-web": "~0.21.4",
     "react-native-worklets": "0.13.0",
     "zustand": "^5.0.16"
@@ -45,6 +46,7 @@
   "devDependencies": {
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "^30.0.0",
+    "@types/pngjs": "^6.0.5",
     "@types/qrcode": "^1.5.6",
     "@types/react": "~19.3.0",
     "eslint": "^9.39.5",

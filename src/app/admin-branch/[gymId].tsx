@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { Button } from '@/components/button';
 import { FeeEditor } from '@/features/branches/components/fee-editor';
+import { BranchQrCard } from '@/features/check-in/components/branch-qr-card';
 import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
 import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
 import { branchBill, branchFee, ownerNames } from '@/features/branches/rules';
@@ -66,6 +67,9 @@ export default function AdminBranchScreen() {
                     branch={b}
                     billing={billing}
                   />
+
+                  <SectionHeader title="Check-in QR" detail="Send to the owner" />
+                  <BranchQrCard branch={b} />
 
                   <SectionHeader title="Visit and contact" />
                   {address || b.phone || b.email ? (

@@ -57,3 +57,9 @@ export function autoOutHint(rules: CheckInRules | undefined, role: AttendeeRole)
   const hours = role === 'member' ? rules.memberAutoOutHours : rules.trainerAutoOutHours;
   return `If you forget, you’re checked out automatically after ${formatMinutes(hours * 60)}.`;
 }
+
+/** "Pulse Fitness Velachery check-in QR.png", safe as a file name. */
+export function qrFileName(gymName: string) {
+  const name = gymName.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'Branch';
+  return `${name} check-in QR.png`;
+}

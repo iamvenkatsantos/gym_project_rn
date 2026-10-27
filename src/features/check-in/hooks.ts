@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { attendanceKeys } from '@/features/attendance/hooks';
 import type { AttendeeRole } from '@/features/attendance/types';
 import {
+  getAdminBranchQr,
   getCheckInQr,
   getCheckInRules,
   getDisplayCode,
-  resetCheckInCode,
+  resetAdminBranchQr,
   saveCheckInSettings,
   scanCheckIn,
   type CheckInSettings,
@@ -17,6 +18,7 @@ export const checkInKeys = {
   rules: (gymId: string) => [...checkInKeys.all, gymId, 'rules'] as const,
   qr: (gymId: string) => [...checkInKeys.all, gymId, 'qr'] as const,
   display: (displayKey: string) => [...checkInKeys.all, 'display', displayKey] as const,
+  admin: (gymId: string) => [...checkInKeys.all, gymId, 'admin'] as const,
 };
 
 /** Scans in or out. Home's check-in card and the reports refresh straight after. */
@@ -60,10 +62,15 @@ export function useSaveCheckInSettings(gymId: string) {
   });
 }
 
-export function useResetCheckInCode(gymId: string) {
+/** CoreFit Gym admins: the branch's printed QR. */
+export function useAdminBranchQr(gymId: string) {
+  return useQuery({ queryKey: checkInKeys.admin(gymId), queryFn: () => getAdminBranchQr(gymId) });
+}
+
+export function useResetAdminBranchQr(gymId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (which: 'poster' | 'display') => resetCheckInCode(gymId, which),
+    mutationFn: () => resetAdminBranchQr(gymId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: checkInKeys.all }),
   });
 }

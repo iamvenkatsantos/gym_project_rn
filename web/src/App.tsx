@@ -1,10 +1,8 @@
 import { GymProvider, useOwnedGyms, useSession, useSignOut } from './auth/session';
 import { Layout } from './components/Layout';
 import { QueryState } from './components/ui';
-import { displayKeyFromHash, usePage, type Page } from './lib/route';
+import { usePage, type Page } from './lib/route';
 import { Attendance } from './pages/Attendance';
-import { CheckIn } from './pages/CheckIn';
-import { Display } from './pages/Display';
 import { Exports } from './pages/Exports';
 import { Members } from './pages/Members';
 import { Overview } from './pages/Overview';
@@ -16,18 +14,10 @@ const SCREENS: Record<Page, () => React.JSX.Element> = {
   members: Members,
   payments: Payments,
   attendance: Attendance,
-  'check-in': CheckIn,
   exports: Exports,
 };
 
 export function App() {
-  // The front-desk display is public: it shows only the rotating code.
-  const displayKey = displayKeyFromHash();
-  if (displayKey) return <Display displayKey={displayKey} />;
-  return <Dashboard />;
-}
-
-function Dashboard() {
   const session = useSession();
   if (session === undefined) return null;
   if (!session) return <SignIn />;
