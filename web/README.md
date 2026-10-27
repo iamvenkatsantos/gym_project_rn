@@ -3,13 +3,14 @@
 A web dashboard for gym owners, on the same Supabase project as the app. Owners sign in with the
 email and password they use in the app; anyone who doesn't own a gym is told to use the app instead.
 
-| Page       | What it shows                                                                            |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| Overview   | Members with an active plan, renewals due, money collected this month, today's check-ins |
-| Members    | Every member with their latest plan and standing; filter, search, CSV                    |
-| Payments   | Payments recorded in a period, totals by method, CSV                                     |
-| Attendance | Who came in on any day, and days present per person over 7, 30 or 90 days                |
-| Exports    | The payments, memberships and attendance CSVs from the app's Export reports              |
+| Page        | What it shows                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| Overview    | Members with an active plan, renewals due, money collected this month, today's check-ins |
+| Members     | Every member with their latest plan and standing; filter, search, CSV                    |
+| Payments    | Payments recorded in a period, totals by method, CSV                                     |
+| Attendance  | Who came in on any day, and days present per person over 7, 30 or 90 days                |
+| Check-in QR | The live front-desk display link (no sign-in) and the printable poster                   |
+| Exports     | The payments, memberships and attendance CSVs from the app's Export reports              |
 
 Owners of more than one gym pick the gym in the sidebar.
 

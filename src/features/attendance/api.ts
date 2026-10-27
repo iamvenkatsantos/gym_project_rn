@@ -13,6 +13,7 @@ type DayRow = {
   checked_in_at: string;
   checked_out_at: string | null;
   workouts: number;
+  auto_checked_out: boolean;
 };
 
 function toDay(row: DayRow): AttendanceDay {
@@ -22,6 +23,7 @@ function toDay(row: DayRow): AttendanceDay {
     checkedInAt: row.checked_in_at,
     checkedOutAt: row.checked_out_at,
     workouts: row.workouts,
+    autoCheckedOut: row.auto_checked_out,
   };
 }
 
@@ -103,6 +105,7 @@ type EntryRow = {
   checked_in_at: string | null;
   checked_out_at: string | null;
   workouts: number;
+  auto_checked_out: boolean;
 };
 
 /** Everyone who should be counted on a day, present or not. Owners and supervisors only. */
@@ -138,6 +141,7 @@ export async function listDayAttendance(
     checkedInAt: r.checked_in_at,
     checkedOutAt: r.checked_out_at,
     workouts: r.workouts,
+    autoCheckedOut: r.auto_checked_out,
   }));
 }
 

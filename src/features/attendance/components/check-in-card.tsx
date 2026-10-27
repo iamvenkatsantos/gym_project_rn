@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -9,13 +10,19 @@ import { Spacing } from '@/constants/theme';
 import { useCheckIn, useMyAttendance } from '@/features/attendance/hooks';
 import { attendanceStatus, attendanceTimes } from '@/features/attendance/rules';
 import type { AttendeeRole } from '@/features/attendance/types';
+import { useCheckInRules } from '@/features/check-in/hooks';
+import { autoOutHint } from '@/features/check-in/rules';
 
 const hint: Record<AttendeeRole, string> = {
-  member: 'Check in when you arrive to start your workout.',
-  trainer: 'Check in when you start your shift.',
+  member: 'Scan the gym’s QR when you arrive to start your workout.',
+  trainer: 'Scan the gym’s QR when you start your shift.',
 };
 
-/** Today's check-in and check-out, on the member's and the trainer's home. */
+/**
+ * Today's check-in and check-out, on the member's and the trainer's home.
+ * Scanning the branch's QR is the main way in; the button is a backup unless
+ * the branch is QR only. Checking out works either way.
+ */
 export function CheckInCard({
   gymId,
   userId,
@@ -27,7 +34,9 @@ export function CheckInCard({
 }) {
   const today = useMyAttendance(gymId, userId);
   const toggle = useCheckIn(gymId, userId, role);
+  const rules = useCheckInRules(gymId);
   const status = attendanceStatus(today.data);
+  const qrOnly = rules.data?.qrOnly ?? false;
 
   return (
     <Card highlighted={status === 'inGym'}>
@@ -52,21 +61,37 @@ export function CheckInCard({
         {status === 'inGym' ? <Pill label="In gym" tone="success" /> : null}
       </View>
       {status === 'inGym' ? (
-        <Button
-          label="Check out"
-          icon="log-out-outline"
-          variant="secondary"
-          loading={toggle.isPending}
-          onPress={() => toggle.mutate('out')}
-        />
+        <>
+          <ThemedText type="small" themeColor="textSecondary">
+            Scan the QR again or tap Check out when you leave. {autoOutHint(rules.data, role)}
+          </ThemedText>
+          <Button
+            label="Check out"
+            icon="log-out-outline"
+            variant="secondary"
+            loading={toggle.isPending}
+            onPress={() => toggle.mutate('out')}
+          />
+        </>
       ) : (
-        <Button
-          label={status === 'left' ? 'Check in again' : 'Check in'}
-          icon="log-in-outline"
-          disabled={today.isPending}
-          loading={toggle.isPending}
-          onPress={() => toggle.mutate('in')}
-        />
+        <>
+          <Button
+            label={status === 'left' ? 'Scan to check in again' : 'Scan to check in'}
+            icon="qr-code-outline"
+            disabled={today.isPending}
+            onPress={() => router.push('/scan-check-in')}
+          />
+          {qrOnly || rules.isPending ? null : (
+            <Button
+              label={status === 'left' ? 'Check in again' : 'Check in'}
+              icon="log-in-outline"
+              variant="secondary"
+              disabled={today.isPending}
+              loading={toggle.isPending}
+              onPress={() => toggle.mutate('in')}
+            />
+          )}
+        </>
       )}
       {toggle.error ? (
         <ThemedText type="small" themeColor="danger">

@@ -48,10 +48,18 @@
       ],
       "expo-sharing",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "CoreFit Gym uses the camera to scan your gym's check-in QR and to take progress photos.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "CoreFit Gym uses your photos so you can add progress photos.",
-          "cameraPermission": "CoreFit Gym uses the camera so you can take progress photos.",
+          "cameraPermission": "CoreFit Gym uses the camera to scan your gym's check-in QR and to take progress photos.",
           "microphonePermission": false
         }
       ]

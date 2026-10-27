@@ -37,14 +37,16 @@ export function minutesAtGym(
   return Math.max(0, (end.getTime() - new Date(entry.checkedInAt).getTime()) / 60000);
 }
 
-/** "6:05 PM – 7:10 PM", "In since 6:05 PM", or "Not checked in". */
+/** "6:05 PM – 7:10 PM", "6:05 PM – 9:05 PM (auto)", "In since 6:05 PM", or "Not checked in". */
 export function attendanceTimes(entry: {
   checkedInAt: string | null;
   checkedOutAt: string | null;
+  autoCheckedOut?: boolean;
 }) {
   if (!entry.checkedInAt) return 'Not checked in';
   if (!entry.checkedOutAt) return `In since ${clockTime(entry.checkedInAt)}`;
-  return `${clockTime(entry.checkedInAt)} – ${clockTime(entry.checkedOutAt)}`;
+  const times = `${clockTime(entry.checkedInAt)} – ${clockTime(entry.checkedOutAt)}`;
+  return entry.autoCheckedOut ? `${times} (auto)` : times;
 }
 
 export type DayCount = { present: number; total: number; inGym: number };

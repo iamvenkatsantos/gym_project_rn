@@ -50,6 +50,10 @@ describe('attendance status', () => {
     expect(attendanceTimes({ checkedInAt: null, checkedOutAt: null })).toBe('Not checked in');
     expect(attendanceTimes(day(null))).toMatch(/^In since /);
     expect(attendanceTimes(day('2026-10-25T02:00:00Z'))).toContain(' – ');
+    expect(attendanceTimes(day('2026-10-25T02:00:00Z'))).not.toContain('(auto)');
+    expect(attendanceTimes({ ...day('2026-10-25T02:00:00Z'), autoCheckedOut: true })).toMatch(
+      / – .* \(auto\)$/,
+    );
   });
 });
 

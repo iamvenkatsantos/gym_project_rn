@@ -15,7 +15,7 @@ export function Attendance() {
     <>
       <PageHeader
         title="Attendance"
-        subtitle="Check-ins from the app’s Home screen, for active members and trainers"
+        subtitle="Check-ins by QR or the app’s Home screen, for active members and trainers"
       />
       <DayView />
       <SummaryView />

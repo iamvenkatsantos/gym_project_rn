@@ -251,3 +251,48 @@ export async function attendanceReport(gymId: string, days: number): Promise<Att
     lastSeen: r.last_seen,
   }));
 }
+
+// Check-in QR -------------------------------------------------------------------------
+
+export type CheckInQr = {
+  gymName: string;
+  posterCode: string;
+  posterEnabled: boolean;
+  displayKey: string;
+  qrOnly: boolean;
+};
+
+type CheckInQrRow = {
+  gym_name: string;
+  poster_code: string;
+  poster_enabled: boolean;
+  display_key: string;
+  qr_only: boolean;
+};
+
+/** The branch's poster code and display key. Settings are changed in the app. */
+export async function getCheckInQr(gymId: string): Promise<CheckInQr> {
+  const rows = unwrap(await supabase.rpc('check_in_qr', { p_gym_id: gymId })) as CheckInQrRow[];
+  const r = rows[0];
+  return {
+    gymName: r.gym_name,
+    posterCode: r.poster_code,
+    posterEnabled: r.poster_enabled,
+    displayKey: r.display_key,
+    qrOnly: r.qr_only,
+  };
+}
+
+export type DisplayCode = { gymId: string; gymName: string; code: string; refreshAt: string };
+
+/** The front-desk display's current code. Works signed out. */
+export async function getDisplayCode(displayKey: string): Promise<DisplayCode> {
+  const rows = unwrap(await supabase.rpc('check_in_display', { p_key: displayKey })) as {
+    gym_id: string;
+    gym_name: string;
+    code: string;
+    refresh_at: string;
+  }[];
+  const r = rows[0];
+  return { gymId: r.gym_id, gymName: r.gym_name, code: r.code, refreshAt: r.refresh_at };
+}

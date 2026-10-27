@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -192,6 +193,13 @@ export default function AttendanceScreen() {
 
   return (
     <Screen>
+      {/* Members and trainers scan this to check in and out. */}
+      <Button
+        label="Check-in QR for this branch"
+        icon="qr-code-outline"
+        variant="secondary"
+        onPress={() => router.push('/check-in-qr')}
+      />
       <SegmentedControl
         options={[
           { value: 'day', label: 'By day' },

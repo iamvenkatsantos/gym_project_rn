@@ -264,6 +264,7 @@ for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
 psql -d corefit_test -f supabase/tests/rls.sql
 psql -d corefit_test -f supabase/tests/workout-plans.sql
 psql -d corefit_test -f supabase/tests/online-payments.sql
+psql -d corefit_test -f supabase/tests/qr-check-in.sql
 ```
 
 ## Scripts
