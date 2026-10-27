@@ -8,8 +8,8 @@ import {
   fetchBillingSettings,
   fetchBrandOverview,
   renameBrand,
-  setBrandFee,
   setBranchFee,
+  setGymFee,
 } from '@/features/branches/api';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
@@ -36,8 +36,8 @@ export function useBrandOverview(brandId: string | undefined) {
 export function useAddBranch(brandId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (details: GymDetails) => {
-      const gymId = await addBranch(brandId, cleanGymDetails(details));
+    mutationFn: async ({ details, feeCents }: { details: GymDetails; feeCents: number | null }) => {
+      const gymId = await addBranch(brandId, cleanGymDetails(details), feeCents);
       // An admin who also owns the brand gets the branch too, so pick it up.
       const profile = await restoreProfile();
       if (profile) useAuthStore.getState().setProfile(profile);
@@ -67,10 +67,10 @@ export function useSetBranchFee() {
   });
 }
 
-export function useSetBrandFee(brandId: string) {
+export function useSetGymFee(gymId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (feeCents: number | null) => setBrandFee(brandId, feeCents),
+    mutationFn: (feeCents: number | null) => setGymFee(gymId, feeCents),
     onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
   });
 }

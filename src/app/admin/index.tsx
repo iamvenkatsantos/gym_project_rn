@@ -16,7 +16,7 @@ import { formatAmount } from '@/lib/format';
 
 /**
  * The admin's home: how many owners and branches there are and what to collect this month.
- * Each branch is billed at the standard fee unless its brand has a deal of its own.
+ * Each branch is billed at the default fee unless the admin gave it a fee of its own.
  */
 export default function AdminOverviewScreen() {
   const branches = useAdminBranches();
@@ -42,7 +42,7 @@ export default function AdminOverviewScreen() {
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {list.length} branches at{' '}
-                      {formatAmount(billing.branchFeeCents, billing.currency)} each, unless a brand
+                      {formatAmount(billing.branchFeeCents, billing.currency)} each, unless a branch
                       has its own fee.
                     </ThemedText>
                   </Card>
@@ -86,11 +86,11 @@ export default function AdminOverviewScreen() {
                     </>
                   ) : null}
 
-                  <SectionHeader title="Standard fee" detail="Per branch, per month" />
+                  <SectionHeader title="Default fee" detail="Per branch, per month" />
                   <Card>
                     <FeeEditor
                       key={billing.branchFeeCents}
-                      label="Monthly fee per branch (₹)"
+                      label="Default monthly fee per branch (₹)"
                       feeCents={billing.branchFeeCents}
                       pending={setFee.isPending}
                       error={setFee.error}

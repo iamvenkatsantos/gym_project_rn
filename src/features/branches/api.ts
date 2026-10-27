@@ -22,9 +22,9 @@ import { supabase, unwrap } from '@/lib/supabase';
 type AdminBranchRow = {
   brand_id: string;
   brand_name: string;
-  brand_fee_cents: number | null;
   gym_id: string;
   gym_name: string;
+  fee_cents: number | null;
   address: string;
   city: string;
   phone: string;
@@ -57,9 +57,9 @@ const mockBranches: AdminBranch[] = [
   {
     brandId: MOCK_BRAND_ID,
     brandName: 'Pulse Fitness',
-    brandFeeCents: null,
     gymId: MOCK_GYM_ID,
     gymName: 'Pulse Fitness Anna Nagar',
+    feeCents: null,
     address: '2nd Avenue, Anna Nagar',
     city: 'Chennai',
     phone: '9840012345',
@@ -72,9 +72,9 @@ const mockBranches: AdminBranch[] = [
   {
     brandId: MOCK_BRAND_ID,
     brandName: 'Pulse Fitness',
-    brandFeeCents: null,
     gymId: 'gym-2',
     gymName: 'Pulse Fitness Velachery',
+    feeCents: null,
     address: '100 Feet Road, Velachery',
     city: 'Chennai',
     phone: '9840054321',
@@ -87,9 +87,9 @@ const mockBranches: AdminBranch[] = [
   {
     brandId: 'brand-2',
     brandName: 'Iron Den',
-    brandFeeCents: 100000,
     gymId: 'gym-3',
     gymName: 'Iron Den',
+    feeCents: 100000,
     address: 'Avinashi Road',
     city: 'Coimbatore',
     phone: '04222345678',
@@ -105,9 +105,9 @@ function toBranch(row: AdminBranchRow): AdminBranch {
   return {
     brandId: row.brand_id,
     brandName: row.brand_name,
-    brandFeeCents: row.brand_fee_cents,
     gymId: row.gym_id,
     gymName: row.gym_name,
+    feeCents: row.fee_cents,
     address: row.address,
     city: row.city,
     phone: row.phone,
@@ -133,8 +133,15 @@ export async function fetchAdminBranches(): Promise<AdminBranch[]> {
   return rows.map(toBranch);
 }
 
-/** Admins only. The brand's owners own the new branch; the admin doesn't join it. */
-export async function addBranch(brandId: string, details: GymDetails): Promise<string> {
+/**
+ * Admins only. The brand's owners own the new branch; the admin doesn't join it. A null fee
+ * keeps the branch on the default fee.
+ */
+export async function addBranch(
+  brandId: string,
+  details: GymDetails,
+  feeCents: number | null,
+): Promise<string> {
   if (!supabase) {
     const brand = mockBranches.find((b) => b.brandId === brandId);
     if (!brand) throw new Error("That brand doesn't exist");
@@ -143,6 +150,7 @@ export async function addBranch(brandId: string, details: GymDetails): Promise<s
       ...brand,
       gymId,
       gymName: details.name,
+      feeCents,
       address: details.address,
       city: details.city,
       phone: details.phone,
@@ -186,14 +194,15 @@ export async function setBranchFee(feeCents: number) {
   if (error) throw error;
 }
 
-/** Admins only. Null puts the brand back on the standard fee. */
-export async function setBrandFee(brandId: string, feeCents: number | null) {
+/** Admins only. Null puts the branch back on the default fee. */
+export async function setGymFee(gymId: string, feeCents: number | null) {
   if (!supabase) {
-    for (const b of mockBranches) if (b.brandId === brandId) b.brandFeeCents = feeCents;
+    const branch = mockBranches.find((b) => b.gymId === gymId);
+    if (branch) branch.feeCents = feeCents;
     return delay(undefined);
   }
-  const { error } = await supabase.rpc('admin_set_brand_fee', {
-    p_brand_id: brandId,
+  const { error } = await supabase.rpc('admin_set_gym_fee', {
+    p_gym_id: gymId,
     p_fee_cents: feeCents,
   });
   if (error) throw error;

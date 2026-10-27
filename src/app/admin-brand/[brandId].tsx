@@ -11,19 +11,13 @@ import { SectionHeader } from '@/components/section-header';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { FeeEditor } from '@/features/branches/components/fee-editor';
-import {
-  useAdminBranches,
-  useBillingSettings,
-  useRenameBrand,
-  useSetBrandFee,
-} from '@/features/branches/hooks';
-import { groupBrands, ownerNames } from '@/features/branches/rules';
+import { useAdminBranches, useBillingSettings, useRenameBrand } from '@/features/branches/hooks';
+import { branchFee, groupBrands, ownerNames } from '@/features/branches/rules';
 import type { AdminBrand } from '@/features/branches/types';
 import { formatAmount } from '@/lib/format';
 import { validateTitle } from '@/lib/validation';
 
-/** Admins only: one brand's branches, its name and fee, and adding a branch to it. */
+/** Admins only: one brand's branches and name, and adding a branch to it. */
 export default function AdminBrandScreen() {
   const { brandId } = useLocalSearchParams<{ brandId: string }>();
   const branches = useAdminBranches();
@@ -43,11 +37,7 @@ export default function AdminBrandScreen() {
 
 function BrandDetails({ brand }: { brand: AdminBrand }) {
   const rename = useRenameBrand(brand.brandId);
-  const setFee = useSetBrandFee(brand.brandId);
   const settings = useBillingSettings();
-  const standard = settings.data
-    ? formatAmount(settings.data.branchFeeCents, settings.data.currency)
-    : '…';
   const [name, setName] = useState(brand.brandName);
   const error = validateTitle(name, { label: 'brand name', max: 80 });
   const changed = name.trim() !== brand.brandName;
@@ -67,7 +57,17 @@ function BrandDetails({ brand }: { brand: AdminBrand }) {
             divider={i > 0}
             icon="location-outline"
             label={b.gymName}
-            detail={[b.city, `${b.members} members`].filter(Boolean).join(' · ')}
+            detail={[
+              b.city,
+              `${b.members} members`,
+              settings.data &&
+                `${formatAmount(branchFee(b, settings.data), settings.data.currency)}/month`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            onPress={() =>
+              router.push({ pathname: '/admin-branch/[gymId]', params: { gymId: b.gymId } })
+            }
           />
         ))}
       </ListGroup>
@@ -81,34 +81,6 @@ function BrandDetails({ brand }: { brand: AdminBrand }) {
           })
         }
       />
-
-      <SectionHeader
-        title="Fee per branch"
-        detail={brand.brandFeeCents === null ? `Standard (${standard})` : 'Own deal'}
-      />
-      <Card style={styles.rename}>
-        <FeeEditor
-          key={brand.brandFeeCents ?? 'standard'}
-          label="This brand's monthly fee per branch (₹)"
-          feeCents={brand.brandFeeCents}
-          pending={setFee.isPending}
-          error={setFee.error}
-          onSave={(fee) => setFee.mutate(fee)}
-        />
-        {brand.brandFeeCents !== null ? (
-          <Button
-            label={`Use the standard fee (${standard})`}
-            variant="secondary"
-            size="compact"
-            loading={setFee.isPending}
-            onPress={() => setFee.mutate(null)}
-          />
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            Leave empty to bill this brand at the standard fee.
-          </ThemedText>
-        )}
-      </Card>
 
       <SectionHeader title="Brand name" />
       <Card style={styles.rename}>

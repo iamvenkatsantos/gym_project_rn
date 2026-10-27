@@ -9,8 +9,11 @@ import { SectionHeader } from '@/components/section-header';
 import { StatTile } from '@/components/stat-tile';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useAdminBranches, useBillingSettings } from '@/features/branches/hooks';
+import { Button } from '@/components/button';
+import { FeeEditor } from '@/features/branches/components/fee-editor';
+import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
 import { branchFee, ownerNames } from '@/features/branches/rules';
+import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { formatDate, formatAmount } from '@/lib/format';
 
 /** Admins only: one branch's address, contact, size and fee, for a visit or a billing call. */
@@ -49,6 +52,12 @@ export default function AdminBranchScreen() {
                       compact
                     />
                   </View>
+
+                  <SectionHeader
+                    title="Monthly fee"
+                    detail={b.feeCents === null ? 'Default fee' : 'Own fee'}
+                  />
+                  <BranchFee branch={b} billing={billing} />
 
                   <SectionHeader title="Visit and contact" />
                   {address || b.phone || b.email ? (
@@ -102,7 +111,42 @@ export default function AdminBranchScreen() {
   );
 }
 
+/** The branch's fee: raise or lower it for this branch alone, or put it back on the default. */
+function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingSettings }) {
+  const setFee = useSetGymFee(branch.gymId);
+  const fallback = formatAmount(billing.branchFeeCents, billing.currency);
+
+  return (
+    <Card style={styles.fee}>
+      <FeeEditor
+        key={branch.feeCents ?? 'default'}
+        label="This branch's monthly fee (₹)"
+        feeCents={branchFee(branch, billing)}
+        pending={setFee.isPending}
+        error={setFee.error}
+        onSave={(fee) => setFee.mutate(fee)}
+      />
+      {branch.feeCents === null ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          On the default fee ({fallback}). Saving a different amount gives this branch its own fee.
+        </ThemedText>
+      ) : (
+        <Button
+          label={`Use the default fee (${fallback})`}
+          variant="secondary"
+          size="compact"
+          loading={setFee.isPending}
+          onPress={() => setFee.mutate(null)}
+        />
+      )}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
+  fee: {
+    gap: Spacing.three,
+  },
   header: {
     gap: Spacing.one,
   },
