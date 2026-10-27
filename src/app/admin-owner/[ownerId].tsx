@@ -11,7 +11,7 @@ import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useAdminBranches, useBillingSettings } from '@/features/branches/hooks';
-import { branchFee, ownerAccounts } from '@/features/branches/rules';
+import { branchBill, ownerAccounts } from '@/features/branches/rules';
 import type { BillingSettings, OwnerAccount } from '@/features/branches/types';
 import { formatAmount } from '@/lib/format';
 
@@ -87,7 +87,7 @@ function OwnerDetails({ account, billing }: { account: OwnerAccount; billing: Bi
                 detail={[
                   b.city,
                   `${b.members} members`,
-                  `${formatAmount(branchFee(b, billing), billing.currency)}/month`,
+                  `${formatAmount(branchBill(b, billing), billing.currency)}/month`,
                 ]
                   .filter(Boolean)
                   .join(' · ')}

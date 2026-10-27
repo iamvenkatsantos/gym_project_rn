@@ -11,8 +11,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { Button } from '@/components/button';
 import { FeeEditor } from '@/features/branches/components/fee-editor';
+import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
 import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
-import { branchFee, ownerNames } from '@/features/branches/rules';
+import { branchBill, branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { formatDate, formatAmount } from '@/lib/format';
 
@@ -46,8 +47,8 @@ export default function AdminBranchScreen() {
                     <StatTile label="Members" value={b.members} icon="people" accent compact />
                     <StatTile label="Staff" value={b.staff} icon="barbell-outline" compact />
                     <StatTile
-                      label="Fee / month"
-                      value={formatAmount(branchFee(b, billing), billing.currency)}
+                      label="Bill / month"
+                      value={formatAmount(branchBill(b, billing), billing.currency)}
                       icon="cash-outline"
                       compact
                     />
@@ -58,6 +59,13 @@ export default function AdminBranchScreen() {
                     detail={b.feeCents === null ? 'Default fee' : 'Own fee'}
                   />
                   <BranchFee branch={b} billing={billing} />
+
+                  <SectionHeader title="Online payments" detail="Add-on" />
+                  <OnlinePaymentsEditor
+                    key={`${b.onlinePayments}-${b.razorpayAccountId}`}
+                    branch={b}
+                    billing={billing}
+                  />
 
                   <SectionHeader title="Visit and contact" />
                   {address || b.phone || b.email ? (

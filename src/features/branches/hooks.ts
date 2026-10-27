@@ -10,6 +10,7 @@ import {
   renameBrand,
   setBranchFee,
   setGymFee,
+  setOnlinePayments,
 } from '@/features/branches/api';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
@@ -71,6 +72,15 @@ export function useSetGymFee(gymId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (feeCents: number | null) => setGymFee(gymId, feeCents),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
+  });
+}
+
+export function useSetOnlinePayments(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ enabled, accountId }: { enabled: boolean; accountId: string }) =>
+      setOnlinePayments(gymId, enabled, accountId),
     onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
   });
 }

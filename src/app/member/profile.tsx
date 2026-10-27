@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { ListGroup, ListRow } from '@/components/list-row';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
@@ -14,8 +15,16 @@ import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useCurrentMembership, usePlans } from '@/features/memberships/hooks';
+import { membershipStatus } from '@/features/memberships/rules';
+import { PaymentRow } from '@/features/payments/components/payment-row';
+import {
+  useOnlinePayments,
+  useOnlinePaymentsEnabled,
+  usePayOnline,
+} from '@/features/payments/hooks';
 import { useWorkoutLogs } from '@/features/progress/hooks';
 import { weekStreak, workoutsThisWeek } from '@/features/progress/rules';
+import { formatAmount } from '@/lib/format';
 
 export default function MemberProfileScreen() {
   const profile = useProfile();
@@ -23,6 +32,11 @@ export default function MemberProfileScreen() {
   const membership = useCurrentMembership(gym.gymId, profile.id);
   const plans = usePlans(gym.gymId);
   const logs = useWorkoutLogs(gym.gymId, profile.id).data;
+  const online = useOnlinePaymentsEnabled(gym.gymId).data === true;
+  const myPayments = useOnlinePayments(gym.gymId, profile.id).data ?? [];
+  const pay = usePayOnline(gym.gymId);
+  // A plan bought while one is running starts the day after it ends.
+  const running = !!membership.data && membershipStatus(membership.data) !== 'expired';
 
   return (
     <Screen>
@@ -53,14 +67,57 @@ export default function MemberProfileScreen() {
         {(m) => m && <MembershipCard membership={m} />}
       </QueryState>
 
-      <SectionHeader title="Plans" detail="Ask the front desk to start or renew" />
+      <SectionHeader
+        title="Plans"
+        detail={online ? 'Pay here or at the front desk' : 'Ask the front desk to start or renew'}
+      />
+      {online && running ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          A plan you pay for now starts the day after your current one ends.
+        </ThemedText>
+      ) : null}
       <QueryState query={plans}>
         {(list) =>
-          list.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} current={plan.id === membership.data?.plan.id} />
-          ))
+          list.map((plan) => {
+            const current = plan.id === membership.data?.plan.id;
+            const price = formatAmount(plan.priceCents, plan.currency);
+            return (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                current={current}
+                action={
+                  online && plan.priceCents >= 100 ? (
+                    <Button
+                      label={current ? `Renew · ${price}` : `Pay ${price}`}
+                      icon="card-outline"
+                      size="compact"
+                      variant={current ? 'primary' : 'secondary'}
+                      loading={pay.isPending && pay.variables === plan.id}
+                      disabled={pay.isPending && pay.variables !== plan.id}
+                      onPress={() => pay.mutate(plan.id)}
+                    />
+                  ) : undefined
+                }
+              />
+            );
+          })
         }
       </QueryState>
+      {pay.error ? (
+        <ThemedText type="small" themeColor="danger">
+          {pay.error.message}
+        </ThemedText>
+      ) : null}
+
+      {myPayments.length ? (
+        <>
+          <SectionHeader title="Your payments" />
+          {myPayments.slice(0, 3).map((p) => (
+            <PaymentRow key={p.id} payment={p} />
+          ))}
+        </>
+      ) : null}
 
       <SectionHeader title="Appearance" />
       <AppearancePicker />

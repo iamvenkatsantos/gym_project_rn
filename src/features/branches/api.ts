@@ -25,6 +25,8 @@ type AdminBranchRow = {
   gym_id: string;
   gym_name: string;
   fee_cents: number | null;
+  online_payments: boolean;
+  razorpay_account_id: string | null;
   address: string;
   city: string;
   phone: string;
@@ -60,6 +62,8 @@ const mockBranches: AdminBranch[] = [
     gymId: MOCK_GYM_ID,
     gymName: 'Pulse Fitness Anna Nagar',
     feeCents: null,
+    onlinePayments: false,
+    razorpayAccountId: null,
     address: '2nd Avenue, Anna Nagar',
     city: 'Chennai',
     phone: '9840012345',
@@ -75,6 +79,8 @@ const mockBranches: AdminBranch[] = [
     gymId: 'gym-2',
     gymName: 'Pulse Fitness Velachery',
     feeCents: null,
+    onlinePayments: false,
+    razorpayAccountId: null,
     address: '100 Feet Road, Velachery',
     city: 'Chennai',
     phone: '9840054321',
@@ -90,6 +96,8 @@ const mockBranches: AdminBranch[] = [
     gymId: 'gym-3',
     gymName: 'Iron Den',
     feeCents: 100000,
+    onlinePayments: false,
+    razorpayAccountId: null,
     address: 'Avinashi Road',
     city: 'Coimbatore',
     phone: '04222345678',
@@ -108,6 +116,8 @@ function toBranch(row: AdminBranchRow): AdminBranch {
     gymId: row.gym_id,
     gymName: row.gym_name,
     feeCents: row.fee_cents,
+    onlinePayments: row.online_payments,
+    razorpayAccountId: row.razorpay_account_id,
     address: row.address,
     city: row.city,
     phone: row.phone,
@@ -151,6 +161,8 @@ export async function addBranch(
       gymId,
       gymName: details.name,
       feeCents,
+      onlinePayments: false,
+      razorpayAccountId: null,
       address: details.address,
       city: details.city,
       phone: details.phone,
@@ -173,15 +185,26 @@ export async function addBranch(
   ) as string;
 }
 
-const mockSettings: BillingSettings = { branchFeeCents: 150000, currency: 'INR' };
+const mockSettings: BillingSettings = {
+  branchFeeCents: 150000,
+  onlineAddonCents: 50000,
+  currency: 'INR',
+};
 
 /** Admins only: the standard monthly fee per branch. */
 export async function fetchBillingSettings(): Promise<BillingSettings> {
   if (!supabase) return delay({ ...mockSettings });
   const row = unwrap(
-    await supabase.from('platform_settings').select('branch_fee_cents, currency').single(),
-  ) as { branch_fee_cents: number; currency: string };
-  return { branchFeeCents: row.branch_fee_cents, currency: row.currency };
+    await supabase
+      .from('platform_settings')
+      .select('branch_fee_cents, online_addon_cents, currency')
+      .single(),
+  ) as { branch_fee_cents: number; online_addon_cents: number; currency: string };
+  return {
+    branchFeeCents: row.branch_fee_cents,
+    onlineAddonCents: row.online_addon_cents,
+    currency: row.currency,
+  };
 }
 
 /** Admins only. */
@@ -204,6 +227,25 @@ export async function setGymFee(gymId: string, feeCents: number | null) {
   const { error } = await supabase.rpc('admin_set_gym_fee', {
     p_gym_id: gymId,
     p_fee_cents: feeCents,
+  });
+  if (error) throw error;
+}
+
+/**
+ * Admins only. Switches online payments on or off for a branch and sets the owner's
+ * Razorpay linked account (acc_...) its payments go to; blank clears it.
+ */
+export async function setOnlinePayments(gymId: string, enabled: boolean, accountId: string) {
+  const account = accountId.trim() || null;
+  if (!supabase) {
+    const branch = mockBranches.find((b) => b.gymId === gymId);
+    if (branch) Object.assign(branch, { onlinePayments: enabled, razorpayAccountId: account });
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('admin_set_online_payments', {
+    p_gym_id: gymId,
+    p_enabled: enabled,
+    p_account_id: account,
   });
   if (error) throw error;
 }

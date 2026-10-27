@@ -35,9 +35,17 @@ export function branchFee(branch: Pick<AdminBranch, 'feeCents'>, settings: Billi
   return branch.feeCents ?? settings.branchFeeCents;
 }
 
+/** What a branch pays each month: its fee plus the online payments add-on when it's on. */
+export function branchBill(
+  branch: Pick<AdminBranch, 'feeCents' | 'onlinePayments'>,
+  settings: BillingSettings,
+) {
+  return branchFee(branch, settings) + (branch.onlinePayments ? settings.onlineAddonCents : 0);
+}
+
 /** What to collect each month across every branch. Co-owned branches count once. */
 export function monthlyTotal(branches: AdminBranch[], settings: BillingSettings) {
-  return branches.reduce((total, b) => total + branchFee(b, settings), 0);
+  return branches.reduce((total, b) => total + branchBill(b, settings), 0);
 }
 
 /**

@@ -8,6 +8,10 @@ export type AdminBranch = {
   gymName: string;
   /** This branch's own monthly fee, or null for the default fee. */
   feeCents: number | null;
+  /** Whether members can pay online (a paid add-on). */
+  onlinePayments: boolean;
+  /** The owner's Razorpay Route linked account that online payments go to. */
+  razorpayAccountId: string | null;
   address: string;
   city: string;
   phone: string;
@@ -19,9 +23,11 @@ export type AdminBranch = {
   createdAt: string;
 };
 
-/** What CoreFit Gym charges: a default monthly fee for each branch. */
+/** What CoreFit Gym charges: a default monthly fee for each branch, plus add-ons. */
 export type BillingSettings = {
   branchFeeCents: number;
+  /** The online payments add-on, per branch that has it switched on. */
+  onlineAddonCents: number;
   currency: string;
 };
 
