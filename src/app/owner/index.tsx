@@ -13,6 +13,7 @@ import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
+import { BranchSwitcher } from '@/features/branches/components/branch-switcher';
 import { classesOnDay } from '@/features/bookings/rules';
 import { TrainerRequestRow } from '@/features/coaching/components/trainer-request-row';
 import { useTrainerLinks, useTrainerRequests } from '@/features/coaching/hooks';
@@ -85,6 +86,7 @@ export default function OwnerDashboardScreen() {
 
   return (
     <Screen>
+      <BranchSwitcher />
       {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
       {/* Three across so the numbers fit on the first screen of a small phone. Each one opens
           the screen behind it, so the dashboard doesn't need a row of buttons as well. */}

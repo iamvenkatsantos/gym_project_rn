@@ -122,6 +122,8 @@ function RootNavigator() {
         <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
         <Stack.Screen name="insights" options={{ headerShown: true, title: 'Insights' }} />
         <Stack.Screen name="gym-details" options={{ headerShown: true, title: 'Gym details' }} />
+        {/* Owners of more than one branch see them side by side. */}
+        <Stack.Screen name="branches" options={{ headerShown: true, title: 'All branches' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>
         <Stack.Screen name="supervisor" options={{ title: 'Dashboard' }} />
@@ -218,6 +220,13 @@ function RootNavigator() {
           name="account"
           options={{ presentation: 'modal', headerShown: true, title: 'Account' }}
         />
+        {/* CoreFit Gym admins add branches here; only they see the way in, and the server checks. */}
+        <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin' }} />
+        <Stack.Screen
+          name="admin-brand/[brandId]"
+          options={{ headerShown: true, title: 'Brand' }}
+        />
+        <Stack.Screen name="add-branch" options={{ headerShown: true, title: 'Add a branch' }} />
       </Stack.Protected>
     </Stack>
   );
