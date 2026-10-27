@@ -14,12 +14,6 @@ const mockGyms: Record<string, GymDetails> = {
   },
 };
 
-/** CoreFit Gym's own admins: only they invite new gym owners or make someone an owner. */
-export async function isPlatformAdmin(): Promise<boolean> {
-  if (!supabase) return delay(true);
-  return unwrap(await supabase.rpc('is_platform_admin')) as boolean;
-}
-
 /** Admins can set up a gym, and so can anyone an admin invited to set one up. */
 export async function canSetUpGym(): Promise<boolean> {
   if (!supabase) return delay(true);

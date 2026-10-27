@@ -8,7 +8,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { Colors, type ColorScheme } from '@/constants/theme';
 
-import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
+import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/auth-store';
 import { canCoach, canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
@@ -67,6 +67,8 @@ function RootNavigator() {
   const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
   // Nobody reaches their role's screens until they've chosen a password.
   const role = useAuthStore((s) => (settingPassword ? undefined : selectActiveGym(s)?.role));
+  // Platform admins get their own area with no gym in it, until they switch to a gym.
+  const inAdmin = useAuthStore((s) => !settingPassword && selectInAdmin(s));
 
   useEffect(() => {
     if (status !== 'loading') SplashScreen.hideAsync();
@@ -91,12 +93,29 @@ function RootNavigator() {
       <Stack.Protected guard={settingPassword}>
         <Stack.Screen name="set-password" options={{ title: 'Choose a password' }} />
       </Stack.Protected>
-      <Stack.Protected guard={status === 'signedIn' && !settingPassword && !role}>
+      <Stack.Protected guard={status === 'signedIn' && !settingPassword && !role && !inAdmin}>
         <Stack.Screen name="no-gym" options={{ title: 'Welcome' }} />
       </Stack.Protected>
       {/* New owners set up their gym here; owners can add another one. The server checks who may. */}
       <Stack.Protected guard={status === 'signedIn' && !settingPassword}>
         <Stack.Screen name="set-up-gym" options={{ headerShown: true, title: 'Set up your gym' }} />
+      </Stack.Protected>
+      {/* CoreFit Gym's admin: owners, branches and billing. The server checks every call too. */}
+      <Stack.Protected guard={inAdmin}>
+        <Stack.Screen name="admin" options={{ title: 'Overview' }} />
+        <Stack.Screen
+          name="admin-owner/[ownerId]"
+          options={{ headerShown: true, title: 'Owner' }}
+        />
+        <Stack.Screen
+          name="admin-branch/[gymId]"
+          options={{ headerShown: true, title: 'Branch' }}
+        />
+        <Stack.Screen
+          name="admin-brand/[brandId]"
+          options={{ headerShown: true, title: 'Brand' }}
+        />
+        <Stack.Screen name="add-branch" options={{ headerShown: true, title: 'Add a branch' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'member'}>
         <Stack.Screen name="member" options={{ title: 'Home' }} />
@@ -220,13 +239,6 @@ function RootNavigator() {
           name="account"
           options={{ presentation: 'modal', headerShown: true, title: 'Account' }}
         />
-        {/* CoreFit Gym admins add branches here; only they see the way in, and the server checks. */}
-        <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin' }} />
-        <Stack.Screen
-          name="admin-brand/[brandId]"
-          options={{ headerShown: true, title: 'Brand' }}
-        />
-        <Stack.Screen name="add-branch" options={{ headerShown: true, title: 'Add a branch' }} />
       </Stack.Protected>
     </Stack>
   );

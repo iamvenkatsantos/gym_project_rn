@@ -89,7 +89,7 @@ export default function InvitePersonScreen() {
   const inviteRole: InviteRole = role === 'owner' && ownerOf === 'new' ? 'gym_owner' : role;
   // Supervisors invite members and trainers, owners add supervisors too, and only
   // CoreFit Gym admins add owners. The server checks all of this again.
-  const isAdmin = useIsPlatformAdmin().data === true;
+  const isAdmin = useIsPlatformAdmin();
   const roles = isAdmin
     ? ownerInviteRoles
     : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : 2);

@@ -5,8 +5,11 @@ import { useAuthStore } from '@/features/auth/auth-store';
 import {
   addBranch,
   fetchAdminBranches,
+  fetchBillingSettings,
   fetchBrandOverview,
   renameBrand,
+  setBrandFee,
+  setBranchFee,
 } from '@/features/branches/api';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
@@ -14,6 +17,7 @@ import type { GymDetails } from '@/features/gyms/types';
 export const branchKeys = {
   all: ['branches'] as const,
   admin: () => [...branchKeys.all, 'admin'] as const,
+  billing: () => [...branchKeys.all, 'billing'] as const,
   overview: (brandId: string) => [...branchKeys.all, 'overview', brandId] as const,
 };
 
@@ -47,6 +51,26 @@ export function useRenameBrand(brandId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => renameBrand(brandId, name.trim()),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
+  });
+}
+
+export function useBillingSettings() {
+  return useQuery({ queryKey: branchKeys.billing(), queryFn: fetchBillingSettings });
+}
+
+export function useSetBranchFee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: setBranchFee,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
+  });
+}
+
+export function useSetBrandFee(brandId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (feeCents: number | null) => setBrandFee(brandId, feeCents),
     onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
   });
 }

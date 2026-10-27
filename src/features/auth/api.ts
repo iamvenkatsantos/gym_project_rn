@@ -37,16 +37,19 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     if (!profile) throw new Error('Unknown user');
     return delay(profile);
   }
-  const row = unwrap(
-    await supabase
+  const [profileResult, adminResult] = await Promise.all([
+    supabase
       .from('profiles')
       .select(
         'id, full_name, gyms:gym_members(role, status, gym:gyms(id, name, brand:brands(id, name)))',
       )
       .eq('id', userId)
       .single(),
-  ) as unknown as ProfileRow;
-  return toProfile(row);
+    supabase.rpc('is_platform_admin'),
+  ]);
+  const row = unwrap(profileResult) as unknown as ProfileRow;
+  // Before the platform_admins migration the check fails; then nobody is an admin.
+  return { ...toProfile(row), isPlatformAdmin: adminResult.data === true };
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<Profile> {
@@ -137,8 +140,10 @@ export async function sendPasswordReset(email: string) {
 }
 
 /** Demo sign-in for mock mode: pick a role and get the seeded user who has it first. */
-export async function signInAsDemo(role: Role): Promise<Profile> {
-  const profile = mockProfiles.find((p) => p.gyms[0]?.role === role);
+export async function signInAsDemo(role: Role | 'admin'): Promise<Profile> {
+  const profile = mockProfiles.find((p) =>
+    role === 'admin' ? p.isPlatformAdmin : p.gyms[0]?.role === role,
+  );
   if (!profile) throw new Error(`No demo ${role}`);
   return delay(profile);
 }

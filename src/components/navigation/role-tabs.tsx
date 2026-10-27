@@ -14,8 +14,11 @@ export type RoleTab = {
   icon: IconName;
 };
 
-/** Shared tab navigator for the member, trainer, supervisor and owner areas. */
-export function RoleTabs({ tabs }: { tabs: RoleTab[] }) {
+/**
+ * Shared tab navigator for the member, trainer, supervisor, owner and admin areas. The admin
+ * area has no gym, so it has no inbox.
+ */
+export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: boolean }) {
   const theme = useTheme();
   // The tabs live in one screen of the root stack. Naming that screen after the open tab means
   // screens pushed on top say "< People" or "< Home" on iOS, rather than the route ("< owner").
@@ -41,7 +44,7 @@ export function RoleTabs({ tabs }: { tabs: RoleTab[] }) {
         headerRightContainerStyle: { paddingRight: Spacing.three },
         headerRight: () => (
           <View style={styles.actions}>
-            <InboxButton />
+            {inbox ? <InboxButton /> : null}
             <AccountButton />
           </View>
         ),

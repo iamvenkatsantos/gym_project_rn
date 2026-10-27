@@ -28,4 +28,6 @@ export type Profile = {
   id: string;
   fullName: string;
   gyms: GymRole[];
+  /** Runs CoreFit Gym itself: sees every owner and branch, and adds branches. */
+  isPlatformAdmin?: boolean;
 };

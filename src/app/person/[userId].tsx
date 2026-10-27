@@ -34,7 +34,7 @@ export default function PersonScreen() {
   const remove = useRemovePerson(gym.gymId);
   const [confirmRemove, setConfirmRemove] = useState(false);
   // Only CoreFit Gym admins make someone an owner; the server refuses anyone else.
-  const isAdmin = useIsPlatformAdmin().data === true;
+  const isAdmin = useIsPlatformAdmin();
   const person = people.data?.find((p) => p.id === userId);
 
   if (!person) {

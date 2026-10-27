@@ -70,6 +70,13 @@ export const mockProfiles: Profile[] = [
       { gymId: 'gym-2', gymName: 'Pulse Fitness Velachery', role: 'owner', ...BRAND },
     ],
   },
+  {
+    id: 'u-admin',
+    fullName: 'CoreFit Admin',
+    // Runs CoreFit Gym itself rather than any one gym.
+    gyms: [],
+    isPlatformAdmin: true,
+  },
 ];
 
 /** Everyone at the demo gym, as the owner's People screen shows them. */
