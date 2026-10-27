@@ -227,6 +227,18 @@ function MemberMembership({ gymId, memberId }: { gymId: string; memberId: string
         size="compact"
         onPress={() => router.push({ pathname: '/record-membership', params: { memberId } })}
       />
+      <Button
+        label="Payment history"
+        icon="time-outline"
+        variant="secondary"
+        size="compact"
+        onPress={() =>
+          router.push({
+            pathname: '/payment-history/[memberId]',
+            params: { memberId, name: current?.memberName },
+          })
+        }
+      />
     </View>
   );
 }

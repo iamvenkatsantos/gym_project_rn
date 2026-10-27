@@ -156,6 +156,10 @@ function RootNavigator() {
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
         <Stack.Screen
+          name="payment-history/[memberId]"
+          options={{ headerShown: true, title: 'Payments' }}
+        />
+        <Stack.Screen
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
         />
@@ -238,6 +242,10 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Payment' }}
         />
         <Stack.Screen name="payment-return" options={{ title: 'Payment' }} />
+        <Stack.Screen
+          name="payment-history/index"
+          options={{ headerShown: true, title: 'Payment history' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen

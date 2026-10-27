@@ -22,13 +22,14 @@ type MembershipRow = {
   ends_on: string;
   amount_paid_cents: number | null;
   payment_method: Membership['paymentMethod'];
+  created_at: string;
   member: { full_name: string };
   plan: PlanRow;
 };
 
 const PLAN_COLUMNS = 'id, name, price_cents, currency, duration_days';
 // The inner join lets queries filter memberships by the plan's gym.
-const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
+const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, created_at, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
 
 function toPlan(row: PlanRow): MembershipPlan {
   return {
@@ -50,6 +51,7 @@ function toMembership(row: MembershipRow): Membership {
     endsOn: row.ends_on,
     amountPaidCents: row.amount_paid_cents,
     paymentMethod: row.payment_method,
+    recordedAt: row.created_at,
   };
 }
 
