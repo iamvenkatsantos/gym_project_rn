@@ -185,6 +185,16 @@ function RootNavigator() {
           name="new-announcement"
           options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
         />
+        {/* The branch's check-in QR: a live code for the desk, the poster and (owners) the rules. */}
+        <Stack.Screen name="check-in-qr" options={{ headerShown: true, title: 'Check-in QR' }} />
+        <Stack.Screen
+          name="check-in-display"
+          options={{ headerShown: true, title: 'Live check-in QR' }}
+        />
+      </Stack.Protected>
+      {/* Members and trainers check in and out by scanning the branch's QR. */}
+      <Stack.Protected guard={role === 'member' || role === 'trainer'}>
+        <Stack.Screen name="scan-check-in" options={{ headerShown: true, title: 'Scan QR' }} />
       </Stack.Protected>
       {/*
         Coaching tools. Owners and supervisors coach too, so a gym without trainers still runs.
@@ -246,6 +256,8 @@ function RootNavigator() {
           name="payment-history/index"
           options={{ headerShown: true, title: 'Payment history' }}
         />
+        {/* Where a branch QR's corefit://check-in link lands. The server says who may check in. */}
+        <Stack.Screen name="check-in" options={{ headerShown: true, title: 'Check in' }} />
       </Stack.Protected>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen

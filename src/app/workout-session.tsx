@@ -11,6 +11,7 @@ import { MaxFontScale, Radius, Spacing, TapTarget } from '@/constants/theme';
 import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { offerCheckOut } from '@/features/check-in/offer-check-out';
 import { type DraftSet, useWorkoutDraft } from '@/features/progress/draft-store';
 import { useFinishWorkout } from '@/features/progress/hooks';
 import { useTheme } from '@/hooks/use-theme';
@@ -242,7 +243,12 @@ export default function WorkoutSessionScreen() {
         disabled={doneSets === 0}
         loading={finish.isPending}
         onPress={() =>
-          finish.mutate(undefined, { onSuccess: () => router.replace(historyRoute[gym.role]) })
+          finish.mutate(undefined, {
+            onSuccess: () => {
+              router.replace(historyRoute[gym.role]);
+              if (gym.role === 'member') offerCheckOut(gym.gymId, profile.id);
+            },
+          })
         }
       />
       {finish.error ? (

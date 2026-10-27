@@ -10,6 +10,8 @@ export type AttendanceDay = {
   checkedOutAt: string | null;
   /** Workouts finished that day (members). */
   workouts: number;
+  /** Checked out by the branch's auto check-out rather than by them. */
+  autoCheckedOut?: boolean;
 };
 
 /** One person on a day's attendance list; absent people have no check-in. */
@@ -21,6 +23,7 @@ export type AttendanceEntry = {
   checkedInAt: string | null;
   checkedOutAt: string | null;
   workouts: number;
+  autoCheckedOut?: boolean;
 };
 
 /** One person's line in the attendance report over a period. */
