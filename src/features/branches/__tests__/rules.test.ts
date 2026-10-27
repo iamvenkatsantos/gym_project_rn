@@ -1,25 +1,40 @@
 import type { GymRole } from '@/features/auth/types';
 import {
-  branchCountsByOwner,
+  branchFee,
   branchLabel,
   groupBrands,
+  monthlyTotal,
   ownedBranches,
+  ownerAccounts,
   totalStats,
+  unownedBranches,
 } from '@/features/branches/rules';
 import type { AdminBranch, BranchStats } from '@/features/branches/types';
 
 const raj = { id: 'u1', fullName: 'Rajesh', email: 'raj@example.com' };
 const priya = { id: 'u2', fullName: 'Priya', email: 'priya@example.com' };
 
-function branch(gymId: string, brandId: string, owners = [raj]): AdminBranch {
+const billing = { branchFeeCents: 150000, currency: 'INR' };
+
+function branch(
+  gymId: string,
+  brandId: string,
+  owners = [raj],
+  brandFeeCents: number | null = null,
+): AdminBranch {
   return {
     brandId,
     brandName: brandId === 'b1' ? 'Pulse Fitness' : 'Iron Den',
+    brandFeeCents,
     gymId,
     gymName: gymId,
+    address: '',
     city: '',
+    phone: '',
+    email: '',
     owners,
     members: 0,
+    staff: 0,
     createdAt: '2026-10-27T00:00:00Z',
   };
 }
@@ -39,18 +54,38 @@ describe('groupBrands', () => {
   });
 });
 
-describe('branchCountsByOwner', () => {
-  it('counts branches per owner across brands, most first', () => {
-    const counts = branchCountsByOwner([
-      branch('g1', 'b1'),
-      branch('g2', 'b1', [raj, priya]),
-      branch('g3', 'b2', [priya]),
-      branch('g4', 'b2', [priya]),
+describe('billing', () => {
+  const list = [
+    branch('g1', 'b1'),
+    branch('g2', 'b1', [raj, priya]),
+    branch('g3', 'b2', [priya], 100000),
+    branch('g4', 'b2', [priya], 100000),
+    branch('g5', 'b2', [], 100000),
+  ];
+
+  it("uses a brand's own fee, else the standard one", () => {
+    expect(branchFee(list[0], billing)).toBe(150000);
+    expect(branchFee(list[2], billing)).toBe(100000);
+    expect(branchFee({ brandFeeCents: 0 }, billing)).toBe(0);
+  });
+
+  it('totals every branch once, owned or not', () => {
+    expect(monthlyTotal(list, billing)).toBe(150000 * 2 + 100000 * 3);
+  });
+
+  it("lists each owner's brands, branches and amount, biggest first", () => {
+    const accounts = ownerAccounts(list, billing);
+    expect(
+      accounts.map((a) => [a.owner.id, a.branches, a.monthlyCents, a.brands.map((b) => b.brandId)]),
+    ).toEqual([
+      ['u2', 3, 350000, ['b1', 'b2']],
+      ['u1', 2, 300000, ['b1']],
     ]);
-    expect(counts.map((c) => [c.owner.id, c.branches, c.brands])).toEqual([
-      ['u2', 3, ['Pulse Fitness', 'Iron Den']],
-      ['u1', 2, ['Pulse Fitness']],
-    ]);
+    expect(accounts[0].brands[1].branches.map((b) => b.gymId)).toEqual(['g3', 'g4']);
+  });
+
+  it('finds branches with no owner', () => {
+    expect(unownedBranches(list).map((b) => b.gymId)).toEqual(['g5']);
   });
 });
 

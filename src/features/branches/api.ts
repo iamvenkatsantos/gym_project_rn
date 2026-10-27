@@ -1,4 +1,9 @@
-import type { AdminBranch, BranchOwner, BranchStats } from '@/features/branches/types';
+import type {
+  AdminBranch,
+  BillingSettings,
+  BranchOwner,
+  BranchStats,
+} from '@/features/branches/types';
 import type { GymDetails } from '@/features/gyms/types';
 import { membershipStatus, renewalsDue, latestByMember } from '@/features/memberships/rules';
 import {
@@ -17,11 +22,16 @@ import { supabase, unwrap } from '@/lib/supabase';
 type AdminBranchRow = {
   brand_id: string;
   brand_name: string;
+  brand_fee_cents: number | null;
   gym_id: string;
   gym_name: string;
+  address: string;
   city: string;
+  phone: string;
+  email: string;
   owners: { id: string; full_name: string; email: string }[];
   members: number;
+  staff: number;
   created_at: string;
 };
 
@@ -47,31 +57,46 @@ const mockBranches: AdminBranch[] = [
   {
     brandId: MOCK_BRAND_ID,
     brandName: 'Pulse Fitness',
+    brandFeeCents: null,
     gymId: MOCK_GYM_ID,
     gymName: 'Pulse Fitness Anna Nagar',
+    address: '2nd Avenue, Anna Nagar',
     city: 'Chennai',
+    phone: '9840012345',
+    email: 'hello@corefit.example',
     owners: [mockOwner],
     members: 42,
+    staff: 4,
     createdAt: '2026-01-10T09:00:00Z',
   },
   {
     brandId: MOCK_BRAND_ID,
     brandName: 'Pulse Fitness',
+    brandFeeCents: null,
     gymId: 'gym-2',
     gymName: 'Pulse Fitness Velachery',
+    address: '100 Feet Road, Velachery',
     city: 'Chennai',
+    phone: '9840054321',
+    email: '',
     owners: [mockOwner],
     members: 0,
+    staff: 0,
     createdAt: '2026-09-01T09:00:00Z',
   },
   {
     brandId: 'brand-2',
     brandName: 'Iron Den',
+    brandFeeCents: 100000,
     gymId: 'gym-3',
     gymName: 'Iron Den',
+    address: 'Avinashi Road',
     city: 'Coimbatore',
+    phone: '04222345678',
+    email: 'irondengym@example.com',
     owners: [{ id: 'u-owner-2', fullName: 'Priya Mohan', email: 'priya@example.com' }],
     members: 18,
+    staff: 2,
     createdAt: '2026-10-26T09:00:00Z',
   },
 ];
@@ -80,11 +105,16 @@ function toBranch(row: AdminBranchRow): AdminBranch {
   return {
     brandId: row.brand_id,
     brandName: row.brand_name,
+    brandFeeCents: row.brand_fee_cents,
     gymId: row.gym_id,
     gymName: row.gym_name,
+    address: row.address,
     city: row.city,
+    phone: row.phone,
+    email: row.email,
     owners: row.owners.map((o) => ({ id: o.id, fullName: o.full_name, email: o.email })),
     members: row.members,
+    staff: row.staff,
     createdAt: row.created_at,
   };
 }
@@ -113,8 +143,12 @@ export async function addBranch(brandId: string, details: GymDetails): Promise<s
       ...brand,
       gymId,
       gymName: details.name,
+      address: details.address,
       city: details.city,
+      phone: details.phone,
+      email: details.email,
       members: 0,
+      staff: 0,
       createdAt: new Date().toISOString(),
     });
     return delay(gymId);
@@ -129,6 +163,40 @@ export async function addBranch(brandId: string, details: GymDetails): Promise<s
       p_email: details.email,
     }),
   ) as string;
+}
+
+const mockSettings: BillingSettings = { branchFeeCents: 150000, currency: 'INR' };
+
+/** Admins only: the standard monthly fee per branch. */
+export async function fetchBillingSettings(): Promise<BillingSettings> {
+  if (!supabase) return delay({ ...mockSettings });
+  const row = unwrap(
+    await supabase.from('platform_settings').select('branch_fee_cents, currency').single(),
+  ) as { branch_fee_cents: number; currency: string };
+  return { branchFeeCents: row.branch_fee_cents, currency: row.currency };
+}
+
+/** Admins only. */
+export async function setBranchFee(feeCents: number) {
+  if (!supabase) {
+    mockSettings.branchFeeCents = feeCents;
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('admin_set_branch_fee', { p_fee_cents: feeCents });
+  if (error) throw error;
+}
+
+/** Admins only. Null puts the brand back on the standard fee. */
+export async function setBrandFee(brandId: string, feeCents: number | null) {
+  if (!supabase) {
+    for (const b of mockBranches) if (b.brandId === brandId) b.brandFeeCents = feeCents;
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('admin_set_brand_fee', {
+    p_brand_id: brandId,
+    p_fee_cents: feeCents,
+  });
+  if (error) throw error;
 }
 
 /** Admins only. */

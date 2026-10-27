@@ -32,7 +32,7 @@ const features: { label: string; icon: IconName }[] = [
   { label: 'Membership', icon: 'card-outline' },
 ];
 
-const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[] = [
+const demoRoles: { role: Role | 'admin'; title: string; detail: string; icon: IconName }[] = [
   { role: 'member', title: 'Member', detail: 'Book classes and track your plan', icon: 'person' },
   { role: 'trainer', title: 'Trainer', detail: 'See your schedule and workouts', icon: 'barbell' },
   {
@@ -42,6 +42,7 @@ const demoRoles: { role: Role; title: string; detail: string; icon: IconName }[]
     icon: 'shield-checkmark',
   },
   { role: 'owner', title: 'Gym owner', detail: 'Members, classes and renewals', icon: 'business' },
+  { role: 'admin', title: 'CoreFit admin', detail: 'Owners, branches and billing', icon: 'shield' },
 ];
 
 type Mode = 'signIn' | 'signUp';

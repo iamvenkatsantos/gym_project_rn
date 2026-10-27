@@ -2,25 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
-import {
-  canSetUpGym,
-  createGym,
-  fetchGymDetails,
-  isPlatformAdmin,
-  updateGymDetails,
-} from '@/features/gyms/api';
+import { canSetUpGym, createGym, fetchGymDetails, updateGymDetails } from '@/features/gyms/api';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
 
 export const gymKeys = {
   all: ['gyms'] as const,
   canSetUp: () => [...gymKeys.all, 'can-set-up'] as const,
-  isAdmin: () => [...gymKeys.all, 'is-admin'] as const,
   details: (gymId: string) => [...gymKeys.all, gymId, 'details'] as const,
 };
 
+/** CoreFit Gym's own admins, from the signed-in profile. */
 export function useIsPlatformAdmin() {
-  return useQuery({ queryKey: gymKeys.isAdmin(), queryFn: isPlatformAdmin, staleTime: Infinity });
+  return useAuthStore((s) => s.profile?.isPlatformAdmin === true);
 }
 
 export function useCanSetUpGym() {

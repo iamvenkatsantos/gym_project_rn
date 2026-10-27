@@ -2,9 +2,10 @@ import type { GymRole } from '@/features/auth/types';
 import type {
   AdminBranch,
   AdminBrand,
+  BillingSettings,
   BranchOwner,
   BranchStats,
-  OwnerBranchCount,
+  OwnerAccount,
 } from '@/features/branches/types';
 
 /** Groups the admin's branch list by brand, keeping the server's order. */
@@ -13,7 +14,13 @@ export function groupBrands(branches: AdminBranch[]): AdminBrand[] {
   for (const branch of branches) {
     let brand = brands.get(branch.brandId);
     if (!brand) {
-      brand = { brandId: branch.brandId, brandName: branch.brandName, owners: [], branches: [] };
+      brand = {
+        brandId: branch.brandId,
+        brandName: branch.brandName,
+        brandFeeCents: branch.brandFeeCents,
+        owners: [],
+        branches: [],
+      };
       brands.set(branch.brandId, brand);
     }
     brand.branches.push(branch);
@@ -24,23 +31,47 @@ export function groupBrands(branches: AdminBranch[]): AdminBrand[] {
   return [...brands.values()];
 }
 
-/** Branch counts per owner for billing, most branches first. */
-export function branchCountsByOwner(branches: AdminBranch[]): OwnerBranchCount[] {
-  const counts = new Map<string, OwnerBranchCount>();
+/** A branch's monthly fee: the brand's own deal, else the standard fee. */
+export function branchFee(branch: Pick<AdminBranch, 'brandFeeCents'>, settings: BillingSettings) {
+  return branch.brandFeeCents ?? settings.branchFeeCents;
+}
+
+/** What to collect each month across every branch. Co-owned branches count once. */
+export function monthlyTotal(branches: AdminBranch[], settings: BillingSettings) {
+  return branches.reduce((total, b) => total + branchFee(b, settings), 0);
+}
+
+/**
+ * Each owner with the brands and branches they own and what to collect from them each month,
+ * the biggest accounts first. A branch with two owners shows under both.
+ */
+export function ownerAccounts(branches: AdminBranch[], settings: BillingSettings): OwnerAccount[] {
+  const owned = new Map<string, { owner: BranchOwner; branches: AdminBranch[] }>();
   for (const branch of branches) {
     for (const owner of branch.owners) {
-      let count = counts.get(owner.id);
-      if (!count) {
-        count = { owner, branches: 0, brands: [] };
-        counts.set(owner.id, count);
-      }
-      count.branches += 1;
-      if (!count.brands.includes(branch.brandName)) count.brands.push(branch.brandName);
+      const entry = owned.get(owner.id) ?? { owner, branches: [] };
+      entry.branches.push(branch);
+      owned.set(owner.id, entry);
     }
   }
-  return [...counts.values()].sort(
-    (a, b) => b.branches - a.branches || a.owner.fullName.localeCompare(b.owner.fullName),
-  );
+  return [...owned.values()]
+    .map(({ owner, branches: list }) => ({
+      owner,
+      brands: groupBrands(list),
+      branches: list.length,
+      monthlyCents: monthlyTotal(list, settings),
+    }))
+    .sort(
+      (a, b) =>
+        b.monthlyCents - a.monthlyCents ||
+        b.branches - a.branches ||
+        a.owner.fullName.localeCompare(b.owner.fullName),
+    );
+}
+
+/** Branches nobody owns yet, say after an owner left. They still count towards the total. */
+export function unownedBranches(branches: AdminBranch[]) {
+  return branches.filter((b) => b.owners.length === 0);
 }
 
 export function ownerNames(owners: BranchOwner[]) {

@@ -2,6 +2,15 @@ export function formatPrice(cents: number, currency: string) {
   return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
 }
 
+/** A price without paise when it's a whole amount, e.g. ₹1,500 rather than ₹1,500.00. */
+export function formatAmount(cents: number, currency: string) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+  }).format(cents / 100);
+}
+
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
     weekday: 'short',

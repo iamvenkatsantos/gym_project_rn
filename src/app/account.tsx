@@ -17,7 +17,7 @@ import { Spacing } from '@/constants/theme';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/constants/legal';
 import { AppearancePicker } from '@/features/appearance/components/appearance-picker';
 import { deleteAccount } from '@/features/auth/api';
-import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
+import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/auth-store';
 import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { branchLabel } from '@/features/branches/rules';
@@ -30,11 +30,13 @@ export default function AccountScreen() {
   const setProfile = useAuthStore((s) => s.setProfile);
   const activeGym = useAuthStore(selectActiveGym);
   const setActiveGym = useAuthStore((s) => s.setActiveGym);
+  const inAdmin = useAuthStore(selectInAdmin);
+  const setAdminMode = useAuthStore((s) => s.setAdminMode);
   const signOut = useSignOut();
   // Admins, and people an admin invited to run a gym, can set one up from here.
   const canSetUpGym = useCanSetUpGym();
-  // Only CoreFit Gym admins add branches, since each branch is billed.
-  const isAdmin = useIsPlatformAdmin().data === true;
+  // CoreFit Gym admins switch between the admin view and any gym they belong to.
+  const isAdmin = useIsPlatformAdmin();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const removeAccount = useMutation({
     mutationFn: deleteAccount,
@@ -50,9 +52,9 @@ export default function AccountScreen() {
     <Screen>
       <ProfileHeader profile={profile} gym={activeGym} />
 
-      {profile.gyms.length > 1 ? (
+      {profile.gyms.length > (isAdmin ? 0 : 1) ? (
         <>
-          <SectionHeader title="Your gyms" />
+          <SectionHeader title={inAdmin ? 'Open a gym' : 'Your gyms'} />
           {profile.gyms.map((g) => {
             const active = g.gymId === activeGym?.gymId;
             return (
@@ -96,13 +98,16 @@ export default function AccountScreen() {
         />
       ) : null}
 
-      {isAdmin ? (
+      {isAdmin && !inAdmin ? (
         <ListGroup>
           <ListRow
-            label="CoreFit Gym admin"
-            detail="Brands, branches and branch counts for billing"
+            label="Back to admin view"
+            detail="Owners, branches and what to collect"
             icon="shield-outline"
-            onPress={() => router.push('/admin')}
+            onPress={() => {
+              setAdminMode(true);
+              router.dismissTo('/');
+            }}
           />
         </ListGroup>
       ) : null}
