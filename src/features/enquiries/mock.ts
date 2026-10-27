@@ -76,9 +76,9 @@ export const mockEnquiries: Enquiry[] = [
   }),
   enquiry({
     id: 'enq-5',
-    fullName: 'Leo Martins',
+    fullName: 'Harish Patel',
     phone: '9445055555',
-    email: 'leo@example.com',
+    email: 'harish@example.com',
     interest: 'Monthly plan',
     status: 'joined',
     memberId: 'u-member-4',
@@ -101,7 +101,7 @@ export const mockEnquiryNotes: (EnquiryNote & { enquiryId: string })[] = [
     enquiryId: 'enq-1',
     kind: 'call',
     body: 'Wants to start after Diwali, call back on Monday.',
-    authorName: 'Olivia Owner',
+    authorName: 'Rajesh Kannan',
     createdAt: at(-2 * DAY),
   },
   {
@@ -109,7 +109,7 @@ export const mockEnquiryNotes: (EnquiryNote & { enquiryId: string })[] = [
     enquiryId: 'enq-1',
     kind: 'status',
     body: 'Following up',
-    authorName: 'Olivia Owner',
+    authorName: 'Rajesh Kannan',
     createdAt: at(-2 * DAY),
   },
   {
@@ -117,7 +117,7 @@ export const mockEnquiryNotes: (EnquiryNote & { enquiryId: string })[] = [
     enquiryId: 'enq-2',
     kind: 'status',
     body: 'Trial pass for 3 days',
-    authorName: 'Sam Supervisor',
+    authorName: 'Meena Sundaram',
     createdAt: at(-DAY),
   },
   {
@@ -125,7 +125,7 @@ export const mockEnquiryNotes: (EnquiryNote & { enquiryId: string })[] = [
     enquiryId: 'enq-2',
     kind: 'visit',
     body: 'Came in for the evening session, liked the free weights area.',
-    authorName: 'Sam Supervisor',
+    authorName: 'Meena Sundaram',
     createdAt: at(-20 * HOUR),
   },
 ];

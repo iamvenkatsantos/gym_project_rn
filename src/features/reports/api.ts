@@ -40,7 +40,7 @@ export async function exportPayments(gymId: string, period: ReportPeriod): Promi
           paymentMethod: m.paymentMethod ?? 'upi',
           startsOn: m.startsOn,
           endsOn: m.endsOn,
-          recordedBy: 'Olivia Owner',
+          recordedBy: 'Rajesh Kannan',
           note: '',
         })),
     );
