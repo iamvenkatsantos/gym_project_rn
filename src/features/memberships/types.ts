@@ -17,6 +17,8 @@ export type Membership = {
   endsOn: string;
   amountPaidCents: number | null;
   paymentMethod: PaymentMethod | null;
+  /** When the payment was recorded. Demo data leaves it out. */
+  recordedAt?: string;
 };
 
 export type PlanInput = Pick<MembershipPlan, 'name' | 'priceCents' | 'durationDays'>;

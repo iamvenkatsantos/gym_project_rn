@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Pressable } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ListGroup, ListRow } from '@/components/list-row';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
@@ -11,7 +12,6 @@ import { MembershipSetup } from '@/features/memberships/components/membership-se
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
-import { OnlinePaymentsSection } from '@/features/payments/components/online-payments-section';
 
 export default function OwnerMembershipsScreen() {
   const gym = useActiveGym();
@@ -33,6 +33,14 @@ export default function OwnerMembershipsScreen() {
         disabled={noPlans}
         onPress={() => router.push('/record-membership')}
       />
+      <ListGroup>
+        <ListRow
+          label="Payment history"
+          detail="Every member's payments, front desk and in the app"
+          icon="time-outline"
+          onPress={() => router.push('/payment-history')}
+        />
+      </ListGroup>
 
       {isOwner && !noPlans ? (
         <>
@@ -67,8 +75,6 @@ export default function OwnerMembershipsScreen() {
           />
         </>
       ) : null}
-
-      <OnlinePaymentsSection gymId={gym.gymId} />
 
       <SectionHeader
         title="Members"

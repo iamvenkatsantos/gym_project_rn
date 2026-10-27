@@ -20,9 +20,3 @@ export function paymentState(payment: OnlinePayment, now: Date = new Date()): Pa
 export function netAmount(payment: Pick<OnlinePayment, 'amountCents' | 'feeCents'>) {
   return payment.feeCents == null ? null : payment.amountCents - payment.feeCents;
 }
-
-/** Staff list: payments still open first, then the most recent. */
-export function sortForStaff(payments: OnlinePayment[], now: Date = new Date()) {
-  const rank = (p: OnlinePayment) => (paymentState(p, now) === 'pending' ? 0 : 1);
-  return [...payments].sort((a, b) => rank(a) - rank(b) || b.createdAt.localeCompare(a.createdAt));
-}
