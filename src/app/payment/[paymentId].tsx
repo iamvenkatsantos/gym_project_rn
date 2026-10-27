@@ -10,7 +10,7 @@ import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { useProfile } from '@/features/auth/use-profile';
 import { paymentPill } from '@/features/payments/components/payment-row';
 import { openPaymentPage, useOnlinePayment, usePayOnline } from '@/features/payments/hooks';
 import { netAmount, paymentState } from '@/features/payments/rules';
@@ -33,8 +33,8 @@ export default function PaymentScreen() {
 
 function PaymentDetails({ payment }: { payment: OnlinePayment }) {
   const profile = useProfile();
-  const gym = useActiveGym();
-  const pay = usePayOnline(gym.gymId);
+  // The payment's own gym, which may not be the one open in the app.
+  const pay = usePayOnline(payment.gymId, { replace: true });
   const state = paymentState(payment);
   const pill = paymentPill[state];
   const amount = formatAmount(payment.amountCents, payment.currency);
