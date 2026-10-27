@@ -20,14 +20,14 @@ function branch(
   gymId: string,
   brandId: string,
   owners = [raj],
-  brandFeeCents: number | null = null,
+  feeCents: number | null = null,
 ): AdminBranch {
   return {
     brandId,
     brandName: brandId === 'b1' ? 'Pulse Fitness' : 'Iron Den',
-    brandFeeCents,
     gymId,
     gymName: gymId,
+    feeCents,
     address: '',
     city: '',
     phone: '',
@@ -63,10 +63,10 @@ describe('billing', () => {
     branch('g5', 'b2', [], 100000),
   ];
 
-  it("uses a brand's own fee, else the standard one", () => {
+  it("uses the branch's own fee, else the default", () => {
     expect(branchFee(list[0], billing)).toBe(150000);
     expect(branchFee(list[2], billing)).toBe(100000);
-    expect(branchFee({ brandFeeCents: 0 }, billing)).toBe(0);
+    expect(branchFee({ feeCents: 0 }, billing)).toBe(0);
   });
 
   it('totals every branch once, owned or not', () => {

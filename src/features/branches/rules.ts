@@ -17,7 +17,6 @@ export function groupBrands(branches: AdminBranch[]): AdminBrand[] {
       brand = {
         brandId: branch.brandId,
         brandName: branch.brandName,
-        brandFeeCents: branch.brandFeeCents,
         owners: [],
         branches: [],
       };
@@ -31,9 +30,9 @@ export function groupBrands(branches: AdminBranch[]): AdminBrand[] {
   return [...brands.values()];
 }
 
-/** A branch's monthly fee: the brand's own deal, else the standard fee. */
-export function branchFee(branch: Pick<AdminBranch, 'brandFeeCents'>, settings: BillingSettings) {
-  return branch.brandFeeCents ?? settings.branchFeeCents;
+/** A branch's monthly fee: its own, else the default. */
+export function branchFee(branch: Pick<AdminBranch, 'feeCents'>, settings: BillingSettings) {
+  return branch.feeCents ?? settings.branchFeeCents;
 }
 
 /** What to collect each month across every branch. Co-owned branches count once. */

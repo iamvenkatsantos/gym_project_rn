@@ -4,10 +4,10 @@ export type BranchOwner = { id: string; fullName: string; email: string };
 export type AdminBranch = {
   brandId: string;
   brandName: string;
-  /** The brand's own monthly fee per branch, or null for the standard fee. */
-  brandFeeCents: number | null;
   gymId: string;
   gymName: string;
+  /** This branch's own monthly fee, or null for the default fee. */
+  feeCents: number | null;
   address: string;
   city: string;
   phone: string;
@@ -19,7 +19,7 @@ export type AdminBranch = {
   createdAt: string;
 };
 
-/** What CoreFit Gym charges: a monthly fee for each branch. */
+/** What CoreFit Gym charges: a default monthly fee for each branch. */
 export type BillingSettings = {
   branchFeeCents: number;
   currency: string;
@@ -29,7 +29,6 @@ export type BillingSettings = {
 export type AdminBrand = {
   brandId: string;
   brandName: string;
-  brandFeeCents: number | null;
   owners: BranchOwner[];
   branches: AdminBranch[];
 };

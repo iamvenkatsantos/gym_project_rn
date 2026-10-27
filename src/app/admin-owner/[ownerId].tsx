@@ -76,10 +76,7 @@ function OwnerDetails({ account, billing }: { account: OwnerAccount; billing: Bi
 
       {account.brands.map((brand) => (
         <View key={brand.brandId} style={styles.brand}>
-          <SectionHeader
-            title={brand.brandName}
-            detail={`${formatAmount(branchFee(brand, billing), billing.currency)} per branch`}
-          />
+          <SectionHeader title={brand.brandName} />
           <ListGroup>
             {brand.branches.map((b, i) => (
               <ListRow
@@ -87,7 +84,11 @@ function OwnerDetails({ account, billing }: { account: OwnerAccount; billing: Bi
                 divider={i > 0}
                 icon="location-outline"
                 label={b.gymName}
-                detail={[b.city, `${b.members} members`, `${b.staff} staff`]
+                detail={[
+                  b.city,
+                  `${b.members} members`,
+                  `${formatAmount(branchFee(b, billing), billing.currency)}/month`,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
                 onPress={() =>
@@ -99,7 +100,7 @@ function OwnerDetails({ account, billing }: { account: OwnerAccount; billing: Bi
               divider
               icon="settings-outline"
               label="Brand settings"
-              detail="Add a branch, rename, set this brand's fee"
+              detail="Add a branch or rename the brand"
               trailing={<Pill label={`${brand.branches.length}`} />}
               onPress={() =>
                 router.push({
