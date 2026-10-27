@@ -41,7 +41,7 @@ export default function PlanEditorScreen() {
 
   if (!workout) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">
           {isPending ? 'Loading…' : 'Plan not found.'}
         </ThemedText>
@@ -97,7 +97,7 @@ function PlanForm({
   };
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stack.Screen options={{ title: workoutId ? 'Edit plan' : 'New plan' }} />
       <TextField
         label="Plan name"

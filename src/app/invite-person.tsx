@@ -106,7 +106,7 @@ export default function InvitePersonScreen() {
   const roleDiffers = existing && invitedRole && existing.role !== invitedRole;
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <ThemedText type="small" themeColor="textSecondary">
         {isAdmin
           ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address, or invite someone to set up a gym of their own.`

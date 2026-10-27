@@ -96,7 +96,7 @@ export default function SignInScreen() {
     });
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <View style={styles.hero}>
         <View style={styles.brand}>
           <Image source={require('@/assets/images/logo.png')} style={styles.logo} />

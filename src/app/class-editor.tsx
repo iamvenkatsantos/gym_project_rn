@@ -40,7 +40,7 @@ export default function ClassEditorScreen() {
 
   if (classId && !gymClass) {
     return (
-      <Screen>
+      <Screen refreshable={false}>
         <ThemedText themeColor="textSecondary">
           {classes.isPending ? 'Loading…' : 'This class has already started or was cancelled.'}
         </ThemedText>
@@ -106,7 +106,7 @@ function ClassForm({
   const error = schedule.error ?? update.error ?? cancel.error;
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <Stack.Screen options={{ title: gymClass ? 'Edit class' : 'Schedule a class' }} />
       <TextField
         label="Class name"

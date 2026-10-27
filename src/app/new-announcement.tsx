@@ -35,7 +35,7 @@ export default function NewAnnouncementScreen() {
   const chosen = audiences.find((a) => a.value === audience);
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <View style={styles.field}>
         <ThemedText type="label" themeColor="textSecondary">
           Send to

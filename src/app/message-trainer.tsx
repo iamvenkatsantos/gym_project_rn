@@ -44,7 +44,7 @@ export default function MessageTrainerScreen() {
   );
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       {gymClass ? <ClassRow gymClass={gymClass} showDay /> : null}
 
       <View style={styles.field}>

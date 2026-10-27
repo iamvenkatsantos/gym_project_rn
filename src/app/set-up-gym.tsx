@@ -16,7 +16,7 @@ export default function SetUpGymScreen() {
   const create = useCreateGym();
 
   return (
-    <Screen>
+    <Screen refreshable={false}>
       <View style={styles.hero}>
         <View style={[styles.badge, { backgroundColor: withAlpha(theme.primary, 0.16) }]}>
           <Icon name="business" size={28} color="accent" />
