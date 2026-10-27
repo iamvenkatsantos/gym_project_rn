@@ -25,7 +25,8 @@ export function RevenueTrend({ months }: { months: MonthRevenue[] }) {
       <View style={styles.grid}>
         <StatTile
           label="This month"
-          value={summary.thisMonth && money(summary.thisMonth.amountCents)}
+          // Compact, so a lakh-sized month still fits the narrow tile on one line.
+          value={summary.thisMonth && compactMoney(summary.thisMonth.amountCents, currency)}
           icon="wallet-outline"
           accent
           compact

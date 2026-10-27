@@ -25,7 +25,7 @@ function daysFromToday(days: number) {
   return new Date(Date.now() + days * DAY).toISOString().slice(0, 10);
 }
 
-const GYM_NAME = 'CoreFit Anna Nagar';
+const GYM_NAME = 'Pulse Fitness Anna Nagar';
 
 function person(
   id: string,
@@ -41,40 +41,40 @@ function person(
 export const mockProfiles: Profile[] = [
   {
     id: 'u-member',
-    fullName: 'Maya Member',
+    fullName: 'Nandini Ravi',
     gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'member' }],
   },
   {
     id: 'u-trainer',
-    fullName: 'Tom Trainer',
+    fullName: 'Karthik Raja',
     // Trains at one branch and works out as a member at another.
     gyms: [
       { gymId: GYM_ID, gymName: GYM_NAME, role: 'trainer' },
-      { gymId: 'gym-2', gymName: 'CoreFit Velachery', role: 'member' },
+      { gymId: 'gym-2', gymName: 'Pulse Fitness Velachery', role: 'member' },
     ],
   },
   {
     id: 'u-supervisor',
-    fullName: 'Sam Supervisor',
+    fullName: 'Meena Sundaram',
     gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'supervisor' }],
   },
   {
     id: 'u-owner',
-    fullName: 'Olivia Owner',
+    fullName: 'Rajesh Kannan',
     gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'owner' }],
   },
 ];
 
 /** Everyone at the demo gym, as the owner's People screen shows them. */
 export const mockPeople: GymPerson[] = [
-  person('u-owner', 'Olivia Owner', 'owner', 400),
-  person('u-supervisor', 'Sam Supervisor', 'supervisor', 390),
-  person('u-trainer', 'Tom Trainer', 'trainer', 380),
+  person('u-owner', 'Rajesh Kannan', 'owner', 400),
+  person('u-supervisor', 'Meena Sundaram', 'supervisor', 390),
+  person('u-trainer', 'Karthik Raja', 'trainer', 380),
   person('u-trainer-2', 'Divya Raman', 'trainer', 200),
-  person('u-member', 'Maya Member', 'member', 120),
+  person('u-member', 'Nandini Ravi', 'member', 120),
   person('u-member-2', 'Arjun Kumar', 'member', 100),
   person('u-member-3', 'Priya Sharma', 'member', 93),
-  person('u-member-4', 'Leo Martins', 'member', 28),
+  person('u-member-4', 'Harish Patel', 'member', 28),
   person('u-member-5', 'Rahul Verma', 'member', 60, 'suspended'),
 ];
 
@@ -103,7 +103,7 @@ function link(memberId: string, trainerId: string, daysAgo: number): TrainerLink
   };
 }
 
-/** Who trains whom. Maya has two trainers; Priya and Leo have none yet. */
+/** Who trains whom. Nandini has two trainers; Priya and Harish have none yet. */
 export const mockTrainerLinks: TrainerLink[] = [
   link('u-member', 'u-trainer', 90),
   link('u-member', 'u-trainer-2', 30),
@@ -129,7 +129,7 @@ export const mockTrainerRequests: TrainerRequest[] = [
 export const mockAnnouncements: Announcement[] = [
   {
     id: 'a-1',
-    senderName: 'Olivia Owner',
+    senderName: 'Rajesh Kannan',
     audience: 'everyone',
     title: 'Gym closed for the holiday',
     body: 'We are closed on 1 Nov for Diwali and open as usual from 2 Nov, 5 am.',
@@ -137,7 +137,7 @@ export const mockAnnouncements: Announcement[] = [
   },
   {
     id: 'a-2',
-    senderName: 'Sam Supervisor',
+    senderName: 'Meena Sundaram',
     audience: 'staff',
     title: 'Staff meeting on Sunday',
     body: '10 am at the front desk. We will plan the new batch timings.',
@@ -149,7 +149,7 @@ export const mockNotifications: AppNotification[] = [
   {
     id: 'n-1',
     recipientId: 'u-trainer',
-    senderName: 'Sam Supervisor',
+    senderName: 'Meena Sundaram',
     kind: 'message',
     title: 'Please schedule a class',
     body: 'Members are asking for a Saturday morning strength class.',
@@ -160,7 +160,7 @@ export const mockNotifications: AppNotification[] = [
   {
     id: 'n-2',
     recipientId: 'u-member',
-    senderName: 'Sam Supervisor',
+    senderName: 'Meena Sundaram',
     kind: 'trainer_assigned',
     title: 'Meet your trainer',
     body: 'Divya Raman is now your trainer.',
@@ -194,7 +194,7 @@ export const mockWorkouts: Workout[] = [
   {
     id: 'w-1',
     trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
+    trainerName: 'Karthik Raja',
     title: 'Full body starter',
     description: 'A balanced session for your first weeks in the gym.',
     level: 'beginner',
@@ -210,7 +210,7 @@ export const mockWorkouts: Workout[] = [
   {
     id: 'w-2',
     trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
+    trainerName: 'Karthik Raja',
     title: 'Lower body strength',
     description: 'Heavy compound lifts for legs and glutes.',
     level: 'intermediate',
@@ -228,7 +228,7 @@ export const mockMealPlans: MealPlan[] = [
   {
     id: 'mp-1',
     coachId: 'u-trainer',
-    coachName: 'Tom Trainer',
+    coachName: 'Karthik Raja',
     title: 'Lean muscle, vegetarian',
     notes: 'Drink 3 litres of water a day. Swap paneer for tofu if you like. No sugary drinks.',
     foodType: 'veg',
@@ -266,7 +266,7 @@ export const mockMealPlans: MealPlan[] = [
   {
     id: 'mp-2',
     coachId: 'u-trainer',
-    coachName: 'Tom Trainer',
+    coachName: 'Karthik Raja',
     title: 'Fat loss, high protein',
     notes: 'Walk 8,000 steps a day.',
     foodType: 'non_veg',
@@ -316,7 +316,7 @@ export const mockClasses: GymClass[] = Array.from({ length: 7 }, (_, day) =>
   classTemplates.map((template, i) => ({
     id: `c-${day}-${i}`,
     trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
+    trainerName: 'Karthik Raja',
     title: template.title,
     startsAt: atHour(day, template.hour),
     durationMinutes: template.durationMinutes,
@@ -349,7 +349,7 @@ export const mockMemberships: Membership[] = [
   {
     id: 'm-1',
     memberId: 'u-member',
-    memberName: 'Maya Member',
+    memberName: 'Nandini Ravi',
     plan: mockPlans[0],
     startsOn: daysFromToday(-25),
     endsOn: daysFromToday(5),
@@ -379,7 +379,7 @@ export const mockMemberships: Membership[] = [
   {
     id: 'm-4',
     memberId: 'u-member-4',
-    memberName: 'Leo Martins',
+    memberName: 'Harish Patel',
     plan: mockPlans[0],
     startsOn: daysFromToday(-28),
     endsOn: daysFromToday(2),
@@ -393,7 +393,7 @@ const weekdays = [1, 2, 3, 4, 5, 6];
 export const mockTrainers: TrainerWithAvailability[] = [
   {
     id: 'u-trainer',
-    fullName: 'Tom Trainer',
+    fullName: 'Karthik Raja',
     bio: 'Strength coach focused on safe technique and steady progress.',
     specialties: ['Strength', 'Fat loss'],
     sessionMinutes: 60,
@@ -430,9 +430,9 @@ export const mockSessions: TrainerSession[] = [
     id: 's-1',
     gymId: GYM_ID,
     trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
+    trainerName: 'Karthik Raja',
     memberId: 'u-member',
-    memberName: 'Maya Member',
+    memberName: 'Nandini Ravi',
     startsAt: sessionStart.toISOString(),
     endsAt: new Date(sessionStart.getTime() + 60 * 60 * 1000).toISOString(),
     status: 'booked',
@@ -441,7 +441,7 @@ export const mockSessions: TrainerSession[] = [
     id: 's-2',
     gymId: GYM_ID,
     trainerId: 'u-trainer',
-    trainerName: 'Tom Trainer',
+    trainerName: 'Karthik Raja',
     memberId: 'u-member-2',
     memberName: 'Arjun Kumar',
     startsAt: nextWeekdayAt(2, 9).toISOString(),
@@ -491,6 +491,12 @@ const set = (
 /** A few weeks of history, keyed by the id of the person who trained. Staff train too. */
 export const mockLogs: Record<string, WorkoutLog[]> = {
   'u-member': [
+    pastLog(1, 'Full body starter', [
+      set('e-goblet-squat', 'Goblet squat', 1, 12, 16),
+      set('e-goblet-squat', 'Goblet squat', 2, 12, 16),
+      set('e-push-up', 'Push-up', 1, 14, null),
+      set('e-dumbbell-row', 'Dumbbell row', 1, 12, 18),
+    ]),
     pastLog(2, 'Lower body strength', [
       set('e-back-squat', 'Back squat', 1, 5, 55),
       set('e-back-squat', 'Back squat', 2, 5, 57.5),
@@ -595,6 +601,7 @@ export const mockAttendance: (AttendanceDay & { userId: string })[] = [
     visit('u-trainer', 'trainer', d, [6, 0], [14, 0]),
     visit('u-trainer-2', 'trainer', d, [14, 0], [21, 0]),
   ]),
+  visit('u-member', 'member', 1, [7, 5], [8, 10], 1),
   visit('u-member', 'member', 2, [7, 10], [8, 15], 1),
   visit('u-member', 'member', 5, [18, 0], [19, 5], 1),
   visit('u-member-2', 'member', 1, [6, 30], [7, 40], 1),
@@ -606,7 +613,148 @@ export const mockAttendance: (AttendanceDay & { userId: string })[] = [
         visit('u-member-2', 'member', 0, [6, 40], [7, 45], 1),
       ]
     : []),
+  ...(new Date().getHours() >= 15 ? [visit('u-trainer-2', 'trainer', 0, [14, 0], null)] : []),
 ];
+
+/**
+ * The rest of the floor: enough members, renewals and check-ins that lists, reports and
+ * charts look like a busy gym. A seeded random keeps the numbers the same on every reload.
+ */
+const rosterNames = [
+  'Aditya Menon',
+  'Sowmya Raghavan',
+  'Vignesh Murugan',
+  'Lakshmi Narayanan',
+  'Farhan Sheikh',
+  'Deepika Reddy',
+  'Pradeep Selvam',
+  'Keerthana Bala',
+  'Manoj Pillai',
+  'Shruti Desai',
+  'Gokul Prakash',
+  'Revathi Mohan',
+  'Imran Khan',
+  'Janani Venkat',
+  'Siddharth Rao',
+  'Pooja Agarwal',
+  'Naveen Chandran',
+  'Asha Thomas',
+  'Bharath Kumar',
+  'Swetha Jayaraman',
+  'Dinesh Kartha',
+  'Fathima Begum',
+  'Rohit Shetty',
+  'Kavitha Selvaraj',
+  'Ashwin Ramesh',
+  'Nisha Gupta',
+  'Suresh Babu',
+  'Anjali Menon',
+  'Varun Nair',
+  'Divya Prakash',
+  'Karan Mehta',
+  'Meera Iyer',
+  'Arun Prasath',
+  'Sangeetha Raj',
+  'Tarun Bhatia',
+  'Preethi Gopal',
+  'Ajay Krishnan',
+  'Ritu Malhotra',
+  'Hari Shankar',
+  'Nithya Anand',
+  'Saravanan Mani',
+  'Zoya Ahmed',
+  'Vishal Jain',
+  'Gayathri Suresh',
+  'Mohammed Irfan',
+  'Bhavana Rao',
+  'Prakash Iyer',
+  "Sonia D'Souza",
+  'Ravi Teja',
+  'Harini Balaji',
+  'Kishore Kumar',
+  'Yamini Sekar',
+  'Abdul Rahman',
+  'Shalini Vasan',
+  'Praveen Raj',
+  'Lavanya Mohan',
+];
+
+function seededRandom(seed: number) {
+  return () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+}
+
+const random = seededRandom(42);
+const pick = <T>(items: T[]) => items[Math.floor(random() * items.length)];
+const paymentMethods: Membership['paymentMethod'][] = [
+  'upi',
+  'upi',
+  'upi',
+  'cash',
+  'card',
+  'bank_transfer',
+];
+const visitHours = [6, 6, 6, 7, 7, 7, 8, 9, 17, 18, 18, 18, 19, 19, 20];
+
+rosterNames.forEach((fullName, i) => {
+  const id = `u-roster-${i + 1}`;
+  // Skewed towards recent joins, so the gym looks like it is growing.
+  const joinedDaysAgo = 4 + Math.floor(Math.pow(random(), 1.4) * 175);
+  // A few members stopped renewing, so Insights and Renewals have someone to chase.
+  const lapsed = i % 7 === 3;
+  mockPeople.push(person(id, fullName, 'member', joinedDaysAgo));
+
+  if (i % 3 === 0 && i % 9 !== 0) {
+    mockWorkouts[i % 2].assignedMemberIds.push(id);
+  }
+  if (i % 3 !== 2) {
+    mockTrainerLinks.push(
+      link(id, i % 3 === 0 ? 'u-trainer' : 'u-trainer-2', Math.min(joinedDaysAgo, 60)),
+    );
+  }
+
+  const plan = i % 6 === 0 ? mockPlans[2] : i % 3 === 1 ? mockPlans[1] : mockPlans[0];
+  for (let start = -joinedDaysAgo, n = 0; start <= 0; start += plan.durationDays, n++) {
+    const end = start + plan.durationDays;
+    if (lapsed && end > -5 && n > 0) break;
+    mockMemberships.push({
+      id: `m-${id}-${n}`,
+      memberId: id,
+      memberName: fullName,
+      plan,
+      startsOn: daysFromToday(start),
+      endsOn: daysFromToday(end),
+      amountPaidCents: plan.priceCents,
+      paymentMethod: pick(paymentMethods),
+    });
+  }
+
+  if (lapsed) return;
+  const visitsPerWeek = 3 + Math.floor(random() * 4);
+  for (let d = 0; d < 30 && d <= joinedDaysAgo; d++) {
+    if (random() > visitsPerWeek / 7) continue;
+    const hour = pick(visitHours);
+    const minute = Math.floor(random() * 12) * 5;
+    const stay = 55 + Math.floor(random() * 30);
+    const outMinutes = hour * 60 + minute + stay;
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    if (d === 0 && hour * 60 + minute > nowMinutes - 10) continue;
+    const stillIn = d === 0 && outMinutes > nowMinutes;
+    mockAttendance.push(
+      visit(
+        id,
+        'member',
+        d,
+        [hour, minute],
+        stillIn ? null : [Math.floor(outMinutes / 60), outMinutes % 60],
+        stillIn ? 0 : 1,
+      ),
+    );
+  }
+});
 
 function measurement(
   daysAgo: number,
@@ -628,7 +776,7 @@ function measurement(
   };
 }
 
-/** Two months of check-ins for Maya, keyed by member id. */
+/** Two months of check-ins for Nandini, keyed by member id. */
 export const mockMeasurements: Record<string, BodyMeasurement[]> = {
   'u-member': [
     measurement(63, {
