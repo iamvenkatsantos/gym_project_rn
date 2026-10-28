@@ -80,7 +80,7 @@ export default function PersonScreen() {
     <Screen>
       <Stack.Screen options={{ title: person.fullName }} />
       <View style={styles.header}>
-        <TrainerAvatar name={person.fullName} size={64} />
+        <TrainerAvatar name={person.fullName} url={person.avatarUrl} size={64} />
         <View style={styles.flex}>
           <ThemedText type="title">{person.fullName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">

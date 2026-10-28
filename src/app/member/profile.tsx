@@ -110,6 +110,13 @@ export default function MemberProfileScreen() {
       <SectionHeader title="More" />
       <ListGroup>
         <ListRow
+          label="Edit profile"
+          detail="Photo, name and mobile number"
+          icon="person-circle-outline"
+          onPress={() => router.push('/edit-profile')}
+        />
+        <ListRow
+          divider
           label="Payment history"
           detail="Every payment, with receipts for in-app ones"
           icon="receipt-outline"

@@ -12,7 +12,10 @@ export async function completeOnboarding(gymId: string, memberId: string, detail
   if (!supabase) {
     const profile = mockProfiles.find((p) => p.id === memberId);
     const gym = profile?.gyms.find((g) => g.gymId === gymId);
-    if (profile) profile.fullName = details.fullName;
+    if (profile) {
+      profile.fullName = details.fullName;
+      profile.phone = details.phone;
+    }
     if (gym) gym.needsOnboarding = false;
     return delay(undefined);
   }

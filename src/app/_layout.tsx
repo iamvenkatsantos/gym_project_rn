@@ -8,7 +8,12 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { Colors, type ColorScheme } from '@/constants/theme';
 
-import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/auth-store';
+import {
+  selectActiveGym,
+  selectInAdmin,
+  selectNeedsProfile,
+  useAuthStore,
+} from '@/features/auth/auth-store';
 import { canCoach, canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
@@ -67,10 +72,12 @@ function RootNavigator() {
   const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
   // New members fill in their details and photos before anything else.
   const onboarding = useAuthStore((s) => !settingPassword && !!selectActiveGym(s)?.needsOnboarding);
-  // Nobody reaches their role's screens until they've chosen a password and, for
-  // members, filled in their details.
+  // Everyone else without a mobile number (mostly staff) fills in their profile first.
+  const profileSetup = useAuthStore((s) => !settingPassword && selectNeedsProfile(s));
+  // Nobody reaches their role's screens until they've chosen a password and filled
+  // in their details.
   const role = useAuthStore((s) =>
-    settingPassword || onboarding ? undefined : selectActiveGym(s)?.role,
+    settingPassword || onboarding || profileSetup ? undefined : selectActiveGym(s)?.role,
   );
   // Platform admins get their own area with no gym in it, until they switch to a gym.
   const inAdmin = useAuthStore((s) => !settingPassword && selectInAdmin(s));
@@ -99,7 +106,14 @@ function RootNavigator() {
         <Stack.Screen name="set-password" options={{ title: 'Choose a password' }} />
       </Stack.Protected>
       <Stack.Protected
-        guard={status === 'signedIn' && !settingPassword && !onboarding && !role && !inAdmin}>
+        guard={
+          status === 'signedIn' &&
+          !settingPassword &&
+          !onboarding &&
+          !profileSetup &&
+          !role &&
+          !inAdmin
+        }>
         <Stack.Screen name="no-gym" options={{ title: 'Welcome' }} />
       </Stack.Protected>
       <Stack.Protected guard={onboarding}>
@@ -109,8 +123,16 @@ function RootNavigator() {
           options={{ headerShown: true, headerBackVisible: false, title: 'Welcome' }}
         />
       </Stack.Protected>
-      {/* New owners set up their gym here; owners can add another one. The server checks who may. */}
+      <Stack.Protected guard={profileSetup}>
+        <Stack.Screen
+          name="profile-setup"
+          options={{ headerShown: true, headerBackVisible: false, title: 'Your profile' }}
+        />
+      </Stack.Protected>
+      {/* New owners set up their gym here; owners can add another one. The server checks who may.
+          Anyone signed in changes their photo, name and mobile on Edit profile. */}
       <Stack.Protected guard={status === 'signedIn' && !settingPassword}>
+        <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
         <Stack.Screen name="set-up-gym" options={{ headerShown: true, title: 'Set up your gym' }} />
       </Stack.Protected>
       {/* CoreFit Gym's admin: owners, branches and billing. The server checks every call too. */}

@@ -1,10 +1,20 @@
+import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { initials } from '@/features/trainers/rules';
 import { useTheme } from '@/hooks/use-theme';
 
-export function TrainerAvatar({ name, size = 48 }: { name: string; size?: number }) {
+/** A round profile photo, or the person's initials when they haven't added one. */
+export function TrainerAvatar({
+  name,
+  url,
+  size = 48,
+}: {
+  name: string;
+  url?: string | null;
+  size?: number;
+}) {
   const theme = useTheme();
 
   return (
@@ -13,9 +23,18 @@ export function TrainerAvatar({ name, size = 48 }: { name: string; size?: number
         styles.avatar,
         { width: size, height: size, borderRadius: size / 2, borderColor: theme.accent },
       ]}>
-      <ThemedText type="smallBold" themeColor="accent">
-        {initials(name)}
-      </ThemedText>
+      {url ? (
+        <Image
+          source={{ uri: url }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        <ThemedText type="smallBold" themeColor="accent">
+          {initials(name)}
+        </ThemedText>
+      )}
     </View>
   );
 }
@@ -25,5 +44,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
 });

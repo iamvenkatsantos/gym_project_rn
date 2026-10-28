@@ -29,6 +29,14 @@ export type GymRole = {
 export type Profile = {
   id: string;
   fullName: string;
+  /** The profile photo's path in the avatars bucket, and its public link. Optional for everyone. */
+  avatarPath?: string | null;
+  avatarUrl?: string | null;
+  /**
+   * Their mobile number, which every role must give. Null when they haven't yet;
+   * undefined when it couldn't be read, in which case nobody is asked for it.
+   */
+  phone?: string | null;
   gyms: GymRole[];
   /** Runs CoreFit Gym itself: sees every owner and branch, and adds branches. */
   isPlatformAdmin?: boolean;

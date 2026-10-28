@@ -18,6 +18,8 @@ export type GymPerson = {
   status: MemberStatus;
   joinedAt: string;
   phone?: string | null;
+  /** Their profile photo, if they've added one. */
+  avatarUrl?: string | null;
   /** Who invited a member, i.e. admitted them. Null for members from before admissions were kept. */
   admittedByName?: string | null;
   admittedAt?: string | null;

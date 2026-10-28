@@ -9,6 +9,8 @@ export type OnboardingInput = {
   phone: string;
   weightKg: number;
   heightCm: number;
+  /** An optional profile photo, separate from the starting photos. */
+  avatar?: PickedPhoto | null;
   /** Photos still to upload; poses already uploaded (say on an earlier try) are left out. */
   photos: Partial<Record<PhotoPose, PickedPhoto>>;
 };
