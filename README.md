@@ -213,10 +213,22 @@ How a payment works:
    usual "Membership active" push and owners and supervisors get "Online payment received".
 3. The browser comes back through `razorpay-webhook` (GET, signed with the key secret), which sends
    it to `corefit://payment-return`; the app shows the payment's status and then its receipt.
-4. If the branch has the owner's Route linked account (`acc_...`), the gym's share (amount less
-   Razorpay's fee and CoreFit Gym's cut, `online_cut_bps`, 0 by default) is transferred to it. Money
-   never stays with CoreFit Gym. With live keys, a branch without a linked account can't take
-   payments.
+4. If the branch has the owner's Route linked account (`acc_...`), the gym's share is transferred
+   to it. Razorpay takes its Route transfer fee (0.25% + GST) from our balance on top of the
+   transfer, so the transfer is the most that leaves room for it after Razorpay's gateway fee and
+   CoreFit Gym's cut (`online_cut_bps`, 0 by default). Money never stays with CoreFit Gym. With
+   live keys, a branch without a linked account can't take payments.
+
+Who pays Razorpay's fees is set per branch (Admin → branch → Online payments). By default the
+member does: `create-payment` adds the gateway fee (2% + GST) and the transfer fee to the price,
+and the app shows the member the breakdown before opening Razorpay. A ₹1,000 plan costs ₹1,027.20
+and the owner receives ₹1,000; the membership, Insights and exports count ₹1,000. The math is in
+`supabase/functions/_shared/fees.ts` (tested in `src/features/payments/__tests__/fees.test.ts`).
+If Razorpay gives the account other rates, set them as secrets (basis points, 100 = 1%):
+
+```bash
+npx supabase secrets set RAZORPAY_GATEWAY_FEE_BPS=200 RAZORPAY_TRANSFER_FEE_BPS=25 RAZORPAY_FEE_GST_PERCENT=18
+```
 
 Setup:
 

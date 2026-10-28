@@ -12,6 +12,8 @@ function payment(id: string, status: OnlinePayment['status'], createdAt: string)
     planId: 'p1',
     planName: 'Monthly',
     amountCents: 150000,
+    baseCents: 150000,
+    chargesCents: 0,
     currency: 'INR',
     status,
     linkUrl: 'https://rzp.io/i/x',
@@ -20,6 +22,8 @@ function payment(id: string, status: OnlinePayment['status'], createdAt: string)
     startsOn: null,
     endsOn: null,
     feeCents: null,
+    cutCents: 0,
+    transferCents: null,
     transferError: null,
     createdAt,
     paidAt: null,
@@ -42,8 +46,19 @@ describe('paymentState', () => {
 });
 
 describe('netAmount', () => {
-  it("takes off Razorpay's fee once it's known", () => {
-    expect(netAmount({ amountCents: 150000, feeCents: 3540 })).toBe(146460);
-    expect(netAmount({ amountCents: 150000, feeCents: null })).toBeNull();
+  const base = { amountCents: 150000, cutCents: 0, transferCents: null };
+
+  it("takes off Razorpay's gateway and transfer fees once the gateway fee is known", () => {
+    // 146460 left after the gateway fee; the transfer leaves 432 for its own fee.
+    expect(netAmount({ ...base, feeCents: 3540 })).toBe(146028);
+    expect(netAmount({ ...base, feeCents: null })).toBeNull();
+  });
+
+  it('takes off the cut too', () => {
+    expect(netAmount({ ...base, feeCents: 3540, cutCents: 1500 })).toBeLessThan(146028 - 1490);
+  });
+
+  it('is what was transferred, once it was', () => {
+    expect(netAmount({ ...base, feeCents: 3540, transferCents: 146000 })).toBe(146000);
   });
 });

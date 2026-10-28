@@ -7,7 +7,7 @@ import { Pill } from '@/components/pill';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useSetOnlinePayments } from '@/features/branches/hooks';
+import { useSetOnlineFeesOnMember, useSetOnlinePayments } from '@/features/branches/hooks';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { formatAmount } from '@/lib/format';
 
@@ -25,6 +25,7 @@ export function OnlinePaymentsEditor({
   billing: BillingSettings;
 }) {
   const save = useSetOnlinePayments(branch.gymId);
+  const fees = useSetOnlineFeesOnMember(branch.gymId);
   const [account, setAccount] = useState(branch.razorpayAccountId ?? '');
   const trimmed = account.trim();
   const invalid =
@@ -59,7 +60,9 @@ export function OnlinePaymentsEditor({
       />
       <ThemedText type="small" themeColor="textSecondary">
         {trimmed
-          ? 'Payments go straight to this account, less Razorpay’s fee.'
+          ? branch.feesOnMember
+            ? 'Payments go straight to this account, in full.'
+            : 'Payments go straight to this account, less Razorpay’s fees.'
           : 'Without one, test payments stay in your Razorpay account. Live payments need it.'}
       </ThemedText>
       {accountChanged ? (
@@ -82,6 +85,23 @@ export function OnlinePaymentsEditor({
         onPress={() => save.mutate({ enabled: !branch.onlinePayments, accountId: trimmed })}
       />
       {save.error ? <ThemedText themeColor="danger">{save.error.message}</ThemedText> : null}
+      <View style={styles.status}>
+        <Pill label={branch.feesOnMember ? 'Member pays fees' : 'Owner pays fees'} tone="neutral" />
+        <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+          {branch.feesOnMember
+            ? 'Razorpay’s fees (about 2.7%) are added to the price: a ₹1,000 plan costs the member ₹1,027.20 and the owner gets ₹1,000.'
+            : 'Members pay the price; Razorpay’s fees (about 2.7%) come out of what the owner gets.'}
+        </ThemedText>
+      </View>
+      <Button
+        label={branch.feesOnMember ? 'Owner pays the fees instead' : 'Member pays the fees instead'}
+        icon="swap-horizontal-outline"
+        variant="secondary"
+        size="compact"
+        loading={fees.isPending}
+        onPress={() => fees.mutate(!branch.feesOnMember)}
+      />
+      {fees.error ? <ThemedText themeColor="danger">{fees.error.message}</ThemedText> : null}
     </Card>
   );
 }

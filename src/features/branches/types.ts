@@ -12,6 +12,8 @@ export type AdminBranch = {
   onlinePayments: boolean;
   /** The owner's Razorpay Route linked account that online payments go to. */
   razorpayAccountId: string | null;
+  /** Whether members pay Razorpay's fees on top of the price, so the owner gets it all. */
+  feesOnMember: boolean;
   address: string;
   city: string;
   phone: string;

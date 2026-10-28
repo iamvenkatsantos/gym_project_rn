@@ -27,6 +27,7 @@ type AdminBranchRow = {
   fee_cents: number | null;
   online_payments: boolean;
   razorpay_account_id: string | null;
+  online_fees_on_member: boolean;
   address: string;
   city: string;
   phone: string;
@@ -64,6 +65,7 @@ const mockBranches: AdminBranch[] = [
     feeCents: null,
     onlinePayments: false,
     razorpayAccountId: null,
+    feesOnMember: true,
     address: '2nd Avenue, Anna Nagar',
     city: 'Chennai',
     phone: '9840012345',
@@ -81,6 +83,7 @@ const mockBranches: AdminBranch[] = [
     feeCents: null,
     onlinePayments: false,
     razorpayAccountId: null,
+    feesOnMember: true,
     address: '100 Feet Road, Velachery',
     city: 'Chennai',
     phone: '9840054321',
@@ -98,6 +101,7 @@ const mockBranches: AdminBranch[] = [
     feeCents: 100000,
     onlinePayments: false,
     razorpayAccountId: null,
+    feesOnMember: true,
     address: 'Avinashi Road',
     city: 'Coimbatore',
     phone: '04222345678',
@@ -118,6 +122,7 @@ function toBranch(row: AdminBranchRow): AdminBranch {
     feeCents: row.fee_cents,
     onlinePayments: row.online_payments,
     razorpayAccountId: row.razorpay_account_id,
+    feesOnMember: row.online_fees_on_member ?? true,
     address: row.address,
     city: row.city,
     phone: row.phone,
@@ -163,6 +168,7 @@ export async function addBranch(
       feeCents,
       onlinePayments: false,
       razorpayAccountId: null,
+      feesOnMember: true,
       address: details.address,
       city: details.city,
       phone: details.phone,
@@ -246,6 +252,20 @@ export async function setOnlinePayments(gymId: string, enabled: boolean, account
     p_gym_id: gymId,
     p_enabled: enabled,
     p_account_id: account,
+  });
+  if (error) throw error;
+}
+
+/** Admins only. Whether the branch's members pay Razorpay's fees on top of the price. */
+export async function setOnlineFeesOnMember(gymId: string, onMember: boolean) {
+  if (!supabase) {
+    const branch = mockBranches.find((b) => b.gymId === gymId);
+    if (branch) branch.feesOnMember = onMember;
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('admin_set_online_fees_on_member', {
+    p_gym_id: gymId,
+    p_on_member: onMember,
   });
   if (error) throw error;
 }
