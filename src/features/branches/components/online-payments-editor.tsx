@@ -8,6 +8,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useSetOnlineFeesOnMember, useSetOnlinePayments } from '@/features/branches/hooks';
+import { onlinePaymentExample } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { formatAmount } from '@/lib/format';
 
@@ -34,6 +35,11 @@ export function OnlinePaymentsEditor({
       : null;
   const accountChanged = trimmed !== (branch.razorpayAccountId ?? '');
   const addon = formatAmount(billing.onlineAddonCents, billing.currency);
+  const example = onlinePaymentExample(branch.feesOnMember, billing.onlineCutBps);
+  const money = (cents: number) => formatAmount(cents, billing.currency);
+  const cut = billing.onlineCutBps
+    ? ` CoreFit Gym keeps ${billing.onlineCutBps / 100}% (${money(example.cutCents)}).`
+    : '';
 
   return (
     <Card style={styles.card}>
@@ -61,7 +67,9 @@ export function OnlinePaymentsEditor({
       <ThemedText type="small" themeColor="textSecondary">
         {trimmed
           ? branch.feesOnMember
-            ? 'Payments go straight to this account, in full.'
+            ? billing.onlineCutBps
+              ? 'Payments go straight to this account, less CoreFit Gym’s cut.'
+              : 'Payments go straight to this account, in full.'
             : 'Payments go straight to this account, less Razorpay’s fees.'
           : 'Without one, test payments stay in your Razorpay account. Live payments need it.'}
       </ThemedText>
@@ -89,8 +97,8 @@ export function OnlinePaymentsEditor({
         <Pill label={branch.feesOnMember ? 'Member pays fees' : 'Owner pays fees'} tone="neutral" />
         <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
           {branch.feesOnMember
-            ? 'Razorpay’s fees (about 2.7%) are added to the price: a ₹1,000 plan costs the member ₹1,027.20 and the owner gets ₹1,000.'
-            : 'Members pay the price; Razorpay’s fees (about 2.7%) come out of what the owner gets.'}
+            ? `Razorpay’s fees (about 2.7%) are added to the price: a ${money(100000)} plan costs the member ${money(example.memberPaysCents)} and the owner gets ${money(example.ownerGetsCents)}.${cut}`
+            : `Members pay the price; Razorpay’s fees (about 2.7%) come out of what the owner gets: ${money(example.ownerGetsCents)} from a ${money(100000)} plan.${cut}`}
         </ThemedText>
       </View>
       <Button

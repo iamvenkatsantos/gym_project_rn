@@ -216,7 +216,7 @@ How a payment works:
 4. If the branch has the owner's Route linked account (`acc_...`), the gym's share is transferred
    to it. Razorpay takes its Route transfer fee (0.25% + GST) from our balance on top of the
    transfer, so the transfer is the most that leaves room for it after Razorpay's gateway fee and
-   CoreFit Gym's cut (`online_cut_bps`, 0 by default). Money never stays with CoreFit Gym. With
+   CoreFit Gym's cut (`online_cut_bps`, 1%, borne by the owner). Money never stays with CoreFit Gym. With
    live keys, a branch without a linked account can't take payments.
 
 Who pays Razorpay's fees is set per branch (Admin → branch → Online payments). By default the

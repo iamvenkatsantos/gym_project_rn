@@ -30,6 +30,8 @@ export type BillingSettings = {
   branchFeeCents: number;
   /** The online payments add-on, per branch that has it switched on. */
   onlineAddonCents: number;
+  /** CoreFit Gym's cut of each online payment, in basis points (100 = 1%). */
+  onlineCutBps: number;
   currency: string;
 };
 

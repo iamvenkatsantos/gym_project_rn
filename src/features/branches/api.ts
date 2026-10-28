@@ -194,6 +194,7 @@ export async function addBranch(
 const mockSettings: BillingSettings = {
   branchFeeCents: 150000,
   onlineAddonCents: 50000,
+  onlineCutBps: 100,
   currency: 'INR',
 };
 
@@ -203,12 +204,18 @@ export async function fetchBillingSettings(): Promise<BillingSettings> {
   const row = unwrap(
     await supabase
       .from('platform_settings')
-      .select('branch_fee_cents, online_addon_cents, currency')
+      .select('branch_fee_cents, online_addon_cents, online_cut_bps, currency')
       .single(),
-  ) as { branch_fee_cents: number; online_addon_cents: number; currency: string };
+  ) as {
+    branch_fee_cents: number;
+    online_addon_cents: number;
+    online_cut_bps: number;
+    currency: string;
+  };
   return {
     branchFeeCents: row.branch_fee_cents,
     onlineAddonCents: row.online_addon_cents,
+    onlineCutBps: row.online_cut_bps,
     currency: row.currency,
   };
 }

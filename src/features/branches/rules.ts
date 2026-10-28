@@ -8,6 +8,8 @@ import type {
   OwnerAccount,
 } from '@/features/branches/types';
 
+import { gatewayFee, memberPrice, routeTransfer } from '../../../supabase/functions/_shared/fees';
+
 /** Groups the admin's branch list by brand, keeping the server's order. */
 export function groupBrands(branches: AdminBranch[]): AdminBrand[] {
   const brands = new Map<string, AdminBrand>();
@@ -122,4 +124,19 @@ type NumberKey = {
 
 function sum(branches: BranchStats[], key: NumberKey) {
   return branches.reduce((total, b) => total + b[key], 0);
+}
+
+/**
+ * What a ₹1,000 plan works out to at a branch: what the member pays and what the
+ * owner receives after Razorpay's fees and CoreFit Gym's cut.
+ */
+export function onlinePaymentExample(feesOnMember: boolean, cutBps: number, baseCents = 100000) {
+  const cutCents = Math.floor((baseCents * cutBps) / 10000);
+  const price = memberPrice(baseCents, cutCents, feesOnMember);
+  const available = price.amountCents - gatewayFee(price.amountCents) - cutCents;
+  return {
+    memberPaysCents: price.amountCents,
+    ownerGetsCents: routeTransfer(available)?.transfer ?? 0,
+    cutCents,
+  };
 }

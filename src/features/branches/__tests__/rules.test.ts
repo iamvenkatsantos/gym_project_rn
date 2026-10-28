@@ -5,6 +5,7 @@ import {
   branchLabel,
   groupBrands,
   monthlyTotal,
+  onlinePaymentExample,
   ownedBranches,
   ownerAccounts,
   totalStats,
@@ -15,7 +16,12 @@ import type { AdminBranch, BranchStats } from '@/features/branches/types';
 const raj = { id: 'u1', fullName: 'Rajesh', email: 'raj@example.com' };
 const priya = { id: 'u2', fullName: 'Priya', email: 'priya@example.com' };
 
-const billing = { branchFeeCents: 150000, onlineAddonCents: 50000, currency: 'INR' };
+const billing = {
+  branchFeeCents: 150000,
+  onlineAddonCents: 50000,
+  onlineCutBps: 0,
+  currency: 'INR',
+};
 
 function branch(
   gymId: string,
@@ -160,5 +166,27 @@ describe('totalStats', () => {
     expect(
       totalStats([stats('g1', 100), stats('g2', 250, 'USD')]).revenueThisMonthCents,
     ).toBeNull();
+  });
+});
+
+describe('onlinePaymentExample', () => {
+  it('passes the fees to the member; the owner bears the 1% cut', () => {
+    expect(onlinePaymentExample(true, 100)).toEqual({
+      memberPaysCents: 102718,
+      ownerGetsCents: 99000,
+      cutCents: 1000,
+    });
+  });
+
+  it('pays the owner the full price with no cut', () => {
+    expect(onlinePaymentExample(true, 0).ownerGetsCents).toBe(100000);
+  });
+
+  it('takes every fee and the cut from the owner when the owner bears the fees', () => {
+    expect(onlinePaymentExample(false, 100)).toEqual({
+      memberPaysCents: 100000,
+      ownerGetsCents: 96355,
+      cutCents: 1000,
+    });
   });
 });
