@@ -1,5 +1,5 @@
 import { canCoach, type Role } from '@/features/auth/types';
-import type { GymPerson, PeopleFilter } from '@/features/members/types';
+import type { GymPerson, InviteResult, InviteRole, PeopleFilter } from '@/features/members/types';
 import { normalizeEmail, validateEmail } from '@/lib/validation';
 
 export { normalizeEmail };
@@ -68,4 +68,47 @@ export function countPeople(people: GymPerson[]): Record<PeopleFilter, number> {
 export function isLastActiveOwner(people: GymPerson[], userId: string) {
   const owners = people.filter((p) => p.role === 'owner' && p.status === 'active');
   return owners.length === 1 && owners[0].id === userId;
+}
+
+/** CoreFit Gym on Google Play. It opens once the app is listed there. */
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
+
+const inviteAs: Record<InviteRole, string> = {
+  member: 'a member',
+  trainer: 'a trainer',
+  supervisor: 'a supervisor',
+  owner: 'a co-owner',
+  gym_owner: 'an owner',
+};
+
+/**
+ * The WhatsApp message for an invite saved without an email. Creating an account with the
+ * invited email claims it, so the message only has to say which email to use.
+ */
+export function inviteMessage(
+  gymName: string,
+  email: string,
+  role: InviteRole,
+  result: InviteResult,
+) {
+  if (result === 'added') {
+    return [
+      `Hi! You've been added to ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+      '',
+      `Open CoreFit Gym and sign in with ${email}. Don't have the app? ${PLAY_STORE_URL}`,
+    ].join('\n');
+  }
+  return [
+    role === 'gym_owner'
+      ? "Hi! You're invited to set up your gym on CoreFit Gym."
+      : `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+    '',
+    `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+    `2. Tap Create account and use this email: ${email}`,
+    '3. Enter the 6-digit code from the email.',
+    '',
+    role === 'gym_owner'
+      ? "Then add your gym's details and you're ready to go."
+      : `You'll be in ${gymName} as soon as you confirm.`,
+  ].join('\n');
 }

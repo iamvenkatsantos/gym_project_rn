@@ -14,7 +14,7 @@ import {
 } from '@/features/members/api';
 import type { ImportRow } from '@/features/members/import-rules';
 import type { MemberKind } from '@/features/members/rules';
-import type { GymPerson, InviteRole } from '@/features/members/types';
+import type { GymPerson, InviteChannel, InviteRole } from '@/features/members/types';
 
 export const memberKeys = {
   all: ['members'] as const,
@@ -60,8 +60,15 @@ function useInvalidateMembers() {
 export function useInvitePerson(gymId: string) {
   const invalidate = useInvalidateMembers();
   return useMutation({
-    mutationFn: ({ email, role }: { email: string; role: InviteRole }) =>
-      invitePerson(gymId, email, role),
+    mutationFn: ({
+      email,
+      role,
+      channel,
+    }: {
+      email: string;
+      role: InviteRole;
+      channel: InviteChannel;
+    }) => invitePerson(gymId, email, role, channel === 'email'),
     onSettled: invalidate,
   });
 }

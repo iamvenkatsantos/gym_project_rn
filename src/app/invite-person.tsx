@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -14,16 +14,31 @@ import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople } from '@/features/members/hooks';
-import { normalizeEmail } from '@/features/members/rules';
+import { whatsappUrl } from '@/features/enquiries/rules';
+import { parseMobile } from '@/features/members/import-rules';
+import { inviteMessage, normalizeEmail } from '@/features/members/rules';
 import { validateEmail } from '@/lib/validation';
-import type { InviteOutcome, InviteRole } from '@/features/members/types';
+import type { InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
+
+/** Opens a chat with their number, or the share sheet to pick who gets it. */
+function sendOnWhatsApp(message: string, mobile: string | null) {
+  const opened = mobile ? Linking.openURL(whatsappUrl(mobile, message)) : Share.share({ message });
+  opened.catch(() => {});
+}
 
 function describe(
   { result, emailSent, emailError }: InviteOutcome,
   email: string,
   role: InviteRole,
   canManage: boolean,
+  channel: InviteChannel,
 ) {
+  if (channel === 'whatsapp' && result === 'invited') {
+    return {
+      title: 'Invite saved',
+      detail: `They join once they sign up with ${email}.`,
+    };
+  }
   if (role === 'gym_owner') {
     const next =
       "After signing in they add their gym's details and get a new, empty gym of their own.";
@@ -87,6 +102,7 @@ export default function InvitePersonScreen() {
   // Trainers can't list everyone at the gym, so they don't get the "already here" details.
   const people = usePeople(gym.gymId, { enabled: !isTrainer });
   const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
   const [role, setRole] = useState<Role>('member');
   // An owner invite usually means someone opening their own gym, not a partner in this one.
   const [ownerOf, setOwnerOf] = useState<OwnerOf>('new');
@@ -98,9 +114,36 @@ export default function InvitePersonScreen() {
     ? ownerInviteRoles
     : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : isTrainer ? 1 : 2);
   const emailError = validateEmail(email);
+  const whatsappNumber = mobile.trim() ? parseMobile(mobile) : null;
+  const mobileError =
+    mobile.trim() && !whatsappNumber ? 'Enter a 10-digit mobile number, or leave it empty.' : null;
   const result = invite.data
-    ? describe(invite.data, invite.variables.email, invite.variables.role, !isTrainer)
+    ? describe(
+        invite.data,
+        invite.variables.email,
+        invite.variables.role,
+        !isTrainer,
+        invite.variables.channel,
+      )
     : null;
+  const message = invite.data
+    ? inviteMessage(gym.gymName, invite.variables.email, invite.variables.role, invite.data.result)
+    : null;
+  const canMessage =
+    invite.variables?.channel === 'whatsapp' && invite.data?.result !== 'already_member';
+  const send = (channel: InviteChannel) => {
+    const variables = { email: normalizeEmail(email), role: inviteRole, channel };
+    invite.mutate(variables, {
+      onSuccess: (outcome) => {
+        if (channel === 'whatsapp' && outcome.result !== 'already_member') {
+          sendOnWhatsApp(
+            inviteMessage(gym.gymName, variables.email, variables.role, outcome.result),
+            whatsappNumber,
+          );
+        }
+      },
+    });
+  };
   // Inviting someone who's already here doesn't change their role, and roles never change.
   const existing =
     invite.data?.result === 'already_member'
@@ -113,12 +156,12 @@ export default function InvitePersonScreen() {
     <Screen refreshable={false}>
       <ThemedText type="small" themeColor="textSecondary">
         {isAdmin
-          ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address, or invite someone to set up a gym of their own.`
+          ? `Invite someone to ${gym.gymName}, or a new gym owner.`
           : gym.role === 'owner'
-            ? `Add a member, trainer or supervisor to ${gym.gymName} by their email address.`
+            ? `Invite someone to ${gym.gymName}.`
             : isTrainer
-              ? `Add a member to ${gym.gymName} by their email address. They become one of your members, and you're saved as the one who admitted them.`
-              : `Add a member or trainer to ${gym.gymName} by their email address.`}
+              ? `Invite a member. They're mapped to you.`
+              : `Invite someone to ${gym.gymName}.`}
       </ThemedText>
       <TextField
         label="Email"
@@ -135,6 +178,20 @@ export default function InvitePersonScreen() {
         textContentType="emailAddress"
         maxLength={254}
         error={emailError}
+      />
+      <TextField
+        label="Mobile for WhatsApp (optional)"
+        placeholder="98400 12345"
+        value={mobile}
+        onChangeText={(text) => {
+          setMobile(text);
+          invite.reset();
+        }}
+        keyboardType="phone-pad"
+        textContentType="telephoneNumber"
+        autoComplete="tel"
+        maxLength={16}
+        error={mobileError}
       />
       <View style={styles.field}>
         {/* Trainers only invite members, so there's no role to pick. */}
@@ -202,6 +259,14 @@ export default function InvitePersonScreen() {
         </Card>
       ) : null}
       {invite.error ? <ThemedText themeColor="danger">{invite.error.message}</ThemedText> : null}
+      {canMessage && message ? (
+        <Button
+          label="Send on WhatsApp again"
+          icon="logo-whatsapp"
+          variant="secondary"
+          onPress={() => sendOnWhatsApp(message, whatsappNumber)}
+        />
+      ) : null}
 
       {result ? (
         <View style={styles.row}>
@@ -211,6 +276,7 @@ export default function InvitePersonScreen() {
               variant="secondary"
               onPress={() => {
                 setEmail('');
+                setMobile('');
                 invite.reset();
               }}
             />
@@ -220,13 +286,23 @@ export default function InvitePersonScreen() {
           </View>
         </View>
       ) : (
-        <Button
-          label="Send invite"
-          icon="person-add-outline"
-          disabled={!!emailError}
-          loading={invite.isPending}
-          onPress={() => invite.mutate({ email: normalizeEmail(email), role: inviteRole })}
-        />
+        <>
+          <Button
+            label="Invite on WhatsApp"
+            icon="logo-whatsapp"
+            disabled={!!emailError || !!mobileError}
+            loading={invite.isPending && invite.variables?.channel === 'whatsapp'}
+            onPress={() => send('whatsapp')}
+          />
+          <Button
+            label="Invite by email"
+            icon="mail-outline"
+            variant="secondary"
+            disabled={!!emailError || invite.isPending}
+            loading={invite.isPending && invite.variables?.channel === 'email'}
+            onPress={() => send('email')}
+          />
+        </>
       )}
     </Screen>
   );

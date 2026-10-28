@@ -40,6 +40,9 @@ export type InviteRole = Role | 'gym_owner';
 
 export type InviteResult = 'added' | 'invited' | 'already_member';
 
+/** How an invite reaches someone: our email, or a WhatsApp message staff send themselves. */
+export type InviteChannel = 'email' | 'whatsapp';
+
 /** What inviting did, and whether the invite email went out. */
 export type InviteOutcome = {
   result: InviteResult;

@@ -14,7 +14,6 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import type { InviteBatch } from '@/features/members/api';
 import { useImportMembers, useSendImportInvites } from '@/features/members/hooks';
 import {
-  IMPORT_COLUMNS,
   importTemplate,
   isSpreadsheetFile,
   joinMessage,
@@ -70,9 +69,7 @@ export default function ImportMembersScreen() {
     if (isSpreadsheetFile(asset.name)) {
       setPreview(null);
       setFileName(asset.name);
-      setFileError(
-        'This is an Excel file. Save it as CSV first: in Excel, File → Save as → CSV; in Google Sheets, File → Download → CSV. Then pick the CSV.',
-      );
+      setFileError('Save the Excel file as CSV, then pick it again.');
       return;
     }
     try {
@@ -107,25 +104,15 @@ export default function ImportMembersScreen() {
 
   return (
     <Screen refreshable={false}>
-      <ThemedText themeColor="textSecondary">
-        Bring your members over from another app or a register. They join your gym with their mobile
-        number and membership, so renewals and reminders work at once. Then share one WhatsApp
-        message telling them to sign up with the same email.
-      </ThemedText>
-
       <SectionHeader title="1. Fill in the template" />
       <Card>
         <ThemedText type="small">
-          One member per row, with these columns: {IMPORT_COLUMNS.join(', ')}. Name, email and
-          mobile are needed. Plan, dates and amount are for their current membership; leave them
-          empty to add the member only.
+          One member per row. Name, email and mobile are required.
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {planList.length
-            ? `Plan must match one of yours: ${planList.map((p) => p.name).join(', ')}.`
-            : 'Add your plans under Memberships first, so imported memberships can use them.'}{' '}
-          Dates like 25/10/2026. Leave the end date empty to count it from the plan. Payment method
-          is Cash, UPI, Card or Bank transfer. Save as CSV.
+            ? `Plans: ${planList.map((p) => p.name).join(', ')}. Dates: 25/10/2026.`
+            : 'Add membership plans first.'}
         </ThemedText>
         <Button
           label="Share the template"
@@ -170,8 +157,7 @@ export default function ImportMembersScreen() {
           />
           {problems.length ? (
             <ThemedText type="small" themeColor="textSecondary">
-              Rows with problems are left out. Fix them in the file and import it again later;
-              members already imported aren&apos;t added twice.
+              Rows with problems are skipped. Fix and import again anytime.
             </ThemedText>
           ) : null}
           {importer.error ? (
@@ -186,10 +172,7 @@ export default function ImportMembersScreen() {
         <>
           <SectionHeader title="4. Tell them to join" />
           <ThemedText type="small" themeColor="textSecondary">
-            {toInvite.length} member{toInvite.length === 1 ? ' hasn’t' : 's haven’t'} signed up yet.
-            Send the join message to your gym&apos;s WhatsApp group or broadcast list: they install
-            the app, create an account with the email you imported and find their membership
-            waiting. No emails go out from us until they sign up.
+            Share on your gym&apos;s WhatsApp group. Members sign up with the same email.
           </ThemedText>
           <Button
             label="Share join message"
@@ -210,10 +193,6 @@ export default function ImportMembersScreen() {
                 loading={inviter.isPending}
                 onPress={runInvites}
               />
-              <ThemedText type="small" themeColor="textSecondary">
-                Emails one invite per member, for anyone not on WhatsApp. Big lists can hit the
-                email limit for the hour.
-              </ThemedText>
             </>
           )}
         </>
@@ -240,8 +219,7 @@ function PreviewCard({
       <Card>
         <ThemedText type="smallBold">{fileName}</ThemedText>
         <ThemedText themeColor="danger">
-          The first row needs these column names: {preview.missingColumns.join(', ')}. Start from
-          the template, or rename the columns in your file.
+          Missing columns: {preview.missingColumns.join(', ')}. Use the template.
         </ThemedText>
       </Card>
     );
@@ -255,12 +233,12 @@ function PreviewCard({
       </ThemedText>
       {preview.examplesSkipped ? (
         <ThemedText type="small" themeColor="textSecondary">
-          The template&apos;s example row is skipped.
+          Example row skipped.
         </ThemedText>
       ) : null}
       {preview.truncated ? (
         <ThemedText type="small" themeColor="danger">
-          Only the first {MAX_IMPORT_ROWS} members are read. Put the rest in a second file.
+          Only the first {MAX_IMPORT_ROWS} rows are read.
         </ThemedText>
       ) : null}
       {problems.slice(0, PROBLEMS_SHOWN).map((row) => (
@@ -315,8 +293,7 @@ function InviteCard({ batch }: { batch: InviteBatch }) {
       </ThemedText>
       {batch.stopped ? (
         <ThemedText type="small" themeColor="danger">
-          Stopped after several failures in a row, usually the email limit for the hour. Send the
-          rest later from Invite someone; they&apos;re already in your gym.
+          Stopped: email limit reached. Try the rest later.
         </ThemedText>
       ) : null}
       {batch.failed.slice(0, PROBLEMS_SHOWN).map((f) => (

@@ -93,7 +93,7 @@ describe('previewImport', () => {
     });
     expect(rows[1]).toMatchObject({ plan: null, startsOn: null, errors: [] });
     expect(rows[2].errors).toEqual([
-      'Mobile: Excel turned it into a number like 9.84E+09. Format the column as Text.',
+      'Mobile: Excel changed it to 9.84E+09. Set the column to Text.',
       'Plan: no plan called "Weekly". Use one of: Monthly, Quarterly.',
       'Start date: write it like 25/10/2026.',
       'Amount paid: write it like 1500.',

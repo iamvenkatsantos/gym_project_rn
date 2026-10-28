@@ -4,6 +4,7 @@ import {
   countPeople,
   filterPeople,
   isLastActiveOwner,
+  inviteMessage,
   isValidEmail,
   normalizeEmail,
 } from '@/features/members/rules';
@@ -89,5 +90,26 @@ describe('coaches', () => {
     expect(coachLabel(staff[3])).toBe('Tom Trainer');
     expect(coachLabel(staff[0])).toBe('Olivia Owner (owner)');
     expect(coachLabel(staff[1], 'sam')).toBe('You');
+  });
+});
+
+describe('inviteMessage', () => {
+  it('tells someone new which email to sign up with', () => {
+    const text = inviteMessage('Iron Den', 'kavi@mail.com', 'trainer', 'invited');
+    expect(text).toContain("You're invited to join Iron Den on CoreFit Gym as a trainer.");
+    expect(text).toContain('Tap Create account and use this email: kavi@mail.com');
+    expect(text).toContain("You'll be in Iron Den as soon as you confirm.");
+  });
+
+  it('asks a new gym owner to set up their gym', () => {
+    const text = inviteMessage('Iron Den', 'raj@mail.com', 'gym_owner', 'invited');
+    expect(text).toContain("You're invited to set up your gym on CoreFit Gym.");
+    expect(text).not.toContain('Iron Den');
+  });
+
+  it('just says to sign in when they already have an account', () => {
+    const text = inviteMessage('Iron Den', 'anu@mail.com', 'member', 'added');
+    expect(text).toContain("You've been added to Iron Den on CoreFit Gym as a member.");
+    expect(text).toContain('sign in with anu@mail.com');
   });
 });

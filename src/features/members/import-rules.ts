@@ -1,3 +1,4 @@
+import { PLAY_STORE_URL } from '@/features/members/rules';
 import { toCsv } from '@/features/reports/csv';
 import { endDateFor, parseRupees, toIsoDate } from '@/features/memberships/rules';
 import type { MembershipPlan, PaymentMethod } from '@/features/memberships/types';
@@ -245,9 +246,7 @@ export function previewImport(text: string, plans: MembershipPlan[]): ImportPrev
     const phone = parseMobile(rawPhone);
     if (!rawPhone) errors.push('Mobile: add their mobile number.');
     else if (/e\+?\d+$/i.test(rawPhone)) {
-      errors.push(
-        'Mobile: Excel turned it into a number like 9.84E+09. Format the column as Text.',
-      );
+      errors.push('Mobile: Excel changed it to 9.84E+09. Set the column to Text.');
     } else if (!phone) errors.push('Mobile: enter a 10-digit Indian mobile number.');
 
     const planText = get('plan');
@@ -315,9 +314,6 @@ export function previewImport(text: string, plans: MembershipPlan[]): ImportPrev
 export function isSpreadsheetFile(fileName: string) {
   return /\.(xlsx|xls|xlsm|ods|numbers)$/i.test(fileName);
 }
-
-/** CoreFit Gym on Google Play. It opens once the app is listed there. */
-export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
 
 /**
  * What the owner sends imported members on WhatsApp (a group, a broadcast list or one by one)

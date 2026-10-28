@@ -62,14 +62,17 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 
 ## Core flows
 
-**Invite and admission.** People join by email invite (People / Members tab → `invite-person`).
-`invite-member` edge fn calls `invite_to_gym()` (or `invite_gym_owner()` for a new gym, admin only)
-as the caller, then sends the email with the service role. Supervisors invite members and trainers;
-trainers invite members only, and those members are auto-mapped to them. Every member invite
-records an admission (`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a
-6-digit code (`enter-code`, `verifyOtp`) because links can't open the app from a computer.
-`claim_gym_invites` attaches pending invites when the user confirms. Login is email only (no phone
-OTP); Google or other OAuth may come later.
+**Invite and admission.** People join by invite (People / Members tab → `invite-person`), sent on
+WhatsApp or by email. **Invite on WhatsApp** only saves the invite (`invite_to_gym()` /
+`invite_gym_owner()` RPC, no email) and opens WhatsApp with `inviteMessage()`; signing up with that
+email claims it. **Invite by email**: the `invite-member` edge fn calls
+`invite_to_gym()` (or `invite_gym_owner()` for a new gym, admin only) as the caller, then sends the
+email with the service role. Supervisors invite members and trainers; trainers invite members only,
+and those members are auto-mapped to them. Every member invite records an admission
+(`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a 6-digit code
+(`enter-code`, `verifyOtp`) because links can't open the app from a computer. `claim_gym_invites`
+attaches pending invites when the user confirms. Login is email only (no phone OTP); Google or other
+OAuth may come later.
 
 **Member import.** Owners bring members over from another app on People → `import-members`: share
 the CSV template, pick the filled CSV (`expo-document-picker`; .xlsx must be saved as CSV), check
@@ -154,6 +157,8 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 - **Headers:** every `Stack.Screen` needs a `title` (iOS back label). Gate screens without a back
   route (onboarding, profile-setup, enter-code, set-up-gym) use the native header (`headerShown: true`) so the title
   clears the Android status bar.
+- **Copy:** keep in-app text crisp. One short line per hint, step or empty state; no paragraphs.
+  Explanations belong in this file or the PR, not the UI (Venkat's rule).
 - **Layout:** test at 360px wide and with large fonts (1.3x; demo on web at 277px). Use `useTheme()`
   colours only; `primary` is for fills, `accent` for green text. New dashboard shortcuts go in the
   `ShortcutGrid`, not as more full-width buttons.
