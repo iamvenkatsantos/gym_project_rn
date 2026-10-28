@@ -6,7 +6,6 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Pill } from '@/components/pill';
 import { Screen } from '@/components/screen';
-import { SegmentedControl } from '@/components/segmented-control';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { canCoach, type Role } from '@/features/auth/types';
@@ -22,6 +21,15 @@ import { MembershipRow } from '@/features/memberships/components/membership-card
 import { useMemberships } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
+
+/** What each role can do, shown under the role pill. */
+const roleNote: Record<Role, string> = {
+  member: 'Members check in, follow their plans and log workouts.',
+  trainer: 'Trainers show up for 1:1 booking once they set their weekly hours.',
+  supervisor:
+    'Supervisors record payments, invite members and trainers, and match members with trainers. They can also coach members themselves.',
+  owner: 'Owners can do everything, including supervisor and trainer work.',
+};
 
 /** Names listed on a coach's card before "and N more". */
 const MEMBERS_SHOWN = 5;
@@ -56,7 +64,7 @@ export default function PersonScreen() {
   const update = useUpdatePerson(gym.gymId);
   const remove = useRemovePerson(gym.gymId);
   const [confirmRemove, setConfirmRemove] = useState(false);
-  // Only CoreFit Gym admins make someone an owner; the server refuses anyone else.
+  // Only CoreFit Gym admins add owners, so they're the ones to ask for a second one.
   const isAdmin = useIsPlatformAdmin();
   const person = people.data?.find((p) => p.id === userId);
 
@@ -70,7 +78,8 @@ export default function PersonScreen() {
     );
   }
 
-  // Supervisors see people and map trainers; roles and access stay with owners.
+  // Supervisors see people and map trainers; access stays with owners. Roles never change
+  // once given (the database refuses), so there's no role picker here.
   const isOwner = gym.role === 'owner';
   const lastOwner = isLastActiveOwner(people.data ?? [], person.id);
   const isSelf = person.id === profile.id;
@@ -103,6 +112,10 @@ export default function PersonScreen() {
         {isSelf ? <Pill label="You" tone="neutral" /> : null}
       </View>
 
+      <ThemedText type="small" themeColor="textSecondary">
+        {roleNote[person.role]} Roles can&apos;t be changed once given.
+      </ThemedText>
+
       {person.role === 'member' ? <Admission person={person} /> : null}
       {person.role === 'member' && !suspended ? (
         <MemberTrainers gymId={gym.gymId} member={person} />
@@ -130,48 +143,12 @@ export default function PersonScreen() {
 
       {isOwner ? (
         <>
-          <View style={styles.field}>
-            <ThemedText type="label" themeColor="textSecondary">
-              Role
-            </ThemedText>
-            <SegmentedControl<Role>
-              options={[
-                { value: 'member', label: 'Member' },
-                { value: 'trainer', label: 'Trainer' },
-                { value: 'supervisor', label: 'Supervisor' },
-                ...(isAdmin || person.role === 'owner'
-                  ? [{ value: 'owner' as const, label: 'Owner' }]
-                  : []),
-              ]}
-              value={person.role}
-              onChange={(role) => {
-                // The last owner's role is locked; the note below says why.
-                if (role !== person.role && !lastOwner)
-                  update.mutate({ userId: person.id, patch: { role } });
-              }}
-            />
-            {person.role === 'trainer' ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Trainers show up for 1:1 booking once they set their weekly hours.
-              </ThemedText>
-            ) : person.role === 'supervisor' ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Supervisors record payments, invite members and trainers, and match members with
-                trainers. They can also coach members themselves.
-              </ThemedText>
-            ) : person.role === 'owner' ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Owners can do everything, including supervisor and trainer work.
-              </ThemedText>
-            ) : null}
-          </View>
-
           {lastOwner ? (
             <Card>
               <ThemedText type="small" themeColor="textSecondary">
                 {isSelf ? 'You are' : 'This is'} the only owner, so this account can&apos;t be
-                demoted, suspended or removed. {isAdmin ? 'Make' : 'Ask CoreFit Gym to make'}{' '}
-                someone else an owner first.
+                suspended or removed. {isAdmin ? 'Invite' : 'Ask CoreFit Gym to add'} another owner
+                first.
               </ThemedText>
             </Card>
           ) : null}

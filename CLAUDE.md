@@ -43,7 +43,10 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   `has_gym_role(gym, array['trainer'])` or `is_coach()`, never `role = 'trainer'`. In the app use
   `canCoach(role)` and `canManageGym(role)` from `src/features/auth/types.ts`. Owners and supervisors
   coach under Training → Coaching.
-- **Owner only:** CSV exports, Insights, roles, removing people, membership plans, gym details.
+- **Owner only:** CSV exports, Insights, suspending or removing people, membership plans, gym details.
+- **Roles never change once given** (`gym_members_lock_role` trigger). There is no role picker in
+  the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
+  already at the gym keeps their role.
 - **Platform admin** (`platform_admins` + `is_platform_admin()`, rows added in the SQL editor only)
   is separate from gym roles. Only the admin invites owners, sets up new gyms, adds branches, sets
   branch fees and switches on online payments. Never give gym owners power over gyms or owners. The

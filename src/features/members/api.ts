@@ -204,11 +204,14 @@ function wouldLeaveNoOwner(userId: string, next: Pick<GymPerson, 'role' | 'statu
   return others.length === 0 && !stillOwner;
 }
 
-/** Changes someone's role or suspends / reactivates them. */
+/**
+ * Suspends or reactivates someone. Roles can't be changed once given; the database refuses
+ * anyone but a CoreFit Gym admin.
+ */
 export async function updatePerson(
   gymId: string,
   userId: string,
-  patch: Partial<Pick<GymPerson, 'role' | 'status'>>,
+  patch: Pick<GymPerson, 'status'>,
 ) {
   if (!supabase) {
     const person = mockPeople.find((p) => p.id === userId);
