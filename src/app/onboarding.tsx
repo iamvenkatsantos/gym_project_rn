@@ -10,7 +10,7 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, withAlpha } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { useProgressPhotos } from '@/features/body/hooks';
@@ -108,10 +108,17 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <Screen eyebrow={gym.gymName} title="Welcome! Tell us about you" refreshable={false}>
-      <ThemedText type="small" themeColor="textSecondary">
-        Your trainer uses this to plan your training and track your progress. It takes a minute.
-      </ThemedText>
+    <Screen refreshable={false}>
+      <View style={styles.hero}>
+        <View style={[styles.badge, { backgroundColor: withAlpha(theme.primary, 0.16) }]}>
+          <Icon name="person" size={28} color="accent" />
+        </View>
+        <ThemedText type="heading">Tell us about you</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Welcome to {gym.gymName}! Your trainer uses this to plan your training and track your
+          progress. It takes a minute.
+        </ThemedText>
+      </View>
 
       <SectionHeader title="Your details" />
       <TextField
@@ -234,6 +241,18 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+  },
+  badge: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
   row: {
     flexDirection: 'row',
     gap: Spacing.two,

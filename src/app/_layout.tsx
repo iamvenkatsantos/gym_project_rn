@@ -103,7 +103,11 @@ function RootNavigator() {
         <Stack.Screen name="no-gym" options={{ title: 'Welcome' }} />
       </Stack.Protected>
       <Stack.Protected guard={onboarding}>
-        <Stack.Screen name="onboarding" options={{ title: 'Welcome' }} />
+        {/* A native header keeps the title clear of the status bar; there's nowhere to go back to. */}
+        <Stack.Screen
+          name="onboarding"
+          options={{ headerShown: true, headerBackVisible: false, title: 'Welcome' }}
+        />
       </Stack.Protected>
       {/* New owners set up their gym here; owners can add another one. The server checks who may. */}
       <Stack.Protected guard={status === 'signedIn' && !settingPassword}>
