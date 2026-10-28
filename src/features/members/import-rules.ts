@@ -1,3 +1,4 @@
+import { PLAY_STORE_URL } from '@/features/members/rules';
 import { toCsv } from '@/features/reports/csv';
 import { endDateFor, parseRupees, toIsoDate } from '@/features/memberships/rules';
 import type { MembershipPlan, PaymentMethod } from '@/features/memberships/types';
@@ -245,9 +246,7 @@ export function previewImport(text: string, plans: MembershipPlan[]): ImportPrev
     const phone = parseMobile(rawPhone);
     if (!rawPhone) errors.push('Mobile: add their mobile number.');
     else if (/e\+?\d+$/i.test(rawPhone)) {
-      errors.push(
-        'Mobile: Excel turned it into a number like 9.84E+09. Format the column as Text.',
-      );
+      errors.push('Mobile: Excel changed it to 9.84E+09. Set the column to Text.');
     } else if (!phone) errors.push('Mobile: enter a 10-digit Indian mobile number.');
 
     const planText = get('plan');
@@ -314,4 +313,20 @@ export function previewImport(text: string, plans: MembershipPlan[]): ImportPrev
 /** True for a file the phone can't read as text, like an .xlsx straight from Excel. */
 export function isSpreadsheetFile(fileName: string) {
   return /\.(xlsx|xls|xlsm|ods|numbers)$/i.test(fileName);
+}
+
+/**
+ * What the owner sends imported members on WhatsApp (a group, a broadcast list or one by one)
+ * instead of an invite email each. Signing up with the same email joins the imported account.
+ */
+export function joinMessage(gymName: string) {
+  return [
+    `Hi! ${gymName} is now on the CoreFit Gym app, and your membership is already in it.`,
+    '',
+    `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+    '2. Tap Create account and use the email you gave the gym.',
+    '3. Enter the 6-digit code from the email and choose a password.',
+    '',
+    'You’ll see your plan, expiry date and workouts straight away.',
+  ].join('\n');
 }

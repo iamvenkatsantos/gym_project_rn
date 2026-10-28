@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -14,57 +14,49 @@ import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople } from '@/features/members/hooks';
-import { normalizeEmail } from '@/features/members/rules';
+import { whatsappUrl } from '@/features/enquiries/rules';
+import { parseMobile } from '@/features/members/import-rules';
+import { inviteMessage, normalizeEmail } from '@/features/members/rules';
 import { validateEmail } from '@/lib/validation';
-import type { InviteOutcome, InviteRole } from '@/features/members/types';
+import type { InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
+
+/** Opens a chat with their number, or the share sheet to pick who gets it. */
+function sendOnWhatsApp(message: string, mobile: string | null) {
+  const opened = mobile ? Linking.openURL(whatsappUrl(mobile, message)) : Share.share({ message });
+  opened.catch(() => {});
+}
 
 function describe(
   { result, emailSent, emailError }: InviteOutcome,
   email: string,
   role: InviteRole,
   canManage: boolean,
+  channel: InviteChannel,
 ) {
-  if (role === 'gym_owner') {
-    const next =
-      "After signing in they add their gym's details and get a new, empty gym of their own.";
-    if (result === 'added') {
-      return {
-        title: 'Ready to set up their gym',
-        detail: `They already have a CoreFit Gym account. ${next}`,
-      };
-    }
-    return emailSent
-      ? { title: 'Invite sent', detail: `We emailed ${email} a link. ${next}` }
-      : {
-          title: 'Invite saved',
-          detail: `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit Gym and create an account with this email. ${next}`,
-        };
+  const joins = role === 'gym_owner' ? 'They set up their gym' : 'They join';
+  if (result === 'already_member') {
+    return {
+      title: 'Already at this gym',
+      detail: canManage
+        ? 'Find them under People.'
+        : 'Ask the owner if they should be your member.',
+    };
   }
-  switch (result) {
-    case 'added':
-      return {
-        title: 'Added to the gym',
-        detail:
-          'They already had a CoreFit Gym account, so they can use this gym the next time they open the app.',
-      };
-    case 'already_member':
-      return {
-        title: 'Already at this gym',
-        detail: canManage
-          ? 'Find them under People to change their role or reactivate them.'
-          : 'Ask the owner or a supervisor if they should be your member.',
-      };
-    case 'invited':
-      return emailSent
-        ? {
-            title: 'Invite sent',
-            detail: `We emailed ${email} a link. It opens CoreFit Gym to set a password, then signs them in to this gym.`,
-          }
-        : {
-            title: 'Invite saved',
-            detail: `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit Gym and create an account with this email. They join the gym as soon as they confirm it.`,
-          };
+  if (result === 'added') {
+    return {
+      title: role === 'gym_owner' ? 'Ready to set up their gym' : 'Added to the gym',
+      detail: 'They already have an account. It shows next time they open the app.',
+    };
   }
+  if (channel === 'whatsapp') {
+    return { title: 'Invite saved', detail: `${joins} once they sign up with ${email}.` };
+  }
+  return emailSent
+    ? { title: 'Invite sent', detail: `We emailed ${email} a code. ${joins} once they enter it.` }
+    : {
+        title: 'Invite saved',
+        detail: `Email failed${emailError ? `: ${emailError.replace(/\.$/, '')}` : ''}. Ask them to sign up with ${email}.`,
+      };
 }
 
 const ownerInviteRoles: { value: Role; label: string }[] = [
@@ -87,6 +79,9 @@ export default function InvitePersonScreen() {
   // Trainers can't list everyone at the gym, so they don't get the "already here" details.
   const people = usePeople(gym.gymId, { enabled: !isTrainer });
   const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
+  // WhatsApp or email is picked first; only then do the fields show.
+  const [channel, setChannel] = useState<InviteChannel | null>(null);
   const [role, setRole] = useState<Role>('member');
   // An owner invite usually means someone opening their own gym, not a partner in this one.
   const [ownerOf, setOwnerOf] = useState<OwnerOf>('new');
@@ -98,9 +93,36 @@ export default function InvitePersonScreen() {
     ? ownerInviteRoles
     : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : isTrainer ? 1 : 2);
   const emailError = validateEmail(email);
+  const whatsappNumber = parseMobile(mobile);
+  const mobileError =
+    channel === 'whatsapp' && !whatsappNumber ? 'Enter a 10-digit mobile number.' : null;
   const result = invite.data
-    ? describe(invite.data, invite.variables.email, invite.variables.role, !isTrainer)
+    ? describe(
+        invite.data,
+        invite.variables.email,
+        invite.variables.role,
+        !isTrainer,
+        invite.variables.channel,
+      )
     : null;
+  const message = invite.data
+    ? inviteMessage(gym.gymName, invite.variables.email, invite.variables.role, invite.data.result)
+    : null;
+  const canMessage =
+    invite.variables?.channel === 'whatsapp' && invite.data?.result !== 'already_member';
+  const send = (channel: InviteChannel) => {
+    const variables = { email: normalizeEmail(email), role: inviteRole, channel };
+    invite.mutate(variables, {
+      onSuccess: (outcome) => {
+        if (channel === 'whatsapp' && outcome.result !== 'already_member') {
+          sendOnWhatsApp(
+            inviteMessage(gym.gymName, variables.email, variables.role, outcome.result),
+            whatsappNumber,
+          );
+        }
+      },
+    });
+  };
   // Inviting someone who's already here doesn't change their role, and roles never change.
   const existing =
     invite.data?.result === 'already_member'
@@ -112,121 +134,182 @@ export default function InvitePersonScreen() {
   return (
     <Screen refreshable={false}>
       <ThemedText type="small" themeColor="textSecondary">
-        {isAdmin
-          ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address, or invite someone to set up a gym of their own.`
-          : gym.role === 'owner'
-            ? `Add a member, trainer or supervisor to ${gym.gymName} by their email address.`
-            : isTrainer
-              ? `Add a member to ${gym.gymName} by their email address. They become one of your members, and you're saved as the one who admitted them.`
-              : `Add a member or trainer to ${gym.gymName} by their email address.`}
+        {isTrainer
+          ? "Invite a member. They're mapped to you."
+          : isAdmin
+            ? `Invite someone to ${gym.gymName}, or a new gym owner.`
+            : `Invite someone to ${gym.gymName}.`}
       </ThemedText>
-      <TextField
-        label="Email"
-        placeholder="name@example.com"
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          invite.reset();
-        }}
-        autoCapitalize="none"
-        autoComplete="email"
-        autoCorrect={false}
-        keyboardType="email-address"
-        textContentType="emailAddress"
-        maxLength={254}
-        error={emailError}
-      />
-      <View style={styles.field}>
-        {/* Trainers only invite members, so there's no role to pick. */}
-        {roles.length > 1 ? (
-          <>
-            <ThemedText type="label" themeColor="textSecondary">
-              Role
-            </ThemedText>
-            <SegmentedControl<Role>
-              options={roles}
-              value={role}
-              onChange={(next) => {
-                setRole(next);
-                invite.reset();
-              }}
-            />
-          </>
-        ) : null}
-        {role === 'owner' ? (
-          <>
-            <ThemedText type="label" themeColor="textSecondary">
-              Owner of
-            </ThemedText>
-            <SegmentedControl<OwnerOf>
-              options={[
-                { value: 'new', label: 'A new gym' },
-                { value: 'this', label: 'This gym' },
-              ]}
-              value={ownerOf}
-              onChange={(next) => {
-                setOwnerOf(next);
-                invite.reset();
-              }}
-            />
-            {ownerOf === 'new' ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                They set up a gym of their own with its details. It starts empty, and they
-                won&apos;t see anyone from {gym.gymName}.
-              </ThemedText>
-            ) : (
-              <ThemedText type="small" themeColor="warning">
-                Co-owners can manage everyone at {gym.gymName}, including you.
-              </ThemedText>
-            )}
-          </>
-        ) : role === 'supervisor' ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Supervisors record payments, invite members and trainers, and match members with
-            trainers. They can&apos;t change roles or remove anyone.
-          </ThemedText>
-        ) : null}
-      </View>
 
-      {result ? (
-        <Card highlighted>
-          <View style={styles.result}>
-            <Icon name="checkmark-circle" size={22} color="accent" />
-            <ThemedText type="heading">{result.title}</ThemedText>
-          </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {existing && roleDiffers
-              ? `${existing.fullName} is already here as ${roleLabel(existing.role)}. Roles can't be changed once given.`
-              : result.detail}
-          </ThemedText>
-        </Card>
-      ) : null}
-      {invite.error ? <ThemedText themeColor="danger">{invite.error.message}</ThemedText> : null}
-
-      {result ? (
-        <View style={styles.row}>
-          <View style={styles.flex}>
-            <Button
-              label="Invite another"
-              variant="secondary"
-              onPress={() => {
-                setEmail('');
-                invite.reset();
-              }}
-            />
-          </View>
-          <View style={styles.flex}>
-            <Button label="Done" onPress={() => router.back()} />
-          </View>
-        </View>
+      {channel === null ? (
+        <>
+          <Button
+            label="Invite on WhatsApp"
+            icon="logo-whatsapp"
+            onPress={() => setChannel('whatsapp')}
+          />
+          <Button
+            label="Invite by email"
+            icon="mail-outline"
+            variant="secondary"
+            onPress={() => setChannel('email')}
+          />
+        </>
       ) : (
-        <Button
-          label="Send invite"
-          icon="person-add-outline"
-          disabled={!!emailError}
-          loading={invite.isPending}
-          onPress={() => invite.mutate({ email: normalizeEmail(email), role: inviteRole })}
-        />
+        <>
+          <SegmentedControl<InviteChannel>
+            options={[
+              { value: 'whatsapp', label: 'WhatsApp' },
+              { value: 'email', label: 'Email' },
+            ]}
+            value={channel}
+            onChange={(next) => {
+              setChannel(next);
+              invite.reset();
+            }}
+          />
+          {channel === 'whatsapp' ? (
+            <TextField
+              label="Mobile"
+              placeholder="98400 12345"
+              value={mobile}
+              onChangeText={(text) => {
+                setMobile(text);
+                invite.reset();
+              }}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              autoComplete="tel"
+              maxLength={16}
+              error={mobile ? mobileError : null}
+            />
+          ) : null}
+          <TextField
+            label={channel === 'whatsapp' ? 'Email they sign up with' : 'Email'}
+            placeholder="name@example.com"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              invite.reset();
+            }}
+            autoCapitalize="none"
+            autoComplete="email"
+            autoCorrect={false}
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            maxLength={254}
+            error={email ? emailError : null}
+          />
+          <View style={styles.field}>
+            {/* Trainers only invite members, so there's no role to pick. */}
+            {roles.length > 1 ? (
+              <>
+                <ThemedText type="label" themeColor="textSecondary">
+                  Role
+                </ThemedText>
+                <SegmentedControl<Role>
+                  options={roles}
+                  value={role}
+                  onChange={(next) => {
+                    setRole(next);
+                    invite.reset();
+                  }}
+                />
+              </>
+            ) : null}
+            {role === 'owner' ? (
+              <>
+                <ThemedText type="label" themeColor="textSecondary">
+                  Owner of
+                </ThemedText>
+                <SegmentedControl<OwnerOf>
+                  options={[
+                    { value: 'new', label: 'A new gym' },
+                    { value: 'this', label: 'This gym' },
+                  ]}
+                  value={ownerOf}
+                  onChange={(next) => {
+                    setOwnerOf(next);
+                    invite.reset();
+                  }}
+                />
+                {ownerOf === 'new' ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    They get a new, empty gym of their own.
+                  </ThemedText>
+                ) : (
+                  <ThemedText type="small" themeColor="warning">
+                    Co-owners can manage everyone here, including you.
+                  </ThemedText>
+                )}
+              </>
+            ) : role === 'supervisor' ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Supervisors record payments and invite members and trainers.
+              </ThemedText>
+            ) : null}
+          </View>
+
+          {result ? (
+            <Card highlighted>
+              <View style={styles.result}>
+                <Icon name="checkmark-circle" size={22} color="accent" />
+                <ThemedText type="heading">{result.title}</ThemedText>
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">
+                {existing && roleDiffers
+                  ? `${existing.fullName} is already here as ${roleLabel(existing.role)}. Roles can't be changed.`
+                  : result.detail}
+              </ThemedText>
+            </Card>
+          ) : null}
+          {invite.error ? (
+            <ThemedText themeColor="danger">{invite.error.message}</ThemedText>
+          ) : null}
+          {canMessage && message ? (
+            <Button
+              label="Send on WhatsApp again"
+              icon="logo-whatsapp"
+              variant="secondary"
+              onPress={() => sendOnWhatsApp(message, whatsappNumber)}
+            />
+          ) : null}
+
+          {result ? (
+            <View style={styles.row}>
+              <View style={styles.flex}>
+                <Button
+                  label="Invite another"
+                  variant="secondary"
+                  onPress={() => {
+                    setEmail('');
+                    setMobile('');
+                    invite.reset();
+                  }}
+                />
+              </View>
+              <View style={styles.flex}>
+                <Button label="Done" onPress={() => router.back()} />
+              </View>
+            </View>
+          ) : channel === 'whatsapp' ? (
+            <Button
+              label="Send on WhatsApp"
+              icon="logo-whatsapp"
+              disabled={!!emailError || !!mobileError}
+              loading={invite.isPending}
+              onPress={() => send('whatsapp')}
+            />
+          ) : (
+            <Button
+              label="Send email invite"
+              icon="mail-outline"
+              disabled={!!emailError}
+              loading={invite.isPending}
+              onPress={() => send('email')}
+            />
+          )}
+        </>
       )}
     </Screen>
   );

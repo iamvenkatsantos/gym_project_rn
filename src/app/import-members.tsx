@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -14,9 +14,9 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import type { InviteBatch } from '@/features/members/api';
 import { useImportMembers, useSendImportInvites } from '@/features/members/hooks';
 import {
-  IMPORT_COLUMNS,
   importTemplate,
   isSpreadsheetFile,
+  joinMessage,
   MAX_IMPORT_ROWS,
   previewImport,
   type ImportPreview,
@@ -69,9 +69,7 @@ export default function ImportMembersScreen() {
     if (isSpreadsheetFile(asset.name)) {
       setPreview(null);
       setFileName(asset.name);
-      setFileError(
-        'This is an Excel file. Save it as CSV first: in Excel, File → Save as → CSV; in Google Sheets, File → Download → CSV. Then pick the CSV.',
-      );
+      setFileError('Save the Excel file as CSV, then pick it again.');
       return;
     }
     try {
@@ -106,25 +104,15 @@ export default function ImportMembersScreen() {
 
   return (
     <Screen refreshable={false}>
-      <ThemedText themeColor="textSecondary">
-        Bring your members over from another app or a register. They join your gym with their mobile
-        number and membership, so renewals and reminders work at once, and get an email to set up
-        the app.
-      </ThemedText>
-
       <SectionHeader title="1. Fill in the template" />
       <Card>
         <ThemedText type="small">
-          One member per row, with these columns: {IMPORT_COLUMNS.join(', ')}. Name, email and
-          mobile are needed. Plan, dates and amount are for their current membership; leave them
-          empty to add the member only.
+          One member per row. Name, email and mobile are required.
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {planList.length
-            ? `Plan must match one of yours: ${planList.map((p) => p.name).join(', ')}.`
-            : 'Add your plans under Memberships first, so imported memberships can use them.'}{' '}
-          Dates like 25/10/2026. Leave the end date empty to count it from the plan. Payment method
-          is Cash, UPI, Card or Bank transfer. Save as CSV.
+            ? `Plans: ${planList.map((p) => p.name).join(', ')}. Dates: 25/10/2026.`
+            : 'Add membership plans first.'}
         </ThemedText>
         <Button
           label="Share the template"
@@ -169,8 +157,7 @@ export default function ImportMembersScreen() {
           />
           {problems.length ? (
             <ThemedText type="small" themeColor="textSecondary">
-              Rows with problems are left out. Fix them in the file and import it again later;
-              members already imported aren&apos;t added twice.
+              Rows with problems are skipped. Fix and import again anytime.
             </ThemedText>
           ) : null}
           {importer.error ? (
@@ -181,25 +168,33 @@ export default function ImportMembersScreen() {
 
       {outcomes ? <ResultCard outcomes={outcomes} /> : null}
 
-      {outcomes && toInvite.length > 0 && !invites ? (
+      {outcomes && toInvite.length > 0 ? (
         <>
-          <SectionHeader title="4. Email their invites" />
+          <SectionHeader title="4. Tell them to join" />
           <ThemedText type="small" themeColor="textSecondary">
-            {toInvite.length} member{toInvite.length === 1 ? ' has' : 's have'} no CoreFit Gym
-            account yet. Each gets an email with a code to set a password. You can send them now or
-            later from Invite someone.
+            Share on your gym&apos;s WhatsApp group. Members sign up with the same email.
           </ThemedText>
-          {inviter.isPending ? <ProgressBar value={progress / toInvite.length} /> : null}
           <Button
-            label={
-              inviter.isPending
-                ? `Sending ${progress} of ${toInvite.length}…`
-                : `Email ${toInvite.length} invite${toInvite.length === 1 ? '' : 's'}`
-            }
-            icon="mail-outline"
-            loading={inviter.isPending}
-            onPress={runInvites}
+            label="Share join message"
+            icon="logo-whatsapp"
+            onPress={() => Share.share({ message: joinMessage(gym.gymName) }).catch(() => {})}
           />
+          {invites ? null : (
+            <>
+              {inviter.isPending ? <ProgressBar value={progress / toInvite.length} /> : null}
+              <Button
+                label={
+                  inviter.isPending
+                    ? `Sending ${progress} of ${toInvite.length}…`
+                    : `Or email ${toInvite.length} invite${toInvite.length === 1 ? '' : 's'}`
+                }
+                icon="mail-outline"
+                variant="secondary"
+                loading={inviter.isPending}
+                onPress={runInvites}
+              />
+            </>
+          )}
         </>
       ) : null}
 
@@ -224,8 +219,7 @@ function PreviewCard({
       <Card>
         <ThemedText type="smallBold">{fileName}</ThemedText>
         <ThemedText themeColor="danger">
-          The first row needs these column names: {preview.missingColumns.join(', ')}. Start from
-          the template, or rename the columns in your file.
+          Missing columns: {preview.missingColumns.join(', ')}. Use the template.
         </ThemedText>
       </Card>
     );
@@ -239,12 +233,12 @@ function PreviewCard({
       </ThemedText>
       {preview.examplesSkipped ? (
         <ThemedText type="small" themeColor="textSecondary">
-          The template&apos;s example row is skipped.
+          Example row skipped.
         </ThemedText>
       ) : null}
       {preview.truncated ? (
         <ThemedText type="small" themeColor="danger">
-          Only the first {MAX_IMPORT_ROWS} members are read. Put the rest in a second file.
+          Only the first {MAX_IMPORT_ROWS} rows are read.
         </ThemedText>
       ) : null}
       {problems.slice(0, PROBLEMS_SHOWN).map((row) => (
@@ -299,8 +293,7 @@ function InviteCard({ batch }: { batch: InviteBatch }) {
       </ThemedText>
       {batch.stopped ? (
         <ThemedText type="small" themeColor="danger">
-          Stopped after several failures in a row, usually the email limit for the hour. Send the
-          rest later from Invite someone; they&apos;re already in your gym.
+          Stopped: email limit reached. Try the rest later.
         </ThemedText>
       ) : null}
       {batch.failed.slice(0, PROBLEMS_SHOWN).map((f) => (

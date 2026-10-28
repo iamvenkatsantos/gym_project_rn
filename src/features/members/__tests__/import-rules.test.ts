@@ -1,6 +1,7 @@
 import {
   importTemplate,
   isSpreadsheetFile,
+  joinMessage,
   parseCsv,
   parseDate,
   parseMobile,
@@ -92,7 +93,7 @@ describe('previewImport', () => {
     });
     expect(rows[1]).toMatchObject({ plan: null, startsOn: null, errors: [] });
     expect(rows[2].errors).toEqual([
-      'Mobile: Excel turned it into a number like 9.84E+09. Format the column as Text.',
+      'Mobile: Excel changed it to 9.84E+09. Set the column to Text.',
       'Plan: no plan called "Weekly". Use one of: Monthly, Quarterly.',
       'Start date: write it like 25/10/2026.',
       'Amount paid: write it like 1500.',
@@ -145,5 +146,14 @@ describe('isSpreadsheetFile', () => {
   it('spots Excel files the phone can’t read', () => {
     expect(isSpreadsheetFile('members.XLSX')).toBe(true);
     expect(isSpreadsheetFile('members.csv')).toBe(false);
+  });
+});
+
+describe('joinMessage', () => {
+  it('names the gym and tells members to sign up with the email they gave', () => {
+    const text = joinMessage('Iron Den Velachery');
+    expect(text).toContain('Iron Den Velachery is now on the CoreFit Gym app');
+    expect(text).toContain('id=com.corefit.gym');
+    expect(text).toContain('use the email you gave the gym');
   });
 });
