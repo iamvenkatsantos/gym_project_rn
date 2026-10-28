@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  importMembers,
   invitePerson,
+  sendImportInvites,
   listCoachedMembers,
   listGymMembers,
   listInvites,
@@ -10,6 +12,7 @@ import {
   updatePerson,
   withdrawInvite,
 } from '@/features/members/api';
+import type { ImportRow } from '@/features/members/import-rules';
 import type { MemberKind } from '@/features/members/rules';
 import type { GymPerson, InviteRole } from '@/features/members/types';
 
@@ -59,6 +62,37 @@ export function useInvitePerson(gymId: string) {
   return useMutation({
     mutationFn: ({ email, role }: { email: string; role: InviteRole }) =>
       invitePerson(gymId, email, role),
+    onSettled: invalidate,
+  });
+}
+
+/** Imports checked rows from the owner's file; onProgress gets how many rows are done. */
+export function useImportMembers(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      rows,
+      onProgress,
+    }: {
+      rows: ImportRow[];
+      onProgress?: (done: number) => void;
+    }) => importMembers(gymId, rows, onProgress),
+    // People, and the memberships behind renewals and the dashboard.
+    onSettled: () => queryClient.invalidateQueries(),
+  });
+}
+
+/** Emails the imported members who have no account yet their invites. */
+export function useSendImportInvites(gymId: string) {
+  const invalidate = useInvalidateMembers();
+  return useMutation({
+    mutationFn: ({
+      emails,
+      onProgress,
+    }: {
+      emails: string[];
+      onProgress?: (done: number) => void;
+    }) => sendImportInvites(gymId, emails, onProgress),
     onSettled: invalidate,
   });
 }

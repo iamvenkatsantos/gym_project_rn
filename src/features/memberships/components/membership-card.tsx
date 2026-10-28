@@ -55,11 +55,12 @@ export function MembershipCard({ membership }: { membership: Membership }) {
   );
 }
 
-/** Compact row for staff lists of members, with Renew and, on renewals lists, Remind. */
+/** Compact row for staff lists of members, with Renew and, on renewals lists, Remind and WhatsApp. */
 export function MembershipRow({
   membership,
   onRenew,
   onRemind,
+  onWhatsApp,
   reminding,
   note,
   noteTone = 'textSecondary',
@@ -67,6 +68,8 @@ export function MembershipRow({
   membership: Membership;
   onRenew?: () => void;
   onRemind?: () => void;
+  /** Opens WhatsApp with a renewal message; left out when there's no mobile number. */
+  onWhatsApp?: () => void;
   reminding?: boolean;
   /** A line under the status, such as "Reminded today". */
   note?: string;
@@ -104,6 +107,15 @@ export function MembershipRow({
             size="compact"
             loading={reminding}
             onPress={onRemind}
+          />
+        ) : null}
+        {onWhatsApp ? (
+          <Button
+            label="WhatsApp"
+            icon="logo-whatsapp"
+            variant="secondary"
+            size="compact"
+            onPress={onWhatsApp}
           />
         ) : null}
       </View>

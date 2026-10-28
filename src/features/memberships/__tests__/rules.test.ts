@@ -4,8 +4,10 @@ import {
   membershipStatus,
   parseRupees,
   remainingFraction,
+  renewalMessage,
   renewalStart,
   groupRenewals,
+  spellDate,
   renewalsDue,
   toIsoDate,
 } from '@/features/memberships/rules';
@@ -122,5 +124,34 @@ describe('membership dates and prices', () => {
 
   it('formats local dates without shifting to UTC', () => {
     expect(toIsoDate(new Date(2026, 0, 1, 23, 30))).toBe('2026-01-01');
+  });
+});
+
+describe('renewalMessage', () => {
+  it('counts down to the last day', () => {
+    // today is 24 Oct 2026
+    expect(
+      renewalMessage(membership('2026-10-01', '2026-10-27'), 'CoreFit Anna Nagar', today),
+    ).toBe(
+      `Hi Maya, your ${membership('2026-10-01', '2026-10-27').plan.name} membership at CoreFit Anna Nagar ends in 3 days, on 27 Oct 2026. Renew at the front desk or in the CoreFit Gym app to keep training without a break.`,
+    );
+    expect(renewalMessage(membership('2026-10-01', '2026-10-25'), 'X', today)).toContain(
+      'ends tomorrow, on 25 Oct 2026',
+    );
+    expect(renewalMessage(membership('2026-10-01', '2026-10-24'), 'X', today)).toContain(
+      'ends today, on 24 Oct 2026',
+    );
+  });
+
+  it('asks a lapsed member to come back', () => {
+    expect(renewalMessage(membership('2026-09-01', '2026-10-20'), 'X', today)).toContain(
+      'ended on 20 Oct 2026',
+    );
+  });
+});
+
+describe('spellDate', () => {
+  it('spells the month the same on every phone', () => {
+    expect(spellDate('2026-01-05')).toBe('5 Jan 2026');
   });
 });

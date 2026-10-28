@@ -176,6 +176,10 @@ function RootNavigator() {
         <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
         <Stack.Screen name="insights" options={{ headerShown: true, title: 'Insights' }} />
         <Stack.Screen name="gym-details" options={{ headerShown: true, title: 'Gym details' }} />
+        <Stack.Screen
+          name="import-members"
+          options={{ headerShown: true, title: 'Import members' }}
+        />
         {/* Owners of more than one branch see them side by side. */}
         <Stack.Screen name="branches" options={{ headerShown: true, title: 'All branches' }} />
       </Stack.Protected>

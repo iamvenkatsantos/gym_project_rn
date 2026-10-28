@@ -52,3 +52,13 @@ export type PeopleFilter = 'all' | Role | 'suspended';
 
 /** A member mapped to a trainer, with the plans that trainer assigned them. */
 export type CoachedMember = { id: string; fullName: string; plans: string[] };
+
+/** What importing one row did: added to the gym, already here (membership added), or skipped. */
+export type ImportOutcome = {
+  email: string;
+  result: 'added' | 'updated' | 'skipped';
+  /** Whether they have confirmed an account, i.e. need no invite email. */
+  joined: boolean;
+  /** Why a row was skipped, or a note such as an already-imported membership. */
+  message: string | null;
+};

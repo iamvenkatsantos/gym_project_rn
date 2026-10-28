@@ -20,19 +20,19 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 
 ## Folder map
 
-| Path                         | What lives there                                                                                                |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `src/app/_layout.tsx`        | Root navigator: every gate and role is a `Stack.Protected` guard                                                |
-| `src/app/<role>/`            | Tab areas: `member`, `trainer`, `supervisor`, `owner`, `admin`                                                  |
-| `src/app/*.tsx`, `[id]` dirs | Shared stack screens (person, plan-editor, record-membership, check-in, …)                                      |
-| `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                       |
-| `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                |
-| `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                  |
-| `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                         |
-| `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                  |
-| `supabase/functions/`        | `invite-member`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
-| `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                 |
-| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                              |
+| Path                         | What lives there                                                                                                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/_layout.tsx`        | Root navigator: every gate and role is a `Stack.Protected` guard                                                                  |
+| `src/app/<role>/`            | Tab areas: `member`, `trainer`, `supervisor`, `owner`, `admin`                                                                    |
+| `src/app/*.tsx`, `[id]` dirs | Shared stack screens (person, plan-editor, record-membership, check-in, …)                                                        |
+| `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                                         |
+| `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                                  |
+| `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                                    |
+| `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                                           |
+| `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                    |
+| `supabase/functions/`        | `invite-member`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
+| `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                   |
+| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                |
 
 ## Roles and who sees what
 
@@ -43,7 +43,8 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   `has_gym_role(gym, array['trainer'])` or `is_coach()`, never `role = 'trainer'`. In the app use
   `canCoach(role)` and `canManageGym(role)` from `src/features/auth/types.ts`. Owners and supervisors
   coach under Training → Coaching.
-- **Owner only:** CSV exports, Insights, suspending or removing people, membership plans, gym details.
+- **Owner only:** CSV exports, importing members, Insights, suspending or removing people, membership
+  plans, gym details.
 - **Roles never change once given** (`gym_members_lock_role` trigger). There is no role picker in
   the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
   already at the gym keeps their role.
@@ -67,7 +68,19 @@ as the caller, then sends the email with the service role. Supervisors invite me
 trainers invite members only, and those members are auto-mapped to them. Every member invite
 records an admission (`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a
 6-digit code (`enter-code`, `verifyOtp`) because links can't open the app from a computer.
-`claim_gym_invites` attaches pending invites when the user confirms.
+`claim_gym_invites` attaches pending invites when the user confirms. Login is email only (no phone
+OTP); Google or other OAuth may come later.
+
+**Member import.** Owners bring members over from another app on People → `import-members`: share
+the CSV template, pick the filled CSV (`expo-document-picker`; .xlsx must be saved as CSV), check
+the preview (`import-rules.ts`: name, email and Indian mobile required; plan must match an active
+plan; day-first dates; end date defaults from the plan), import, then email invites. The
+`import-members` edge fn makes an unconfirmed account (no email) for each new email with the service
+role, then calls `import_members()` as the owner, which adds them as active members (admitted by
+the owner), fills an empty name, sets the mobile only if they have none, and records the membership
+dated to its start day (not today, so collections reports aren't skewed); re-importing never
+duplicates. So imported members get renewals and reminders before they ever sign in. Invites then
+go out one by one through `invite-member`; each is an email, so watch the SMTP provider's limits.
 
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,
@@ -104,12 +117,13 @@ private progress photos) follow the same coach/member pattern.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,
-`remind_renewal`). Online payments are an admin-switched add-on per branch: `create-payment` makes a
-Razorpay Payment Link opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the
-signature and calls `complete_online_payment()`, and the browser returns to `corefit://payment-return`.
-The gym's share goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`);
-member money never stays with CoreFit Gym. By default the owner pays all fees and the members see one
-price. Fee math lives only in `supabase/functions/_shared/fees.ts` (tests in
+`remind_renewal` push, or a WhatsApp button with a written message from `renewalMessage`). Online
+payments are an admin-switched add-on per branch: `create-payment` makes a Razorpay Payment Link
+opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the signature and calls
+`complete_online_payment()`, and the browser returns to `corefit://payment-return`. The gym's share
+goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`); member money
+never stays with CoreFit Gym. By default the owner pays all fees and the members see one price. Fee
+math lives only in `supabase/functions/_shared/fees.ts` (tests in
 `src/features/payments/__tests__/fees.test.ts`). No refunds in the app.
 
 **Push and inbox.** Anything inserted into `notifications` (use `notify()`) shows in the inbox, and
