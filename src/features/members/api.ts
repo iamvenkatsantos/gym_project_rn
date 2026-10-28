@@ -7,10 +7,12 @@ import type {
   GymInvite,
   GymMember,
   GymPerson,
+  ImportOutcome,
   InviteOutcome,
   InviteResult,
   InviteRole,
 } from '@/features/members/types';
+import type { ImportRow } from '@/features/members/import-rules';
 import { coachRoles, normalizeEmail, sortCoaches, type MemberKind } from '@/features/members/rules';
 import {
   delay,
@@ -18,7 +20,9 @@ import {
   mockAccounts,
   mockId,
   mockInvites,
+  mockMemberships,
   mockPeople,
+  mockPlans,
   mockWorkouts,
 } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -147,6 +151,143 @@ export async function invitePerson(
     emailSent: false,
     emailError:
       result === 'invited' ? 'The invite-member function is not deployed to Supabase yet.' : null,
+  };
+}
+
+/** Rows per call to import-members, which keeps each call well inside the function's time limit. */
+export const IMPORT_CHUNK = 50;
+
+/**
+ * Imports checked rows from the owner's file, a chunk at a time, calling onProgress after each.
+ * Every email gets an account if it has none, joins the gym as a member and gets its
+ * membership. No email goes out; send invites afterwards with invitePerson.
+ */
+export async function importMembers(
+  gymId: string,
+  rows: ImportRow[],
+  onProgress?: (done: number) => void,
+): Promise<ImportOutcome[]> {
+  const outcomes: ImportOutcome[] = [];
+  for (let i = 0; i < rows.length; i += IMPORT_CHUNK) {
+    const chunk = rows.slice(i, i + IMPORT_CHUNK);
+    if (!supabase) {
+      outcomes.push(...(await delay(chunk.map((row) => mockImport(gymId, row)))));
+    } else {
+      const { data, error } = await supabase.functions.invoke<{ results: ImportOutcome[] }>(
+        'import-members',
+        {
+          body: {
+            gymId,
+            rows: chunk.map((r) => ({
+              email: r.email,
+              name: r.name,
+              phone: r.phone,
+              plan: r.plan,
+              starts_on: r.startsOn,
+              ends_on: r.endsOn,
+              amount_paid_cents: r.amountPaidCents,
+              payment_method: r.paymentMethod,
+            })),
+          },
+        },
+      );
+      if (error || !data) {
+        const reason = await functionErrorMessage(error);
+        // Keep what already went in, and say where it stopped.
+        if (outcomes.length) {
+          throw new Error(`Imported ${outcomes.length} rows, then stopped: ${reason}`);
+        }
+        throw new Error(reason);
+      }
+      outcomes.push(...data.results);
+    }
+    onProgress?.(Math.min(i + IMPORT_CHUNK, rows.length));
+  }
+  return outcomes;
+}
+
+/** How sending invite emails after an import went. */
+export type InviteBatch = {
+  sent: number;
+  failed: { email: string; error: string }[];
+  stopped: boolean;
+};
+
+/**
+ * Emails each imported member who has no account yet their invite, one at a time. Stops after
+ * three failures in a row, which usually means the email provider's hourly limit is reached.
+ */
+export async function sendImportInvites(
+  gymId: string,
+  emails: string[],
+  onProgress?: (done: number) => void,
+): Promise<InviteBatch> {
+  const batch: InviteBatch = { sent: 0, failed: [], stopped: false };
+  let failuresInARow = 0;
+  for (const [i, email] of emails.entries()) {
+    try {
+      const outcome = await invitePerson(gymId, email, 'member');
+      if (outcome.emailSent || outcome.result !== 'invited') {
+        batch.sent++;
+        failuresInARow = 0;
+      } else {
+        batch.failed.push({ email, error: outcome.emailError ?? 'The email didn’t go out' });
+        failuresInARow++;
+      }
+    } catch (error) {
+      batch.failed.push({ email, error: error instanceof Error ? error.message : String(error) });
+      failuresInARow++;
+    }
+    onProgress?.(i + 1);
+    if (failuresInARow >= 3 && i < emails.length - 1) {
+      batch.stopped = true;
+      break;
+    }
+  }
+  return batch;
+}
+
+function mockImport(gymId: string, row: ImportRow): ImportOutcome {
+  const existing = mockPeople.find((p) => p.email === row.email);
+  if (existing && existing.role !== 'member') {
+    return {
+      email: row.email,
+      result: 'skipped',
+      joined: true,
+      message: `Already at your gym as a ${existing.role}`,
+    };
+  }
+  const person = existing ?? {
+    id: mockId('u'),
+    fullName: row.name,
+    email: row.email,
+    role: 'member' as const,
+    status: 'active' as const,
+    joinedAt: new Date().toISOString(),
+    phone: row.phone,
+    admittedByName: 'Rajesh Kannan',
+    admittedAt: new Date().toISOString(),
+    onboarded: false,
+  };
+  if (!existing) mockPeople.push(person);
+  const plan = forGym(gymId, mockPlans).find((p) => p.name === row.plan);
+  if (plan && row.startsOn && row.endsOn) {
+    mockMemberships.push({
+      id: mockId('m'),
+      memberId: person.id,
+      memberName: person.fullName,
+      plan,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn,
+      amountPaidCents: row.amountPaidCents,
+      paymentMethod: row.paymentMethod,
+    });
+  }
+  return {
+    email: row.email,
+    result: existing ? 'updated' : 'added',
+    joined: !!existing,
+    message: null,
   };
 }
 

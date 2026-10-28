@@ -49,6 +49,14 @@ export default function OwnerPeopleScreen() {
         icon="person-add-outline"
         onPress={() => router.push('/invite-person')}
       />
+      {gym.role === 'owner' ? (
+        <Button
+          label="Import members from a file"
+          icon="cloud-upload-outline"
+          variant="secondary"
+          onPress={() => router.push('/import-members')}
+        />
+      ) : null}
       <Button
         label="Match members with trainers"
         icon="git-compare-outline"

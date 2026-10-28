@@ -108,3 +108,24 @@ export function latestByMember(memberships: Membership[]) {
   }
   return latest;
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "2026-11-02" → "2 Nov 2026", the same on every phone, for messages members read. */
+export function spellDate(isoDate: string) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+}
+
+/** The WhatsApp message staff send a member whose membership is ending or has ended. */
+export function renewalMessage(membership: Membership, gymName: string, today: Date = new Date()) {
+  const firstName = membership.memberName.trim().split(/\s+/)[0] || 'there';
+  const plan = `${membership.plan.name} membership at ${gymName}`;
+  const ends = spellDate(membership.endsOn);
+  if (membershipStatus(membership, today) === 'expired') {
+    return `Hi ${firstName}, your ${plan} ended on ${ends}. Renew at the front desk or in the CoreFit Gym app to get back to training.`;
+  }
+  const left = daysRemaining(membership, today);
+  const when = left <= 1 ? 'today' : left === 2 ? 'tomorrow' : `in ${left - 1} days`;
+  return `Hi ${firstName}, your ${plan} ends ${when}, on ${ends}. Renew at the front desk or in the CoreFit Gym app to keep training without a break.`;
+}

@@ -167,7 +167,10 @@ export default function OwnerDashboardScreen() {
         {(list) =>
           renewalsDue(list)
             .slice(0, RENEWALS_SHOWN)
-            .map((m) => <RenewalRow key={m.id} gymId={gym.gymId} membership={m} />)
+            .map((m) => (
+              // WhatsApp lives on the full Renewals screen to keep the dashboard short.
+              <RenewalRow key={m.id} gymId={gym.gymId} gymName={gym.gymName} membership={m} />
+            ))
         }
       </QueryState>
       {renewals && renewals.length > RENEWALS_SHOWN ? (
