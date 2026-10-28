@@ -61,7 +61,7 @@ export function routeTransfer(available: number, rates: FeeRates = DEFAULT_FEE_R
 
 /** What a member pays for a plan when the online charges are passed on to them. */
 export type MemberPrice = {
-  /** The plan's price: what the gym receives (less CoreFit Gym's cut, if any). */
+  /** The plan's price: what the gym receives. */
   baseCents: number;
   /** What the member pays: the price plus the charges. */
   amountCents: number;
@@ -71,12 +71,15 @@ export type MemberPrice = {
   gatewayFeeCents: number;
   /** Razorpay's expected Route transfer fee with GST, part of the charges. */
   transferFeeCents: number;
+  /** CoreFit Gym's cut, part of the charges when the member pays the fees; else 0. */
+  platformFeeCents: number;
 };
 
 /**
  * Grosses up a plan's price so that after Razorpay's gateway fee, CoreFit Gym's
- * cut and the transfer fee, the owner still receives `baseCents − cutCents`.
- * With feesOnMember false the member pays the price and the owner bears the fees.
+ * cut and the transfer fee, the owner still receives the full `baseCents`.
+ * With feesOnMember false the member pays the price and the owner bears the
+ * fees and the cut.
  */
 export function memberPrice(
   baseCents: number,
@@ -91,9 +94,10 @@ export function memberPrice(
       chargesCents: 0,
       gatewayFeeCents: gatewayFee(baseCents, rates),
       transferFeeCents: 0,
+      platformFeeCents: 0,
     };
   }
-  const toOwner = baseCents - cutCents;
+  const toOwner = baseCents;
   const transfer = transferFee(toOwner, rates);
   // Our balance after the gateway fee must cover the transfer, its fee and the cut.
   const needed = toOwner + transfer + cutCents;
@@ -106,9 +110,10 @@ export function memberPrice(
     baseCents,
     amountCents: amount,
     chargesCents: amount - baseCents,
-    // Whatever the gateway fee's rounding leaves over goes with it, so the two
+    // Whatever the gateway fee's rounding leaves over goes with it, so the
     // parts the member sees add up to the charges.
-    gatewayFeeCents: amount - baseCents - transfer,
+    gatewayFeeCents: amount - baseCents - transfer - cutCents,
     transferFeeCents: transfer,
+    platformFeeCents: cutCents,
   };
 }

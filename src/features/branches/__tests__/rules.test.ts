@@ -170,10 +170,10 @@ describe('totalStats', () => {
 });
 
 describe('onlinePaymentExample', () => {
-  it('passes the fees to the member; the owner bears the 1% cut', () => {
+  it('passes the fees and the 1% cut to the member; the owner gets it all', () => {
     expect(onlinePaymentExample(true, 100)).toEqual({
-      memberPaysCents: 102718,
-      ownerGetsCents: 99000,
+      memberPaysCents: 103744,
+      ownerGetsCents: 100000,
       cutCents: 1000,
     });
   });

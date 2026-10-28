@@ -54,15 +54,21 @@ describe('memberPrice', () => {
       chargesCents: 2720,
       gatewayFeeCents: 2425,
       transferFeeCents: 295,
+      platformFeeCents: 0,
     });
     const available = price.amountCents - gatewayFee(price.amountCents);
     expect(routeTransfer(available)?.transfer).toBe(100000);
   });
 
-  it('pays the owner the price less the cut', () => {
+  it('adds the 1% cut on top too, so the owner still gets the full ₹1,000', () => {
     const price = memberPrice(100000, 1000, true);
+    expect(price.platformFeeCents).toBe(1000);
+    expect(price.gatewayFeeCents + price.transferFeeCents + price.platformFeeCents).toBe(
+      price.chargesCents,
+    );
     const available = price.amountCents - gatewayFee(price.amountCents) - 1000;
-    expect(routeTransfer(available)?.transfer).toBe(99000);
+    expect(routeTransfer(available)?.transfer).toBe(100000);
+    expect(routeTransfer(available - 1)?.transfer).toBeLessThan(100000);
   });
 
   it('is the smallest amount that covers every fee', () => {

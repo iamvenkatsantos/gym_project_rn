@@ -38,7 +38,7 @@ export function OnlinePaymentsEditor({
   const example = onlinePaymentExample(branch.feesOnMember, billing.onlineCutBps);
   const money = (cents: number) => formatAmount(cents, billing.currency);
   const cut = billing.onlineCutBps
-    ? ` CoreFit Gym keeps ${billing.onlineCutBps / 100}% (${money(example.cutCents)}).`
+    ? ` CoreFit Gym's ${billing.onlineCutBps / 100}% (${money(example.cutCents)}) is ${branch.feesOnMember ? 'part of what the member pays' : 'taken from the owner'}.`
     : '';
 
   return (
@@ -67,9 +67,7 @@ export function OnlinePaymentsEditor({
       <ThemedText type="small" themeColor="textSecondary">
         {trimmed
           ? branch.feesOnMember
-            ? billing.onlineCutBps
-              ? 'Payments go straight to this account, less CoreFit Gym’s cut.'
-              : 'Payments go straight to this account, in full.'
+            ? 'Payments go straight to this account, in full.'
             : 'Payments go straight to this account, less Razorpay’s fees.'
           : 'Without one, test payments stay in your Razorpay account. Live payments need it.'}
       </ThemedText>
@@ -97,7 +95,7 @@ export function OnlinePaymentsEditor({
         <Pill label={branch.feesOnMember ? 'Member pays fees' : 'Owner pays fees'} tone="neutral" />
         <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
           {branch.feesOnMember
-            ? `Razorpay’s fees (about 2.7%) are added to the price: a ${money(100000)} plan costs the member ${money(example.memberPaysCents)} and the owner gets ${money(example.ownerGetsCents)}.${cut}`
+            ? `Razorpay’s fees (about 2.7%)${billing.onlineCutBps ? ' and CoreFit Gym’s fee' : ''} are added to the price: a ${money(100000)} plan costs the member ${money(example.memberPaysCents)} and the owner gets ${money(example.ownerGetsCents)}.${cut}`
             : `Members pay the price; Razorpay’s fees (about 2.7%) come out of what the owner gets: ${money(example.ownerGetsCents)} from a ${money(100000)} plan.${cut}`}
         </ThemedText>
       </View>
