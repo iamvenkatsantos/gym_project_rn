@@ -1,3 +1,5 @@
+import type { ImagePickerOptions } from 'expo-image-picker';
+
 import type {
   BodyMeasurement,
   MetricKey,
@@ -38,6 +40,15 @@ export const POSES: { value: PhotoPose; label: string }[] = [
   { value: 'side', label: 'Side' },
   { value: 'back', label: 'Back' },
 ];
+
+/** Progress photos: portrait crop, and small enough to upload quickly on mobile data. */
+export const PHOTO_PICKER_OPTIONS: ImagePickerOptions = {
+  mediaTypes: ['images'],
+  allowsEditing: true,
+  aspect: [3, 4],
+  // Keeps uploads to a few hundred KB; plenty for comparing photos on a phone.
+  quality: 0.6,
+};
 
 export function emptyValues(): MetricValues {
   return {

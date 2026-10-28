@@ -32,6 +32,10 @@ export type MembershipExportRow = {
   amountPaidCents: number | null;
   currency: string | null;
   paymentMethod: PaymentMethod | null;
+  phone: string | null;
+  /** Who invited them: their admission. Null for members from before admissions were kept. */
+  admittedBy: string | null;
+  admittedOn: string | null;
 };
 
 /** One person's check-in on one day. Times are the gym's local HH:MM. */

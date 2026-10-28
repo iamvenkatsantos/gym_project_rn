@@ -25,6 +25,28 @@ import { useMemberships } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
 
+/** Who invited (admitted) a member and when, and whether they've filled in their details. */
+function Admission({ person }: { person: GymPerson }) {
+  if (!person.admittedAt) return null;
+  return (
+    <Card>
+      <ThemedText type="label" themeColor="textSecondary">
+        Admission
+      </ThemedText>
+      <ThemedText>
+        {person.admittedByName
+          ? `Admitted by ${person.admittedByName} on ${formatDate(person.admittedAt)}`
+          : `Admitted on ${formatDate(person.admittedAt)}`}
+      </ThemedText>
+      {person.onboarded === false ? (
+        <ThemedText type="small" themeColor="warning">
+          Hasn&apos;t added their details and starting photos yet.
+        </ThemedText>
+      ) : null}
+    </Card>
+  );
+}
+
 export default function PersonScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const profile = useProfile();
@@ -64,6 +86,11 @@ export default function PersonScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             {person.email}
           </ThemedText>
+          {person.phone ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {person.phone}
+            </ThemedText>
+          ) : null}
           <ThemedText type="small" themeColor="textSecondary">
             Joined {formatDate(person.joinedAt)}
           </ThemedText>
@@ -74,6 +101,8 @@ export default function PersonScreen() {
         {suspended ? <Pill label="Suspended" tone="danger" icon="ban-outline" /> : null}
         {isSelf ? <Pill label="You" tone="neutral" /> : null}
       </View>
+
+      {person.role === 'member' ? <Admission person={person} /> : null}
 
       {person.role === 'member' && !suspended ? (
         <>

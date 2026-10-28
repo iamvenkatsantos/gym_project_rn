@@ -77,6 +77,9 @@ type MembershipDbRow = {
   amount_paid_cents: number | null;
   currency: string | null;
   payment_method: MembershipExportRow['paymentMethod'];
+  phone: string | null;
+  admitted_by: string | null;
+  admitted_on: string | null;
 };
 
 export async function exportMemberships(gymId: string): Promise<MembershipExportRow[]> {
@@ -98,6 +101,9 @@ export async function exportMemberships(gymId: string): Promise<MembershipExport
             amountPaidCents: m ? (m.amountPaidCents ?? m.plan.priceCents) : null,
             currency: m?.plan.currency ?? null,
             paymentMethod: m ? (m.paymentMethod ?? 'upi') : null,
+            phone: p.phone ?? null,
+            admittedBy: p.admittedByName ?? null,
+            admittedOn: p.admittedAt ? toIsoDate(new Date(p.admittedAt)) : null,
           };
         }),
     );
@@ -115,6 +121,9 @@ export async function exportMemberships(gymId: string): Promise<MembershipExport
     amountPaidCents: r.amount_paid_cents,
     currency: r.currency,
     paymentMethod: r.payment_method,
+    phone: r.phone,
+    admittedBy: r.admitted_by,
+    admittedOn: r.admitted_on,
   }));
 }
 

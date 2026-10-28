@@ -22,6 +22,8 @@ export type GymRole = {
   /** The brand the gym is a branch of. Every gym has one; a single gym is a one-branch brand. */
   brandId?: string;
   brandName?: string;
+  /** A member who still has to fill in their details and photos before using the app. */
+  needsOnboarding?: boolean;
 };
 
 export type Profile = {

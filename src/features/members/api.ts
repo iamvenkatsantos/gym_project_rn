@@ -31,6 +31,10 @@ type PersonRow = {
   role: GymPerson['role'];
   status: GymPerson['status'];
   joined_at: string;
+  phone: string | null;
+  admitted_by_name: string | null;
+  admitted_at: string | null;
+  onboarded_at: string | null;
 };
 
 type InviteRow = { id: string; email: string; role: GymInvite['role']; created_at: string };
@@ -83,6 +87,10 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     role: r.role,
     status: r.status,
     joinedAt: r.joined_at,
+    phone: r.phone,
+    admittedByName: r.admitted_by_name,
+    admittedAt: r.admitted_at,
+    onboarded: !!r.onboarded_at,
   }));
 }
 

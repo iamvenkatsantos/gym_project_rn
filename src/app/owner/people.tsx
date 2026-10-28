@@ -1,29 +1,26 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
-import { Icon } from '@/components/icon';
-import { Pill } from '@/components/pill';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing, TapTarget } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { canCoach } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useTrainerLinks } from '@/features/coaching/hooks';
 import { membersOf, trainersOf } from '@/features/coaching/rules';
 import type { TrainerLink } from '@/features/coaching/types';
-import { PersonRow, roleTone } from '@/features/members/components/person-row';
-import { useInvites, usePeople, useWithdrawInvite } from '@/features/members/hooks';
+import { PendingInvites } from '@/features/members/components/pending-invites';
+import { PersonRow } from '@/features/members/components/person-row';
+import { usePeople } from '@/features/members/hooks';
 import { countPeople, filterPeople } from '@/features/members/rules';
 import type { GymPerson, PeopleFilter } from '@/features/members/types';
-import { useTheme } from '@/hooks/use-theme';
-import { formatDate } from '@/lib/format';
 
 const filters: { value: PeopleFilter; label: string }[] = [
   { value: 'all', label: 'Everyone' },
@@ -36,11 +33,8 @@ const filters: { value: PeopleFilter; label: string }[] = [
 
 /** Everyone at the gym, for owners and supervisors. */
 export default function OwnerPeopleScreen() {
-  const theme = useTheme();
   const gym = useActiveGym();
   const people = usePeople(gym.gymId);
-  const invites = useInvites(gym.gymId);
-  const withdraw = useWithdrawInvite();
   const links = useTrainerLinks(gym.gymId);
   // Supervisors can only withdraw the invites they could have sent.
   const canWithdraw = (role: GymPerson['role']) =>
@@ -56,45 +50,7 @@ export default function OwnerPeopleScreen() {
         onPress={() => router.push('/invite-person')}
       />
 
-      {invites.data?.length ? (
-        <>
-          <SectionHeader title="Pending invites" detail={`${invites.data.length}`} />
-          <Card>
-            {invites.data.map((invite, i) => (
-              <View
-                key={invite.id}
-                style={[
-                  styles.invite,
-                  i > 0 && {
-                    borderTopColor: theme.border,
-                    borderTopWidth: StyleSheet.hairlineWidth,
-                  },
-                ]}>
-                <Icon name="mail-outline" size={20} />
-                <View style={styles.flex}>
-                  <ThemedText type="smallBold" numberOfLines={1}>
-                    {invite.email}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Invited {formatDate(invite.createdAt)} · waiting for sign-up
-                  </ThemedText>
-                </View>
-                <Pill label={invite.role} tone={roleTone[invite.role]} />
-                {canWithdraw(invite.role) ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Withdraw invite for ${invite.email}`}
-                    hitSlop={8}
-                    disabled={withdraw.isPending}
-                    onPress={() => withdraw.mutate(invite.id)}>
-                    <Icon name="close-circle" size={22} />
-                  </Pressable>
-                ) : null}
-              </View>
-            ))}
-          </Card>
-        </>
-      ) : null}
+      <PendingInvites gymId={gym.gymId} canWithdraw={canWithdraw} />
 
       <SectionHeader title="People" />
       <TextField
@@ -165,16 +121,6 @@ function coachingDetail(person: GymPerson, links: TrainerLink[]) {
 }
 
 const styles = StyleSheet.create({
-  invite: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    minHeight: TapTarget + 8,
-  },
-  flex: {
-    flex: 1,
-    minWidth: 0,
-  },
   chips: {
     gap: Spacing.two,
   },

@@ -55,6 +55,9 @@ describe('tables', () => {
       amountPaidCents: null,
       currency: 'INR',
       paymentMethod: null,
+      phone: null,
+      admittedBy: null,
+      admittedOn: null,
     };
     const [header, rows] = membershipsTable(
       [

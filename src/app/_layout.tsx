@@ -65,8 +65,13 @@ function RootNavigator() {
   usePushNotifications();
   const status = useAuthStore((s) => s.status);
   const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
-  // Nobody reaches their role's screens until they've chosen a password.
-  const role = useAuthStore((s) => (settingPassword ? undefined : selectActiveGym(s)?.role));
+  // New members fill in their details and photos before anything else.
+  const onboarding = useAuthStore((s) => !settingPassword && !!selectActiveGym(s)?.needsOnboarding);
+  // Nobody reaches their role's screens until they've chosen a password and, for
+  // members, filled in their details.
+  const role = useAuthStore((s) =>
+    settingPassword || onboarding ? undefined : selectActiveGym(s)?.role,
+  );
   // Platform admins get their own area with no gym in it, until they switch to a gym.
   const inAdmin = useAuthStore((s) => !settingPassword && selectInAdmin(s));
 
@@ -93,8 +98,16 @@ function RootNavigator() {
       <Stack.Protected guard={settingPassword}>
         <Stack.Screen name="set-password" options={{ title: 'Choose a password' }} />
       </Stack.Protected>
-      <Stack.Protected guard={status === 'signedIn' && !settingPassword && !role && !inAdmin}>
+      <Stack.Protected
+        guard={status === 'signedIn' && !settingPassword && !onboarding && !role && !inAdmin}>
         <Stack.Screen name="no-gym" options={{ title: 'Welcome' }} />
+      </Stack.Protected>
+      <Stack.Protected guard={onboarding}>
+        {/* A native header keeps the title clear of the status bar; there's nowhere to go back to. */}
+        <Stack.Screen
+          name="onboarding"
+          options={{ headerShown: true, headerBackVisible: false, title: 'Welcome' }}
+        />
       </Stack.Protected>
       {/* New owners set up their gym here; owners can add another one. The server checks who may. */}
       <Stack.Protected guard={status === 'signedIn' && !settingPassword}>
@@ -148,10 +161,6 @@ function RootNavigator() {
         <Stack.Screen name="supervisor" options={{ title: 'Dashboard' }} />
       </Stack.Protected>
       <Stack.Protected guard={!!role && canManageGym(role)}>
-        <Stack.Screen
-          name="invite-person"
-          options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
-        />
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: 'Person' }} />
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
@@ -202,6 +211,11 @@ function RootNavigator() {
         Owners schedule any class; trainers and supervisors schedule and edit their own.
       */}
       <Stack.Protected guard={!!role && canCoach(role)}>
+        {/* Trainers invite members only; the server checks who may invite whom. */}
+        <Stack.Screen
+          name="invite-person"
+          options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
+        />
         <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
         <Stack.Screen
           name="assign-plan/[workoutId]"
