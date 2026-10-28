@@ -115,8 +115,13 @@ export async function signUp(
 /** Where invite and password reset emails send people: the set-password screen. */
 export const setPasswordUrl = () => Linking.createURL('/set-password');
 
-/** Signs in with the session from an invite or reset link. */
-export async function signInWithLinkSession(session: LinkSession): Promise<Profile> {
+/**
+ * Signs in with the session from an invite, reset or confirmation link. imported is true for
+ * an account a member import made, which has no password of its own yet.
+ */
+export async function signInWithLinkSession(
+  session: LinkSession,
+): Promise<{ profile: Profile; imported: boolean }> {
   if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
   const { data, error } = await supabase.auth.setSession({
     access_token: session.accessToken,
@@ -124,7 +129,8 @@ export async function signInWithLinkSession(session: LinkSession): Promise<Profi
   });
   if (error) throw error;
   if (!data.user) throw new Error('That link has expired. Ask for a new one.');
-  return fetchProfile(data.user.id);
+  const imported = data.user.app_metadata?.imported === true;
+  return { profile: await fetchProfile(data.user.id), imported };
 }
 
 /**
@@ -136,12 +142,16 @@ export async function verifyEmailCode(
   email: string,
   code: string,
   kinds: LinkSession['type'][],
-): Promise<{ type: LinkSession['type']; userId: string }> {
+): Promise<{ type: LinkSession['type']; userId: string; imported: boolean }> {
   if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
   let lastError: Error = new Error('That code is wrong or has expired.');
   for (const type of kinds) {
     const { data, error } = await supabase.auth.verifyOtp({ email, token: code, type });
-    if (!error && data.user) return { type, userId: data.user.id };
+    if (!error && data.user) {
+      // Accounts made by a member import have no password of their own yet.
+      const imported = data.user.app_metadata?.imported === true;
+      return { type, userId: data.user.id, imported };
+    }
     if (error) lastError = error;
   }
   throw lastError;

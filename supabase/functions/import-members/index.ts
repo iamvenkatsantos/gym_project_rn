@@ -3,7 +3,8 @@
 // account with no email sent, which the member takes over when they accept
 // their invite. Everything else (the owner check, adding them to the gym,
 // their mobile number and membership) runs as the caller through
-// import_members(). Invite emails go out afterwards through invite-member.
+// import_members(). Members then sign up with the same email themselves, after
+// the owner shares a join message, or get an invite email through invite-member.
 // Deploy with:
 //   npx supabase functions deploy import-members
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -68,6 +69,8 @@ Deno.serve(async (req) => {
           email,
           email_confirm: false,
           user_metadata: fullName ? { full_name: fullName } : {},
+          // Tells the app to ask for a password when they confirm their sign-up code.
+          app_metadata: { imported: true },
         });
         // Someone with an account already is fine: import_members() finds them.
         if (

@@ -29,9 +29,10 @@ export default function EnterCodeScreen() {
 
   const verify = useMutation({
     mutationFn: async () => {
-      const { type, userId } = await verifyEmailCode(email.trim(), code.trim(), order);
-      // Invites and resets choose a password before reaching their screens.
-      useAuthStore.getState().setNeedsPassword(type !== 'signup');
+      const { type, userId, imported } = await verifyEmailCode(email.trim(), code.trim(), order);
+      // Invites and resets choose a password before reaching their screens. So do imported
+      // members confirming their sign-up: Supabase may keep the imported account passwordless.
+      useAuthStore.getState().setNeedsPassword(type !== 'signup' || imported);
       return fetchProfile(userId);
     },
     onSuccess: (profile) => {

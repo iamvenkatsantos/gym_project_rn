@@ -1,6 +1,7 @@
 import {
   importTemplate,
   isSpreadsheetFile,
+  joinMessage,
   parseCsv,
   parseDate,
   parseMobile,
@@ -145,5 +146,14 @@ describe('isSpreadsheetFile', () => {
   it('spots Excel files the phone can’t read', () => {
     expect(isSpreadsheetFile('members.XLSX')).toBe(true);
     expect(isSpreadsheetFile('members.csv')).toBe(false);
+  });
+});
+
+describe('joinMessage', () => {
+  it('names the gym and tells members to sign up with the email they gave', () => {
+    const text = joinMessage('Iron Den Velachery');
+    expect(text).toContain('Iron Den Velachery is now on the CoreFit Gym app');
+    expect(text).toContain('id=com.corefit.gym');
+    expect(text).toContain('use the email you gave the gym');
   });
 });

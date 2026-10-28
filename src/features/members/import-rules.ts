@@ -315,3 +315,22 @@ export function previewImport(text: string, plans: MembershipPlan[]): ImportPrev
 export function isSpreadsheetFile(fileName: string) {
   return /\.(xlsx|xls|xlsm|ods|numbers)$/i.test(fileName);
 }
+
+/** CoreFit Gym on Google Play. It opens once the app is listed there. */
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
+
+/**
+ * What the owner sends imported members on WhatsApp (a group, a broadcast list or one by one)
+ * instead of an invite email each. Signing up with the same email joins the imported account.
+ */
+export function joinMessage(gymName: string) {
+  return [
+    `Hi! ${gymName} is now on the CoreFit Gym app, and your membership is already in it.`,
+    '',
+    `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+    '2. Tap Create account and use the email you gave the gym.',
+    '3. Enter the 6-digit code from the email and choose a password.',
+    '',
+    'You’ll see your plan, expiry date and workouts straight away.',
+  ].join('\n');
+}

@@ -74,13 +74,17 @@ OTP); Google or other OAuth may come later.
 **Member import.** Owners bring members over from another app on People → `import-members`: share
 the CSV template, pick the filled CSV (`expo-document-picker`; .xlsx must be saved as CSV), check
 the preview (`import-rules.ts`: name, email and Indian mobile required; plan must match an active
-plan; day-first dates; end date defaults from the plan), import, then email invites. The
-`import-members` edge fn makes an unconfirmed account (no email) for each new email with the service
-role, then calls `import_members()` as the owner, which adds them as active members (admitted by
-the owner), fills an empty name, sets the mobile only if they have none, and records the membership
-dated to its start day (not today, so collections reports aren't skewed); re-importing never
-duplicates. So imported members get renewals and reminders before they ever sign in. Invites then
-go out one by one through `invite-member`; each is an email, so watch the SMTP provider's limits.
+plan; day-first dates; end date defaults from the plan), import, then share a join message. The
+`import-members` edge fn makes an unconfirmed account (no email, `app_metadata.imported`) for each
+new email with the service role, then calls `import_members()` as the owner, which adds them as
+active members (admitted by the owner), fills an empty name, sets the mobile only if they have none,
+and records the membership dated to its start day (not today, so collections reports aren't skewed);
+re-importing never duplicates. So imported members get renewals and reminders before they ever sign
+in. **No bulk invite emails by default:** the owner shares `joinMessage()` on WhatsApp, members tap
+Create account with the same email, and confirming the sign-up code joins the imported account;
+`enter-code` and `use-auth-links` send imported accounts to `set-password`, since Supabase may keep
+them passwordless. Emailing invites one by one (`invite-member`) is an optional extra; mind the SMTP
+provider's hourly limit.
 
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,

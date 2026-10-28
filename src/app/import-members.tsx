@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -17,6 +17,7 @@ import {
   IMPORT_COLUMNS,
   importTemplate,
   isSpreadsheetFile,
+  joinMessage,
   MAX_IMPORT_ROWS,
   previewImport,
   type ImportPreview,
@@ -108,8 +109,8 @@ export default function ImportMembersScreen() {
     <Screen refreshable={false}>
       <ThemedText themeColor="textSecondary">
         Bring your members over from another app or a register. They join your gym with their mobile
-        number and membership, so renewals and reminders work at once, and get an email to set up
-        the app.
+        number and membership, so renewals and reminders work at once. Then share one WhatsApp
+        message telling them to sign up with the same email.
       </ThemedText>
 
       <SectionHeader title="1. Fill in the template" />
@@ -181,25 +182,40 @@ export default function ImportMembersScreen() {
 
       {outcomes ? <ResultCard outcomes={outcomes} /> : null}
 
-      {outcomes && toInvite.length > 0 && !invites ? (
+      {outcomes && toInvite.length > 0 ? (
         <>
-          <SectionHeader title="4. Email their invites" />
+          <SectionHeader title="4. Tell them to join" />
           <ThemedText type="small" themeColor="textSecondary">
-            {toInvite.length} member{toInvite.length === 1 ? ' has' : 's have'} no CoreFit Gym
-            account yet. Each gets an email with a code to set a password. You can send them now or
-            later from Invite someone.
+            {toInvite.length} member{toInvite.length === 1 ? ' hasn’t' : 's haven’t'} signed up yet.
+            Send the join message to your gym&apos;s WhatsApp group or broadcast list: they install
+            the app, create an account with the email you imported and find their membership
+            waiting. No emails go out from us until they sign up.
           </ThemedText>
-          {inviter.isPending ? <ProgressBar value={progress / toInvite.length} /> : null}
           <Button
-            label={
-              inviter.isPending
-                ? `Sending ${progress} of ${toInvite.length}…`
-                : `Email ${toInvite.length} invite${toInvite.length === 1 ? '' : 's'}`
-            }
-            icon="mail-outline"
-            loading={inviter.isPending}
-            onPress={runInvites}
+            label="Share join message"
+            icon="logo-whatsapp"
+            onPress={() => Share.share({ message: joinMessage(gym.gymName) }).catch(() => {})}
           />
+          {invites ? null : (
+            <>
+              {inviter.isPending ? <ProgressBar value={progress / toInvite.length} /> : null}
+              <Button
+                label={
+                  inviter.isPending
+                    ? `Sending ${progress} of ${toInvite.length}…`
+                    : `Or email ${toInvite.length} invite${toInvite.length === 1 ? '' : 's'}`
+                }
+                icon="mail-outline"
+                variant="secondary"
+                loading={inviter.isPending}
+                onPress={runInvites}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                Emails one invite per member, for anyone not on WhatsApp. Big lists can hit the
+                email limit for the hour.
+              </ThemedText>
+            </>
+          )}
         </>
       ) : null}
 
