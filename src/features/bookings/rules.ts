@@ -5,8 +5,7 @@ export function spotsLeft(gymClass: GymClass) {
 }
 
 export type BookingEligibility =
-  | { ok: true }
-  | { ok: false; reason: 'started' | 'full' | 'alreadyBooked' };
+  { ok: true } | { ok: false; reason: 'started' | 'full' | 'alreadyBooked' };
 
 export function canBook(
   gymClass: GymClass,

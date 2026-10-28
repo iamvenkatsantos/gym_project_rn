@@ -11,10 +11,7 @@ describe('registerForPush on Android', () => {
       jest.doMock('expo-device', () => ({ isDevice: true }));
       jest.doMock('expo-constants', () => ({ expoConfig: { extra: { eas: { projectId: 'p' } } } }));
       jest.doMock('@/lib/supabase', () => ({ supabase: {} }));
-      jest.doMock('@/features/notifications/api', () => ({
-        savePushToken,
-        removePushToken: jest.fn(),
-      }));
+      jest.doMock('@/features/notifications/api', () => ({ savePushToken, removePushToken: jest.fn() }));
       jest.doMock('expo-notifications', () => ({
         AndroidImportance: { HIGH: 4 },
         setNotificationHandler: jest.fn(),

@@ -1,13 +1,6 @@
 /** Numbers a member can log. Each is optional; an entry needs at least one. */
 export type MetricKey =
-  | 'weightKg'
-  | 'heightCm'
-  | 'bodyFatPct'
-  | 'chestCm'
-  | 'waistCm'
-  | 'hipsCm'
-  | 'armCm'
-  | 'thighCm';
+  'weightKg' | 'heightCm' | 'bodyFatPct' | 'chestCm' | 'waistCm' | 'hipsCm' | 'armCm' | 'thighCm';
 
 export type MetricValues = Record<MetricKey, number | null>;
 

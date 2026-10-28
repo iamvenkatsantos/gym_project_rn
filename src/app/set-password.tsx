@@ -46,9 +46,7 @@ export default function SetPasswordScreen() {
   const problem = firstError(nameError, passwordError, confirmError);
 
   return (
-    <Screen
-      refreshable={false}
-      title={askName ? 'Welcome to CoreFit Gym' : 'Choose a new password'}>
+    <Screen refreshable={false} title={askName ? 'Welcome to CoreFit Gym' : 'Choose a new password'}>
       <ThemedText themeColor="textSecondary">
         {askName
           ? `${gymName ? `${gymName} invited you. ` : ''}Set a password so you can sign in with your email from now on.`
