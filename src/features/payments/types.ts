@@ -42,6 +42,8 @@ export type PaymentQuote = {
   chargesCents: number;
   gatewayFeeCents: number;
   transferFeeCents: number;
+  /** CoreFit Gym's fee, when the member pays it. */
+  platformFeeCents: number;
   currency: string;
 };
 

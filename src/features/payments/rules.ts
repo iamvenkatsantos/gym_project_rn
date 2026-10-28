@@ -39,8 +39,9 @@ export function quoteMessage(quote: PaymentQuote) {
     `Membership: ${money(quote.baseCents)}`,
     `Payment gateway fee + GST: ${money(quote.gatewayFeeCents)}`,
     `Transfer fee + GST: ${money(quote.transferFeeCents)}`,
+    ...(quote.platformFeeCents ? [`CoreFit Gym fee: ${money(quote.platformFeeCents)}`] : []),
     `Total: ${money(quote.amountCents)}`,
     '',
-    'Razorpay charges these fees for paying online.',
+    'These fees are charged for paying online.',
   ].join('\n');
 }

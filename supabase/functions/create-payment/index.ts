@@ -26,7 +26,8 @@ function json(body: unknown, status = 200) {
 
 /**
  * What a member pays for a plan at a branch: the price, plus Razorpay's fees when
- * the branch passes them on. CoreFit Gym's cut is always the owner's.
+ * the branch passes them on, CoreFit Gym's cut with them. Otherwise the owner
+ * bears both.
  */
 async function quote(
   admin: ReturnType<typeof adminClient>,
