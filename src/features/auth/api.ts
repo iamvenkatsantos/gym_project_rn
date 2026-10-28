@@ -44,7 +44,7 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     client
       .from('profiles')
       .select(
-        `id, full_name, gyms:gym_members(${gymColumns}, gym:gyms(id, name, brand:brands(id, name)))`,
+        `id, full_name, gyms:gym_members!gym_members_user_id_fkey(${gymColumns}, gym:gyms(id, name, brand:brands(id, name)))`,
       )
       .eq('id', userId)
       .single();
