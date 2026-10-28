@@ -140,6 +140,12 @@ Say in the PR which of these it needs:
 --profile preview` for the APK). JS-only changes need none.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.
 
+## Keep this file current
+
+Venkat's rule: any PR that adds or changes a business rule, a role or permission, a core flow, a
+convention or gotcha, or what shipping needs must update this file in the same PR. Keep it
+concise and derived from the code.
+
 ## Secrets
 
 Never commit or paste secrets: Razorpay keys, webhook secrets, the service role key, push webhook
