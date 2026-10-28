@@ -194,6 +194,19 @@ function RootNavigator() {
           name="record-membership"
           options={{ presentation: 'modal', headerShown: true, title: 'Record a payment' }}
         />
+        {/* Matching members with trainers, from either side. */}
+        <Stack.Screen
+          name="match-trainers"
+          options={{ headerShown: true, title: 'Match trainers' }}
+        />
+        <Stack.Screen
+          name="member-trainers/[memberId]"
+          options={{ headerShown: true, title: 'Trainers' }}
+        />
+        <Stack.Screen
+          name="trainer-members/[trainerId]"
+          options={{ headerShown: true, title: 'Members' }}
+        />
         <Stack.Screen
           name="trainer-request/[requestId]"
           options={{ headerShown: true, title: 'Trainer request' }}

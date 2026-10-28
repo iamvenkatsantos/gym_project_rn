@@ -1,11 +1,15 @@
 import { canCoach, canManageGym } from '@/features/auth/types';
 import {
   assignableMembers,
+  changesLabel,
   membersOf,
+  membersToMatch,
   openRequest,
   pendingRequests,
+  pickChanges,
   requestProblem,
   toggle,
+  trainerSummary,
   trainersOf,
   unmappedMembers,
 } from '@/features/coaching/rules';
@@ -140,5 +144,41 @@ describe('assigning plans', () => {
 
   it('only lists a trainer’s own members', () => {
     expect(assignableMembers(coached)).toEqual([{ id: 'maya', fullName: 'Maya', coached: true }]);
+  });
+});
+
+describe('matching trainers', () => {
+  const people = [
+    person('cara', 'member'),
+    person('arjun', 'member'),
+    person('bea', 'member'),
+    person('gone', 'member', 'suspended'),
+    person('tom', 'trainer'),
+  ];
+  const links = [link('arjun', 'tom'), link('arjun', 'sue')];
+
+  it('lists active members without a trainer first, then by name', () => {
+    expect(membersToMatch(people, links).map((p) => p.id)).toEqual(['bea', 'cara', 'arjun']);
+  });
+
+  it('searches by name or email', () => {
+    expect(membersToMatch(people, links, ' BEA@').map((p) => p.id)).toEqual(['bea']);
+  });
+
+  it('sums up a member’s trainers, leaving one out when asked', () => {
+    expect(trainerSummary(links, 'arjun')).toBe('Trainer: tom, sue');
+    expect(trainerSummary(links, 'arjun', 'tom')).toBe('Trainer: sue');
+    expect(trainerSummary(links, 'bea')).toBe('No trainer yet');
+  });
+
+  it('works out what Save adds and removes', () => {
+    expect(pickChanges(['a', 'b'], ['b', 'c', 'd'])).toEqual({ added: ['c', 'd'], removed: ['a'] });
+    expect(pickChanges(['a'], ['a'])).toEqual({ added: [], removed: [] });
+  });
+
+  it('labels the Save button with the changes', () => {
+    expect(changesLabel({ added: ['c', 'd'], removed: ['a'] })).toBe('Save 3 changes');
+    expect(changesLabel({ added: [], removed: ['a'] })).toBe('Save 1 change');
+    expect(changesLabel({ added: [], removed: [] })).toBe('No changes');
   });
 });

@@ -20,12 +20,18 @@ export function PersonRow({
   person,
   divider,
   detail,
+  hideEmail,
+  hideRole,
   onPress,
 }: {
   person: GymPerson;
   divider: boolean;
   /** An extra line, e.g. a member's trainers. */
   detail?: string;
+  /** For lists where the email is noise, like matching trainers. */
+  hideEmail?: boolean;
+  /** For lists of one role, where the pill says nothing new. */
+  hideRole?: boolean;
   onPress: () => void;
 }) {
   const theme = useTheme();
@@ -61,9 +67,11 @@ export function PersonRow({
         <ThemedText type="smallBold" numberOfLines={1}>
           {person.fullName}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {person.email}
-        </ThemedText>
+        {hideEmail ? null : (
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {person.email}
+          </ThemedText>
+        )}
         {detail ? (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             {detail}
@@ -73,7 +81,7 @@ export function PersonRow({
       <View>
         {suspended ? (
           <Pill label="Suspended" tone="danger" />
-        ) : (
+        ) : hideRole ? null : (
           <Pill label={person.role} tone={roleTone[person.role]} />
         )}
       </View>

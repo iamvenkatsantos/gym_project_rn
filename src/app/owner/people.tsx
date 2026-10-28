@@ -49,6 +49,12 @@ export default function OwnerPeopleScreen() {
         icon="person-add-outline"
         onPress={() => router.push('/invite-person')}
       />
+      <Button
+        label="Match members with trainers"
+        icon="git-compare-outline"
+        variant="secondary"
+        onPress={() => router.push('/match-trainers')}
+      />
 
       <PendingInvites gymId={gym.gymId} canWithdraw={canWithdraw} />
 
