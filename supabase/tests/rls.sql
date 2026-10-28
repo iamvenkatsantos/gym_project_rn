@@ -246,7 +246,7 @@ update public.gym_members set role = 'member'
   where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
 delete from public.gym_members
   where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000a';
-\echo '44 with a second owner, the first can step down (expect UPDATE 1 twice)'
+\echo '44 a CoreFit Gym admin fixes roles: adds a second owner, then steps down (expect UPDATE 1 twice)'
 update public.gym_members set role = 'owner'
   where gym_id = '10000000-0000-0000-0000-000000000001' and user_id = '00000000-0000-0000-0000-00000000000f';
 update public.gym_members set role = 'trainer'
@@ -759,7 +759,7 @@ select public.invite_gym_owner('friend.gym@example.com');
 select public.invite_to_gym((select id from public.gyms where name = 'Iron House'), 'friend.gym@example.com', 'owner');
 select public.can_set_up_gym();
 select public.create_gym('Second Branch', '', '', '', '');
-\echo '116 Grace adds Xavier as a member (expect added), cannot make him owner (expect "Only CoreFit Gym admins") but can make him supervisor (expect UPDATE 1)'
+\echo '116 Grace adds Xavier as a member (expect added), cannot change his role to owner or supervisor (expect "A role can''t be changed" x2)'
 select public.invite_to_gym((select id from public.gyms where name = 'Iron House'), 'xavier@example.com', 'member');
 update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
 update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');

@@ -71,13 +71,8 @@ export function useWithdrawInvite() {
 export function useUpdatePerson(gymId: string) {
   const invalidate = useInvalidateMembers();
   return useMutation({
-    mutationFn: ({
-      userId,
-      patch,
-    }: {
-      userId: string;
-      patch: Partial<Pick<GymPerson, 'role' | 'status'>>;
-    }) => updatePerson(gymId, userId, patch),
+    mutationFn: ({ userId, patch }: { userId: string; patch: Pick<GymPerson, 'status'> }) =>
+      updatePerson(gymId, userId, patch),
     onSettled: invalidate,
   });
 }
