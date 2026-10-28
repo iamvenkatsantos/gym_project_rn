@@ -81,7 +81,10 @@ Mapped trainers get pushes when their member starts and finishes a workout.
 
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to
 mapped members (`assign-plan`). Mapping is many trainers per member (`member_trainers`), managed
-from Match trainers; members can ask for a trainer (`trainer_requests`). Members log sessions in
+by owners and supervisors from `match-trainers` (members without a trainer first), then
+`member-trainers/[memberId]` or bulk `trainer-members/[trainerId]`. Both pickers save only on
+**Save** (`SaveBar`, `changeTrainerLinks`); unmapping deletes that trainer's plan assignments (DB
+trigger), so the bar warns first. Members can ask for a trainer (`trainer_requests`). Members log sessions in
 `workout-session` with an offline draft (`src/features/progress/draft-store.ts`, Zustand persist)
 uploaded idempotently by `workout_logs.client_id`. Diet plans and body progress (measurements,
 private progress photos) follow the same coach/member pattern.
