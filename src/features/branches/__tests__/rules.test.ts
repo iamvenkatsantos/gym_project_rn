@@ -189,4 +189,12 @@ describe('onlinePaymentExample', () => {
       cutCents: 1000,
     });
   });
+
+  it('at the default 0.25% cut with the owner paying, a ₹3,200 plan nets the owner ₹3,107.31', () => {
+    expect(onlinePaymentExample(false, 25, 320000)).toEqual({
+      memberPaysCents: 320000,
+      ownerGetsCents: 310731,
+      cutCents: 800,
+    });
+  });
 });
