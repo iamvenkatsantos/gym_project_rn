@@ -182,3 +182,29 @@ select public.start_online_payment('f1000000-0000-0000-0000-000000000001','f2000
 select count(*) from public.online_payments;
 
 reset role;
+
+\echo 'P24 Fees on the member by default; the owner can''t change it, the admin can (expect t, Only CoreFit Gym admins, f)'
+set role authenticated;
+select pg_temp.as_user('f0000000-0000-0000-0000-00000000000b');
+select online_fees_on_member from public.admin_branches() where gym_id = 'f1000000-0000-0000-0000-000000000001';
+select pg_temp.as_user('f0000000-0000-0000-0000-00000000000a');
+select public.admin_set_online_fees_on_member('f1000000-0000-0000-0000-000000000001', false);
+select pg_temp.as_user('f0000000-0000-0000-0000-00000000000b');
+select public.admin_set_online_fees_on_member('f1000000-0000-0000-0000-000000000001', false);
+select online_fees_on_member from public.admin_branches() where gym_id = 'f1000000-0000-0000-0000-000000000001';
+select public.admin_set_online_fees_on_member('f1000000-0000-0000-0000-000000000001', true);
+reset role;
+
+\echo 'P25 A grossed-up payment records the plan price on the membership (expect 102720 paid, membership 100000, notice says ₹1000)'
+insert into public.membership_plans (id, gym_id, name, price_cents, duration_days) values
+ ('f2000000-0000-0000-0000-000000000009','f1000000-0000-0000-0000-000000000001','Thousand',100000,30);
+insert into public.online_payments (gym_id, member_id, plan_id, amount_cents, base_cents, charges_cents, currency) values
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000013','f2000000-0000-0000-0000-000000000009',102720,100000,2720,'INR');
+select public.complete_online_payment(
+  (select id from public.online_payments where plan_id = 'f2000000-0000-0000-0000-000000000009'),
+  'pay_GROSS', 102720, 2425) is not null as recorded;
+select op.amount_cents, m.amount_paid_cents
+from public.online_payments op join public.memberships m on m.id = op.membership_id
+where op.plan_id = 'f2000000-0000-0000-0000-000000000009';
+select body from public.notifications where dedupe_key = 'online-payment:' ||
+  (select id from public.online_payments where plan_id = 'f2000000-0000-0000-0000-000000000009') limit 1;

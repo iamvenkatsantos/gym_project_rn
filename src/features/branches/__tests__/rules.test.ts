@@ -32,6 +32,7 @@ function branch(
     feeCents,
     onlinePayments,
     razorpayAccountId: null,
+    feesOnMember: true,
     address: '',
     city: '',
     phone: '',

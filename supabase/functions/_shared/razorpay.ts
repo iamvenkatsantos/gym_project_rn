@@ -3,6 +3,8 @@
 // test keys (rzp_test_...) take test payments only.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
+import { DEFAULT_FEE_RATES, type FeeRates, routeTransfer } from './fees.ts';
+
 const API = 'https://api.razorpay.com/v1';
 
 export function keyId() {
@@ -20,6 +22,24 @@ export function keySecret() {
 /** Live keys move real money, so every payment must reach the owner's linked account. */
 export function isLiveMode() {
   return keyId().startsWith('rzp_live_');
+}
+
+function envNumber(name: string, fallback: number) {
+  const value = Number(Deno.env.get(name));
+  return Deno.env.get(name) && Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
+/**
+ * Razorpay's fee rates for this account. Route pricing can be negotiated, so
+ * RAZORPAY_GATEWAY_FEE_BPS, RAZORPAY_TRANSFER_FEE_BPS and RAZORPAY_FEE_GST_PERCENT
+ * override the standard 2%, 0.25% and 18% GST.
+ */
+export function feeRates(): FeeRates {
+  return {
+    gatewayBps: envNumber('RAZORPAY_GATEWAY_FEE_BPS', DEFAULT_FEE_RATES.gatewayBps),
+    transferBps: envNumber('RAZORPAY_TRANSFER_FEE_BPS', DEFAULT_FEE_RATES.transferBps),
+    gstPercent: envNumber('RAZORPAY_FEE_GST_PERCENT', DEFAULT_FEE_RATES.gstPercent),
+  };
 }
 
 export async function razorpay<T>(path: string, init: { method?: string; body?: unknown } = {}) {
@@ -113,9 +133,15 @@ async function transferToOwner(
   // with the platform account and the admin settles it by hand.
   if (!gym?.razorpay_account_id) return;
 
-  // The owner pays Razorpay's fee and CoreFit Gym's cut (0 unless switched on).
-  const amount = row.amount_cents - (row.fee_cents ?? payment.fee ?? 0) - row.cut_cents;
-  if (amount <= 0) return;
+  // Razorpay takes its transfer fee from our balance on top of the transfer, so
+  // the transfer leaves room for it. When the branch passes the fees on to
+  // members, the amount was grossed up to cover them and the owner gets the
+  // plan's full price; otherwise the owner bears every fee and CoreFit Gym's cut
+  // (0 unless switched on).
+  const available = row.amount_cents - (row.fee_cents ?? payment.fee ?? 0) - row.cut_cents;
+  const split = routeTransfer(available, feeRates());
+  if (!split) return;
+  const amount = split.transfer;
 
   const { data: claimed } = await admin
     .from('online_payments')
@@ -146,7 +172,11 @@ async function transferToOwner(
     );
     await admin
       .from('online_payments')
-      .update({ transfer_id: result.items?.[0]?.id ?? 'unknown' })
+      .update({
+        transfer_id: result.items?.[0]?.id ?? 'unknown',
+        transfer_cents: amount,
+        transfer_fee_cents: split.transferFee,
+      })
       .eq('id', onlinePaymentId);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

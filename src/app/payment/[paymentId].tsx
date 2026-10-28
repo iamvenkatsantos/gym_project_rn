@@ -67,6 +67,22 @@ function PaymentDetails({ payment }: { payment: OnlinePayment }) {
       <ListGroup>
         <ListRow icon="person-outline" label="Member" detail={payment.memberName} />
         <ListRow divider icon="pricetag-outline" label="Plan" detail={payment.planName} />
+        {payment.chargesCents > 0 ? (
+          <>
+            <ListRow
+              divider
+              icon="cash-outline"
+              label="Plan price"
+              detail={formatAmount(payment.baseCents, payment.currency)}
+            />
+            <ListRow
+              divider
+              icon="card-outline"
+              label="Online charges"
+              detail={formatAmount(payment.chargesCents, payment.currency)}
+            />
+          </>
+        ) : null}
         {payment.startsOn && payment.endsOn ? (
           <ListRow
             divider
@@ -94,7 +110,7 @@ function PaymentDetails({ payment }: { payment: OnlinePayment }) {
             divider
             icon="wallet-outline"
             label="Gym receives"
-            detail={`${formatAmount(net, payment.currency)} after Razorpay's fee`}
+            detail={`${formatAmount(net, payment.currency)} after Razorpay's fees`}
           />
         ) : null}
       </ListGroup>

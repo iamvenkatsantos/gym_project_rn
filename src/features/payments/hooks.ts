@@ -2,15 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 
 import { membershipKeys } from '@/features/memberships/hooks';
 import {
   fetchOnlinePayment,
   fetchOnlinePaymentsEnabled,
   listOnlinePayments,
+  quoteOnlinePayment,
   startOnlinePayment,
 } from '@/features/payments/api';
-import { paymentState } from '@/features/payments/rules';
+import { paymentState, quoteMessage } from '@/features/payments/rules';
+import type { PaymentQuote } from '@/features/payments/types';
+import { formatAmount } from '@/lib/format';
 
 /** razorpay-webhook sends the browser here when the member leaves Razorpay's page. */
 export const PAYMENT_RETURN_URL = 'corefit://payment-return';
@@ -67,24 +71,47 @@ export async function openPaymentPage(url: string) {
   await WebBrowser.openAuthSessionAsync(url, PAYMENT_RETURN_URL);
 }
 
+/** Shows the member the online charges on top of the price; resolves true to pay. */
+function confirmCharges(quote: PaymentQuote) {
+  return new Promise<boolean>((resolve) =>
+    Alert.alert(
+      'Online payment charges',
+      quoteMessage(quote),
+      [
+        { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+        {
+          text: `Pay ${formatAmount(quote.amountCents, quote.currency)}`,
+          onPress: () => resolve(true),
+        },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    ),
+  );
+}
+
 /**
- * Pays for a plan: opens Razorpay's page, then shows the payment's status, which
- * turns into a receipt once Razorpay confirms it.
+ * Pays for a plan: when the branch passes Razorpay's fees on, shows the member
+ * what they add first. Then opens Razorpay's page and shows the payment's
+ * status, which turns into a receipt once Razorpay confirms it.
  */
 export function usePayOnline(gymId: string, { replace = false } = {}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (planId: string) => {
+      const quote = await quoteOnlinePayment(gymId, planId);
+      if (quote.chargesCents > 0 && !(await confirmCharges(quote))) return null;
       const { paymentId, url } = await startOnlinePayment(gymId, planId);
       await openPaymentPage(url);
       return paymentId;
     },
     // A retry from a payment's own screen takes its place rather than stacking on it.
-    onSuccess: (paymentId) =>
+    onSuccess: (paymentId) => {
+      if (!paymentId) return;
       (replace ? router.replace : router.push)({
         pathname: '/payment/[paymentId]',
         params: { paymentId },
-      }),
+      });
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.all });
       queryClient.invalidateQueries({ queryKey: membershipKeys.all });
