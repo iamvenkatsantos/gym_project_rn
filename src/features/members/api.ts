@@ -1,6 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { setPasswordUrl } from '@/features/auth/api';
 import { listTrainerLinks } from '@/features/coaching/api';
+import { avatarUrl } from '@/features/profile/api';
 import type {
   CoachedMember,
   GymInvite,
@@ -35,6 +36,8 @@ type PersonRow = {
   admitted_by_name: string | null;
   admitted_at: string | null;
   onboarded_at: string | null;
+  /** Missing before the profile photo migration. */
+  avatar_path?: string | null;
 };
 
 type InviteRow = { id: string; email: string; role: GymInvite['role']; created_at: string };
@@ -91,6 +94,7 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     admittedByName: r.admitted_by_name,
     admittedAt: r.admitted_at,
     onboarded: !!r.onboarded_at,
+    avatarUrl: avatarUrl(r.avatar_path),
   }));
 }
 

@@ -57,3 +57,12 @@ export function selectActiveGym(state: AuthState): GymRole | null {
   if (selectInAdmin(state)) return null;
   return state.profile?.gyms.find((g) => g.gymId === state.activeGymId) ?? null;
 }
+
+/**
+ * Everyone must have a mobile number. Anyone without one fills in their profile
+ * before anything else; a new member gives theirs on their own form instead.
+ */
+export function selectNeedsProfile(state: AuthState): boolean {
+  const gym = selectActiveGym(state);
+  return !!gym && !gym.needsOnboarding && state.profile?.phone === null;
+}

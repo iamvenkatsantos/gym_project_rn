@@ -25,6 +25,7 @@ import {
   type OnboardingTexts,
 } from '@/features/onboarding/rules';
 import type { PickedPhoto } from '@/features/onboarding/types';
+import { ProfilePhotoPicker } from '@/features/profile/components/profile-photo-picker';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -46,6 +47,7 @@ export default function OnboardingScreen() {
     weight: '',
     height: '',
   });
+  const [avatar, setAvatar] = useState<PickedPhoto | null>(null);
   const [picked, setPicked] = useState<Partial<Record<PhotoPose, PickedPhoto>>>({});
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -102,7 +104,7 @@ export default function OnboardingScreen() {
       Object.entries(picked).filter(([pose]) => !hasUploaded(pose as PhotoPose)),
     );
     complete.mutate(
-      { ...onboardingValues(texts), photos },
+      { ...onboardingValues(texts), photos, avatar },
       { onSuccess: () => router.replace('/') },
     );
   };
@@ -121,6 +123,12 @@ export default function OnboardingScreen() {
       </View>
 
       <SectionHeader title="Your details" />
+      <ProfilePhotoPicker
+        name={texts.fullName || profile.fullName}
+        uri={avatar?.uri ?? profile.avatarUrl}
+        onPick={setAvatar}
+        onRemove={avatar ? () => setAvatar(null) : undefined}
+      />
       <TextField
         label="Full name"
         value={texts.fullName}
@@ -132,7 +140,7 @@ export default function OnboardingScreen() {
         showError={submitted}
       />
       <TextField
-        label="Phone number"
+        label="Mobile number"
         placeholder="98765 43210"
         value={texts.phone}
         onChangeText={set('phone')}

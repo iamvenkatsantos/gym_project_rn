@@ -39,7 +39,17 @@ function person(
 ): GymPerson {
   const email = `${fullName.split(' ')[0].toLowerCase()}@example.com`;
   const joinedAt = daysFromToday(-joinedDaysAgo);
-  if (role !== 'member') return { id, fullName, email, role, status, joinedAt };
+  if (role !== 'member') {
+    return {
+      id,
+      fullName,
+      email,
+      role,
+      status,
+      joinedAt,
+      phone: '+9198410' + String(joinedDaysAgo).padStart(5, '0'),
+    };
+  }
   return {
     id,
     fullName,
@@ -57,11 +67,13 @@ function person(
 export const mockProfiles: Profile[] = [
   {
     id: 'u-member',
+    phone: '9840012345',
     fullName: 'Nandini Ravi',
     gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'member', ...BRAND }],
   },
   {
     id: 'u-trainer',
+    phone: '9840023456',
     fullName: 'Karthik Raja',
     // Trains at one branch and works out as a member at another.
     gyms: [
@@ -71,11 +83,13 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: 'u-supervisor',
+    phone: '9840034567',
     fullName: 'Meena Sundaram',
     gyms: [{ gymId: GYM_ID, gymName: GYM_NAME, role: 'supervisor', ...BRAND }],
   },
   {
     id: 'u-owner',
+    phone: '9840045678',
     fullName: 'Rajesh Kannan',
     // Owns both branches of the brand.
     gyms: [
@@ -85,6 +99,7 @@ export const mockProfiles: Profile[] = [
   },
   {
     id: 'u-admin',
+    phone: '9840056789',
     fullName: 'CoreFit Admin',
     // Runs CoreFit Gym itself rather than any one gym.
     gyms: [],

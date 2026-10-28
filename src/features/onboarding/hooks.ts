@@ -7,6 +7,7 @@ import { bodyKeys } from '@/features/body/hooks';
 import type { PhotoPose } from '@/features/body/types';
 import { toIsoDate } from '@/features/memberships/rules';
 import { completeOnboarding } from '@/features/onboarding/api';
+import { setMyAvatar, uploadAvatar } from '@/features/profile/api';
 import type { OnboardingInput } from '@/features/onboarding/types';
 
 /**
@@ -18,7 +19,7 @@ export function useCompleteOnboarding(gymId: string, memberId: string) {
   const queryClient = useQueryClient();
   const setProfile = useAuthStore((s) => s.setProfile);
   return useMutation({
-    mutationFn: async ({ photos, ...details }: OnboardingInput) => {
+    mutationFn: async ({ photos, avatar, ...details }: OnboardingInput) => {
       const takenOn = toIsoDate(new Date());
       for (const [pose, photo] of Object.entries(photos) as [
         PhotoPose,
@@ -28,6 +29,8 @@ export function useCompleteOnboarding(gymId: string, memberId: string) {
         await uploadPhoto(gymId, memberId, { ...photo, pose, takenOn });
         await queryClient.invalidateQueries({ queryKey: bodyKeys.photos(gymId, memberId) });
       }
+      // Before the profile photo migration there's nowhere to keep it; the form still goes in.
+      if (avatar) await setMyAvatar(memberId, await uploadAvatar(memberId, avatar)).catch(() => {});
       await completeOnboarding(gymId, memberId, details);
       return fetchProfile(memberId);
     },

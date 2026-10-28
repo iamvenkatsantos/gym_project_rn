@@ -2,12 +2,14 @@ import * as Linking from 'expo-linking';
 
 import type { LinkSession } from '@/features/auth/auth-link';
 import type { Profile, Role } from '@/features/auth/types';
+import { avatarUrl, removeOwnAvatars } from '@/features/profile/api';
 import { delay, mockProfiles } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type ProfileRow = {
   id: string;
   full_name: string;
+  avatar_path?: string | null;
   gyms: {
     role: Role;
     status: string;
@@ -20,6 +22,8 @@ function toProfile(row: ProfileRow): Profile {
   return {
     id: row.id,
     fullName: row.full_name,
+    avatarPath: row.avatar_path ?? null,
+    avatarUrl: avatarUrl(row.avatar_path),
     gyms: row.gyms
       .filter((g) => g.status === 'active')
       .map((g) => ({
@@ -40,24 +44,44 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     return delay(profile);
   }
   const client = supabase;
-  const selectProfile = (gymColumns: string) =>
+  const selectProfile = (profileColumns: string, gymColumns: string) =>
     client
       .from('profiles')
       .select(
-        `id, full_name, gyms:gym_members!gym_members_user_id_fkey(${gymColumns}, gym:gyms(id, name, brand:brands(id, name)))`,
+        `${profileColumns}, gyms:gym_members!gym_members_user_id_fkey(${gymColumns}, gym:gyms(id, name, brand:brands(id, name)))`,
       )
       .eq('id', userId)
       .single();
-  const [withOnboarding, adminResult] = await Promise.all([
-    selectProfile('role, status, onboarded_at'),
+  // Newest columns first. Before the profile photo migration there's no avatar_path, and
+  // before the member onboarding one no onboarded_at (then nobody is asked yet).
+  const attempts: [string, string][] = [
+    ['id, full_name, avatar_path', 'role, status, onboarded_at'],
+    ['id, full_name', 'role, status, onboarded_at'],
+    ['id, full_name', 'role, status'],
+  ];
+  const [first, adminResult, contactResult] = await Promise.all([
+    selectProfile(...attempts[0]),
     client.rpc('is_platform_admin'),
+    client.from('contact_details').select('phone').eq('user_id', userId).maybeSingle(),
   ]);
-  // Before the member onboarding migration there's no onboarded_at; nobody is asked yet.
-  const profileResult =
-    withOnboarding.error?.code === '42703' ? await selectProfile('role, status') : withOnboarding;
+  let profileResult = first;
+  // Saving a profile needs the profile photo migration; until it's pushed, nobody is asked.
+  const canSaveProfile = first.error?.code !== '42703';
+  for (const attempt of attempts.slice(1)) {
+    if (profileResult.error?.code !== '42703') break;
+    profileResult = await selectProfile(...attempt);
+  }
   const row = unwrap(profileResult) as unknown as ProfileRow;
   // Before the platform_admins migration the check fails; then nobody is an admin.
-  return { ...toProfile(row), isPlatformAdmin: adminResult.data === true };
+  return {
+    ...toProfile(row),
+    isPlatformAdmin: adminResult.data === true,
+    // If the phone can't be read, leave it unknown so nobody gets stuck on the profile form.
+    phone:
+      contactResult.error || !canSaveProfile
+        ? undefined
+        : ((contactResult.data as { phone: string } | null)?.phone ?? null),
+  };
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<Profile> {
@@ -166,6 +190,8 @@ export async function signOut() {
  */
 export async function deleteAccount() {
   if (!supabase) return delay(undefined);
+  // Profile photos are public files, so take them down first; best effort.
+  await removeOwnAvatars().catch(() => {});
   const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
   if (error) throw error;
   await supabase.auth.signOut();

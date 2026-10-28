@@ -182,12 +182,14 @@ export function mealPlanInput(draft: MealPlanDraft): MealPlanInput {
       carbsG: toNumber(draft.targets.carbsG),
       fatG: toNumber(draft.targets.fatG),
     },
-    meals: draft.meals.map((m): Meal => ({
-      name: m.name.trim(),
-      time: m.time.trim(),
-      foods: m.foods.trim(),
-      calories: toNumber(m.calories),
-    })),
+    meals: draft.meals.map(
+      (m): Meal => ({
+        name: m.name.trim(),
+        time: m.time.trim(),
+        foods: m.foods.trim(),
+        calories: toNumber(m.calories),
+      }),
+    ),
   };
 }
 

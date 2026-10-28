@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -46,7 +47,15 @@ export function PersonRow({
           { backgroundColor: theme.backgroundSelected },
           suspended && styles.dimmed,
         ]}>
-        <ThemedText type="smallBold">{initials(person.fullName)}</ThemedText>
+        {person.avatarUrl ? (
+          <Image
+            source={{ uri: person.avatarUrl }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
+        ) : (
+          <ThemedText type="smallBold">{initials(person.fullName)}</ThemedText>
+        )}
       </View>
       <View style={[styles.text, suspended && styles.dimmed]}>
         <ThemedText type="smallBold" numberOfLines={1}>
@@ -84,6 +93,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.pill,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },

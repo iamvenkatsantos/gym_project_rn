@@ -142,7 +142,13 @@ export default function AccountScreen() {
 
       <SectionHeader title="Account" />
       <ListGroup>
-        <ListRow label="Sign out" icon="log-out-outline" onPress={signOut} />
+        <ListRow
+          label="Edit profile"
+          detail="Photo, name and mobile number"
+          icon="person-circle-outline"
+          onPress={() => router.push('/edit-profile')}
+        />
+        <ListRow divider label="Sign out" icon="log-out-outline" onPress={signOut} />
       </ListGroup>
       {confirmingDelete ? (
         <Card style={styles.confirm}>

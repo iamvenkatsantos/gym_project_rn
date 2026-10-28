@@ -68,9 +68,19 @@ records an admission (`gym_members.admitted_by` / `admitted_at`, frozen by trigg
 
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,
-phone, weight, height, front/back/side photos via `complete_member_onboarding`); no gym →
+phone, weight, height, front/back/side photos via `complete_member_onboarding`, optional profile
+photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
+`selectNeedsProfile`) → `profile-setup` (name, required mobile, optional photo via `save_my_profile`);
+no gym →
 `no-gym`; new owner → `set-up-gym` (`create_gym` starts a new brand); admin → `admin`; otherwise the
 role's area. Roles and profile refetch when the app comes to the foreground.
+
+**Profiles.** Every role must have a mobile number (in `contact_details`, readable only by the
+person, their gym's managers and, for members, their mapped trainers) and may add a profile photo.
+Photos live in the public `avatars` bucket at `<user id>/<random>.<ext>` (`profiles.avatar_path`,
+checked to sit in the person's own folder); progress photos stay private. Anyone edits their photo,
+name and mobile on `edit-profile` (tap the profile card, or Edit profile on Profile/Account). Use
+`TrainerAvatar` with `url` to show a photo with initials as the fallback.
 
 **Attendance and QR.** Members and staff check in/out from Home. Members must be checked in to start
 a workout (`start_workout_attendance` raises "Check in first"). Each branch has a QR
@@ -118,7 +128,7 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 - **Screens use `Screen`,** which gives pull-to-refresh and refetch-on-focus for free. Pass
   `refreshable={false}` on forms.
 - **Headers:** every `Stack.Screen` needs a `title` (iOS back label). Gate screens without a back
-  route (onboarding, enter-code, set-up-gym) use the native header (`headerShown: true`) so the title
+  route (onboarding, profile-setup, enter-code, set-up-gym) use the native header (`headerShown: true`) so the title
   clears the Android status bar.
 - **Layout:** test at 360px wide and with large fonts (1.3x; demo on web at 277px). Use `useTheme()`
   colours only; `primary` is for fills, `accent` for green text. New dashboard shortcuts go in the
