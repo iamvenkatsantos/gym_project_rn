@@ -11,6 +11,7 @@ type ProfileRow = {
   gyms: {
     role: Role;
     status: string;
+    onboarded_at: string | null;
     gym: { id: string; name: string; brand: { id: string; name: string } | null };
   }[];
 };
@@ -27,6 +28,7 @@ function toProfile(row: ProfileRow): Profile {
         role: g.role,
         brandId: g.gym.brand?.id,
         brandName: g.gym.brand?.name,
+        needsOnboarding: g.role === 'member' && g.onboarded_at === null,
       })),
   };
 }
@@ -37,16 +39,22 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     if (!profile) throw new Error('Unknown user');
     return delay(profile);
   }
-  const [profileResult, adminResult] = await Promise.all([
-    supabase
+  const client = supabase;
+  const selectProfile = (gymColumns: string) =>
+    client
       .from('profiles')
       .select(
-        'id, full_name, gyms:gym_members(role, status, gym:gyms(id, name, brand:brands(id, name)))',
+        `id, full_name, gyms:gym_members(${gymColumns}, gym:gyms(id, name, brand:brands(id, name)))`,
       )
       .eq('id', userId)
-      .single(),
-    supabase.rpc('is_platform_admin'),
+      .single();
+  const [withOnboarding, adminResult] = await Promise.all([
+    selectProfile('role, status, onboarded_at'),
+    client.rpc('is_platform_admin'),
   ]);
+  // Before the member onboarding migration there's no onboarded_at; nobody is asked yet.
+  const profileResult =
+    withOnboarding.error?.code === '42703' ? await selectProfile('role, status') : withOnboarding;
   const row = unwrap(profileResult) as unknown as ProfileRow;
   // Before the platform_admins migration the check fails; then nobody is an admin.
   return { ...toProfile(row), isPlatformAdmin: adminResult.data === true };

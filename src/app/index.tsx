@@ -5,12 +5,14 @@ import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/au
 export default function Index() {
   const status = useAuthStore((s) => s.status);
   const role = useAuthStore((s) => selectActiveGym(s)?.role);
+  const onboarding = useAuthStore((s) => !!selectActiveGym(s)?.needsOnboarding);
   const needsPassword = useAuthStore((s) => s.needsPassword);
   const inAdmin = useAuthStore(selectInAdmin);
 
   if (status !== 'signedIn') return <Redirect href="/sign-in" />;
   if (needsPassword) return <Redirect href="/set-password" />;
   if (inAdmin) return <Redirect href="/admin" />;
+  if (onboarding) return <Redirect href="/onboarding" />;
   if (!role) return <Redirect href="/no-gym" />;
   return <Redirect href={`/${role}`} />;
 }

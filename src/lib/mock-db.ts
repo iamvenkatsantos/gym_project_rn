@@ -38,7 +38,20 @@ function person(
   status: GymPerson['status'] = 'active',
 ): GymPerson {
   const email = `${fullName.split(' ')[0].toLowerCase()}@example.com`;
-  return { id, fullName, email, role, status, joinedAt: daysFromToday(-joinedDaysAgo) };
+  const joinedAt = daysFromToday(-joinedDaysAgo);
+  if (role !== 'member') return { id, fullName, email, role, status, joinedAt };
+  return {
+    id,
+    fullName,
+    email,
+    role,
+    status,
+    joinedAt,
+    phone: '+9198400' + String(joinedDaysAgo).padStart(5, '0'),
+    admittedByName: 'Meena Sundaram',
+    admittedAt: joinedAt,
+    onboarded: true,
+  };
 }
 
 export const mockProfiles: Profile[] = [

@@ -102,7 +102,10 @@ export function membershipsTable(
     [
       'Member',
       'Email',
+      'Phone',
       'Joined',
+      'Admitted by',
+      'Admitted on',
       'Plan',
       'Starts',
       'Ends',
@@ -114,7 +117,10 @@ export function membershipsTable(
     rows.map((r) => [
       r.memberName,
       r.memberEmail,
+      r.phone,
       r.joinedOn,
+      r.admittedBy,
+      r.admittedOn,
       r.planName,
       r.startsOn,
       r.endsOn,

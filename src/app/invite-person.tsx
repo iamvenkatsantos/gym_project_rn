@@ -22,6 +22,7 @@ function describe(
   { result, emailSent, emailError }: InviteOutcome,
   email: string,
   role: InviteRole,
+  canManage: boolean,
 ) {
   if (role === 'gym_owner') {
     const next =
@@ -49,7 +50,9 @@ function describe(
     case 'already_member':
       return {
         title: 'Already at this gym',
-        detail: 'Find them under People to change their role or reactivate them.',
+        detail: canManage
+          ? 'Find them under People to change their role or reactivate them.'
+          : 'Ask the owner or a supervisor if they should be your member.',
       };
     case 'invited':
       return emailSent
@@ -80,22 +83,24 @@ function roleLabel(role: Role) {
 export default function InvitePersonScreen() {
   const gym = useActiveGym();
   const invite = useInvitePerson(gym.gymId);
-  const people = usePeople(gym.gymId);
+  const isTrainer = gym.role === 'trainer';
+  // Trainers can't list everyone at the gym, so they don't get the "already here" details.
+  const people = usePeople(gym.gymId, { enabled: !isTrainer });
   const update = useUpdatePerson(gym.gymId);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('member');
   // An owner invite usually means someone opening their own gym, not a partner in this one.
   const [ownerOf, setOwnerOf] = useState<OwnerOf>('new');
   const inviteRole: InviteRole = role === 'owner' && ownerOf === 'new' ? 'gym_owner' : role;
-  // Supervisors invite members and trainers, owners add supervisors too, and only
-  // CoreFit Gym admins add owners. The server checks all of this again.
+  // Trainers invite members, supervisors members and trainers, owners add supervisors
+  // too, and only CoreFit Gym admins add owners. The server checks all of this again.
   const isAdmin = useIsPlatformAdmin();
   const roles = isAdmin
     ? ownerInviteRoles
-    : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : 2);
+    : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : isTrainer ? 1 : 2);
   const emailError = validateEmail(email);
   const result = invite.data
-    ? describe(invite.data, invite.variables.email, invite.variables.role)
+    ? describe(invite.data, invite.variables.email, invite.variables.role, !isTrainer)
     : null;
   // Inviting someone who's already here doesn't change their role, so offer that instead.
   const existing =
@@ -112,7 +117,9 @@ export default function InvitePersonScreen() {
           ? `Add a member, trainer, supervisor or co-owner to ${gym.gymName} by their email address, or invite someone to set up a gym of their own.`
           : gym.role === 'owner'
             ? `Add a member, trainer or supervisor to ${gym.gymName} by their email address.`
-            : `Add a member or trainer to ${gym.gymName} by their email address.`}
+            : isTrainer
+              ? `Add a member to ${gym.gymName} by their email address. They become one of your members, and you're saved as the one who admitted them.`
+              : `Add a member or trainer to ${gym.gymName} by their email address.`}
       </ThemedText>
       <TextField
         label="Email"
@@ -132,18 +139,23 @@ export default function InvitePersonScreen() {
         error={emailError}
       />
       <View style={styles.field}>
-        <ThemedText type="label" themeColor="textSecondary">
-          Role
-        </ThemedText>
-        <SegmentedControl<Role>
-          options={roles}
-          value={role}
-          onChange={(next) => {
-            setRole(next);
-            invite.reset();
-            update.reset();
-          }}
-        />
+        {/* Trainers only invite members, so there's no role to pick. */}
+        {roles.length > 1 ? (
+          <>
+            <ThemedText type="label" themeColor="textSecondary">
+              Role
+            </ThemedText>
+            <SegmentedControl<Role>
+              options={roles}
+              value={role}
+              onChange={(next) => {
+                setRole(next);
+                invite.reset();
+                update.reset();
+              }}
+            />
+          </>
+        ) : null}
         {role === 'owner' ? (
           <>
             <ThemedText type="label" themeColor="textSecondary">

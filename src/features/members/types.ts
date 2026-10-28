@@ -17,6 +17,12 @@ export type GymPerson = {
   role: Role;
   status: MemberStatus;
   joinedAt: string;
+  phone?: string | null;
+  /** Who invited a member, i.e. admitted them. Null for members from before admissions were kept. */
+  admittedByName?: string | null;
+  admittedAt?: string | null;
+  /** Whether a member has filled in their first-sign-in details. */
+  onboarded?: boolean;
 };
 
 /** An invite waiting for someone to confirm an account with that email. */

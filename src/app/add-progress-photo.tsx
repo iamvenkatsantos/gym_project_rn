@@ -12,18 +12,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useUploadPhoto } from '@/features/body/hooks';
-import { POSES } from '@/features/body/rules';
+import { PHOTO_PICKER_OPTIONS, POSES } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
 import { toIsoDate } from '@/features/memberships/rules';
 import { useTheme } from '@/hooks/use-theme';
-
-const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
-  mediaTypes: ['images'],
-  allowsEditing: true,
-  aspect: [3, 4],
-  // Keeps uploads to a few hundred KB; plenty for comparing photos on a phone.
-  quality: 0.6,
-};
 
 type Picked = { uri: string; mimeType: string };
 
@@ -49,11 +41,12 @@ export default function AddProgressPhotoScreen() {
       return;
     }
     setCameraBlocked(false);
-    keep(await ImagePicker.launchCameraAsync(PICKER_OPTIONS));
+    keep(await ImagePicker.launchCameraAsync(PHOTO_PICKER_OPTIONS));
   };
 
   // The system photo picker needs no permission.
-  const choosePhoto = async () => keep(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS));
+  const choosePhoto = async () =>
+    keep(await ImagePicker.launchImageLibraryAsync(PHOTO_PICKER_OPTIONS));
 
   return (
     <Screen refreshable={false}>
