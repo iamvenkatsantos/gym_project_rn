@@ -64,11 +64,14 @@ export function useInvitePerson(gymId: string) {
       email,
       role,
       channel,
+      phone = null,
     }: {
       email: string;
       role: InviteRole;
       channel: InviteChannel;
-    }) => invitePerson(gymId, email, role, channel === 'email'),
+      /** The WhatsApp number, which gets a join code. */
+      phone?: string | null;
+    }) => invitePerson(gymId, email, role, channel === 'email', phone),
     onSettled: invalidate,
   });
 }

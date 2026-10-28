@@ -15,7 +15,7 @@ import { useTrainerLinks } from '@/features/coaching/hooks';
 import type { GymPerson } from '@/features/members/types';
 import { roleTone } from '@/features/members/components/person-row';
 import { usePeople, useRemovePerson, useUpdatePerson } from '@/features/members/hooks';
-import { isLastActiveOwner } from '@/features/members/rules';
+import { isLastActiveOwner, isSignedUp } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { useMemberships } from '@/features/memberships/hooks';
@@ -109,6 +109,7 @@ export default function PersonScreen() {
       <View style={styles.pills}>
         <Pill label={person.role} tone={roleTone[person.role]} />
         {suspended ? <Pill label="Suspended" tone="danger" icon="ban-outline" /> : null}
+        {!isSignedUp(person) ? <Pill label="Invited · not joined" tone="warning" /> : null}
         {isSelf ? <Pill label="You" tone="neutral" /> : null}
       </View>
 
@@ -273,20 +274,29 @@ function MemberTrainers({ gymId, member }: { gymId: string; member: GymPerson })
             </ThemedText>
           </View>
         ))
+      ) : !isSignedUp(member) ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Add a trainer once they join.
+        </ThemedText>
       ) : (
         <ThemedText type="small" themeColor={links.isPending ? 'textSecondary' : 'warning'}>
           {links.isPending ? 'Loading…' : 'No trainer yet.'}
         </ThemedText>
       )}
-      <Button
-        label={trainers.length ? 'Change trainers' : 'Assign a trainer'}
-        icon="people-outline"
-        variant={trainers.length ? 'secondary' : 'primary'}
-        size="compact"
-        onPress={() =>
-          router.push({ pathname: '/member-trainers/[memberId]', params: { memberId: member.id } })
-        }
-      />
+      {isSignedUp(member) ? (
+        <Button
+          label={trainers.length ? 'Change trainers' : 'Assign a trainer'}
+          icon="people-outline"
+          variant={trainers.length ? 'secondary' : 'primary'}
+          size="compact"
+          onPress={() =>
+            router.push({
+              pathname: '/member-trainers/[memberId]',
+              params: { memberId: member.id },
+            })
+          }
+        />
+      ) : null}
     </Card>
   );
 }

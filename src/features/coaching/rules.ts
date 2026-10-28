@@ -1,3 +1,4 @@
+import { isSignedUp } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
 import type { TrainerLink, TrainerRequest, TrainerRequestInput } from '@/features/coaching/types';
 
@@ -38,6 +39,7 @@ export function membersToMatch(people: GymPerson[], links: TrainerLink[], query 
       (p) =>
         p.role === 'member' &&
         p.status === 'active' &&
+        isSignedUp(p) &&
         (!q || p.fullName.toLowerCase().includes(q) || p.email.toLowerCase().includes(q)),
     )
     .sort(
@@ -82,7 +84,9 @@ export function assignableMembers(
   return [
     ...coached.map(({ id, fullName }) => ({ id, fullName, coached: true })),
     ...others
-      .filter((p) => p.role === 'member' && p.status === 'active' && !mine.has(p.id))
+      .filter(
+        (p) => p.role === 'member' && p.status === 'active' && isSignedUp(p) && !mine.has(p.id),
+      )
       .sort((a, b) => a.fullName.localeCompare(b.fullName))
       .map(({ id, fullName }) => ({ id, fullName, coached: false })),
   ];

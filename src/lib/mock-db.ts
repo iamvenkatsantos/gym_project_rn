@@ -118,6 +118,8 @@ export const mockPeople: GymPerson[] = [
   person('u-member-3', 'Priya Sharma', 'member', 93),
   person('u-member-4', 'Harish Patel', 'member', 28),
   person('u-member-5', 'Rahul Verma', 'member', 60, 'suspended'),
+  // Imported from the gym's old app; hasn't joined yet.
+  { ...person('u-member-6', 'Lakshmi Menon', 'member', 3), signedUp: false },
 ];
 
 export const mockInvites: GymInvite[] = [
@@ -126,6 +128,15 @@ export const mockInvites: GymInvite[] = [
     email: 'karthik.s@example.com',
     role: 'member',
     createdAt: new Date(Date.now() - 2 * DAY).toISOString(),
+  },
+  {
+    id: 'inv-2',
+    email: 'deepa.r@example.com',
+    role: 'member',
+    createdAt: new Date(Date.now() - DAY).toISOString(),
+    code: 'K7P2QX4M',
+    phone: '9840012345',
+    codeExpiresAt: new Date(Date.now() + 6 * DAY).toISOString(),
   },
 ];
 

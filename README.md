@@ -86,6 +86,9 @@ functions:
 ```bash
 npx supabase functions deploy delete-account   # account deletion (store requirement)
 npx supabase functions deploy invite-member    # emails invites from the People tab
+npx supabase functions deploy import-members   # member import from a CSV
+npx supabase functions deploy accept-invite    # joining with a WhatsApp invite code
+npx supabase functions deploy join --no-verify-jwt   # the tappable join link in WhatsApp invites
 npx supabase functions deploy send-push --no-verify-jwt   # push notifications, see below
 npx supabase functions deploy create-payment                # online payments, see below
 npx supabase functions deploy razorpay-webhook --no-verify-jwt
@@ -282,6 +285,7 @@ psql -d corefit_test -f supabase/tests/online-payments.sql
 psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/import-members.sql
+psql -d corefit_test -f supabase/tests/invite-codes.sql
 ```
 
 ## Scripts

@@ -9,11 +9,19 @@ import type {
   GymPerson,
   ImportOutcome,
   InviteOutcome,
+  InviteByCode,
   InviteResult,
   InviteRole,
 } from '@/features/members/types';
+import type { Role } from '@/features/auth/types';
 import type { ImportRow } from '@/features/members/import-rules';
-import { coachRoles, normalizeEmail, sortCoaches, type MemberKind } from '@/features/members/rules';
+import {
+  coachRoles,
+  normalizeEmail,
+  normalizeInviteCode,
+  sortCoaches,
+  type MemberKind,
+} from '@/features/members/rules';
 import {
   delay,
   forGym,
@@ -42,9 +50,19 @@ type PersonRow = {
   onboarded_at: string | null;
   /** Missing before the profile photo migration. */
   avatar_path?: string | null;
+  /** Missing before the invite codes migration. */
+  signed_up?: boolean;
 };
 
-type InviteRow = { id: string; email: string; role: GymInvite['role']; created_at: string };
+type InviteRow = {
+  id: string;
+  email: string;
+  role: GymInvite['role'];
+  created_at: string;
+  code?: string | null;
+  phone?: string | null;
+  code_expires_at?: string | null;
+};
 
 type CoachedRow = { member_id: string; workout: { title: string } };
 
@@ -99,19 +117,31 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     admittedAt: r.admitted_at,
     onboarded: !!r.onboarded_at,
     avatarUrl: avatarUrl(r.avatar_path),
+    signedUp: r.signed_up ?? true,
   }));
 }
 
 export async function listInvites(gymId: string): Promise<GymInvite[]> {
   if (!supabase) return delay(forGym(gymId, mockInvites));
-  const rows = unwrap(
-    await supabase
+  const select = (columns: string) =>
+    supabase!
       .from('gym_invites')
-      .select('id, email, role, created_at')
+      .select(columns)
       .eq('gym_id', gymId)
-      .order('created_at', { ascending: false }),
-  ) as InviteRow[];
-  return rows.map((r) => ({ id: r.id, email: r.email, role: r.role, createdAt: r.created_at }));
+      .order('created_at', { ascending: false });
+  let result = await select('id, email, role, created_at, code, phone, code_expires_at');
+  // Before the invite codes migration there are no code columns.
+  if (result.error?.code === '42703') result = await select('id, email, role, created_at');
+  const rows = unwrap(result) as unknown as InviteRow[];
+  return rows.map((r) => ({
+    id: r.id,
+    email: r.email,
+    role: r.role,
+    createdAt: r.created_at,
+    code: r.code ?? null,
+    phone: r.phone ?? null,
+    codeExpiresAt: r.code_expires_at ?? null,
+  }));
 }
 
 /**
@@ -126,11 +156,31 @@ export async function invitePerson(
   email: string,
   role: InviteRole,
   sendEmail = true,
+  phone: string | null = null,
 ): Promise<InviteOutcome> {
   if (!supabase) {
     const result =
-      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(email, role);
-    return { result, emailSent: false, emailError: null };
+      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(email, role, phone);
+    const code =
+      result === 'invited' && phone
+        ? (mockInvites.find((i) => i.email === normalizeEmail(email))?.code ?? null)
+        : null;
+    return { result, emailSent: false, emailError: null, code };
+  }
+
+  // A WhatsApp invite to the gym carries a one-time code to join with.
+  if (!sendEmail && phone && role !== 'gym_owner') {
+    const { data, error } = await supabase.rpc('whatsapp_invite', {
+      p_gym_id: gymId,
+      p_email: email,
+      p_role: role,
+      p_phone: phone,
+    });
+    // Before the invite codes migration, save it without a code.
+    if (error?.code !== 'PGRST202') {
+      const [row] = unwrap({ data, error }) as { result: InviteResult; code: string | null }[];
+      return { result: row.result, emailSent: false, emailError: null, code: row.code };
+    }
   }
 
   if (!sendEmail) {
@@ -310,7 +360,11 @@ async function functionErrorMessage(error: unknown): Promise<string> {
   return error instanceof Error ? error.message : 'Something went wrong';
 }
 
-async function mockInvite(email: string, role: GymPerson['role']): Promise<InviteResult> {
+async function mockInvite(
+  email: string,
+  role: GymPerson['role'],
+  phone: string | null = null,
+): Promise<InviteResult> {
   const normalized = normalizeEmail(email);
   if (mockPeople.some((p) => p.email === normalized)) return delay('already_member');
   const account = mockAccounts.find((a) => a.email === normalized);
@@ -323,17 +377,58 @@ async function mockInvite(email: string, role: GymPerson['role']): Promise<Invit
     });
     return delay('added');
   }
+  const code = phone ? mockInviteCode() : null;
+  const codeExpiresAt = code ? new Date(Date.now() + 7 * 86_400_000).toISOString() : null;
   const existing = mockInvites.find((i) => i.email === normalized);
-  if (existing) existing.role = role;
+  if (existing) Object.assign(existing, { role }, code ? { code, phone, codeExpiresAt } : {});
   else {
     mockInvites.unshift({
       id: mockId('inv'),
       email: normalized,
       role,
       createdAt: new Date().toISOString(),
+      code,
+      phone,
+      codeExpiresAt,
     });
   }
   return delay('invited');
+}
+
+function mockInviteCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 8 }, () => alphabet[Math.floor(Math.random() * 32)]).join('');
+}
+
+/** The gym, email and role behind an invite code, or null for a wrong or used one. */
+export async function findInviteByCode(code: string): Promise<InviteByCode | null> {
+  const clean = normalizeInviteCode(code);
+  if (!supabase) {
+    const invite = mockInvites.find((i) => i.code === clean);
+    return delay(
+      invite ? { gymName: 'CoreFit Gym Demo', email: invite.email, role: invite.role } : null,
+    );
+  }
+  const rows = unwrap(await supabase.rpc('invite_by_code', { p_code: clean })) as {
+    gym_name: string;
+    email: string;
+    role: Role;
+  }[];
+  const row = rows[0];
+  return row ? { gymName: row.gym_name, email: row.email, role: row.role } : null;
+}
+
+/**
+ * Makes the invited person's account from their code, name and password, already confirmed,
+ * and returns the email to sign in with. Each code works once.
+ */
+export async function acceptInvite(code: string, fullName: string, password: string) {
+  if (!supabase) throw new Error('Demo mode can’t make accounts. Pick a demo role instead.');
+  const { data, error } = await supabase.functions.invoke<{ email: string }>('accept-invite', {
+    body: { code: normalizeInviteCode(code), fullName, password },
+  });
+  if (error || !data) throw new Error(await functionErrorMessage(error));
+  return data.email;
 }
 
 export async function withdrawInvite(inviteId: string) {

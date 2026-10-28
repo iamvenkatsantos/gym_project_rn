@@ -131,10 +131,11 @@ describe('assigning plans', () => {
     person('maya', 'member'),
     person('bea', 'member'),
     person('gone', 'member', 'suspended'),
+    { ...person('new', 'member'), signedUp: false },
     person('tom', 'trainer'),
   ];
 
-  it('lists a coach’s own members, then other active members for managers', () => {
+  it('lists a coach’s own members, then other active, joined members for managers', () => {
     expect(assignableMembers(coached, people)).toEqual([
       { id: 'maya', fullName: 'Maya', coached: true },
       { id: 'arjun', fullName: 'arjun', coached: false },
@@ -153,11 +154,12 @@ describe('matching trainers', () => {
     person('arjun', 'member'),
     person('bea', 'member'),
     person('gone', 'member', 'suspended'),
+    { ...person('new', 'member'), signedUp: false },
     person('tom', 'trainer'),
   ];
   const links = [link('arjun', 'tom'), link('arjun', 'sue')];
 
-  it('lists active members without a trainer first, then by name', () => {
+  it('lists active, joined members without a trainer first, then by name', () => {
     expect(membersToMatch(people, links).map((p) => p.id)).toEqual(['bea', 'cara', 'arjun']);
   });
 

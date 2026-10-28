@@ -1,5 +1,6 @@
 import { canCoach, type Role } from '@/features/auth/types';
 import type { GymPerson, InviteResult, InviteRole, PeopleFilter } from '@/features/members/types';
+import { env } from '@/lib/env';
 import { normalizeEmail, validateEmail } from '@/lib/validation';
 
 export { normalizeEmail };
@@ -20,7 +21,9 @@ export function sortCoaches<T extends { fullName: string; role: Role }>(people: 
 
 /** Active people who can coach, for trainer pickers. */
 export function activeCoaches(people: GymPerson[]) {
-  return sortCoaches(people.filter((p) => p.status === 'active' && canCoach(p.role)));
+  return sortCoaches(
+    people.filter((p) => p.status === 'active' && isSignedUp(p) && canCoach(p.role)),
+  );
 }
 
 /** A coach's name for a picker; owners and supervisors say so, and the viewer is "You". */
@@ -90,12 +93,25 @@ export function inviteMessage(
   email: string,
   role: InviteRole,
   result: InviteResult,
+  code?: string | null,
 ) {
   if (result === 'added') {
     return [
       `Hi! You've been added to ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
       '',
       `Open CoreFit Gym and sign in with ${email}. Don't have the app? ${PLAY_STORE_URL}`,
+    ].join('\n');
+  }
+  if (code) {
+    return [
+      `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+      '',
+      `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+      `2. Tap this link: ${joinLink(code)}`,
+      `   Or tap "I have an invite code" and enter ${formatInviteCode(code)}`,
+      '3. Add your name and a password.',
+      '',
+      `You'll sign in with ${email}. The code works once, for 7 days.`,
     ].join('\n');
   }
   return [
@@ -111,4 +127,33 @@ export function inviteMessage(
       ? "Then add your gym's details and you're ready to go."
       : `You'll be in ${gymName} as soon as you confirm.`,
   ].join('\n');
+}
+
+/** "K7P2QX4M" as "K7P2-QX4M", easier to read out and type. */
+export function formatInviteCode(code: string) {
+  const clean = normalizeInviteCode(code);
+  return clean.length > 4 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : clean;
+}
+
+/** What people type, as the database stores it: no dashes or spaces, upper case. */
+export function normalizeInviteCode(text: string) {
+  return text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/** Invite codes are 8 letters and digits, without 0, O, 1 or I. */
+export function isInviteCode(text: string) {
+  return /^[A-HJ-NP-Z2-9]{8}$/.test(normalizeInviteCode(text));
+}
+
+/**
+ * The tappable link in a WhatsApp invite. WhatsApp only links https, so it goes
+ * through the join function, which opens corefit://join?code=… or the Play Store.
+ */
+export function joinLink(code: string) {
+  return `${env.supabaseUrl}/functions/v1/join?code=${normalizeInviteCode(code)}`;
+}
+
+/** Imported members and people mid-invite have no confirmed account yet. */
+export function isSignedUp(person: Pick<GymPerson, 'signedUp'>) {
+  return person.signedUp !== false;
 }

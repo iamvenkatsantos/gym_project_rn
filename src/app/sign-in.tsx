@@ -318,8 +318,14 @@ export default function SignInScreen() {
             <View style={[styles.rule, { backgroundColor: theme.border }]} />
           </View>
           <Button
+            label="I have an invite code"
+            icon="logo-whatsapp"
+            variant="secondary"
+            onPress={() => router.push('/join')}
+          />
+          <Button
             label="Enter a code from your email"
-            icon="keypad-outline"
+            icon="mail-outline"
             variant="secondary"
             onPress={() => enterCode()}
           />

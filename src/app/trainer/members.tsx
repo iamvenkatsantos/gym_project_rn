@@ -16,7 +16,7 @@ export default function TrainerMembersScreen() {
         icon="person-add-outline"
         onPress={() => router.push('/invite-person')}
       />
-      <PendingInvites gymId={gym.gymId} canWithdraw={() => true} />
+      <PendingInvites gymId={gym.gymId} gymName={gym.gymName} canWithdraw={() => true} />
       <CoachedMembers />
     </Screen>
   );
