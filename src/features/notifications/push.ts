@@ -33,6 +33,17 @@ Notifications?.setNotificationHandler({
 let savedToken: string | null = null;
 
 /**
+ * The device token behind savedToken. Android emits the push token event on every token fetch,
+ * not only when the OS rotates it, so listeners compare against this to avoid a fetch loop.
+ */
+let lastDeviceToken: string | null = null;
+
+/** Whether a push token event carries a device token this run hasn't registered yet. */
+export function isNewDeviceToken(deviceToken: string): boolean {
+  return deviceToken !== lastDeviceToken;
+}
+
+/**
  * Why this run can't get a push token, or null if it can. Push needs a real phone, the real
  * backend, an EAS project id, and on Android a development or store build (not Expo Go).
  */
@@ -71,9 +82,17 @@ export async function registerForPush({ ask }: { ask: boolean }): Promise<boolea
   }
   if (status !== 'granted') return false;
 
-  const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: projectId() });
-  await savePushToken(token, Platform.OS as 'ios' | 'android');
-  savedToken = token;
+  const devicePushToken = await Notifications.getDevicePushTokenAsync();
+  lastDeviceToken = String(devicePushToken.data);
+  const { data: token } = await Notifications.getExpoPushTokenAsync({
+    projectId: projectId(),
+    devicePushToken,
+  });
+  // Already saved for this person: every app start and token event would otherwise call the API.
+  if (token !== savedToken) {
+    await savePushToken(token, Platform.OS as 'ios' | 'android');
+    savedToken = token;
+  }
   return true;
 }
 
@@ -81,6 +100,7 @@ export async function registerForPush({ ask }: { ask: boolean }): Promise<boolea
 export async function unregisterForPush() {
   const token = savedToken;
   savedToken = null;
+  lastDeviceToken = null;
   if (!token) return;
   await removePushToken(token).catch(() => {});
   await Notifications?.setBadgeCountAsync(0).catch(() => {});

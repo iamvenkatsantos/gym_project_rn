@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { notificationKeys } from '@/features/notifications/hooks';
 import {
+  isNewDeviceToken,
   Notifications,
   pushUnavailableReason,
   registerForPush,
@@ -29,8 +30,10 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!userId || !Notifications || pushUnavailableReason()) return;
     registerForPush({ ask: true }).catch((e) => console.warn('Push registration failed', e));
-    // The OS can rotate the device token; the Expo token follows it.
-    const tokens = Notifications.addPushTokenListener(() => {
+    // The OS can rotate the device token; the Expo token follows it. Android also sends this
+    // event on every token fetch, including registerForPush's own, so skip a token we already have.
+    const tokens = Notifications.addPushTokenListener((deviceToken) => {
+      if (!isNewDeviceToken(String(deviceToken.data))) return;
       registerForPush({ ask: false }).catch(() => {});
     });
     const received = Notifications.addNotificationReceivedListener(() => {
