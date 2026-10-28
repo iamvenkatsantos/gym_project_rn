@@ -2,11 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   assignTrainer,
+  changeTrainerLinks,
   listTrainerLinks,
   listTrainerRequests,
   requestTrainer,
   resolveTrainerRequest,
-  unassignTrainer,
   withdrawTrainerRequest,
 } from '@/features/coaching/api';
 import type { TrainerRequestInput } from '@/features/coaching/types';
@@ -56,21 +56,15 @@ export function useInvalidateCoaching() {
     ]);
 }
 
-export function useSetTrainer(gymId: string) {
+/** Saves a member's trainers, or a trainer's members, in one go. */
+export function useChangeTrainerLinks(
+  gymId: string,
+  side: { kind: 'member' | 'trainer'; id: string },
+) {
   const invalidate = useInvalidateCoaching();
   return useMutation({
-    mutationFn: ({
-      memberId,
-      trainerId,
-      assigned,
-    }: {
-      memberId: string;
-      trainerId: string;
-      assigned: boolean;
-    }) =>
-      assigned
-        ? assignTrainer(gymId, memberId, trainerId)
-        : unassignTrainer(gymId, memberId, trainerId),
+    mutationFn: (change: { added: string[]; removed: string[] }) =>
+      changeTrainerLinks(gymId, side, change),
     onSettled: invalidate,
   });
 }

@@ -29,6 +29,47 @@ export function unmappedMembers(people: GymPerson[], links: TrainerLink[]) {
   return people.filter((p) => p.role === 'member' && p.status === 'active' && !mapped.has(p.id));
 }
 
+/** Active members, the ones without a trainer first so the gym sees who still needs one. */
+export function membersToMatch(people: GymPerson[], links: TrainerLink[], query = '') {
+  const mapped = new Set(links.map((l) => l.memberId));
+  const q = query.trim().toLowerCase();
+  return people
+    .filter(
+      (p) =>
+        p.role === 'member' &&
+        p.status === 'active' &&
+        (!q || p.fullName.toLowerCase().includes(q) || p.email.toLowerCase().includes(q)),
+    )
+    .sort(
+      (a, b) =>
+        Number(mapped.has(a.id)) - Number(mapped.has(b.id)) || a.fullName.localeCompare(b.fullName),
+    );
+}
+
+/** A member's trainers in a few words, for list rows. */
+export function trainerSummary(links: TrainerLink[], memberId: string, skipTrainerId?: string) {
+  const names = trainersOf(links, memberId)
+    .filter((l) => l.trainerId !== skipTrainerId)
+    .map((l) => l.trainerName);
+  return names.length ? `Trainer: ${names.join(', ')}` : 'No trainer yet';
+}
+
+/** What Save will do: ids ticked that weren't saved, and saved ids now unticked. */
+export function pickChanges(saved: Iterable<string>, picked: Iterable<string>) {
+  const before = new Set(saved);
+  const after = new Set(picked);
+  return {
+    added: [...after].filter((id) => !before.has(id)),
+    removed: [...before].filter((id) => !after.has(id)),
+  };
+}
+
+/** The Save button's label, e.g. "Save 3 changes". Short so it fits a small phone. */
+export function changesLabel({ added, removed }: { added: string[]; removed: string[] }) {
+  const count = added.length + removed.length;
+  return count ? `Save ${count} change${count === 1 ? '' : 's'}` : 'No changes';
+}
+
 /**
  * Members a coach can assign plans to: their own first, then, for owners and
  * supervisors, every other active member, flagged so assigning maps them too.

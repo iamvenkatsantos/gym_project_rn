@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
-import { Chip } from '@/components/chip';
 import { Pill } from '@/components/pill';
 import { Screen } from '@/components/screen';
 import { SegmentedControl } from '@/components/segmented-control';
@@ -13,17 +12,19 @@ import { Spacing } from '@/constants/theme';
 import { canCoach, type Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
-import { useSetTrainer, useTrainerLinks } from '@/features/coaching/hooks';
-import { membersOf, trainersOf } from '@/features/coaching/rules';
+import { useTrainerLinks } from '@/features/coaching/hooks';
 import type { GymPerson } from '@/features/members/types';
 import { roleTone } from '@/features/members/components/person-row';
 import { usePeople, useRemovePerson, useUpdatePerson } from '@/features/members/hooks';
-import { activeCoaches, coachLabel, isLastActiveOwner } from '@/features/members/rules';
+import { isLastActiveOwner } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { useMemberships } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
+
+/** Names listed on a coach's card before "and N more". */
+const MEMBERS_SHOWN = 5;
 
 /** Who invited (admitted) a member and when, and whether they've filled in their details. */
 function Admission({ person }: { person: GymPerson }) {
@@ -103,6 +104,12 @@ export default function PersonScreen() {
       </View>
 
       {person.role === 'member' ? <Admission person={person} /> : null}
+      {person.role === 'member' && !suspended ? (
+        <MemberTrainers gymId={gym.gymId} member={person} />
+      ) : null}
+      {canCoach(person.role) && !suspended ? (
+        <TrainerMembers gymId={gym.gymId} coach={person} />
+      ) : null}
 
       {person.role === 'member' && !suspended ? (
         <>
@@ -118,10 +125,8 @@ export default function PersonScreen() {
               })
             }
           />
-          <MemberTrainers gymId={gym.gymId} member={person} people={people.data ?? []} />
         </>
       ) : null}
-      {canCoach(person.role) ? <TrainerMembers gymId={gym.gymId} trainerId={person.id} /> : null}
 
       {isOwner ? (
         <>
@@ -272,77 +277,72 @@ function MemberMembership({ gymId, memberId }: { gymId: string; memberId: string
   );
 }
 
-/** Owners and supervisors pick which trainers a member works with. */
-function MemberTrainers({
-  gymId,
-  member,
-  people,
-}: {
-  gymId: string;
-  member: GymPerson;
-  people: GymPerson[];
-}) {
-  const profile = useProfile();
-  const links = useTrainerLinks(gymId);
-  const setTrainer = useSetTrainer(gymId);
-  // Owners and supervisors can coach too, for gyms without (enough) trainers.
-  const trainers = activeCoaches(people);
-  const assigned = new Set(trainersOf(links.data ?? [], member.id).map((l) => l.trainerId));
+/** Who trains the member, with one button to change it. */
+function MemberTrainers({ gymId, member }: { gymId: string; member: GymPerson }) {
+  const links = useTrainerLinks(gymId, { memberId: member.id });
+  const trainers = links.data ?? [];
 
   return (
-    <View style={styles.field}>
+    <Card>
       <ThemedText type="label" themeColor="textSecondary">
-        Trainers
+        {trainers.length > 1 ? `Trainers (${trainers.length})` : 'Trainer'}
       </ThemedText>
       {trainers.length ? (
-        <View style={styles.chips}>
-          {trainers.map((t) => {
-            const on = assigned.has(t.id);
-            return (
-              <Chip
-                key={t.id}
-                label={`${coachLabel(t, profile.id)} · ${membersOf(links.data ?? [], t.id).length}`}
-                selected={on}
-                onPress={() =>
-                  !setTrainer.isPending &&
-                  setTrainer.mutate({ memberId: member.id, trainerId: t.id, assigned: !on })
-                }
-              />
-            );
-          })}
-        </View>
+        trainers.map((l) => (
+          <View key={l.trainerId} style={styles.trainer}>
+            <TrainerAvatar name={l.trainerName} size={36} />
+            <ThemedText type="smallBold" style={styles.flex}>
+              {l.trainerName}
+            </ThemedText>
+          </View>
+        ))
       ) : (
-        <ThemedText type="small" themeColor="textSecondary">
-          Nobody active can coach yet.
+        <ThemedText type="small" themeColor={links.isPending ? 'textSecondary' : 'warning'}>
+          {links.isPending ? 'Loading…' : 'No trainer yet.'}
         </ThemedText>
       )}
-      <ThemedText type="small" themeColor="textSecondary">
-        Tap to add or remove. Pick yourself to train {member.fullName.split(' ')[0]} when
-        there&apos;s no trainer free. The number is each trainer&apos;s members. Removing a trainer
-        also takes their plans off {member.fullName.split(' ')[0]}.
-      </ThemedText>
-      {setTrainer.error ? (
-        <ThemedText themeColor="danger">{setTrainer.error.message}</ThemedText>
-      ) : null}
-    </View>
+      <Button
+        label={trainers.length ? 'Change trainers' : 'Assign a trainer'}
+        icon="people-outline"
+        variant={trainers.length ? 'secondary' : 'primary'}
+        size="compact"
+        onPress={() =>
+          router.push({ pathname: '/member-trainers/[memberId]', params: { memberId: member.id } })
+        }
+      />
+    </Card>
   );
 }
 
-function TrainerMembers({ gymId, trainerId }: { gymId: string; trainerId: string }) {
-  const links = useTrainerLinks(gymId);
-  const members = membersOf(links.data ?? [], trainerId);
+/** How many members a coach trains, and a button to add or remove several at once. */
+function TrainerMembers({ gymId, coach }: { gymId: string; coach: GymPerson }) {
+  const links = useTrainerLinks(gymId, { trainerId: coach.id });
+  const members = links.data ?? [];
+  const shown = members.slice(0, MEMBERS_SHOWN);
 
   return (
-    <View style={styles.field}>
+    <Card>
       <ThemedText type="label" themeColor="textSecondary">
         Members ({members.length})
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {members.length
-          ? members.map((l) => l.memberName).join(', ')
-          : 'No members yet. Assign trainers from a member’s page.'}
+          ? shown.map((l) => l.memberName).join(', ') +
+            (members.length > shown.length ? ` and ${members.length - shown.length} more` : '')
+          : links.isPending
+            ? 'Loading…'
+            : 'No members yet.'}
       </ThemedText>
-    </View>
+      <Button
+        label={members.length ? 'Add or remove members' : 'Add members'}
+        icon="people-outline"
+        variant="secondary"
+        size="compact"
+        onPress={() =>
+          router.push({ pathname: '/trainer-members/[trainerId]', params: { trainerId: coach.id } })
+        }
+      />
+    </Card>
   );
 }
 
@@ -356,16 +356,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
   },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
   field: {
     gap: Spacing.one,
   },
   row: {
     flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  trainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
   },
   flex: {

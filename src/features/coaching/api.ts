@@ -110,6 +110,53 @@ export async function unassignTrainer(gymId: string, memberId: string, trainerId
   if (error) throw error;
 }
 
+/**
+ * Maps and unmaps several people at once from one side: a member's trainers, or a
+ * trainer's members. Unmapping takes that trainer's plans off the member.
+ */
+export async function changeTrainerLinks(
+  gymId: string,
+  side: { kind: 'member' | 'trainer'; id: string },
+  change: { added: string[]; removed: string[] },
+) {
+  const pair = (otherId: string) =>
+    side.kind === 'member'
+      ? { memberId: side.id, trainerId: otherId }
+      : { memberId: otherId, trainerId: side.id };
+  if (!supabase) {
+    for (const id of change.added) {
+      const { memberId, trainerId } = pair(id);
+      await assignTrainer(gymId, memberId, trainerId);
+    }
+    for (const id of change.removed) {
+      const { memberId, trainerId } = pair(id);
+      await unassignTrainer(gymId, memberId, trainerId);
+    }
+    return;
+  }
+  if (change.added.length) {
+    const { error } = await supabase.from('member_trainers').upsert(
+      change.added.map((id) => {
+        const { memberId, trainerId } = pair(id);
+        return { gym_id: gymId, member_id: memberId, trainer_id: trainerId };
+      }),
+      { onConflict: 'gym_id,member_id,trainer_id', ignoreDuplicates: true },
+    );
+    if (error) throw error;
+  }
+  if (change.removed.length) {
+    const [own, other] =
+      side.kind === 'member' ? ['member_id', 'trainer_id'] : ['trainer_id', 'member_id'];
+    const { error } = await supabase
+      .from('member_trainers')
+      .delete()
+      .eq('gym_id', gymId)
+      .eq(own, side.id)
+      .in(other, change.removed);
+    if (error) throw error;
+  }
+}
+
 /** Trainer requests: all of them for owners and supervisors, a member's own for members. */
 export async function listTrainerRequests(gymId: string): Promise<TrainerRequest[]> {
   if (!supabase) return delay(forGym(gymId, mockTrainerRequests));

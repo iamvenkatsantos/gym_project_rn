@@ -111,7 +111,7 @@ export default function OwnerDashboardScreen() {
           value={noTrainer}
           icon="person-outline"
           compact
-          onPress={() => router.push('/owner/training')}
+          onPress={() => router.push('/match-trainers')}
         />
         <StatTile
           label="Came today"
