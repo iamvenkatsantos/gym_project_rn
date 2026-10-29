@@ -95,6 +95,13 @@ export function inviteMessage(
   result: InviteResult,
   code?: string | null,
 ) {
+  if (result === 'added' && role === 'gym_owner') {
+    return [
+      "Hi! You're invited to set up your gym on CoreFit Gym.",
+      '',
+      `Open CoreFit Gym, sign in with ${email} and add your gym's details. Don't have the app? ${PLAY_STORE_URL}`,
+    ].join('\n');
+  }
   if (result === 'added') {
     return [
       `Hi! You've been added to ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,

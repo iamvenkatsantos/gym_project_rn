@@ -14,7 +14,7 @@ const mockGyms: Record<string, GymDetails> = {
   },
 };
 
-/** Admins can set up a gym, and so can anyone an admin invited to set one up. */
+/** Only people an admin invited to run a gym can set one up; the admin never does. */
 export async function canSetUpGym(): Promise<boolean> {
   if (!supabase) return delay(true);
   return unwrap(await supabase.rpc('can_set_up_gym')) as boolean;

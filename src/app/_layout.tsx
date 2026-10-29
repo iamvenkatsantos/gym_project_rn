@@ -164,6 +164,10 @@ function RootNavigator() {
           options={{ headerShown: true, title: 'Brand' }}
         />
         <Stack.Screen name="add-branch" options={{ headerShown: true, title: 'Add a branch' }} />
+        <Stack.Screen
+          name="invite-owner"
+          options={{ headerShown: true, title: 'Invite a gym owner' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={role === 'member'}>
         <Stack.Screen name="member" options={{ title: 'Home' }} />
