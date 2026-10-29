@@ -16,7 +16,7 @@ type Props = {
   onSave: (feeCents: number) => void;
 };
 
-/** A monthly fee in rupees, saved with a button so a half-typed number never applies. */
+/** A yearly fee in rupees, saved with a button so a half-typed number never applies. */
 export function FeeEditor({ label, feeCents, pending, error, onSave }: Props) {
   const [text, setText] = useState(feeCents === null ? '' : String(feeCents / 100));
   const invalid = validateAmount(text, { label: 'fee', allowZero: true, max: 1_000_000 });
@@ -32,7 +32,7 @@ export function FeeEditor({ label, feeCents, pending, error, onSave }: Props) {
         onChangeText={setText}
         error={invalid}
         keyboardType="decimal-pad"
-        placeholder="1500"
+        placeholder="4999"
         returnKeyType="done"
       />
       <Button

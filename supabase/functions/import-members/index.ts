@@ -49,6 +49,17 @@ Deno.serve(async (req) => {
   // An empty import runs only the owner check, before any account is made.
   const check = await caller.rpc('import_members', { p_gym_id: gymId, p_rows: [] });
   if (check.error) return json({ error: check.error.message }, 403);
+  // Unpaid branches can't add people; stop before making any accounts.
+  const paid = await caller.rpc('branch_is_paid', { p_gym_id: gymId });
+  if (paid.data === false) {
+    return json(
+      {
+        error:
+          'CoreFit Gym plan not paid, so no one can be added. The owner can pay from Dashboard → CoreFit plan.',
+      },
+      402,
+    );
+  }
 
   const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const failed = new Map<string, string>();

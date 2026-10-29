@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
@@ -17,7 +18,7 @@ import { parseAmount, validateAmount } from '@/lib/validation';
 /**
  * Admins only: a new branch for a brand. Its owners get it straight away, along with a copy of
  * the first branch's membership plans to reprice. Staff and members are invited per branch.
- * It starts at the default fee; change the amount here to give it a fee of its own.
+ * It starts at the default fee; change the amount here to give it a fee of its own, or no fee.
  */
 export default function AddBranchScreen() {
   const { brandId, brandName } = useLocalSearchParams<{ brandId: string; brandName?: string }>();
@@ -50,7 +51,7 @@ export default function AddBranchScreen() {
       </View>
 
       <SectionHeader
-        title="Monthly fee"
+        title="Yearly fee"
         detail={
           settings.data
             ? `Default ${formatAmount(settings.data.branchFeeCents, settings.data.currency)}`
@@ -58,7 +59,7 @@ export default function AddBranchScreen() {
         }
       />
       <TextField
-        label="This branch's monthly fee (₹)"
+        label="This branch's yearly fee (₹)"
         icon="cash-outline"
         value={shownFee}
         onChangeText={setFeeText}
@@ -67,6 +68,19 @@ export default function AddBranchScreen() {
         keyboardType="decimal-pad"
         returnKeyType="done"
       />
+      {parseAmount(shownFee) === 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          No fee: the owner pays nothing until you set one.
+        </ThemedText>
+      ) : (
+        <Button
+          label="No fee for now"
+          icon="gift-outline"
+          variant="secondary"
+          size="compact"
+          onPress={() => setFeeText('0')}
+        />
+      )}
 
       <GymDetailsForm
         initial={{ ...emptyGymDetails, name: brandName ? `${brandName} ` : '' }}

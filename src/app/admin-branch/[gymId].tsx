@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { ListGroup, ListRow } from '@/components/list-row';
@@ -14,8 +14,10 @@ import { FeeEditor } from '@/features/branches/components/fee-editor';
 import { BranchQrCard } from '@/features/check-in/components/branch-qr-card';
 import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
 import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
-import { branchBill, branchFee, ownerNames } from '@/features/branches/rules';
+import { branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
+import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
+import { useRecordSubscription, useSubscription } from '@/features/subscription/hooks';
 import { formatDate, formatAmount } from '@/lib/format';
 
 /** Admins only: one branch's address, contact, size and fee, for a visit or a billing call. */
@@ -47,16 +49,13 @@ export default function AdminBranchScreen() {
                   <View style={styles.grid}>
                     <StatTile label="Members" value={b.members} icon="people" accent compact />
                     <StatTile label="Staff" value={b.staff} icon="barbell-outline" compact />
-                    <StatTile
-                      label="Bill / month"
-                      value={formatAmount(branchBill(b, billing), billing.currency)}
-                      icon="cash-outline"
-                      compact
-                    />
                   </View>
 
+                  <SectionHeader title="CoreFit Gym plan" detail="Owner pays in the app" />
+                  <BranchPlan gymId={b.gymId} />
+
                   <SectionHeader
-                    title="Monthly fee"
+                    title="Yearly fee"
                     detail={b.feeCents === null ? 'Default fee' : 'Own fee'}
                   />
                   <BranchFee branch={b} billing={billing} />
@@ -123,6 +122,58 @@ export default function AdminBranchScreen() {
   );
 }
 
+/**
+ * How long the branch is paid for. The owner pays in the app; a year paid by cash or
+ * bank transfer, or given free, is recorded here.
+ */
+function BranchPlan({ gymId }: { gymId: string }) {
+  const subscription = useSubscription(gymId);
+  const record = useRecordSubscription(gymId);
+
+  const confirm = (amountCents: number, currency: string, note: string) =>
+    Alert.alert(
+      amountCents ? 'Record a year paid?' : 'Give a free year?',
+      amountCents
+        ? `${formatAmount(amountCents, currency)} received outside the app. Adds a year.`
+        : 'Adds a year at no charge.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Add a year', onPress: () => record.mutate({ amountCents, note }) },
+      ],
+    );
+
+  return (
+    <QueryState query={subscription}>
+      {(sub) => (
+        <View style={styles.fee}>
+          <SubscriptionCard sub={sub} title="This branch" />
+          {sub.amountCents > 0 ? (
+            <Button
+              label={`Record ${formatAmount(sub.amountCents, sub.currency)} paid`}
+              icon="receipt-outline"
+              variant="secondary"
+              size="compact"
+              loading={record.isPending}
+              onPress={() => confirm(sub.amountCents, sub.currency, 'Cash or bank transfer')}
+            />
+          ) : null}
+          <Button
+            label="Give a free year"
+            icon="gift-outline"
+            variant="secondary"
+            size="compact"
+            loading={record.isPending}
+            onPress={() => confirm(0, sub.currency, 'Free year')}
+          />
+          {record.error ? (
+            <ThemedText themeColor="danger">{record.error.message}</ThemedText>
+          ) : null}
+        </View>
+      )}
+    </QueryState>
+  );
+}
+
 /** The branch's fee: raise or lower it for this branch alone, or put it back on the default. */
 function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingSettings }) {
   const setFee = useSetGymFee(branch.gymId);
@@ -132,7 +183,7 @@ function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingS
     <Card style={styles.fee}>
       <FeeEditor
         key={branch.feeCents ?? 'default'}
-        label="This branch's monthly fee (₹)"
+        label="This branch's yearly fee (₹)"
         feeCents={branchFee(branch, billing)}
         pending={setFee.isPending}
         error={setFee.error}

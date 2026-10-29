@@ -11,7 +11,7 @@ import { formatAmount } from '@/lib/format';
 
 const branchCount = (n: number) => `${n} branch${n === 1 ? '' : 'es'}`;
 
-/** Every gym owner, with their brands, branch count and monthly amount. Tap one to visit. */
+/** Every gym owner, with their brands, branch count and yearly amount. Tap one to visit. */
 export default function AdminOwnersScreen() {
   const branches = useAdminBranches();
   const settings = useBillingSettings();
@@ -36,7 +36,7 @@ export default function AdminOwnersScreen() {
                       detail={`${account.brands.map((b) => b.brandName).join(', ')} · ${branchCount(account.branches)}`}
                       trailing={
                         <Pill
-                          label={`${formatAmount(account.monthlyCents, billing.currency)}/mo`}
+                          label={`${formatAmount(account.yearlyCents, billing.currency)}/yr`}
                           tone="accent"
                         />
                       }

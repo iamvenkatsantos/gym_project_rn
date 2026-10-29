@@ -15,7 +15,7 @@ import { branchBill, ownerAccounts } from '@/features/branches/rules';
 import type { BillingSettings, OwnerAccount } from '@/features/branches/types';
 import { formatAmount } from '@/lib/format';
 
-/** Admins only: one owner's brands and branches, and what they pay each month. */
+/** Admins only: one owner's brands and branches, and what they pay each year. */
 export default function AdminOwnerScreen() {
   const { ownerId } = useLocalSearchParams<{ ownerId: string }>();
   const branches = useAdminBranches();
@@ -55,10 +55,10 @@ function OwnerDetails({ account, billing }: { account: OwnerAccount; billing: Bi
       </View>
       <Card>
         <ThemedText type="small" themeColor="textSecondary">
-          To collect each month
+          To collect each year
         </ThemedText>
         <ThemedText type="title" themeColor="accent">
-          {formatAmount(account.monthlyCents, billing.currency)}
+          {formatAmount(account.yearlyCents, billing.currency)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {account.branches} branch{account.branches === 1 ? '' : 'es'} across{' '}
@@ -87,7 +87,7 @@ function OwnerDetails({ account, billing }: { account: OwnerAccount; billing: Bi
                 detail={[
                   b.city,
                   `${b.members} members`,
-                  `${formatAmount(branchBill(b, billing), billing.currency)}/month`,
+                  `${formatAmount(branchBill(b, billing), billing.currency)}/year`,
                 ]
                   .filter(Boolean)
                   .join(' · ')}

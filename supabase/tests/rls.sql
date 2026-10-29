@@ -759,6 +759,11 @@ select public.invite_gym_owner('friend.gym@example.com');
 select public.invite_to_gym((select id from public.gyms where name = 'Iron House'), 'friend.gym@example.com', 'owner');
 select public.can_set_up_gym();
 select public.create_gym('Second Branch', '', '', '', '');
+reset role;
+-- Paid, so Grace can add people (20261029010000_owner_subscriptions).
+update public.gyms set paid_until = current_date + 365 where name = 'Iron House';
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-000000000099');
 \echo '116 Grace adds Xavier as a member (expect added), cannot change his role to owner or supervisor (expect "A role can''t be changed" x2)'
 select public.invite_to_gym((select id from public.gyms where name = 'Iron House'), 'xavier@example.com', 'member');
 update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');

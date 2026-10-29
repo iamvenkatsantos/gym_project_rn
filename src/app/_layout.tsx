@@ -18,6 +18,7 @@ import { canCoach, canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
+import { useActiveBranchLocked } from '@/features/subscription/hooks';
 import { useColorSchemeName } from '@/hooks/use-theme';
 import { queryClient } from '@/lib/query-client';
 
@@ -76,9 +77,13 @@ function RootNavigator() {
   const profileSetup = useAuthStore((s) => !settingPassword && selectNeedsProfile(s));
   // Nobody reaches their role's screens until they've chosen a password and filled
   // in their details.
-  const role = useAuthStore((s) =>
+  const gymRole = useAuthStore((s) =>
     settingPassword || onboarding || profileSetup ? undefined : selectActiveGym(s)?.role,
   );
+  // A branch whose CoreFit Gym plan lapsed more than 5 days ago gets only the locked screen.
+  const branchLocked = useActiveBranchLocked();
+  const locked = !!gymRole && branchLocked;
+  const role = locked ? undefined : gymRole;
   // Platform admins get their own area with no gym in it, until they switch to a gym.
   const inAdmin = useAuthStore((s) => !settingPassword && selectInAdmin(s));
 
@@ -113,9 +118,16 @@ function RootNavigator() {
           !onboarding &&
           !profileSetup &&
           !role &&
+          !locked &&
           !inAdmin
         }>
         <Stack.Screen name="no-gym" options={{ title: 'Welcome' }} />
+      </Stack.Protected>
+      <Stack.Protected guard={locked && !inAdmin}>
+        <Stack.Screen
+          name="plan-locked"
+          options={{ headerShown: true, headerBackVisible: false, title: 'CoreFit Gym plan' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={onboarding}>
         {/* A native header keeps the title clear of the status bar; there's nowhere to go back to. */}
@@ -183,6 +195,11 @@ function RootNavigator() {
         />
         {/* Owners of more than one branch see them side by side. */}
         <Stack.Screen name="branches" options={{ headerShown: true, title: 'All branches' }} />
+        {/* What the branch pays CoreFit Gym each year, paid in the app. */}
+        <Stack.Screen
+          name="subscription"
+          options={{ headerShown: true, title: 'CoreFit Gym plan' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>
         <Stack.Screen name="supervisor" options={{ title: 'Dashboard' }} />

@@ -19,6 +19,7 @@ import { RenewOnline } from '@/features/payments/components/renew-online';
 import { SessionRow } from '@/features/trainers/components/session-row';
 import { useSessions } from '@/features/trainers/hooks';
 import { greeting } from '@/lib/greeting';
+import { PlanBanner } from '@/features/subscription/components/plan-banner';
 
 export default function MemberHomeScreen() {
   const profile = useProfile();
@@ -36,6 +37,7 @@ export default function MemberHomeScreen() {
         {gym.gymName}
       </ThemedText>
 
+      <PlanBanner />
       <CheckInCard gymId={gym.gymId} userId={profile.id} role="member" />
       <LatestAnnouncement />
 
