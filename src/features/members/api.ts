@@ -215,6 +215,47 @@ export async function invitePerson(
   };
 }
 
+/**
+ * Admin only: sets up a new gym and invites its owner to it, in one call, so the owner
+ * never creates a gym. By email, invite-member then sends the invite for that gym.
+ */
+export async function inviteGymOwner(
+  gym: { name: string; city: string },
+  email: string,
+  sendEmail: boolean,
+  phone: string | null,
+): Promise<InviteOutcome> {
+  if (!supabase) {
+    return delay({
+      result: 'invited',
+      emailSent: false,
+      emailError: null,
+      code: sendEmail ? null : 'K7P2QX4M',
+    });
+  }
+  const [row] = unwrap(
+    await supabase.rpc('admin_create_owner_gym', {
+      p_name: gym.name,
+      p_city: gym.city,
+      p_email: email,
+      p_phone: sendEmail ? null : phone,
+    }),
+  ) as { gym_id: string; result: InviteResult; code: string | null }[];
+  if (!sendEmail || row.result !== 'invited') {
+    return { result: row.result, emailSent: false, emailError: null, code: row.code };
+  }
+  const { data, error } = await supabase.functions.invoke<InviteOutcome>('invite-member', {
+    body: { gymId: row.gym_id, email, role: 'gym_owner', redirectTo: setPasswordUrl() },
+  });
+  if (!error && data) return data;
+  // The gym and the invite are saved; only the email didn't go.
+  return {
+    result: row.result,
+    emailSent: false,
+    emailError: await functionErrorMessage(error),
+  };
+}
+
 /** Rows per call to import-members, which keeps each call well inside the function's time limit. */
 export const IMPORT_CHUNK = 50;
 

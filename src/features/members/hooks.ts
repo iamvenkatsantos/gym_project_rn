@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   importMembers,
+  inviteGymOwner,
   invitePerson,
   sendImportInvites,
   listCoachedMembers,
@@ -12,6 +13,7 @@ import {
   updatePerson,
   withdrawInvite,
 } from '@/features/members/api';
+import { branchKeys } from '@/features/branches/hooks';
 import type { ImportRow } from '@/features/members/import-rules';
 import type { MemberKind } from '@/features/members/rules';
 import type { GymPerson, InviteChannel, InviteRole } from '@/features/members/types';
@@ -73,6 +75,25 @@ export function useInvitePerson(gymId: string) {
       phone?: string | null;
     }) => invitePerson(gymId, email, role, channel === 'email', phone),
     onSettled: invalidate,
+  });
+}
+
+/** Admin only: sets up a new gym and invites its owner, then refreshes the admin lists. */
+export function useInviteGymOwner() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      gym,
+      email,
+      channel,
+      phone = null,
+    }: {
+      gym: { name: string; city: string };
+      email: string;
+      channel: InviteChannel;
+      phone?: string | null;
+    }) => inviteGymOwner(gym, email, channel === 'email', phone),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: branchKeys.all }),
   });
 }
 

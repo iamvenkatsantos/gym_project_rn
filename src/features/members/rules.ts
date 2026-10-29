@@ -81,7 +81,7 @@ const inviteAs: Record<InviteRole, string> = {
   trainer: 'a trainer',
   supervisor: 'a supervisor',
   owner: 'a co-owner',
-  gym_owner: 'an owner',
+  gym_owner: 'the owner',
 };
 
 /**
@@ -95,13 +95,6 @@ export function inviteMessage(
   result: InviteResult,
   code?: string | null,
 ) {
-  if (result === 'added' && role === 'gym_owner') {
-    return [
-      "Hi! You're invited to set up your gym on CoreFit Gym.",
-      '',
-      `Open CoreFit Gym, sign in with ${email} and add your gym's details. Don't have the app? ${PLAY_STORE_URL}`,
-    ].join('\n');
-  }
   if (result === 'added') {
     return [
       `Hi! You've been added to ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
@@ -122,17 +115,13 @@ export function inviteMessage(
     ].join('\n');
   }
   return [
-    role === 'gym_owner'
-      ? "Hi! You're invited to set up your gym on CoreFit Gym."
-      : `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+    `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
     '',
     `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
     `2. Tap Create account and use this email: ${email}`,
     '3. Enter the 6-digit code from the email.',
     '',
-    role === 'gym_owner'
-      ? "Then add your gym's details and you're ready to go."
-      : `You'll be in ${gymName} as soon as you confirm.`,
+    `You'll be in ${gymName} as soon as you confirm.`,
   ].join('\n');
 }
 

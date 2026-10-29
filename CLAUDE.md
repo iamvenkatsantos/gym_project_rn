@@ -52,10 +52,14 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   is separate from gym roles. Only the admin invites owners, adds branches, sets branch fees and
   switches on online payments. Never give gym owners power over gyms or owners. The admin area
   (`src/app/admin`) shows owners, branches and billing; admins switch to a gym from Account
-  (`selectInAdmin`). New gym owners are invited from Admin → Owners → **Invite a gym owner**
-  (`invite-owner`, `invite_gym_owner()`), which needs no gym, so it works with zero gyms. The admin
-  runs CoreFit Gym, not a gym: `can_set_up_gym()` is only true for invited owners, so the admin
-  never sets up a gym for themself or invites their own email.
+  (`selectInAdmin`). **The admin sets up every new gym:** Admin → Owners → **Invite a gym owner**
+  (`invite-owner`) takes the gym's name and city plus the owner's email (and mobile for WhatsApp),
+  and `admin_create_owner_gym()` makes the brand, its first branch and the owner invite in one
+  transaction (WhatsApp gets a join code; email goes through `invite-member` with role
+  `gym_owner` and the `gymId`). Owners never create a gym; they edit its details on Gym details.
+  Works with zero gyms. The admin never joins the gym or invites their own email. The older
+  `invite_gym_owner()` → `set-up-gym` path stays only for invites sent before this; in-gym
+  Invite → Owner adds a co-owner.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
   branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
   (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free,
@@ -75,7 +79,7 @@ On `join` (or Sign in → I have an invite code) the person enters name and pass
 `accept-invite` edge fn makes the account already confirmed (or takes over an imported one), which
 claims the invite, so each code works once. Signing up with the invited email still works too.
 **Invite by email**: the `invite-member` edge fn calls
-`invite_to_gym()` (or `invite_gym_owner()` for a new gym, admin only) as the caller, then sends the
+`invite_to_gym()` (or, for an older new-gym invite, `invite_gym_owner()`) as the caller, then sends the
 email with the service role. Supervisors invite members and trainers; trainers invite members only,
 and those members are auto-mapped to them. Every member invite records an admission
 (`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a 6-digit code
@@ -107,7 +111,7 @@ phone, weight, height, front/back/side photos via `complete_member_onboarding`, 
 photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
 `selectNeedsProfile`) → `profile-setup` (name, required mobile, optional photo via `save_my_profile`);
 no gym →
-`no-gym`; new owner → `set-up-gym` (`create_gym` starts a new brand); admin → `admin`; otherwise the
+`no-gym` (older new-owner invites → `set-up-gym`, `create_gym`); admin → `admin`; otherwise the
 role's area. Roles and profile refetch when the app comes to the foreground.
 
 **Profiles.** Every role must have a mobile number (in `contact_details`, readable only by the
