@@ -17,8 +17,10 @@ export function useIsPlatformAdmin() {
   return useAuthStore((s) => s.profile?.isPlatformAdmin === true);
 }
 
+/** The admin runs CoreFit Gym, not a gym, so they never set one up for themself. */
 export function useCanSetUpGym() {
-  return useQuery({ queryKey: gymKeys.canSetUp(), queryFn: canSetUpGym });
+  const isAdmin = useIsPlatformAdmin();
+  return useQuery({ queryKey: gymKeys.canSetUp(), queryFn: canSetUpGym, enabled: !isAdmin });
 }
 
 export function useGymDetails(gymId: string) {

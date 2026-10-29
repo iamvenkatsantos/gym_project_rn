@@ -770,6 +770,15 @@ update public.gym_members set role = 'owner' where user_id = '00000000-0000-0000
 update public.gym_members set role = 'supervisor' where user_id = '00000000-0000-0000-0000-00000000000e' and gym_id = (select id from public.gyms where name = 'Iron House');
 \echo '117 nobody makes themselves an admin from the app (expect permission denied)'
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-000000000099');
+\echo '117b admin cannot set up a gym for themself (expect f, "Ask CoreFit Gym") or invite their own email (expect "not yours")'
+reset role;
+update auth.users set email = 'olivia@example.com', email_confirmed_at = now()
+  where id = '00000000-0000-0000-0000-00000000000a';
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+select public.can_set_up_gym() as admin_sets_up;
+select public.create_gym('Admin Gym', '', '', '', '');
+select public.invite_gym_owner(' Olivia@Example.com');
 
 -- Owner insights ---------------------------------------------------------------------
 \echo '118 owner sees 6 months of revenue ending this month, with this month''s payments and new members (expect 6, t, t)'

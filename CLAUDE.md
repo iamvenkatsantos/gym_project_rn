@@ -49,10 +49,13 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
   already at the gym keeps their role.
 - **Platform admin** (`platform_admins` + `is_platform_admin()`, rows added in the SQL editor only)
-  is separate from gym roles. Only the admin invites owners, sets up new gyms, adds branches, sets
-  branch fees and switches on online payments. Never give gym owners power over gyms or owners. The
-  admin area (`src/app/admin`) shows owners, branches and billing; admins switch to a gym from
-  Account (`selectInAdmin`).
+  is separate from gym roles. Only the admin invites owners, adds branches, sets branch fees and
+  switches on online payments. Never give gym owners power over gyms or owners. The admin area
+  (`src/app/admin`) shows owners, branches and billing; admins switch to a gym from Account
+  (`selectInAdmin`). New gym owners are invited from Admin → Owners → **Invite a gym owner**
+  (`invite-owner`, `invite_gym_owner()`), which needs no gym, so it works with zero gyms. The admin
+  runs CoreFit Gym, not a gym: `can_set_up_gym()` is only true for invited owners, so the admin
+  never sets up a gym for themself or invites their own email.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
   branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
   (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free,

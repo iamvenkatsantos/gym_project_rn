@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 
+import { Button } from '@/components/button';
 import { ListGroup, ListRow } from '@/components/list-row';
 import { Pill } from '@/components/pill';
 import { QueryState } from '@/components/query-state';
@@ -11,19 +12,24 @@ import { formatAmount } from '@/lib/format';
 
 const branchCount = (n: number) => `${n} branch${n === 1 ? '' : 'es'}`;
 
-/** Every gym owner, with their brands, branch count and yearly amount. Tap one to visit. */
+/** Every gym owner, with their brands, branch count and yearly amount, and where new ones are invited. */
 export default function AdminOwnersScreen() {
   const branches = useAdminBranches();
   const settings = useBillingSettings();
 
   return (
     <Screen>
+      <Button
+        label="Invite a gym owner"
+        icon="person-add-outline"
+        onPress={() => router.push('/invite-owner')}
+      />
       <QueryState query={settings}>
         {(billing) => (
           <QueryState
             query={branches}
             isEmpty={(list) => ownerAccounts(list, billing).length === 0}
-            emptyText="No owners yet. Invite one from a gym: Invite → Owner → A new gym.">
+            emptyText="No owners yet.">
             {(list) => (
               <>
                 <ListGroup>

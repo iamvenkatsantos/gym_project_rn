@@ -33,7 +33,7 @@ export default function AccountScreen() {
   const inAdmin = useAuthStore(selectInAdmin);
   const setAdminMode = useAuthStore((s) => s.setAdminMode);
   const signOut = useSignOut();
-  // Admins, and people an admin invited to run a gym, can set one up from here.
+  // People an admin invited to run a gym can set up another one from here.
   const canSetUpGym = useCanSetUpGym();
   // CoreFit Gym admins switch between the admin view and any gym they belong to.
   const isAdmin = useIsPlatformAdmin();
