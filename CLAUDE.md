@@ -55,8 +55,8 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   Account (`selectInAdmin`).
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
   branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
-  (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 means no fee, an
-  option when adding a branch). Members use their home branch only.
+  (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free,
+  add-on included: **Make this branch free** on the admin branch screen or when adding one). Members use their home branch only.
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
@@ -148,10 +148,11 @@ refunds in the app.
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
 Razorpay Payment Link into CoreFit Gym's own account (no Route), and `razorpay-webhook` calls
 `complete_subscription_payment()`, which adds a year from the day after `paid_until` (or today if
-lapsed). The admin records cash or a free year on the branch screen (`admin_record_subscription`).
+lapsed). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
+free months (`admin_give_free_months`).
 Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
 `gym_invites` and `gym_members`, so every invite and import path is covered); every role sees
-`PlanBanner`; 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for
+`PlanBanner` (only once unpaid, no advance warning); 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for
 everyone at the branch, where the owner can pay. The lock is in the app only; the server still
 answers other calls.
 

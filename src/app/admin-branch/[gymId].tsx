@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
@@ -17,7 +18,12 @@ import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/b
 import { branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
-import { useRecordSubscription, useSubscription } from '@/features/subscription/hooks';
+import {
+  subscriptionKeys,
+  useGiveFreeMonths,
+  useRecordSubscription,
+  useSubscription,
+} from '@/features/subscription/hooks';
 import { formatDate, formatAmount } from '@/lib/format';
 
 /** Admins only: one branch's address, contact, size and fee, for a visit or a billing call. */
@@ -122,6 +128,13 @@ export default function AdminBranchScreen() {
   );
 }
 
+const FREE_OPTIONS = [
+  { months: 1, label: '1 month' },
+  { months: 3, label: '3 months' },
+  { months: 6, label: '6 months' },
+  { months: 12, label: '1 year' },
+];
+
 /**
  * How long the branch is paid for. The owner pays in the app; a year paid by cash or
  * bank transfer, or given free, is recorded here.
@@ -129,18 +142,26 @@ export default function AdminBranchScreen() {
 function BranchPlan({ gymId }: { gymId: string }) {
   const subscription = useSubscription(gymId);
   const record = useRecordSubscription(gymId);
+  const free = useGiveFreeMonths(gymId);
 
-  const confirm = (amountCents: number, currency: string, note: string) =>
+  const confirmPaid = (amountCents: number, currency: string) =>
     Alert.alert(
-      amountCents ? 'Record a year paid?' : 'Give a free year?',
-      amountCents
-        ? `${formatAmount(amountCents, currency)} received outside the app. Adds a year.`
-        : 'Adds a year at no charge.',
+      'Record a year paid?',
+      `${formatAmount(amountCents, currency)} received outside the app. Adds a year.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Add a year', onPress: () => record.mutate({ amountCents, note }) },
+        {
+          text: 'Add a year',
+          onPress: () => record.mutate({ amountCents, note: 'Cash or bank transfer' }),
+        },
       ],
     );
+  const confirmFree = (months: number, label: string) =>
+    Alert.alert(`Give ${label} free?`, 'Adds it at no charge.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Give free', onPress: () => free.mutate(months) },
+    ]);
+  const error = record.error ?? free.error;
 
   return (
     <QueryState query={subscription}>
@@ -154,20 +175,26 @@ function BranchPlan({ gymId }: { gymId: string }) {
               variant="secondary"
               size="compact"
               loading={record.isPending}
-              onPress={() => confirm(sub.amountCents, sub.currency, 'Cash or bank transfer')}
+              onPress={() => confirmPaid(sub.amountCents, sub.currency)}
             />
           ) : null}
-          <Button
-            label="Give a free year"
-            icon="gift-outline"
-            variant="secondary"
-            size="compact"
-            loading={record.isPending}
-            onPress={() => confirm(0, sub.currency, 'Free year')}
-          />
-          {record.error ? (
-            <ThemedText themeColor="danger">{record.error.message}</ThemedText>
-          ) : null}
+          <ThemedText type="small" themeColor="textSecondary">
+            Give free time
+          </ThemedText>
+          <View style={styles.chips}>
+            {FREE_OPTIONS.map(({ months, label }) => (
+              <Button
+                key={months}
+                label={label}
+                icon="gift-outline"
+                variant="secondary"
+                size="compact"
+                disabled={free.isPending}
+                onPress={() => confirmFree(months, label)}
+              />
+            ))}
+          </View>
+          {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
         </View>
       )}
     </QueryState>
@@ -177,7 +204,13 @@ function BranchPlan({ gymId }: { gymId: string }) {
 /** The branch's fee: raise or lower it for this branch alone, or put it back on the default. */
 function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingSettings }) {
   const setFee = useSetGymFee(branch.gymId);
+  const queryClient = useQueryClient();
   const fallback = formatAmount(billing.branchFeeCents, billing.currency);
+  // The plan above shows the new bill straight away.
+  const save = (fee: number | null) =>
+    setFee.mutate(fee, {
+      onSettled: () => queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
+    });
 
   return (
     <Card style={styles.fee}>
@@ -187,8 +220,22 @@ function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingS
         feeCents={branchFee(branch, billing)}
         pending={setFee.isPending}
         error={setFee.error}
-        onSave={(fee) => setFee.mutate(fee)}
+        onSave={save}
       />
+      {branch.feeCents !== 0 ? (
+        <Button
+          label="Make this branch free"
+          icon="gift-outline"
+          variant="secondary"
+          size="compact"
+          loading={setFee.isPending}
+          onPress={() => save(0)}
+        />
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          Free: nothing to pay, add-on included.
+        </ThemedText>
+      )}
       {branch.feeCents === null ? (
         <ThemedText type="small" themeColor="textSecondary">
           On the default fee ({fallback}). Saving a different amount gives this branch its own fee.
@@ -199,7 +246,7 @@ function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingS
           variant="secondary"
           size="compact"
           loading={setFee.isPending}
-          onPress={() => setFee.mutate(null)}
+          onPress={() => save(null)}
         />
       )}
     </Card>
@@ -212,6 +259,11 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: Spacing.one,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
   grid: {
     flexDirection: 'row',

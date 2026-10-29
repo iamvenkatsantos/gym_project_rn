@@ -85,6 +85,8 @@ describe('billing', () => {
   it('adds the online payments add-on to branches that have it', () => {
     expect(branchBill(list[0], billing)).toBe(150000);
     expect(branchBill(branch('g6', 'b1', [raj], null, true), billing)).toBe(200000);
+    // A free branch pays no add-on either.
+    expect(branchBill(branch('g7', 'b1', [raj], 0, true), billing)).toBe(0);
     expect(yearlyTotal([...list, branch('g6', 'b1', [], 100000, true)], billing)).toBe(
       150000 * 2 + 100000 * 4 + 50000,
     );
