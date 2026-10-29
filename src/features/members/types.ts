@@ -25,6 +25,8 @@ export type GymPerson = {
   admittedAt?: string | null;
   /** Whether a member has filled in their first-sign-in details. */
   onboarded?: boolean;
+  /** False until they confirm an account (imported members); no trainer before then. */
+  signedUp?: boolean;
 };
 
 /** An invite waiting for someone to confirm an account with that email. */
@@ -33,6 +35,10 @@ export type GymInvite = {
   email: string;
   role: Role;
   createdAt: string;
+  /** The one-time code sent on WhatsApp, and the number it went to. */
+  code?: string | null;
+  phone?: string | null;
+  codeExpiresAt?: string | null;
 };
 
 /** A role at this gym, or 'gym_owner': the owner of a new gym of their own. */
@@ -49,7 +55,12 @@ export type InviteOutcome = {
   emailSent: boolean;
   /** Why no email went out, when one should have. */
   emailError: string | null;
+  /** The one-time join code of a WhatsApp invite. */
+  code?: string | null;
 };
+
+/** What the join screen shows for an invite code. */
+export type InviteByCode = { gymName: string; email: string; role: Role };
 
 export type PeopleFilter = 'all' | Role | 'suspended';
 

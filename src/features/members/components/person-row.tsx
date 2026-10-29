@@ -5,6 +5,7 @@ import { Icon } from '@/components/icon';
 import { Pill, type PillTone } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, TapTarget } from '@/constants/theme';
+import { isSignedUp } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
 import { initials } from '@/features/trainers/rules';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,11 +37,14 @@ export function PersonRow({
 }) {
   const theme = useTheme();
   const suspended = person.status === 'suspended';
+  // Imported members who haven't joined yet: listed, but not active.
+  const invited = !suspended && !isSignedUp(person);
+  const dimmed = suspended || invited;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${person.fullName}, ${person.role}${suspended ? ', suspended' : ''}`}
+      accessibilityLabel={`${person.fullName}, ${person.role}${suspended ? ', suspended' : invited ? ', not joined yet' : ''}`}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
@@ -51,7 +55,7 @@ export function PersonRow({
         style={[
           styles.avatar,
           { backgroundColor: theme.backgroundSelected },
-          suspended && styles.dimmed,
+          dimmed && styles.dimmed,
         ]}>
         {person.avatarUrl ? (
           <Image
@@ -63,7 +67,7 @@ export function PersonRow({
           <ThemedText type="smallBold">{initials(person.fullName)}</ThemedText>
         )}
       </View>
-      <View style={[styles.text, suspended && styles.dimmed]}>
+      <View style={[styles.text, dimmed && styles.dimmed]}>
         <ThemedText type="smallBold" numberOfLines={1}>
           {person.fullName}
         </ThemedText>
@@ -81,6 +85,8 @@ export function PersonRow({
       <View>
         {suspended ? (
           <Pill label="Suspended" tone="danger" />
+        ) : invited ? (
+          <Pill label="Invited" tone="warning" />
         ) : hideRole ? null : (
           <Pill label={person.role} tone={roleTone[person.role]} />
         )}

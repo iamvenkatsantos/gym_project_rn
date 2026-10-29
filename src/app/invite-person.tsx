@@ -16,7 +16,7 @@ import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople } from '@/features/members/hooks';
 import { whatsappUrl } from '@/features/enquiries/rules';
 import { parseMobile } from '@/features/members/import-rules';
-import { inviteMessage, normalizeEmail } from '@/features/members/rules';
+import { formatInviteCode, inviteMessage, normalizeEmail } from '@/features/members/rules';
 import { validateEmail } from '@/lib/validation';
 import type { InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
 
@@ -27,7 +27,7 @@ function sendOnWhatsApp(message: string, mobile: string | null) {
 }
 
 function describe(
-  { result, emailSent, emailError }: InviteOutcome,
+  { result, emailSent, emailError, code }: InviteOutcome,
   email: string,
   role: InviteRole,
   canManage: boolean,
@@ -49,7 +49,12 @@ function describe(
     };
   }
   if (channel === 'whatsapp') {
-    return { title: 'Invite saved', detail: `${joins} once they sign up with ${email}.` };
+    return code
+      ? {
+          title: `Code ${formatInviteCode(code)}`,
+          detail: `${joins} with this code. It works once, for 7 days.`,
+        }
+      : { title: 'Invite saved', detail: `${joins} once they sign up with ${email}.` };
   }
   return emailSent
     ? { title: 'Invite sent', detail: `We emailed ${email} a code. ${joins} once they enter it.` }
@@ -106,17 +111,34 @@ export default function InvitePersonScreen() {
       )
     : null;
   const message = invite.data
-    ? inviteMessage(gym.gymName, invite.variables.email, invite.variables.role, invite.data.result)
+    ? inviteMessage(
+        gym.gymName,
+        invite.variables.email,
+        invite.variables.role,
+        invite.data.result,
+        invite.data.code,
+      )
     : null;
   const canMessage =
     invite.variables?.channel === 'whatsapp' && invite.data?.result !== 'already_member';
   const send = (channel: InviteChannel) => {
-    const variables = { email: normalizeEmail(email), role: inviteRole, channel };
+    const variables = {
+      email: normalizeEmail(email),
+      role: inviteRole,
+      channel,
+      phone: channel === 'whatsapp' ? whatsappNumber : null,
+    };
     invite.mutate(variables, {
       onSuccess: (outcome) => {
         if (channel === 'whatsapp' && outcome.result !== 'already_member') {
           sendOnWhatsApp(
-            inviteMessage(gym.gymName, variables.email, variables.role, outcome.result),
+            inviteMessage(
+              gym.gymName,
+              variables.email,
+              variables.role,
+              outcome.result,
+              outcome.code,
+            ),
             whatsappNumber,
           );
         }

@@ -19,7 +19,7 @@ import type { TrainerLink } from '@/features/coaching/types';
 import { PendingInvites } from '@/features/members/components/pending-invites';
 import { PersonRow } from '@/features/members/components/person-row';
 import { usePeople } from '@/features/members/hooks';
-import { countPeople, filterPeople } from '@/features/members/rules';
+import { countPeople, filterPeople, isSignedUp } from '@/features/members/rules';
 import type { GymPerson, PeopleFilter } from '@/features/members/types';
 
 const filters: { value: PeopleFilter; label: string }[] = [
@@ -64,7 +64,7 @@ export default function OwnerPeopleScreen() {
         onPress={() => router.push('/match-trainers')}
       />
 
-      <PendingInvites gymId={gym.gymId} canWithdraw={canWithdraw} />
+      <PendingInvites gymId={gym.gymId} gymName={gym.gymName} canWithdraw={canWithdraw} />
 
       <SectionHeader title="People" />
       <TextField
@@ -121,6 +121,7 @@ export default function OwnerPeopleScreen() {
 
 /** Who a member trains with, or how many members a trainer has. */
 function coachingDetail(person: GymPerson, links: TrainerLink[]) {
+  if (!isSignedUp(person)) return 'Not joined yet';
   if (person.role === 'member') {
     const trainers = trainersOf(links, person.id).map((l) => l.trainerName);
     return trainers.length ? `Trainer: ${trainers.join(', ')}` : 'No trainer yet';

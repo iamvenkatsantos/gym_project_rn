@@ -4,7 +4,12 @@ import {
   countPeople,
   filterPeople,
   isLastActiveOwner,
+  formatInviteCode,
   inviteMessage,
+  isInviteCode,
+  isSignedUp,
+  joinLink,
+  normalizeInviteCode,
   isValidEmail,
   normalizeEmail,
 } from '@/features/members/rules';
@@ -111,5 +116,33 @@ describe('inviteMessage', () => {
     const text = inviteMessage('Iron Den', 'anu@mail.com', 'member', 'added');
     expect(text).toContain("You've been added to Iron Den on CoreFit Gym as a member.");
     expect(text).toContain('sign in with anu@mail.com');
+  });
+});
+
+describe('invite codes', () => {
+  it('reads codes however people type them', () => {
+    expect(normalizeInviteCode(' k7p2-qx4m ')).toBe('K7P2QX4M');
+    expect(formatInviteCode('k7p2qx4m')).toBe('K7P2-QX4M');
+    expect(isInviteCode('K7P2 QX4M')).toBe(true);
+    expect(isInviteCode('K7P2QX4')).toBe(false);
+    // 0, O, 1 and I are left out so they can't be mixed up.
+    expect(isInviteCode('K7P2QX4O')).toBe(false);
+  });
+
+  it('links through the join function', () => {
+    expect(joinLink('k7p2-qx4m')).toMatch(/\/functions\/v1\/join\?code=K7P2QX4M$/);
+  });
+
+  it('puts the link and code in the WhatsApp message', () => {
+    const text = inviteMessage('Iron Den', 'kavi@mail.com', 'member', 'invited', 'K7P2QX4M');
+    expect(text).toContain('join?code=K7P2QX4M');
+    expect(text).toContain('enter K7P2-QX4M');
+    expect(text).toContain("You'll sign in with kavi@mail.com.");
+    expect(text).not.toContain('6-digit');
+  });
+
+  it('treats people as signed up unless told otherwise', () => {
+    expect(isSignedUp({})).toBe(true);
+    expect(isSignedUp({ signedUp: false })).toBe(false);
   });
 });

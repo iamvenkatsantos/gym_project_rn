@@ -20,19 +20,19 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 
 ## Folder map
 
-| Path                         | What lives there                                                                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `src/app/_layout.tsx`        | Root navigator: every gate and role is a `Stack.Protected` guard                                                                  |
-| `src/app/<role>/`            | Tab areas: `member`, `trainer`, `supervisor`, `owner`, `admin`                                                                    |
-| `src/app/*.tsx`, `[id]` dirs | Shared stack screens (person, plan-editor, record-membership, check-in, …)                                                        |
-| `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                                         |
-| `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                                  |
-| `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                                    |
-| `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                                           |
-| `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                    |
-| `supabase/functions/`        | `invite-member`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
-| `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                   |
-| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                |
+| Path                         | What lives there                                                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/_layout.tsx`        | Root navigator: every gate and role is a `Stack.Protected` guard                                                                                           |
+| `src/app/<role>/`            | Tab areas: `member`, `trainer`, `supervisor`, `owner`, `admin`                                                                                             |
+| `src/app/*.tsx`, `[id]` dirs | Shared stack screens (person, plan-editor, record-membership, check-in, …)                                                                                 |
+| `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                                                                  |
+| `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                                                           |
+| `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                                                             |
+| `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                                                                    |
+| `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                                             |
+| `supabase/functions/`        | `invite-member`, `accept-invite`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
+| `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                            |
+| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                         |
 
 ## Roles and who sees what
 
@@ -63,15 +63,23 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 ## Core flows
 
 **Invite and admission.** People join by invite (People / Members tab → `invite-person`), sent on
-WhatsApp or by email. **Invite on WhatsApp** only saves the invite (`invite_to_gym()` /
-`invite_gym_owner()` RPC, no email) and opens WhatsApp with `inviteMessage()`; signing up with that
-email claims it. **Invite by email**: the `invite-member` edge fn calls
+WhatsApp or by email. **Invite on WhatsApp** saves the invite with a one-time 8-character code
+(`whatsapp_invite()` RPC, 7 days, no email; new gym owners get no code) and opens WhatsApp with
+`inviteMessage()`, which carries the code and a join link. The link goes through the `join` edge fn
+(WhatsApp only makes https tappable), which redirects to `corefit://join?code=…` or the Play Store.
+On `join` (or Sign in → I have an invite code) the person enters name and password; the
+`accept-invite` edge fn makes the account already confirmed (or takes over an imported one), which
+claims the invite, so each code works once. Signing up with the invited email still works too.
+**Invite by email**: the `invite-member` edge fn calls
 `invite_to_gym()` (or `invite_gym_owner()` for a new gym, admin only) as the caller, then sends the
 email with the service role. Supervisors invite members and trainers; trainers invite members only,
 and those members are auto-mapped to them. Every member invite records an admission
 (`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a 6-digit code
 (`enter-code`, `verifyOtp`) because links can't open the app from a computer. `claim_gym_invites`
-attaches pending invites when the user confirms. Login is email only (no phone OTP); Google or other
+attaches pending invites when the user confirms. Pending invites list as **Invited** on People, and
+members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
+**No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
+pickers. Login is email only (no phone OTP); Google or other
 OAuth may come later.
 
 **Member import.** Owners bring members over from another app on People → `import-members`: share
@@ -174,7 +182,7 @@ Say in the PR which of these it needs:
 
 - **`npx supabase db push`** for any new migration (run from Venkat's machine).
 - **Function deploys** when `supabase/functions/` changes: `npx supabase functions deploy <name>`
-  (`send-push` and `razorpay-webhook` need `--no-verify-jwt`).
+  (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
 - **A new EAS build** when a native module or `app.json` changes (`npx eas-cli@latest build
 --profile preview` for the APK). JS-only changes need none.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.

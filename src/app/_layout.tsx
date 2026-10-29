@@ -101,6 +101,7 @@ function RootNavigator() {
       <Stack.Protected guard={status === 'signedOut'}>
         <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />
         <Stack.Screen name="enter-code" options={{ headerShown: true, title: 'Enter your code' }} />
+        <Stack.Screen name="join" options={{ headerShown: true, title: 'Join your gym' }} />
       </Stack.Protected>
       <Stack.Protected guard={settingPassword}>
         <Stack.Screen name="set-password" options={{ title: 'Choose a password' }} />
