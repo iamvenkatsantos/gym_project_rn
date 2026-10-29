@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
@@ -17,7 +18,11 @@ import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/b
 import { branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
-import { useRecordSubscription, useSubscription } from '@/features/subscription/hooks';
+import {
+  subscriptionKeys,
+  useRecordSubscription,
+  useSubscription,
+} from '@/features/subscription/hooks';
 import { formatDate, formatAmount } from '@/lib/format';
 
 /** Admins only: one branch's address, contact, size and fee, for a visit or a billing call. */
@@ -177,7 +182,13 @@ function BranchPlan({ gymId }: { gymId: string }) {
 /** The branch's fee: raise or lower it for this branch alone, or put it back on the default. */
 function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingSettings }) {
   const setFee = useSetGymFee(branch.gymId);
+  const queryClient = useQueryClient();
   const fallback = formatAmount(billing.branchFeeCents, billing.currency);
+  // The plan above shows the new bill straight away.
+  const save = (fee: number | null) =>
+    setFee.mutate(fee, {
+      onSettled: () => queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
+    });
 
   return (
     <Card style={styles.fee}>
@@ -187,8 +198,22 @@ function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingS
         feeCents={branchFee(branch, billing)}
         pending={setFee.isPending}
         error={setFee.error}
-        onSave={(fee) => setFee.mutate(fee)}
+        onSave={save}
       />
+      {branch.feeCents !== 0 ? (
+        <Button
+          label="Make this branch free"
+          icon="gift-outline"
+          variant="secondary"
+          size="compact"
+          loading={setFee.isPending}
+          onPress={() => save(0)}
+        />
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          Free: nothing to pay, add-on included.
+        </ThemedText>
+      )}
       {branch.feeCents === null ? (
         <ThemedText type="small" themeColor="textSecondary">
           On the default fee ({fallback}). Saving a different amount gives this branch its own fee.
@@ -199,7 +224,7 @@ function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingS
           variant="secondary"
           size="compact"
           loading={setFee.isPending}
-          onPress={() => setFee.mutate(null)}
+          onPress={() => save(null)}
         />
       )}
     </Card>

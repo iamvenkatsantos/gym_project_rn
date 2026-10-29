@@ -37,12 +37,16 @@ export function branchFee(branch: Pick<AdminBranch, 'feeCents'>, settings: Billi
   return branch.feeCents ?? settings.branchFeeCents;
 }
 
-/** What a branch pays each year: its fee plus the online payments add-on when it's on. */
+/**
+ * What a branch pays each year: its fee plus the online payments add-on when it's on.
+ * A free branch (fee 0) pays no add-on either.
+ */
 export function branchBill(
   branch: Pick<AdminBranch, 'feeCents' | 'onlinePayments'>,
   settings: BillingSettings,
 ) {
-  return branchFee(branch, settings) + (branch.onlinePayments ? settings.onlineAddonCents : 0);
+  const fee = branchFee(branch, settings);
+  return fee + (branch.onlinePayments && fee > 0 ? settings.onlineAddonCents : 0);
 }
 
 /** What to collect each year across every branch. Co-owned branches count once. */

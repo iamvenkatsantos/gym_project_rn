@@ -189,3 +189,14 @@ select pg_temp.as_user('d0000000-0000-0000-0000-00000000000a');
 select paid, locks_on, locked from public.branch_access('d1000000-0000-0000-0000-000000000001');
 
 reset role;
+
+\echo 'S28 A free branch with online payments on still pays nothing (expect 0 0 0, t)'
+select set_config('request.jwt.claim.sub', '', false);
+update public.gyms set fee_cents = 0, online_payments = true, paid_until = null
+where id = 'd1000000-0000-0000-0000-000000000003';
+set role authenticated;
+select pg_temp.as_user('d0000000-0000-0000-0000-00000000000b');
+select fee_cents, addon_cents, amount_cents
+from public.branch_subscription('d1000000-0000-0000-0000-000000000003');
+select public.branch_is_paid('d1000000-0000-0000-0000-000000000003');
+reset role;
