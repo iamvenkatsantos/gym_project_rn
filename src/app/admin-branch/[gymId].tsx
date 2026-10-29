@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
@@ -19,7 +18,6 @@ import { branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
 import {
-  subscriptionKeys,
   useGiveFreeMonths,
   useRecordSubscription,
   useSubscription,
@@ -204,13 +202,8 @@ function BranchPlan({ gymId }: { gymId: string }) {
 /** The branch's fee: raise or lower it for this branch alone, or put it back on the default. */
 function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingSettings }) {
   const setFee = useSetGymFee(branch.gymId);
-  const queryClient = useQueryClient();
   const fallback = formatAmount(billing.branchFeeCents, billing.currency);
-  // The plan above shows the new bill straight away.
-  const save = (fee: number | null) =>
-    setFee.mutate(fee, {
-      onSettled: () => queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
-    });
+  const save = (fee: number | null) => setFee.mutate(fee);
 
   return (
     <Card style={styles.fee}>
