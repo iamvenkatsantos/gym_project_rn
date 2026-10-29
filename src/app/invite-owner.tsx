@@ -11,9 +11,9 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { whatsappUrl } from '@/features/enquiries/rules';
-import { useInvitePerson } from '@/features/members/hooks';
+import { useInviteGymOwner } from '@/features/members/hooks';
 import { parseMobile } from '@/features/members/import-rules';
-import { inviteMessage, normalizeEmail } from '@/features/members/rules';
+import { formatInviteCode, inviteMessage, normalizeEmail } from '@/features/members/rules';
 import type { InviteChannel, InviteOutcome } from '@/features/members/types';
 import { validateEmail } from '@/lib/validation';
 
@@ -24,50 +24,63 @@ function sendOnWhatsApp(message: string, mobile: string | null) {
 }
 
 function describe(
-  { result, emailSent, emailError }: InviteOutcome,
+  { result, emailSent, emailError, code }: InviteOutcome,
+  gymName: string,
   email: string,
-  channel: InviteChannel,
 ) {
   if (result === 'added') {
-    return { title: 'Ready to set up their gym', detail: 'They already have an account.' };
-  }
-  if (channel === 'whatsapp' || emailSent) {
     return {
-      title: channel === 'whatsapp' ? 'Invite saved' : 'Invite sent',
-      detail: `They set up their gym once they sign up with ${email}.`,
+      title: `${gymName} is ready`,
+      detail: 'They already have an account. It shows next time they open the app.',
+    };
+  }
+  if (code) {
+    return {
+      title: `Code ${formatInviteCode(code)}`,
+      detail: `They join ${gymName} with this code. It works once, for 7 days.`,
+    };
+  }
+  if (emailSent) {
+    return {
+      title: 'Invite sent',
+      detail: `We emailed ${email} a code. They join once they enter it.`,
     };
   }
   return {
-    title: 'Invite saved',
-    detail: `Email failed${emailError ? `: ${emailError.replace(/\.$/, '')}` : ''}. Ask them to sign up with ${email}.`,
+    title: `${gymName} is ready`,
+    detail: emailError
+      ? `Email failed: ${emailError.replace(/\.$/, '')}. Ask them to sign up with ${email}.`
+      : `They join once they sign up with ${email}.`,
   };
 }
 
 /**
- * CoreFit Gym's admin invites someone to open a new gym of their own. It needs no gym,
- * so it works on a fresh install with no gyms at all. The server checks it's the admin.
+ * CoreFit Gym's admin sets up a new gym and invites its owner. The owner never creates a
+ * gym; they only edit its details. Works with no gyms at all. The server checks it's the admin.
  */
 export default function InviteOwnerScreen() {
-  // A new gym owner joins no existing gym, so there's no gym id to send.
-  const invite = useInvitePerson('');
+  const invite = useInviteGymOwner();
   const [channel, setChannel] = useState<InviteChannel>('whatsapp');
+  const [gymName, setGymName] = useState('');
+  const [city, setCity] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
+  const nameError = gymName.trim().length < 2 ? "Enter the gym's name." : null;
   const emailError = validateEmail(email);
   const whatsappNumber = parseMobile(mobile);
   const mobileError =
     channel === 'whatsapp' && !whatsappNumber ? 'Enter a 10-digit mobile number.' : null;
-  const result = invite.data
-    ? describe(invite.data, invite.variables.email, invite.variables.channel)
-    : null;
-  const message = invite.data
-    ? inviteMessage('', invite.variables.email, 'gym_owner', invite.data.result)
-    : null;
+  const sent = invite.variables;
+  const result = invite.data && sent ? describe(invite.data, sent.gym.name, sent.email) : null;
+  const message =
+    invite.data && sent
+      ? inviteMessage(sent.gym.name, sent.email, 'gym_owner', invite.data.result, invite.data.code)
+      : null;
 
   const send = () => {
     const variables = {
+      gym: { name: gymName.trim(), city: city.trim() },
       email: normalizeEmail(email),
-      role: 'gym_owner' as const,
       channel,
       phone: channel === 'whatsapp' ? whatsappNumber : null,
     };
@@ -75,13 +88,21 @@ export default function InviteOwnerScreen() {
       onSuccess: (outcome) => {
         if (channel === 'whatsapp') {
           sendOnWhatsApp(
-            inviteMessage('', variables.email, 'gym_owner', outcome.result),
+            inviteMessage(
+              variables.gym.name,
+              variables.email,
+              'gym_owner',
+              outcome.result,
+              outcome.code,
+            ),
             whatsappNumber,
           );
         }
       },
     });
   };
+  // Once sent, the gym exists, so the form locks: a resend would set up a second gym.
+  const locked = !!invite.data || invite.isPending;
   const edit = (set: (text: string) => void) => (text: string) => {
     set(text);
     invite.reset();
@@ -90,8 +111,27 @@ export default function InviteOwnerScreen() {
   return (
     <Screen refreshable={false}>
       <ThemedText type="small" themeColor="textSecondary">
-        They get a new, empty gym of their own.
+        You set up the gym. The owner edits its details later.
       </ThemedText>
+      <TextField
+        label="Gym name"
+        placeholder="AMR Fitness"
+        value={gymName}
+        editable={!locked}
+        onChangeText={edit(setGymName)}
+        autoCapitalize="words"
+        maxLength={80}
+        error={gymName ? nameError : null}
+      />
+      <TextField
+        label="City"
+        placeholder="Optional"
+        value={city}
+        editable={!locked}
+        onChangeText={edit(setCity)}
+        autoCapitalize="words"
+        maxLength={80}
+      />
       <SegmentedControl<InviteChannel>
         options={[
           { value: 'whatsapp', label: 'WhatsApp' },
@@ -99,6 +139,7 @@ export default function InviteOwnerScreen() {
         ]}
         value={channel}
         onChange={(next) => {
+          if (locked) return;
           setChannel(next);
           invite.reset();
         }}
@@ -108,6 +149,7 @@ export default function InviteOwnerScreen() {
           label="Mobile"
           placeholder="98400 12345"
           value={mobile}
+          editable={!locked}
           onChangeText={edit(setMobile)}
           keyboardType="phone-pad"
           textContentType="telephoneNumber"
@@ -120,6 +162,7 @@ export default function InviteOwnerScreen() {
         label={channel === 'whatsapp' ? 'Email they sign up with' : 'Email'}
         placeholder="name@example.com"
         value={email}
+        editable={!locked}
         onChangeText={edit(setEmail)}
         autoCapitalize="none"
         autoComplete="email"
@@ -142,7 +185,7 @@ export default function InviteOwnerScreen() {
         </Card>
       ) : null}
       {invite.error ? <ThemedText themeColor="danger">{invite.error.message}</ThemedText> : null}
-      {result && invite.variables?.channel === 'whatsapp' && message ? (
+      {result && sent?.channel === 'whatsapp' && message ? (
         <Button
           label="Send on WhatsApp again"
           icon="logo-whatsapp"
@@ -158,6 +201,8 @@ export default function InviteOwnerScreen() {
               label="Invite another"
               variant="secondary"
               onPress={() => {
+                setGymName('');
+                setCity('');
                 setEmail('');
                 setMobile('');
                 invite.reset();
@@ -172,7 +217,7 @@ export default function InviteOwnerScreen() {
         <Button
           label="Send on WhatsApp"
           icon="logo-whatsapp"
-          disabled={!!emailError || !!mobileError}
+          disabled={!!nameError || !!emailError || !!mobileError}
           loading={invite.isPending}
           onPress={send}
         />
@@ -180,7 +225,7 @@ export default function InviteOwnerScreen() {
         <Button
           label="Send email invite"
           icon="mail-outline"
-          disabled={!!emailError}
+          disabled={!!nameError || !!emailError}
           loading={invite.isPending}
           onPress={send}
         />

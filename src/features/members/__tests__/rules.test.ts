@@ -106,17 +106,16 @@ describe('inviteMessage', () => {
     expect(text).toContain("You'll be in Iron Den as soon as you confirm.");
   });
 
-  it('asks a new gym owner to set up their gym', () => {
-    const text = inviteMessage('Iron Den', 'raj@mail.com', 'gym_owner', 'invited');
-    expect(text).toContain("You're invited to set up your gym on CoreFit Gym.");
-    expect(text).not.toContain('Iron Den');
+  it('invites a new gym owner to the gym the admin set up for them', () => {
+    const text = inviteMessage('AMR Fitness', 'raj@mail.com', 'gym_owner', 'invited', 'K7P2QX4M');
+    expect(text).toContain("You're invited to join AMR Fitness on CoreFit Gym as the owner.");
+    expect(text).toContain('K7P2-QX4M');
   });
 
-  it('asks a new gym owner with an account to sign in and set up, naming no gym', () => {
-    const text = inviteMessage('', 'raj@mail.com', 'gym_owner', 'added');
-    expect(text).toContain("You're invited to set up your gym on CoreFit Gym.");
+  it('tells a new gym owner with an account their gym is ready', () => {
+    const text = inviteMessage('AMR Fitness', 'raj@mail.com', 'gym_owner', 'added');
+    expect(text).toContain("You've been added to AMR Fitness on CoreFit Gym as the owner.");
     expect(text).toContain('sign in with raj@mail.com');
-    expect(text).not.toContain('added to');
   });
 
   it('just says to sign in when they already have an account', () => {

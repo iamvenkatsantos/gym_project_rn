@@ -1,5 +1,6 @@
-// Invites someone to a gym by email, or (role 'gym_owner') to set up a gym of their
-// own. The owner check and the invite itself run as the caller through
+// Invites someone to a gym by email. Role 'gym_owner' with a gymId invites the owner of a
+// gym the admin just set up (admin_create_owner_gym); without one, it's the older invite to
+// set up a gym of their own. The owner check and the invite itself run as the caller through
 // invite_to_gym() / invite_gym_owner(); this function only adds the email, which
 // needs the service role. Deploy with:
 //   npx supabase functions deploy invite-member
@@ -42,7 +43,7 @@ const roles: Record<string, { label: string; blurb: string }> = {
   gym_owner: {
     label: 'Gym owner',
     blurb:
-      "Add your gym's details, then invite your members and trainers. Only your people see your gym.",
+      "Check your gym's details, then invite your members and trainers. Only your people see your gym.",
   },
 };
 
@@ -61,6 +62,7 @@ Deno.serve(async (req) => {
 
   const { gymId, email, role, redirectTo } = await req.json().catch(() => ({}));
   const newGym = role === 'gym_owner';
+  const setUpLater = newGym && typeof gymId !== 'string';
   if (
     (!newGym && typeof gymId !== 'string') ||
     typeof email !== 'string' ||
@@ -73,9 +75,13 @@ Deno.serve(async (req) => {
   const caller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: authorization } },
   });
-  const { data: result, error } = newGym
+  const { data: result, error } = setUpLater
     ? await caller.rpc('invite_gym_owner', { p_email: email })
-    : await caller.rpc('invite_to_gym', { p_gym_id: gymId, p_email: email, p_role: role });
+    : await caller.rpc('invite_to_gym', {
+        p_gym_id: gymId,
+        p_email: email,
+        p_role: newGym ? 'owner' : role,
+      });
   if (error) return json({ error: error.message }, 400);
 
   // invite_to_gym already refused unknown roles, so this only guards the email's wording.
@@ -84,10 +90,12 @@ Deno.serve(async (req) => {
   // Someone with a confirmed account was added straight away; there's nothing to accept.
   if (result !== 'invited') return json({ result, emailSent: false, emailError: null });
 
-  // Details for the email template, read as the owner so RLS still applies.
-  const { data: gym } = newGym
+  // Details for the email template, read as the owner so RLS still applies. The admin
+  // belongs to no gym, and invite_to_gym above already checked they're the admin.
+  const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data: gym } = setUpLater
     ? { data: { name: 'your new gym' } }
-    : await caller.from('gyms').select('name').eq('id', gymId).maybeSingle();
+    : await (newGym ? admin : caller).from('gyms').select('name').eq('id', gymId).maybeSingle();
   const {
     data: { user: owner },
   } = await caller.auth.getUser();
@@ -97,7 +105,6 @@ Deno.serve(async (req) => {
 
   // Supabase only follows redirect URLs on the project's allow list, so a bad one falls back
   // to the Site URL instead of sending people somewhere else.
-  const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { error: mailError } = await admin.auth.admin.inviteUserByEmail(
     email.trim().toLowerCase(),
     {

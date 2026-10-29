@@ -779,6 +779,20 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select public.can_set_up_gym() as admin_sets_up;
 select public.create_gym('Admin Gym', '', '', '', '');
 select public.invite_gym_owner(' Olivia@Example.com');
+\echo '117c admin sets up Hari''s gym on WhatsApp (expect invited, a code); Grace already has an account so joins hers at once (expect added, no code)'
+select r.result, r.code is not null as has_code
+  from public.admin_create_owner_gym(' Hari Fitness ', 'Madurai', 'Hari@Example.com', '98400 11111') r;
+select r.result, r.code from public.admin_create_owner_gym('Grace Two', '', 'grace@example.com') r;
+\echo '117d Hari confirms and owns Hari Fitness (expect owner); a member cannot set up a gym this way (expect "Only CoreFit Gym admins")'
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+ ('00000000-0000-0000-0000-000000000098', 'hari@example.com', '{"full_name":"Hari Owner"}');
+update auth.users set email_confirmed_at = now() where id = '00000000-0000-0000-0000-000000000098';
+select g.name, g.city, gm.role from public.gym_members gm join public.gyms g on g.id = gm.gym_id
+  where gm.user_id = '00000000-0000-0000-0000-000000000098';
+set role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+select public.admin_create_owner_gym('Sneaky Two', '', 'sneak@example.com');
 
 -- Owner insights ---------------------------------------------------------------------
 \echo '118 owner sees 6 months of revenue ending this month, with this month''s payments and new members (expect 6, t, t)'

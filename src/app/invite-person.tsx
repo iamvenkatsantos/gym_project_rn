@@ -71,8 +71,6 @@ const ownerInviteRoles: { value: Role; label: string }[] = [
   { value: 'owner', label: 'Owner' },
 ];
 
-type OwnerOf = 'new' | 'this';
-
 function roleLabel(role: Role) {
   return role === 'owner' ? 'an owner' : `a ${role}`;
 }
@@ -88,11 +86,10 @@ export default function InvitePersonScreen() {
   // WhatsApp or email is picked first; only then do the fields show.
   const [channel, setChannel] = useState<InviteChannel | null>(null);
   const [role, setRole] = useState<Role>('member');
-  // An owner invite usually means someone opening their own gym, not a partner in this one.
-  const [ownerOf, setOwnerOf] = useState<OwnerOf>('new');
-  const inviteRole: InviteRole = role === 'owner' && ownerOf === 'new' ? 'gym_owner' : role;
+  // New gyms and their owners are set up from Admin → Owners; an owner here is a co-owner.
+  const inviteRole: InviteRole = role;
   // Trainers invite members, supervisors members and trainers, owners add supervisors
-  // too, and only CoreFit Gym admins add owners. The server checks all of this again.
+  // too, and only CoreFit Gym admins add co-owners. The server checks all of this again.
   const isAdmin = useIsPlatformAdmin();
   const roles = isAdmin
     ? ownerInviteRoles
@@ -158,9 +155,7 @@ export default function InvitePersonScreen() {
       <ThemedText type="small" themeColor="textSecondary">
         {isTrainer
           ? "Invite a member. They're mapped to you."
-          : isAdmin
-            ? `Invite someone to ${gym.gymName}, or a new gym owner.`
-            : `Invite someone to ${gym.gymName}.`}
+          : `Invite someone to ${gym.gymName}.`}
       </ThemedText>
 
       {channel === null ? (
@@ -240,31 +235,9 @@ export default function InvitePersonScreen() {
               </>
             ) : null}
             {role === 'owner' ? (
-              <>
-                <ThemedText type="label" themeColor="textSecondary">
-                  Owner of
-                </ThemedText>
-                <SegmentedControl<OwnerOf>
-                  options={[
-                    { value: 'new', label: 'A new gym' },
-                    { value: 'this', label: 'This gym' },
-                  ]}
-                  value={ownerOf}
-                  onChange={(next) => {
-                    setOwnerOf(next);
-                    invite.reset();
-                  }}
-                />
-                {ownerOf === 'new' ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    They get a new, empty gym of their own.
-                  </ThemedText>
-                ) : (
-                  <ThemedText type="small" themeColor="warning">
-                    Co-owners can manage everyone here, including you.
-                  </ThemedText>
-                )}
-              </>
+              <ThemedText type="small" themeColor="warning">
+                Co-owners can manage everyone here. New gyms: Admin → Owners.
+              </ThemedText>
             ) : role === 'supervisor' ? (
               <ThemedText type="small" themeColor="textSecondary">
                 Supervisors record payments and invite members and trainers.
