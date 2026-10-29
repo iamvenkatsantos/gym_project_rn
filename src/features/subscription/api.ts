@@ -183,3 +183,35 @@ export async function fetchBranchAccess(gymId: string): Promise<BranchAccess> {
   const row = rows[0];
   return { paid: row?.paid ?? true, locksOn: row?.locks_on ?? null, locked: row?.locked ?? false };
 }
+
+/**
+ * Admins only: free time for a branch, 1 to 12 months, running on from the paid year
+ * (or today if it lapsed). Returns the new paid-until date.
+ */
+export async function giveFreeMonths(gymId: string, months: number): Promise<string> {
+  if (!supabase) {
+    const sub = await fetchSubscription(gymId);
+    const { start } = nextPeriod(sub);
+    const [y, m, d] = start.split('-').map(Number);
+    const periodEnd = new Date(Date.UTC(y, m - 1 + months, d - 1)).toISOString().slice(0, 10);
+    const branch = mockBranch(gymId);
+    if (branch) branch.paidUntil = periodEnd;
+    mockPayments.unshift({
+      id: mockId('sub'),
+      gymId,
+      method: 'manual',
+      amountCents: 0,
+      currency: 'INR',
+      status: 'paid',
+      periodStart: start,
+      periodEnd,
+      note: `Free ${months} month${months === 1 ? '' : 's'}`,
+      createdAt: new Date().toISOString(),
+      paidAt: new Date().toISOString(),
+    });
+    return delay(periodEnd);
+  }
+  return unwrap(
+    await supabase.rpc('admin_give_free_months', { p_gym_id: gymId, p_months: months }),
+  ) as string;
+}

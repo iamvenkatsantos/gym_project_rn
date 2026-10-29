@@ -20,6 +20,7 @@ import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
 import {
   subscriptionKeys,
+  useGiveFreeMonths,
   useRecordSubscription,
   useSubscription,
 } from '@/features/subscription/hooks';
@@ -127,6 +128,13 @@ export default function AdminBranchScreen() {
   );
 }
 
+const FREE_OPTIONS = [
+  { months: 1, label: '1 month' },
+  { months: 3, label: '3 months' },
+  { months: 6, label: '6 months' },
+  { months: 12, label: '1 year' },
+];
+
 /**
  * How long the branch is paid for. The owner pays in the app; a year paid by cash or
  * bank transfer, or given free, is recorded here.
@@ -134,18 +142,26 @@ export default function AdminBranchScreen() {
 function BranchPlan({ gymId }: { gymId: string }) {
   const subscription = useSubscription(gymId);
   const record = useRecordSubscription(gymId);
+  const free = useGiveFreeMonths(gymId);
 
-  const confirm = (amountCents: number, currency: string, note: string) =>
+  const confirmPaid = (amountCents: number, currency: string) =>
     Alert.alert(
-      amountCents ? 'Record a year paid?' : 'Give a free year?',
-      amountCents
-        ? `${formatAmount(amountCents, currency)} received outside the app. Adds a year.`
-        : 'Adds a year at no charge.',
+      'Record a year paid?',
+      `${formatAmount(amountCents, currency)} received outside the app. Adds a year.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Add a year', onPress: () => record.mutate({ amountCents, note }) },
+        {
+          text: 'Add a year',
+          onPress: () => record.mutate({ amountCents, note: 'Cash or bank transfer' }),
+        },
       ],
     );
+  const confirmFree = (months: number, label: string) =>
+    Alert.alert(`Give ${label} free?`, 'Adds it at no charge.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Give free', onPress: () => free.mutate(months) },
+    ]);
+  const error = record.error ?? free.error;
 
   return (
     <QueryState query={subscription}>
@@ -159,20 +175,26 @@ function BranchPlan({ gymId }: { gymId: string }) {
               variant="secondary"
               size="compact"
               loading={record.isPending}
-              onPress={() => confirm(sub.amountCents, sub.currency, 'Cash or bank transfer')}
+              onPress={() => confirmPaid(sub.amountCents, sub.currency)}
             />
           ) : null}
-          <Button
-            label="Give a free year"
-            icon="gift-outline"
-            variant="secondary"
-            size="compact"
-            loading={record.isPending}
-            onPress={() => confirm(0, sub.currency, 'Free year')}
-          />
-          {record.error ? (
-            <ThemedText themeColor="danger">{record.error.message}</ThemedText>
-          ) : null}
+          <ThemedText type="small" themeColor="textSecondary">
+            Give free time
+          </ThemedText>
+          <View style={styles.chips}>
+            {FREE_OPTIONS.map(({ months, label }) => (
+              <Button
+                key={months}
+                label={label}
+                icon="gift-outline"
+                variant="secondary"
+                size="compact"
+                disabled={free.isPending}
+                onPress={() => confirmFree(months, label)}
+              />
+            ))}
+          </View>
+          {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
         </View>
       )}
     </QueryState>
@@ -237,6 +259,11 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: Spacing.one,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
   grid: {
     flexDirection: 'row',

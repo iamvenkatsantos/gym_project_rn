@@ -148,7 +148,8 @@ refunds in the app.
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
 Razorpay Payment Link into CoreFit Gym's own account (no Route), and `razorpay-webhook` calls
 `complete_subscription_payment()`, which adds a year from the day after `paid_until` (or today if
-lapsed). The admin records cash or a free year on the branch screen (`admin_record_subscription`).
+lapsed). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
+free months (`admin_give_free_months`).
 Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
 `gym_invites` and `gym_members`, so every invite and import path is covered); every role sees
 `PlanBanner` (only once unpaid, no advance warning); 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for

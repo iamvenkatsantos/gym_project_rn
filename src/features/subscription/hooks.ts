@@ -7,6 +7,7 @@ import {
   fetchBranchAccess,
   fetchSubscription,
   fetchSubscriptionPayment,
+  giveFreeMonths,
   listSubscriptionPayments,
   recordSubscription,
   startSubscriptionPayment,
@@ -96,6 +97,18 @@ export function useRecordSubscription(gymId: string) {
   return useMutation({
     mutationFn: ({ amountCents, note }: { amountCents: number; note: string }) =>
       recordSubscription(gymId, amountCents, note),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.one(gymId) });
+      queryClient.invalidateQueries({ queryKey: branchKeys.all });
+    },
+  });
+}
+
+/** Admins only: 1 to 12 free months for a branch. */
+export function useGiveFreeMonths(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (months: number) => giveFreeMonths(gymId, months),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: subscriptionKeys.one(gymId) });
       queryClient.invalidateQueries({ queryKey: branchKeys.all });

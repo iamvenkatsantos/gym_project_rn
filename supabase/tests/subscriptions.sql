@@ -200,3 +200,17 @@ select fee_cents, addon_cents, amount_cents
 from public.branch_subscription('d1000000-0000-0000-0000-000000000003');
 select public.branch_is_paid('d1000000-0000-0000-0000-000000000003');
 reset role;
+
+\echo 'S29 Only the admin gives free time (expect Only CoreFit Gym admins, then Pick 1 to 12 months)'
+set role authenticated;
+select pg_temp.as_user('d0000000-0000-0000-0000-00000000000a');
+select public.admin_give_free_months('d1000000-0000-0000-0000-000000000001', 3);
+select pg_temp.as_user('d0000000-0000-0000-0000-00000000000b');
+select public.admin_give_free_months('d1000000-0000-0000-0000-000000000001', 0);
+
+\echo 'S30 3 free months run on from the paid year (expect t, Free 3 months 0)'
+select public.admin_give_free_months('d1000000-0000-0000-0000-000000000001', 3)
+  = (current_date + interval '1 year' + interval '3 months')::date - 1 as runs_on;
+select note, amount_cents from public.subscription_payments
+where gym_id = 'd1000000-0000-0000-0000-000000000001' and note like 'Free%';
+reset role;
