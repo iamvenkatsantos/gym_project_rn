@@ -4,12 +4,13 @@ import {
   branchFee,
   branchLabel,
   groupBrands,
-  monthlyTotal,
   onlinePaymentExample,
   ownedBranches,
   ownerAccounts,
   totalStats,
   unownedBranches,
+  unpaidBranches,
+  yearlyTotal,
 } from '@/features/branches/rules';
 import type { AdminBranch, BranchStats } from '@/features/branches/types';
 
@@ -39,6 +40,7 @@ function branch(
     onlinePayments,
     razorpayAccountId: null,
     feesOnMember: true,
+    paidUntil: null,
     address: '',
     city: '',
     phone: '',
@@ -83,19 +85,19 @@ describe('billing', () => {
   it('adds the online payments add-on to branches that have it', () => {
     expect(branchBill(list[0], billing)).toBe(150000);
     expect(branchBill(branch('g6', 'b1', [raj], null, true), billing)).toBe(200000);
-    expect(monthlyTotal([...list, branch('g6', 'b1', [], 100000, true)], billing)).toBe(
+    expect(yearlyTotal([...list, branch('g6', 'b1', [], 100000, true)], billing)).toBe(
       150000 * 2 + 100000 * 4 + 50000,
     );
   });
 
   it('totals every branch once, owned or not', () => {
-    expect(monthlyTotal(list, billing)).toBe(150000 * 2 + 100000 * 3);
+    expect(yearlyTotal(list, billing)).toBe(150000 * 2 + 100000 * 3);
   });
 
   it("lists each owner's brands, branches and amount, biggest first", () => {
     const accounts = ownerAccounts(list, billing);
     expect(
-      accounts.map((a) => [a.owner.id, a.branches, a.monthlyCents, a.brands.map((b) => b.brandId)]),
+      accounts.map((a) => [a.owner.id, a.branches, a.yearlyCents, a.brands.map((b) => b.brandId)]),
     ).toEqual([
       ['u2', 3, 350000, ['b1', 'b2']],
       ['u1', 2, 300000, ['b1']],
@@ -190,11 +192,35 @@ describe('onlinePaymentExample', () => {
     });
   });
 
-  it('at the default 0.25% cut with the owner paying, a ₹3,200 plan nets the owner ₹3,107.31', () => {
+  it('at the old 0.25% cut with the owner paying, a ₹3,200 plan nets the owner ₹3,107.31', () => {
     expect(onlinePaymentExample(false, 25, 320000)).toEqual({
       memberPaysCents: 320000,
       ownerGetsCents: 310731,
       cutCents: 800,
     });
+  });
+
+  it('at the default 0.5% cut with the owner paying, a ₹1,000 plan nets the owner ₹968.53', () => {
+    expect(onlinePaymentExample(false, 50)).toEqual({
+      memberPaysCents: 100000,
+      ownerGetsCents: 96853,
+      cutCents: 500,
+    });
+  });
+});
+
+describe('unpaidBranches', () => {
+  it('lists branches never paid or whose year ended, but not free ones', () => {
+    const list = [
+      { ...branch('paid', 'b1'), paidUntil: '2027-01-01' },
+      { ...branch('ended', 'b1'), paidUntil: '2026-10-28' },
+      { ...branch('lastDay', 'b1'), paidUntil: '2026-10-29' },
+      branch('never', 'b1'),
+      branch('free', 'b2', [priya], 0),
+    ];
+    expect(unpaidBranches(list, billing, '2026-10-29').map((b) => b.gymId)).toEqual([
+      'ended',
+      'never',
+    ]);
   });
 });

@@ -3,6 +3,7 @@ import { LatestAnnouncement } from '@/features/announcements/components/latest-a
 import { CheckInCard } from '@/features/attendance/components/check-in-card';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { CoachSchedule } from '@/features/trainers/components/coach-schedule';
+import { PlanBanner } from '@/features/subscription/components/plan-banner';
 
 export default function TrainerScheduleScreen() {
   const profile = useProfile();
@@ -10,6 +11,7 @@ export default function TrainerScheduleScreen() {
 
   return (
     <Screen>
+      <PlanBanner />
       <CheckInCard gymId={gym.gymId} userId={profile.id} role="trainer" />
       <LatestAnnouncement />
       <CoachSchedule />

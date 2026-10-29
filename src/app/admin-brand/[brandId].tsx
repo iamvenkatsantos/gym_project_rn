@@ -61,7 +61,7 @@ function BrandDetails({ brand }: { brand: AdminBrand }) {
               b.city,
               `${b.members} members`,
               settings.data &&
-                `${formatAmount(branchBill(b, settings.data), settings.data.currency)}/month`,
+                `${formatAmount(branchBill(b, settings.data), settings.data.currency)}/year`,
             ]
               .filter(Boolean)
               .join(' · ')}

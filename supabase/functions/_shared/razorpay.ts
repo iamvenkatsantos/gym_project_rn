@@ -187,3 +187,23 @@ async function transferToOwner(
       .eq('id', onlinePaymentId);
   }
 }
+
+/**
+ * Records an owner's captured payment for their branch's CoreFit Gym plan. The
+ * money is CoreFit Gym's own, so nothing is transferred. Safe to run twice.
+ */
+export async function completeSubscriptionPayment(
+  admin: SupabaseClient,
+  subscriptionPaymentId: string,
+  payment: RazorpayPayment,
+) {
+  const settled =
+    payment.fee == null ? await razorpay<RazorpayPayment>(`/payments/${payment.id}`) : payment;
+  const { error } = await admin.rpc('complete_subscription_payment', {
+    p_payment_id: subscriptionPaymentId,
+    p_razorpay_payment_id: settled.id,
+    p_amount_cents: settled.amount,
+    p_fee_cents: settled.fee,
+  });
+  if (error) throw new Error(error.message);
+}

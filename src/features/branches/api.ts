@@ -28,6 +28,7 @@ type AdminBranchRow = {
   online_payments: boolean;
   razorpay_account_id: string | null;
   online_fees_on_member: boolean;
+  paid_until: string | null;
   address: string;
   city: string;
   phone: string;
@@ -66,6 +67,8 @@ const mockBranches: AdminBranch[] = [
     onlinePayments: false,
     razorpayAccountId: null,
     feesOnMember: false,
+    // Runs out in a couple of weeks, so the demo owner sees the Pay nudge.
+    paidUntil: mockDay(-12),
     address: '2nd Avenue, Anna Nagar',
     city: 'Chennai',
     phone: '9840012345',
@@ -84,6 +87,8 @@ const mockBranches: AdminBranch[] = [
     onlinePayments: false,
     razorpayAccountId: null,
     feesOnMember: false,
+    // Ended a few days ago, so the demo shows the unpaid banner.
+    paidUntil: mockDay(2),
     address: '100 Feet Road, Velachery',
     city: 'Chennai',
     phone: '9840054321',
@@ -98,10 +103,11 @@ const mockBranches: AdminBranch[] = [
     brandName: 'Iron Den',
     gymId: 'gym-3',
     gymName: 'Iron Den',
-    feeCents: 100000,
+    feeCents: 1200000,
     onlinePayments: false,
     razorpayAccountId: null,
     feesOnMember: false,
+    paidUntil: '2026-11-10',
     address: 'Avinashi Road',
     city: 'Coimbatore',
     phone: '04222345678',
@@ -113,6 +119,11 @@ const mockBranches: AdminBranch[] = [
   },
 ];
 
+/** Demo data only: one branch, for the demo CoreFit Gym plan. */
+export function mockBranch(gymId: string) {
+  return mockBranches.find((b) => b.gymId === gymId);
+}
+
 function toBranch(row: AdminBranchRow): AdminBranch {
   return {
     brandId: row.brand_id,
@@ -123,6 +134,7 @@ function toBranch(row: AdminBranchRow): AdminBranch {
     onlinePayments: row.online_payments,
     razorpayAccountId: row.razorpay_account_id,
     feesOnMember: row.online_fees_on_member ?? false,
+    paidUntil: row.paid_until ?? null,
     address: row.address,
     city: row.city,
     phone: row.phone,
@@ -169,6 +181,7 @@ export async function addBranch(
       onlinePayments: false,
       razorpayAccountId: null,
       feesOnMember: false,
+      paidUntil: null,
       address: details.address,
       city: details.city,
       phone: details.phone,
@@ -187,18 +200,19 @@ export async function addBranch(
       p_city: details.city,
       p_phone: details.phone,
       p_email: details.email,
+      p_fee_cents: feeCents,
     }),
   ) as string;
 }
 
 const mockSettings: BillingSettings = {
-  branchFeeCents: 150000,
-  onlineAddonCents: 50000,
-  onlineCutBps: 25,
+  branchFeeCents: 499900,
+  onlineAddonCents: 600000,
+  onlineCutBps: 50,
   currency: 'INR',
 };
 
-/** Admins only: the standard monthly fee per branch. */
+/** Admins only: the standard yearly fee per branch. */
 export async function fetchBillingSettings(): Promise<BillingSettings> {
   if (!supabase) return delay({ ...mockSettings });
   const row = unwrap(

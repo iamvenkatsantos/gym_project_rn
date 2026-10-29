@@ -92,6 +92,7 @@ npx supabase functions deploy join --no-verify-jwt   # the tappable join link in
 npx supabase functions deploy send-push --no-verify-jwt   # push notifications, see below
 npx supabase functions deploy create-payment                # online payments, see below
 npx supabase functions deploy razorpay-webhook --no-verify-jwt
+npx supabase functions deploy create-subscription-payment   # owners paying CoreFit Gym
 ```
 
 A new gym's first owner is added in SQL:
@@ -202,7 +203,7 @@ limit 5;` shows what `pg_net` got back.
 
 Members can pay for a plan in the app when the CoreFit Gym admin switches **Online payments** on
 for their branch (Admin → branch → Online payments). It's a paid add-on per branch
-(`platform_settings.online_addon_cents`, ₹500 a month by default) and off by default. Cash and UPI
+(`platform_settings.online_addon_cents`, ₹6,000 a year by default) and off by default. Cash and UPI
 entries at the front desk keep working.
 
 How a payment works:
@@ -219,13 +220,13 @@ How a payment works:
 4. If the branch has the owner's Route linked account (`acc_...`), the gym's share is transferred
    to it. Razorpay takes its Route transfer fee (0.25% + GST) from our balance on top of the
    transfer, so the transfer is the most that leaves room for it after Razorpay's gateway fee and
-   CoreFit Gym's cut (`online_cut_bps`, 0.25%). Money never stays with CoreFit Gym. With
+   CoreFit Gym's cut (`online_cut_bps`, 0.5%). Money never stays with CoreFit Gym. With
    live keys, a branch without a linked account can't take payments.
 
 Who pays Razorpay's fees is set per branch (Admin → branch → Online payments). By default the
 owner does: members see one price, and Razorpay's gateway fee (2% + GST), its transfer fee (0.25% +
-GST) and CoreFit Gym's 0.25% cut come out of what the owner receives. A ₹1,000 plan nets the owner
-₹971.03, so owners raise their prices to cover the fees if they want to. A branch can instead pass
+GST) and CoreFit Gym's 0.5% cut come out of what the owner receives. A ₹1,000 plan nets the owner
+₹968.53, so owners raise their prices to cover the fees if they want to. A branch can instead pass
 the fees and the cut on to members: `create-payment` adds them to the price and the app shows the
 member the breakdown before opening Razorpay. Either way the membership, Insights and exports count
 the plan's price. The math is in
@@ -286,6 +287,7 @@ psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
+psql -d corefit_test -f supabase/tests/subscriptions.sql
 ```
 
 ## Scripts

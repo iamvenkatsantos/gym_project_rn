@@ -17,6 +17,8 @@ insert into public.gym_members (gym_id, user_id, role) values
  ('fa000000-0000-0000-0000-000000000001','f8000000-0000-0000-0000-00000000000d','member'),
  ('fa000000-0000-0000-0000-000000000001','f8000000-0000-0000-0000-000000000010','member');
 
+-- Paid branches, so staff can add people (20261029010000_owner_subscriptions).
+update public.gyms set paid_until = current_date + 365 where paid_until is null;
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 set role authenticated;
 select pg_temp.as_user('f8000000-0000-0000-0000-00000000000a');

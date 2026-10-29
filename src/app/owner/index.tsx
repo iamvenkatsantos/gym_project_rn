@@ -25,6 +25,7 @@ import { MembershipSetup } from '@/features/memberships/components/membership-se
 import { RenewalRow } from '@/features/memberships/components/renewal-row';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
+import { PlanBanner } from '@/features/subscription/components/plan-banner';
 
 /** How much of each list the dashboard shows before the screen behind it. */
 const RENEWALS_SHOWN = 2;
@@ -81,12 +82,18 @@ export default function OwnerDashboardScreen() {
         icon: 'business-outline',
         onPress: () => router.push('/gym-details'),
       },
+      {
+        label: 'CoreFit plan',
+        icon: 'ribbon-outline',
+        onPress: () => router.push('/subscription'),
+      },
     );
   }
 
   return (
     <Screen>
       <BranchSwitcher />
+      <PlanBanner />
       {plans.data?.length === 0 ? <MembershipSetup isOwner={gym.role === 'owner'} /> : null}
       {/* Three across so the numbers fit on the first screen of a small phone. Each one opens
           the screen behind it, so the dashboard doesn't need a row of buttons as well. */}

@@ -1,14 +1,17 @@
 // Confirms Razorpay payments. Two ways in, both signature-checked:
 //   POST: Razorpay's webhook (payment_link.paid, .expired, .cancelled), signed
 //         with RAZORPAY_WEBHOOK_SECRET. This is what records a payment.
-//   GET:  the member's browser coming back from the payment page, signed with
+//   GET:  the payer's browser coming back from the payment page, signed with
 //         RAZORPAY_KEY_SECRET. Records the payment too if the webhook is slow,
-//         then sends the member back to the app.
+//         then sends them back to the app.
+// A link's reference_id is either a member's online payment or an owner's
+// payment for their branch's CoreFit Gym plan (subscription_payments).
 // Razorpay calls it without a Supabase login, so deploy with:
 //   npx supabase functions deploy razorpay-webhook --no-verify-jwt
 import {
   adminClient,
   completePayment,
+  completeSubscriptionPayment,
   hmacHex,
   keySecret,
   safeEqual,
@@ -37,6 +40,33 @@ function json(body: unknown, status = 200) {
   });
 }
 
+type Kind = 'online' | 'subscription';
+
+/** Which of our tables a link's reference belongs to, if either. */
+async function paymentKind(
+  admin: ReturnType<typeof adminClient>,
+  reference: string,
+): Promise<Kind | null> {
+  const [{ data: online }, { data: subscription }] = await Promise.all([
+    admin.from('online_payments').select('id').eq('id', reference).maybeSingle(),
+    admin.from('subscription_payments').select('id').eq('id', reference).maybeSingle(),
+  ]);
+  if (online) return 'online';
+  if (subscription) return 'subscription';
+  return null;
+}
+
+function complete(
+  admin: ReturnType<typeof adminClient>,
+  kind: Kind,
+  reference: string,
+  payment: PaymentEntity,
+) {
+  return kind === 'online'
+    ? completePayment(admin, reference, payment)
+    : completeSubscriptionPayment(admin, reference, payment);
+}
+
 async function handleWebhook(req: Request) {
   const secret = Deno.env.get('RAZORPAY_WEBHOOK_SECRET');
   const raw = await req.text();
@@ -52,17 +82,13 @@ async function handleWebhook(req: Request) {
   if (!link?.reference_id || !UUID.test(link.reference_id)) return json({ ignored: event.event });
 
   const admin = adminClient();
-  const { data: ours } = await admin
-    .from('online_payments')
-    .select('id')
-    .eq('id', link.reference_id)
-    .maybeSingle();
-  if (!ours) return json({ ignored: event.event });
+  const kind = await paymentKind(admin, link.reference_id);
+  if (!kind) return json({ ignored: event.event });
   if (event.event === 'payment_link.paid') {
     const payment = event.payload.payment?.entity;
     if (!payment) return json({ error: 'No payment in event' }, 400);
     try {
-      await completePayment(admin, link.reference_id, payment);
+      await complete(admin, kind, link.reference_id, payment);
     } catch (e) {
       // A 500 makes Razorpay retry, which is what we want for a database hiccup.
       console.error('complete payment failed', link.reference_id, e);
@@ -73,7 +99,7 @@ async function handleWebhook(req: Request) {
 
   if (event.event === 'payment_link.expired' || event.event === 'payment_link.cancelled') {
     await admin
-      .from('online_payments')
+      .from(kind === 'online' ? 'online_payments' : 'subscription_payments')
       .update({ status: 'expired' })
       .eq('id', link.reference_id)
       .eq('status', 'created');
@@ -94,13 +120,11 @@ async function handleReturn(url: URL) {
     const expected = await hmacHex(keySecret(), `${linkId}|${reference}|${status}|${paymentId}`);
     if (safeEqual(expected, p('razorpay_signature'))) {
       try {
+        const admin = adminClient();
+        const kind = await paymentKind(admin, reference);
         // The amount and fee come from Razorpay, not from the URL.
-        await completePayment(adminClient(), reference, {
-          id: paymentId,
-          amount: 0,
-          fee: null,
-          status,
-        });
+        if (kind)
+          await complete(admin, kind, reference, { id: paymentId, amount: 0, fee: null, status });
       } catch (e) {
         // The webhook will record it; the app keeps checking until it has.
         console.error('return completion failed', reference, e);

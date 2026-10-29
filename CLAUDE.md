@@ -54,8 +54,9 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   admin area (`src/app/admin`) shows owners, branches and billing; admins switch to a gym from
   Account (`selectInAdmin`).
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
-  branches get a branch switcher and an All branches view. Billing is per branch (`gyms.fee_cents`,
-  null means the `platform_settings` default). Members use their home branch only.
+  branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
+  (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 means no fee, an
+  option when adding a branch). Members use their home branch only.
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
@@ -137,9 +138,22 @@ payments are an admin-switched add-on per branch: `create-payment` makes a Razor
 opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the signature and calls
 `complete_online_payment()`, and the browser returns to `corefit://payment-return`. The gym's share
 goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`); member money
-never stays with CoreFit Gym. By default the owner pays all fees and the members see one price. Fee
-math lives only in `supabase/functions/_shared/fees.ts` (tests in
-`src/features/payments/__tests__/fees.test.ts`). No refunds in the app.
+never stays with CoreFit Gym. By default the owner pays all fees and the members see one price.
+CoreFit Gym's cut is 0.5% (`platform_settings.online_cut_bps` 50). Fee math lives only in
+`supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
+refunds in the app.
+
+**CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on,
+`branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`
+(Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
+Razorpay Payment Link into CoreFit Gym's own account (no Route), and `razorpay-webhook` calls
+`complete_subscription_payment()`, which adds a year from the day after `paid_until` (or today if
+lapsed). The admin records cash or a free year on the branch screen (`admin_record_subscription`).
+Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
+`gym_invites` and `gym_members`, so every invite and import path is covered); every role sees
+`PlanBanner`; 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for
+everyone at the branch, where the owner can pay. The lock is in the app only; the server still
+answers other calls.
 
 **Push and inbox.** Anything inserted into `notifications` (use `notify()`) shows in the inbox, and
 a statement trigger posts it through `pg_net` to `send-push`, which sends via Expo push. The app

@@ -25,6 +25,8 @@ insert into public.membership_plans (id, gym_id, name, price_cents, duration_day
  ('f7000000-0000-0000-0000-000000000001','f6000000-0000-0000-0000-000000000001','Monthly',150000,30),
  ('f7000000-0000-0000-0000-000000000002','f6000000-0000-0000-0000-000000000002','Yearly',1200000,365);
 
+-- Paid branches, so staff can add people (20261029010000_owner_subscriptions).
+update public.gyms set paid_until = current_date + 365 where paid_until is null;
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 set role authenticated;
 

@@ -32,12 +32,12 @@ export function groupBrands(branches: AdminBranch[]): AdminBrand[] {
   return [...brands.values()];
 }
 
-/** A branch's monthly fee: its own, else the default. */
+/** A branch's yearly fee: its own, else the default. */
 export function branchFee(branch: Pick<AdminBranch, 'feeCents'>, settings: BillingSettings) {
   return branch.feeCents ?? settings.branchFeeCents;
 }
 
-/** What a branch pays each month: its fee plus the online payments add-on when it's on. */
+/** What a branch pays each year: its fee plus the online payments add-on when it's on. */
 export function branchBill(
   branch: Pick<AdminBranch, 'feeCents' | 'onlinePayments'>,
   settings: BillingSettings,
@@ -45,13 +45,13 @@ export function branchBill(
   return branchFee(branch, settings) + (branch.onlinePayments ? settings.onlineAddonCents : 0);
 }
 
-/** What to collect each month across every branch. Co-owned branches count once. */
-export function monthlyTotal(branches: AdminBranch[], settings: BillingSettings) {
+/** What to collect each year across every branch. Co-owned branches count once. */
+export function yearlyTotal(branches: AdminBranch[], settings: BillingSettings) {
   return branches.reduce((total, b) => total + branchBill(b, settings), 0);
 }
 
 /**
- * Each owner with the brands and branches they own and what to collect from them each month,
+ * Each owner with the brands and branches they own and what to collect from them each year,
  * the biggest accounts first. A branch with two owners shows under both.
  */
 export function ownerAccounts(branches: AdminBranch[], settings: BillingSettings): OwnerAccount[] {
@@ -68,14 +68,24 @@ export function ownerAccounts(branches: AdminBranch[], settings: BillingSettings
       owner,
       brands: groupBrands(list),
       branches: list.length,
-      monthlyCents: monthlyTotal(list, settings),
+      yearlyCents: yearlyTotal(list, settings),
     }))
     .sort(
       (a, b) =>
-        b.monthlyCents - a.monthlyCents ||
+        b.yearlyCents - a.yearlyCents ||
         b.branches - a.branches ||
         a.owner.fullName.localeCompare(b.owner.fullName),
     );
+}
+
+/**
+ * Branches whose CoreFit Gym plan isn't paid: never paid, or the paid year ended before
+ * `today` (YYYY-MM-DD). Free branches never are.
+ */
+export function unpaidBranches(branches: AdminBranch[], settings: BillingSettings, today: string) {
+  return branches.filter(
+    (b) => branchBill(b, settings) >= 100 && (!b.paidUntil || b.paidUntil < today),
+  );
 }
 
 /** Branches nobody owns yet, say after an owner left. They still count towards the total. */

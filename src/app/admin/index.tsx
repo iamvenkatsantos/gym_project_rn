@@ -11,11 +11,17 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { FeeEditor } from '@/features/branches/components/fee-editor';
 import { useAdminBranches, useBillingSettings, useSetBranchFee } from '@/features/branches/hooks';
-import { monthlyTotal, ownerAccounts, unownedBranches } from '@/features/branches/rules';
-import { formatAmount } from '@/lib/format';
+import {
+  ownerAccounts,
+  unownedBranches,
+  unpaidBranches,
+  yearlyTotal,
+} from '@/features/branches/rules';
+import { toIsoDate } from '@/features/memberships/rules';
+import { formatAmount, formatDate } from '@/lib/format';
 
 /**
- * The admin's home: how many owners and branches there are and what to collect this month.
+ * The admin's home: how many owners and branches there are and what to collect each year.
  * Each branch is billed at the default fee unless the admin gave it a fee of its own.
  */
 export default function AdminOverviewScreen() {
@@ -31,14 +37,15 @@ export default function AdminOverviewScreen() {
             {(list) => {
               const owners = ownerAccounts(list, billing);
               const orphans = unownedBranches(list);
+              const unpaid = unpaidBranches(list, billing, toIsoDate(new Date()));
               return (
                 <>
                   <Card>
                     <ThemedText type="small" themeColor="textSecondary">
-                      To collect each month
+                      To collect each year
                     </ThemedText>
                     <ThemedText type="title" themeColor="accent">
-                      {formatAmount(monthlyTotal(list, billing), billing.currency)}
+                      {formatAmount(yearlyTotal(list, billing), billing.currency)}
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {list.length} branches at{' '}
@@ -88,11 +95,34 @@ export default function AdminOverviewScreen() {
                     </>
                   ) : null}
 
-                  <SectionHeader title="Default fee" detail="Per branch, per month" />
+                  {unpaid.length ? (
+                    <>
+                      <SectionHeader title="Not paid" detail={`${unpaid.length}`} />
+                      <ListGroup>
+                        {unpaid.map((b, i) => (
+                          <ListRow
+                            key={b.gymId}
+                            divider={i > 0}
+                            icon="ribbon-outline"
+                            label={b.gymName}
+                            detail={b.paidUntil ? `Ended ${formatDate(b.paidUntil)}` : 'Never paid'}
+                            onPress={() =>
+                              router.push({
+                                pathname: '/admin-branch/[gymId]',
+                                params: { gymId: b.gymId },
+                              })
+                            }
+                          />
+                        ))}
+                      </ListGroup>
+                    </>
+                  ) : null}
+
+                  <SectionHeader title="Default fee" detail="Per branch, per year" />
                   <Card>
                     <FeeEditor
                       key={billing.branchFeeCents}
-                      label="Default monthly fee per branch (₹)"
+                      label="Default yearly fee per branch (₹)"
                       feeCents={billing.branchFeeCents}
                       pending={setFee.isPending}
                       error={setFee.error}

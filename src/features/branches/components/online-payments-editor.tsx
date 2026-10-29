@@ -50,8 +50,8 @@ export function OnlinePaymentsEditor({
         />
         <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
           {branch.onlinePayments
-            ? `Members pay in the app. Adds ${addon} to this branch's monthly bill.`
-            : `Members pay at the front desk. Switching on adds ${addon} a month.`}
+            ? `Members pay in the app. Adds ${addon} to this branch's yearly bill.`
+            : `Members pay at the front desk. Switching on adds ${addon} a year.`}
         </ThemedText>
       </View>
       <TextField
