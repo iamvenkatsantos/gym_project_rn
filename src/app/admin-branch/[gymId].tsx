@@ -64,7 +64,7 @@ export default function AdminBranchScreen() {
                   />
                   <BranchFee branch={b} billing={billing} />
 
-                  <SectionHeader title="Online payments" detail="Add-on" />
+                  <SectionHeader title="Online payments" />
                   <OnlinePaymentsEditor
                     key={`${b.onlinePayments}-${b.razorpayAccountId}`}
                     branch={b}
@@ -226,7 +226,7 @@ function BranchFee({ branch, billing }: { branch: AdminBranch; billing: BillingS
         />
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
-          Free: nothing to pay, add-on included.
+          Free: nothing to pay.
         </ThemedText>
       )}
       {branch.feeCents === null ? (

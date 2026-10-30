@@ -24,7 +24,7 @@ insert into public.platform_admins (user_id) values ('d0000000-0000-0000-0000-00
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 set role authenticated;
 
-\echo 'S1 The default is ₹4,999 a year and there''s no cut (expect 499900 600000 0)'
+\echo 'S1 The default is ₹4,999 a year, no add-on and no cut (expect 499900 0 0)'
 select pg_temp.as_user('d0000000-0000-0000-0000-00000000000b');
 select branch_fee_cents, online_addon_cents, online_cut_bps from public.platform_settings;
 
@@ -107,7 +107,7 @@ select public.admin_record_subscription('d1000000-0000-0000-0000-000000000002', 
 select gym_name, paid_until > current_date as paid from public.admin_branches()
 where gym_id in ('d1000000-0000-0000-0000-000000000001','d1000000-0000-0000-0000-000000000002');
 
-\echo 'S17 With online payments on, the bill adds the add-on (expect 499900 600000 1099900)'
+\echo 'S17 Online payments add nothing to the bill (expect 499900 0 499900)'
 select public.admin_set_online_payments('d1000000-0000-0000-0000-000000000002', true, null);
 select fee_cents, addon_cents, amount_cents
 from public.branch_subscription('d1000000-0000-0000-0000-000000000002');
