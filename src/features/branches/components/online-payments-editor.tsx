@@ -15,7 +15,7 @@ import { formatAmount } from '@/lib/format';
 const ACCOUNT_PATTERN = /^acc_[A-Za-z0-9]{6,32}$/;
 
 /**
- * Admins only: the online payments add-on for one branch. Members' payments go
+ * Admins only: online payments for one branch, free unless an add-on price is set. Members' payments go
  * to the owner's Razorpay linked account (Route), never to CoreFit Gym.
  */
 export function OnlinePaymentsEditor({
@@ -35,6 +35,7 @@ export function OnlinePaymentsEditor({
       : null;
   const accountChanged = trimmed !== (branch.razorpayAccountId ?? '');
   const addon = formatAmount(billing.onlineAddonCents, billing.currency);
+  const hasAddon = billing.onlineAddonCents > 0;
   const example = onlinePaymentExample(branch.feesOnMember, billing.onlineCutBps);
   const money = (cents: number) => formatAmount(cents, billing.currency);
 
@@ -47,8 +48,8 @@ export function OnlinePaymentsEditor({
         />
         <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
           {branch.onlinePayments
-            ? `Members pay in the app. Adds ${addon} to this branch's yearly bill.`
-            : `Members pay at the front desk. Switching on adds ${addon} a year.`}
+            ? `Members pay in the app.${hasAddon ? ` Adds ${addon} to this branch's yearly bill.` : ''}`
+            : `Members pay at the front desk.${hasAddon ? ` Switching on adds ${addon} a year.` : ''}`}
         </ThemedText>
       </View>
       <TextField

@@ -60,7 +60,7 @@ export async function fetchSubscription(gymId: string): Promise<Subscription> {
   if (!supabase) {
     const branch = mockBranch(gymId);
     const feeCents = branch?.feeCents ?? 499900;
-    const addonCents = branch?.onlinePayments && feeCents > 0 ? 600000 : 0;
+    const addonCents = 0;
     return delay({
       feeCents,
       addonCents,

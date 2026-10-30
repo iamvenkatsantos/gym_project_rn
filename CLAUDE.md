@@ -66,8 +66,8 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   Invite → Owner adds a co-owner.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
   branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
-  (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free,
-  add-on included: **Make this branch free** on the admin branch screen or when adding one). Members use their home branch only.
+  (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free:
+  **Make this branch free** on the admin branch screen or when adding one). Members use their home branch only.
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
@@ -151,7 +151,8 @@ private progress photos) follow the same coach/member pattern.
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,
 `remind_renewal` push, or a WhatsApp button with a written message from `renewalMessage`). Online
-payments are an admin-switched add-on per branch: `create-payment` makes a Razorpay Payment Link
+payments are switched on per branch by the admin and cost the owner nothing extra
+(`platform_settings.online_addon_cents` 0, Venkat 2026-10-30; the add-on math stays): `create-payment` makes a Razorpay Payment Link
 opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the signature and calls
 `complete_online_payment()`, and the browser returns to `corefit://payment-return`. The gym's share
 goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`); member money
@@ -161,7 +162,7 @@ shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
 
-**CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on,
+**CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
 `branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
 Razorpay Payment Link into CoreFit Gym's own account (no Route), and `razorpay-webhook` calls

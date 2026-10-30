@@ -207,7 +207,7 @@ export async function addBranch(
 
 const mockSettings: BillingSettings = {
   branchFeeCents: 499900,
-  onlineAddonCents: 600000,
+  onlineAddonCents: 0,
   onlineCutBps: 0,
   currency: 'INR',
 };

@@ -50,9 +50,11 @@ export default function AdminOverviewScreen() {
                     <ThemedText type="small" themeColor="textSecondary">
                       {list.length} branches at{' '}
                       {formatAmount(billing.branchFeeCents, billing.currency)} each, unless a branch
-                      has its own fee, plus{' '}
-                      {formatAmount(billing.onlineAddonCents, billing.currency)} for each with
-                      online payments.
+                      has its own fee
+                      {billing.onlineAddonCents > 0
+                        ? `, plus ${formatAmount(billing.onlineAddonCents, billing.currency)} for each with online payments`
+                        : ''}
+                      .
                     </ThemedText>
                   </Card>
                   <View style={styles.grid}>
