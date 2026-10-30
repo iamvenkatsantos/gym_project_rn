@@ -4,7 +4,12 @@ import { env } from './env';
 
 // The browser keeps the session in localStorage, so a refresh stays signed in.
 export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storageKey: env.authStorageKey,
+  },
 });
 
 /** Throws the Supabase error if present, otherwise returns the data. */
