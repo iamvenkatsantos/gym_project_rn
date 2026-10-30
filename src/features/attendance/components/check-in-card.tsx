@@ -11,7 +11,7 @@ import { useCheckIn, useMyAttendance } from '@/features/attendance/hooks';
 import { attendanceStatus, attendanceTimes } from '@/features/attendance/rules';
 import type { AttendeeRole } from '@/features/attendance/types';
 import { useCheckInRules } from '@/features/check-in/hooks';
-import { autoOutHint } from '@/features/check-in/rules';
+import { autoOutHint, gymHours, hoursLine } from '@/features/check-in/rules';
 import { useHasMembership } from '@/features/memberships/hooks';
 
 const hint: Record<AttendeeRole, string> = {
@@ -38,6 +38,7 @@ export function CheckInCard({
   const rules = useCheckInRules(gymId);
   const status = attendanceStatus(today.data);
   const qrOnly = rules.data?.qrOnly ?? false;
+  const hours = gymHours(rules.data);
   // Members need a membership covering today to check in; checking out always works.
   const hasMembership = useHasMembership(gymId, userId, role);
 
@@ -63,6 +64,11 @@ export function CheckInCard({
         </View>
         {status === 'inGym' ? <Pill label="In gym" tone="success" /> : null}
       </View>
+      {hours && status !== 'inGym' ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {hoursLine(hours)}
+        </ThemedText>
+      ) : null}
       {status === 'inGym' ? (
         <>
           <ThemedText type="small" themeColor="textSecondary">

@@ -9,9 +9,11 @@ import {
   getDisplayCode,
   resetAdminBranchQr,
   saveCheckInSettings,
+  saveGymHours,
   scanCheckIn,
   type CheckInSettings,
 } from '@/features/check-in/api';
+import type { GymHours } from '@/features/check-in/types';
 
 export const checkInKeys = {
   all: ['check-in'] as const,
@@ -58,6 +60,14 @@ export function useSaveCheckInSettings(gymId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (settings: CheckInSettings) => saveCheckInSettings(gymId, settings),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: checkInKeys.all }),
+  });
+}
+
+export function useSaveGymHours(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hours: GymHours) => saveGymHours(gymId, hours),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: checkInKeys.all }),
   });
 }

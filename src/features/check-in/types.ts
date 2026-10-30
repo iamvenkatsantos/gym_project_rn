@@ -17,10 +17,14 @@ export type CheckInRules = {
   qrOnly: boolean;
   memberAutoOutHours: number;
   trainerAutoOutHours: number;
+  /** "HH:MM" in the branch's time zone; both null means open all day. */
+  opensAt: string | null;
+  /** Before opensAt means it closes after midnight. Everyone still in is checked out then. */
+  closesAt: string | null;
 };
 
 /** Owners and supervisors: the branch's QR codes and settings. */
-export type CheckInQr = CheckInRules & {
+export type CheckInQr = Omit<CheckInRules, 'opensAt' | 'closesAt'> & {
   gymName: string;
   /** The fixed code printed on the poster. */
   posterCode: string;
@@ -31,3 +35,6 @@ export type CheckInQr = CheckInRules & {
 
 /** The live code the front-desk display shows until refreshAt. */
 export type DisplayCode = { gymId: string; gymName: string; code: string; refreshAt: string };
+
+/** Opening hours as minutes after midnight; null for open all day. */
+export type GymHours = { opensAt: number; closesAt: number } | null;

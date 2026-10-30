@@ -1,5 +1,5 @@
 import type { AttendeeRole } from '@/features/attendance/types';
-import type { CheckInLink, CheckInRules, ScanResult } from '@/features/check-in/types';
+import type { CheckInLink, CheckInRules, GymHours, ScanResult } from '@/features/check-in/types';
 import { clockTime, formatMinutes, minutesAtGym } from '@/features/attendance/rules';
 
 /** The app's own link scheme, from app.json. Phone cameras open it in the app. */
@@ -51,11 +51,43 @@ export function scanDetail(result: ScanResult, now = new Date()) {
   return `${result.gymName} · ${clockTime(now.toISOString())}. Scan again when you leave.`;
 }
 
-/** "You're checked out automatically after 3 h." */
+/** "05:30" as 330 minutes after midnight, or null. */
+export function minutesOfDay(time: string | null) {
+  const match = time ? /^(\d{1,2}):(\d{2})/.exec(time) : null;
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+/** 330 as "5:30 am", 1320 as "10:00 pm". The same on every phone, whatever its locale. */
+export function timeOfDay(minutes: number) {
+  const m = ((minutes % 1440) + 1440) % 1440;
+  const h = Math.floor(m / 60);
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m % 60).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+
+/** The branch's hours from its rules; null when it's open all day. */
+export function gymHours(rules: Pick<CheckInRules, 'opensAt' | 'closesAt'> | undefined): GymHours {
+  const opensAt = minutesOfDay(rules?.opensAt ?? null);
+  const closesAt = minutesOfDay(rules?.closesAt ?? null);
+  return opensAt === null || closesAt === null ? null : { opensAt, closesAt };
+}
+
+/** "Open 5:30 am – 10:00 pm", or "Open 24 hours". */
+export function hoursLine(hours: GymHours) {
+  return hours
+    ? `Open ${timeOfDay(hours.opensAt)} – ${timeOfDay(hours.closesAt)}`
+    : 'Open 24 hours';
+}
+
+/** "You're checked out automatically at 10:00 pm or after 3 h." */
 export function autoOutHint(rules: CheckInRules | undefined, role: AttendeeRole) {
   if (!rules) return '';
   const hours = role === 'member' ? rules.memberAutoOutHours : rules.trainerAutoOutHours;
-  return `If you forget, you’re checked out automatically after ${formatMinutes(hours * 60)}.`;
+  const after = formatMinutes(hours * 60);
+  const closing = gymHours(rules)?.closesAt;
+  return closing === undefined
+    ? `If you forget, you’re checked out automatically after ${after}.`
+    : `If you forget, you’re checked out at closing (${timeOfDay(closing)}) or after ${after}.`;
 }
 
 /** "Pulse Fitness Velachery check-in QR.png", safe as a file name. */

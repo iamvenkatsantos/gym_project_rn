@@ -3,6 +3,7 @@ import type {
   CheckInQr,
   CheckInRules,
   DisplayCode,
+  GymHours,
   ScanAction,
   ScanResult,
 } from '@/features/check-in/types';
@@ -19,6 +20,8 @@ const mockQr: CheckInQr = {
   memberAutoOutHours: 3,
   trainerAutoOutHours: 12,
 };
+
+let mockHours: Pick<CheckInRules, 'opensAt' | 'closesAt'> = { opensAt: '05:30', closesAt: '22:00' };
 
 function mockWindow() {
   return Math.floor(Date.now() / 30000);
@@ -92,17 +95,24 @@ type RulesRow = {
   qr_check_in_only: boolean;
   member_auto_out_hours: number;
   trainer_auto_out_hours: number;
+  opens_at: string | null;
+  closes_at: string | null;
 };
+
+/** "05:30:00" from Postgres as "05:30". */
+const hhmm = (time: string | null) => (time ? time.slice(0, 5) : null);
 
 export async function getCheckInRules(gymId: string): Promise<CheckInRules> {
   if (!supabase) {
     const { qrOnly, memberAutoOutHours, trainerAutoOutHours } = mockQr;
-    return delay({ qrOnly, memberAutoOutHours, trainerAutoOutHours });
+    return delay({ qrOnly, memberAutoOutHours, trainerAutoOutHours, ...mockHours });
   }
   const row = unwrap(
     await supabase
       .from('gyms')
-      .select('qr_check_in_only, member_auto_out_hours, trainer_auto_out_hours')
+      .select(
+        'qr_check_in_only, member_auto_out_hours, trainer_auto_out_hours, opens_at, closes_at',
+      )
       .eq('id', gymId)
       .single(),
   ) as RulesRow;
@@ -110,7 +120,28 @@ export async function getCheckInRules(gymId: string): Promise<CheckInRules> {
     qrOnly: row.qr_check_in_only,
     memberAutoOutHours: row.member_auto_out_hours,
     trainerAutoOutHours: row.trainer_auto_out_hours,
+    opensAt: hhmm(row.opens_at),
+    closesAt: hhmm(row.closes_at),
   };
+}
+
+const toTime = (minutes: number) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+/** Owners only. Null for open all day. */
+export async function saveGymHours(gymId: string, hours: GymHours) {
+  const opensAt = hours ? toTime(hours.opensAt) : null;
+  const closesAt = hours ? toTime(hours.closesAt) : null;
+  if (!supabase) {
+    mockHours = { opensAt, closesAt };
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('set_gym_hours', {
+    p_gym_id: gymId,
+    p_opens_at: opensAt,
+    p_closes_at: closesAt,
+  });
+  if (error) throw error;
 }
 
 type QrRow = {
