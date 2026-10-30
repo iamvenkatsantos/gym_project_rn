@@ -179,6 +179,9 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
   `gym_members!gym_members_user_id_fkey(...)` or the workouts → profiles embed. An ambiguous embed
   fails with PGRST201 and breaks installed apps. Never add a second FK between `profiles` and
   `gym_members`.
+- **Network failures** (no signal, a mobile network resetting the connection) reach screens as
+  "Can't reach the server…" via `friendlyFetch` in `src/lib/network.ts`, the Supabase client's
+  fetch. Show `error.message` as is; don't special-case raw fetch errors.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
