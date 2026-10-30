@@ -2,10 +2,14 @@ import { qrRows } from '@/features/check-in/components/qr-code';
 import {
   autoOutHint,
   checkInLink,
+  gymHours,
+  hoursLine,
+  minutesOfDay,
   parseCheckInLink,
   qrFileName,
   scanDetail,
   scanHeadline,
+  timeOfDay,
 } from '@/features/check-in/rules';
 
 const gymId = '4f1c2d3e-0000-4000-8000-000000000001';
@@ -60,10 +64,44 @@ describe('scan messages', () => {
   });
 
   it('tells each role when auto check-out happens', () => {
-    const rules = { qrOnly: false, memberAutoOutHours: 3, trainerAutoOutHours: 12 };
-    expect(autoOutHint(rules, 'member')).toContain('after 3 h.');
+    const rules = {
+      qrOnly: false,
+      memberAutoOutHours: 3,
+      trainerAutoOutHours: 12,
+      opensAt: null,
+      closesAt: null,
+    };
+    expect(autoOutHint(rules, 'member')).toContain('automatically after 3 h.');
     expect(autoOutHint(rules, 'trainer')).toContain('after 12 h.');
+    expect(autoOutHint({ ...rules, opensAt: '05:30', closesAt: '22:00' }, 'member')).toBe(
+      'If you forget, you’re checked out at closing (10:00 pm) or after 3 h.',
+    );
     expect(autoOutHint(undefined, 'member')).toBe('');
+  });
+});
+
+describe('opening hours', () => {
+  it('reads Postgres times', () => {
+    expect(minutesOfDay('05:30:00')).toBe(330);
+    expect(minutesOfDay('22:00')).toBe(1320);
+    expect(minutesOfDay(null)).toBeNull();
+  });
+
+  it('shows times the same way on every phone', () => {
+    expect(timeOfDay(0)).toBe('12:00 am');
+    expect(timeOfDay(330)).toBe('5:30 am');
+    expect(timeOfDay(720)).toBe('12:00 pm');
+    expect(timeOfDay(1320)).toBe('10:00 pm');
+  });
+
+  it('says when the branch is open', () => {
+    expect(hoursLine(gymHours({ opensAt: '05:30', closesAt: '22:00' }))).toBe(
+      'Open 5:30 am – 10:00 pm',
+    );
+    expect(hoursLine(gymHours({ opensAt: '18:00', closesAt: '01:00' }))).toBe(
+      'Open 6:00 pm – 1:00 am',
+    );
+    expect(hoursLine(gymHours({ opensAt: null, closesAt: null }))).toBe('Open 24 hours');
   });
 });
 

@@ -256,7 +256,7 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
         />
         {/* The branch's check-in QR: a live code for the desk, the poster and (owners) the rules. */}
-        <Stack.Screen name="check-in-qr" options={{ headerShown: true, title: 'Check-in QR' }} />
+        <Stack.Screen name="check-in-qr" options={{ headerShown: true, title: 'Check-in settings' }} />
         <Stack.Screen
           name="check-in-display"
           options={{ headerShown: true, title: 'Live check-in QR' }}

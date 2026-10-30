@@ -136,6 +136,11 @@ first membership is recorded. Each branch has a QR
 (`corefit://check-in?gym=…&code=…`): a rotating live code on the owner's `check-in-display` and a
 fixed poster code the admin shares as an image. `scan_check_in` toggles in/out;
 `gyms.qr_check_in_only` blocks the button check-in; `auto_check_out()` closes stale visits.
+**Opening hours:** owners set each branch's `gyms.opens_at`/`closes_at` (`set_gym_hours()`, both null =
+open 24 hours, closing before opening = after midnight) on Attendance → **Check-in QR and settings**,
+next to the auto check-out hours; supervisors see them read-only and Home shows them. Check-in is
+never blocked outside hours (Venkat, 2026-10-30), but `auto_check_out()` checks everyone still in out
+at closing time or after their role's hours, whichever comes first.
 Mapped trainers get pushes when their member starts and finishes a workout.
 
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to

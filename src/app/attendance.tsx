@@ -193,9 +193,9 @@ export default function AttendanceScreen() {
 
   return (
     <Screen>
-      {/* Members and trainers scan this to check in and out. */}
+      {/* The QR members and trainers scan, opening hours and the check-in rules. */}
       <Button
-        label="Check-in QR for this branch"
+        label="Check-in QR and settings"
         icon="qr-code-outline"
         variant="secondary"
         onPress={() => router.push('/check-in-qr')}
