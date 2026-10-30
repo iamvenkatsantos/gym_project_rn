@@ -98,9 +98,6 @@ export async function listMemberships(gymId: string): Promise<Membership[]> {
     endsOn: r.ends_on,
     amountPaidCents: r.amount_paid_cents,
     paymentMethod: r.payment_method,
-    phone: r.phone,
-    admittedBy: r.admitted_by,
-    admittedOn: r.admitted_on,
   }));
 }
 
@@ -171,6 +168,9 @@ export async function exportMemberships(gymId: string): Promise<MembershipExport
     amountPaidCents: r.amount_paid_cents,
     currency: r.currency,
     paymentMethod: r.payment_method,
+    phone: r.phone,
+    admittedBy: r.admitted_by,
+    admittedOn: r.admitted_on,
   }));
 }
 

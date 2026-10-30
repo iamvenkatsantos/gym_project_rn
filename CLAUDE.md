@@ -16,7 +16,8 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 - **Backend:** Supabase. Postgres with RLS on every table, most writes through `security definer`
   RPCs, edge functions in `supabase/functions/`, `pg_cron` + `pg_net` for jobs and push.
 - **Owner web dashboard:** a separate Vite app in `web/` that reuses pure files from `src/` (see
-  `web/README.md`). Never import React Native code into it. No QR on the web.
+  `web/README.md`). Live at `https://dashboard.vinven.net` (Cloudflare Workers Builds, deploys on
+  push to `main`). Never import React Native code into it. No QR on the web.
 
 ## Folder map
 
@@ -232,6 +233,7 @@ Say in the PR which of these it needs:
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
 - **A new EAS build** when a native module or `app.json` changes (`npx eas-cli@latest build
 --profile preview` for the APK). JS-only changes need none.
+- **Nothing** for `web/` changes: the dashboard redeploys itself on merge; run `cd web && npm run build` first.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.
 
 ## Keep this file current
