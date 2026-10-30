@@ -48,7 +48,10 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   plans, gym details.
 - **Roles never change once given** (`gym_members_lock_role` trigger). There is no role picker in
   the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
-  already at the gym keeps their role.
+  already at the gym keeps their role. **One exception:** owners and supervisors can make an active
+  member a trainer (person screen → **Make trainer**, `promote_to_trainer()`, the only path the
+  trigger lets through). It removes their trainer links, workout and diet plan assignments and
+  pending trainer requests; history and memberships stay. It can't be undone in the app.
 - **Platform admin** (`platform_admins` + `is_platform_admin()`, rows added in the SQL editor only)
   is separate from gym roles. Only the admin invites owners, adds branches, sets branch fees and
   switches on online payments. Never give gym owners power over gyms or owners. The admin area
@@ -123,7 +126,13 @@ name and mobile on `edit-profile` (tap the profile card, or Edit profile on Prof
 `TrainerAvatar` with `url` to show a photo with initials as the fallback.
 
 **Attendance and QR.** Members and staff check in/out from Home. Members must be checked in to start
-a workout (`start_workout_attendance` raises "Check in first"). Each branch has a QR
+a workout (`start_workout_attendance` raises "Check in first"). **No membership, no training:** a
+member needs a membership covering today (`has_current_membership()`, the gym's day) to check in
+(button or QR), start a workout, book a class or book a trainer; `require_membership()` raises "No
+active membership…" in `check_in`, `scan_check_in` (checking out still works),
+`start_workout_attendance`, `book_class` and `book_trainer_session`. Staff never need one. The app
+mirrors it with `useHasMembership` and `NoMembershipNotice`. New members are blocked until their
+first membership is recorded. Each branch has a QR
 (`corefit://check-in?gym=…&code=…`): a rotating live code on the owner's `check-in-display` and a
 fixed poster code the admin shares as an image. `scan_check_in` toggles in/out;
 `gyms.qr_check_in_only` blocks the button check-in; `auto_check_out()` closes stale visits.
@@ -147,7 +156,8 @@ opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the si
 `complete_online_payment()`, and the browser returns to `corefit://payment-return`. The gym's share
 goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`); member money
 never stays with CoreFit Gym. By default the owner pays all fees and the members see one price.
-CoreFit Gym's cut is 0.5% (`platform_settings.online_cut_bps` 50). Fee math lives only in
+CoreFit Gym takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
+shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
 

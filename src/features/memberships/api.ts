@@ -4,6 +4,7 @@ import type {
   MembershipPlan,
   PlanInput,
 } from '@/features/memberships/types';
+import { coversToday, toIsoDate } from '@/features/memberships/rules';
 import { delay, forGym, mockId, mockMemberships, mockPeople, mockPlans } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -86,6 +87,26 @@ export async function getCurrentMembership(
     .maybeSingle();
   if (error) throw error;
   return data ? toMembership(data as unknown as MembershipRow) : null;
+}
+
+/** Whether the member has a membership at this gym covering today. The server checks too. */
+export async function hasCurrentMembership(gymId: string, memberId: string): Promise<boolean> {
+  if (!supabase) {
+    return delay(
+      forGym(gymId, mockMemberships).some((m) => m.memberId === memberId && coversToday(m)),
+    );
+  }
+  const today = toIsoDate(new Date());
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('id, plan:membership_plans!inner(gym_id)')
+    .eq('member_id', memberId)
+    .eq('plan.gym_id', gymId)
+    .lte('starts_on', today)
+    .gte('ends_on', today)
+    .limit(1);
+  if (error) throw error;
+  return data.length > 0;
 }
 
 /** Every membership in the gym. RLS only lets owners see other people's. */

@@ -1,4 +1,5 @@
 import {
+  coversToday,
   daysRemaining,
   endDateFor,
   membershipStatus,
@@ -47,6 +48,18 @@ describe('membershipStatus', () => {
     ['2026-10-25', '2026-11-25', 'upcoming'],
   ] as const)('%s to %s is %s', (startsOn, endsOn, expected) => {
     expect(membershipStatus(membership(startsOn, endsOn), today)).toBe(expected);
+  });
+});
+
+describe('coversToday', () => {
+  it.each([
+    ['2026-10-01', '2026-11-30', true],
+    ['2026-10-01', '2026-10-24', true],
+    ['2026-10-24', '2026-11-22', true],
+    ['2026-09-01', '2026-10-23', false],
+    ['2026-10-25', '2026-11-25', false],
+  ] as const)('%s to %s covers today: %s', (startsOn, endsOn, expected) => {
+    expect(coversToday(membership(startsOn, endsOn), today)).toBe(expected);
   });
 });
 

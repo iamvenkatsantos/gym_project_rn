@@ -12,6 +12,7 @@ import { attendanceStatus, attendanceTimes } from '@/features/attendance/rules';
 import type { AttendeeRole } from '@/features/attendance/types';
 import { useCheckInRules } from '@/features/check-in/hooks';
 import { autoOutHint } from '@/features/check-in/rules';
+import { useHasMembership } from '@/features/memberships/hooks';
 
 const hint: Record<AttendeeRole, string> = {
   member: 'Scan the gym’s QR when you arrive to start your workout.',
@@ -37,6 +38,8 @@ export function CheckInCard({
   const rules = useCheckInRules(gymId);
   const status = attendanceStatus(today.data);
   const qrOnly = rules.data?.qrOnly ?? false;
+  // Members need a membership covering today to check in; checking out always works.
+  const hasMembership = useHasMembership(gymId, userId, role);
 
   return (
     <Card highlighted={status === 'inGym'}>
@@ -73,6 +76,10 @@ export function CheckInCard({
             onPress={() => toggle.mutate('out')}
           />
         </>
+      ) : hasMembership === false ? (
+        <ThemedText type="small" themeColor="warning">
+          No active membership. Renew to check in.
+        </ThemedText>
       ) : (
         <>
           <Button

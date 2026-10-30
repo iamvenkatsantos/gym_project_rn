@@ -37,9 +37,6 @@ export function OnlinePaymentsEditor({
   const addon = formatAmount(billing.onlineAddonCents, billing.currency);
   const example = onlinePaymentExample(branch.feesOnMember, billing.onlineCutBps);
   const money = (cents: number) => formatAmount(cents, billing.currency);
-  const cut = billing.onlineCutBps
-    ? ` CoreFit Gym's ${billing.onlineCutBps / 100}% (${money(example.cutCents)}) is ${branch.feesOnMember ? 'part of what the member pays' : 'taken from the owner'}.`
-    : '';
 
   return (
     <Card style={styles.card}>
@@ -95,8 +92,8 @@ export function OnlinePaymentsEditor({
         <Pill label={branch.feesOnMember ? 'Member pays fees' : 'Owner pays fees'} tone="neutral" />
         <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
           {branch.feesOnMember
-            ? `Razorpay’s fees (about 2.7%)${billing.onlineCutBps ? ' and CoreFit Gym’s fee' : ''} are added to the price: a ${money(100000)} plan costs the member ${money(example.memberPaysCents)} and the owner gets ${money(example.ownerGetsCents)}.${cut}`
-            : `Members pay the price; Razorpay’s fees (about 2.7%) come out of what the owner gets: ${money(example.ownerGetsCents)} from a ${money(100000)} plan.${cut}`}
+            ? `Razorpay’s fees (about 2.7%) are added to the price: a ${money(100000)} plan costs the member ${money(example.memberPaysCents)} and the owner gets ${money(example.ownerGetsCents)}.`
+            : `Members pay the price; Razorpay’s fees (about 2.7%) come out of what the owner gets: ${money(example.ownerGetsCents)} from a ${money(100000)} plan.`}
         </ThemedText>
       </View>
       <Button

@@ -33,6 +33,15 @@ export function membershipStatus(
   return 'active';
 }
 
+/** Whether the membership covers today, which members need to check in, train and book. */
+export function coversToday(
+  membership: Pick<Membership, 'startsOn' | 'endsOn'>,
+  today: Date = new Date(),
+) {
+  const status = membershipStatus(membership, today);
+  return status === 'active' || status === 'expiringSoon';
+}
+
 /** Share of the membership period still remaining, from 1 at the start to 0 at the end. */
 export function remainingFraction(membership: Membership, today: Date = new Date()) {
   const total =

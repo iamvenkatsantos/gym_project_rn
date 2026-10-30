@@ -17,6 +17,8 @@ import {
   useUpcomingClasses,
 } from '@/features/bookings/hooks';
 import { canBook, classesOnDay, upcomingDays } from '@/features/bookings/rules';
+import { NoMembershipNotice } from '@/features/memberships/components/no-membership-notice';
+import { useHasMembership } from '@/features/memberships/hooks';
 import { SessionRow } from '@/features/trainers/components/session-row';
 import { TrainerCard } from '@/features/trainers/components/trainer-card';
 import { useSessions, useTrainers, useUpdateSession } from '@/features/trainers/hooks';
@@ -27,9 +29,13 @@ const blockedLabel = { started: 'Started', full: 'Class full', alreadyBooked: 'B
 
 export default function MemberBookingsScreen() {
   const [tab, setTab] = useState<Tab>('trainers');
+  const profile = useProfile();
+  const gym = useActiveGym();
+  const hasMembership = useHasMembership(gym.gymId, profile.id, gym.role);
 
   return (
     <Screen>
+      {hasMembership === false ? <NoMembershipNotice action="book" /> : null}
       <SegmentedControl
         options={[
           { value: 'trainers', label: 'Personal training' },
@@ -90,6 +96,7 @@ function ClassesTab() {
   const classes = useUpcomingClasses(gym.gymId);
   const myBookings = useMyBookings(gym.gymId, profile.id);
   const book = useBookClass(profile.id);
+  const hasMembership = useHasMembership(gym.gymId, profile.id, gym.role);
   const cancel = useCancelBooking();
 
   return (
@@ -130,7 +137,7 @@ function ClassesTab() {
                   <Button
                     label={eligibility.ok ? 'Book class' : blockedLabel[eligibility.reason]}
                     size="compact"
-                    disabled={!eligibility.ok}
+                    disabled={!eligibility.ok || hasMembership === false}
                     loading={book.isPending && book.variables === gymClass.id}
                     onPress={() => book.mutate(gymClass.id)}
                   />

@@ -31,6 +31,7 @@ import {
   mockMemberships,
   mockPeople,
   mockPlans,
+  mockTrainerLinks,
   mockWorkouts,
 } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -525,6 +526,27 @@ export async function updatePerson(
 }
 
 /** Removes someone from the gym. Their account and history stay. */
+/**
+ * Owners and supervisors make a member a trainer: the one role change a gym makes itself.
+ * The server drops their own trainer links and plans.
+ */
+export async function promoteToTrainer(gymId: string, userId: string) {
+  if (!supabase) {
+    const person = forGym(gymId, mockPeople).find((p) => p.id === userId);
+    if (!person || person.role !== 'member') throw new Error('Only members can be made trainers');
+    person.role = 'trainer';
+    for (let i = mockTrainerLinks.length - 1; i >= 0; i--) {
+      if (mockTrainerLinks[i].memberId === userId) mockTrainerLinks.splice(i, 1);
+    }
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('promote_to_trainer', {
+    p_gym_id: gymId,
+    p_user_id: userId,
+  });
+  if (error) throw error;
+}
+
 export async function removePerson(gymId: string, userId: string) {
   if (!supabase) {
     const index = mockPeople.findIndex((p) => p.id === userId);
