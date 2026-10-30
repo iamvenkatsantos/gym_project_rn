@@ -8,13 +8,18 @@ import { Pill } from '@/components/pill';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { canCoach, type Role } from '@/features/auth/types';
+import { canCoach, canManageGym, type Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useTrainerLinks } from '@/features/coaching/hooks';
 import type { GymPerson } from '@/features/members/types';
 import { roleTone } from '@/features/members/components/person-row';
-import { usePeople, useRemovePerson, useUpdatePerson } from '@/features/members/hooks';
+import {
+  usePeople,
+  usePromoteToTrainer,
+  useRemovePerson,
+  useUpdatePerson,
+} from '@/features/members/hooks';
 import { isLastActiveOwner, isSignedUp } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
@@ -33,6 +38,54 @@ const roleNote: Record<Role, string> = {
 
 /** Names listed on a coach's card before "and N more". */
 const MEMBERS_SHOWN = 5;
+
+/** Owners and supervisors can make a member a trainer, after a confirm step. */
+function MakeTrainer({ gymId, person }: { gymId: string; person: GymPerson }) {
+  const promote = usePromoteToTrainer(gymId);
+  const [confirm, setConfirm] = useState(false);
+
+  if (!confirm) {
+    return (
+      <Button
+        label="Make trainer"
+        icon="barbell-outline"
+        variant="secondary"
+        onPress={() => setConfirm(true)}
+      />
+    );
+  }
+  return (
+    <Card>
+      <ThemedText type="smallBold">Make {person.fullName} a trainer?</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Their trainers and plans are removed. This can&apos;t be undone.
+      </ThemedText>
+      {promote.error ? (
+        <ThemedText type="small" themeColor="danger">
+          {promote.error.message}
+        </ThemedText>
+      ) : null}
+      <View style={styles.row}>
+        <View style={styles.flex}>
+          <Button
+            label="Cancel"
+            variant="secondary"
+            size="compact"
+            onPress={() => setConfirm(false)}
+          />
+        </View>
+        <View style={styles.flex}>
+          <Button
+            label="Make trainer"
+            size="compact"
+            loading={promote.isPending}
+            onPress={() => promote.mutate(person.id, { onSuccess: () => setConfirm(false) })}
+          />
+        </View>
+      </View>
+    </Card>
+  );
+}
 
 /** Who invited (admitted) a member and when, and whether they've filled in their details. */
 function Admission({ person }: { person: GymPerson }) {
@@ -79,7 +132,8 @@ export default function PersonScreen() {
   }
 
   // Supervisors see people and map trainers; access stays with owners. Roles never change
-  // once given (the database refuses), so there's no role picker here.
+  // once given (the database refuses), except that owners and supervisors can make a member
+  // a trainer, so there's no role picker here.
   const isOwner = gym.role === 'owner';
   const lastOwner = isLastActiveOwner(people.data ?? [], person.id);
   const isSelf = person.id === profile.id;
@@ -114,7 +168,10 @@ export default function PersonScreen() {
       </View>
 
       <ThemedText type="small" themeColor="textSecondary">
-        {roleNote[person.role]} Roles can&apos;t be changed once given.
+        {roleNote[person.role]}
+        {person.role === 'member' && canManageGym(gym.role)
+          ? ' You can make them a trainer.'
+          : ' Roles can’t be changed once given.'}
       </ThemedText>
 
       {person.role === 'member' ? <Admission person={person} /> : null}
@@ -139,6 +196,7 @@ export default function PersonScreen() {
               })
             }
           />
+          {canManageGym(gym.role) ? <MakeTrainer gymId={gym.gymId} person={person} /> : null}
         </>
       ) : null}
 

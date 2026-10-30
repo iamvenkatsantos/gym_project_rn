@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useAnnounceWorkoutStart, useMyAttendance } from '@/features/attendance/hooks';
 import { canStartWorkout } from '@/features/attendance/rules';
+import { NoMembershipNotice } from '@/features/memberships/components/no-membership-notice';
+import { useHasMembership } from '@/features/memberships/hooks';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
 import { useWorkouts } from '@/features/workouts/hooks';
@@ -15,8 +17,8 @@ import type { Workout } from '@/features/workouts/types';
 
 /**
  * The workout in progress, or the plans to start one from: a member's trainers' plans, or a
- * coach's own. Anyone at the gym can train; members have to check in first, and starting
- * tells their trainers.
+ * coach's own. Anyone at the gym can train; members need a current membership and to check
+ * in first, and starting tells their trainers.
  */
 export function StartWorkout({ gymId }: { gymId: string }) {
   const profile = useProfile();
@@ -28,7 +30,9 @@ export function StartWorkout({ gymId }: { gymId: string }) {
   const isMember = gym.role === 'member';
   const attendance = useMyAttendance(gymId, profile.id);
   const announce = useAnnounceWorkoutStart(gymId);
+  const hasMembership = useHasMembership(gymId, profile.id, gym.role);
   const checkedIn = !isMember || canStartWorkout(attendance.data);
+  const canStart = checkedIn && hasMembership !== false;
 
   const begin = (workout: Workout) => {
     start(gymId, workout);
@@ -41,9 +45,9 @@ export function StartWorkout({ gymId }: { gymId: string }) {
     announce.mutate(started, {
       onSuccess: () => router.push('/workout-session'),
       onError: (error) => {
-        // Only the server saying they aren't checked in stops the workout; no signal
-        // in the gym shouldn't.
-        if (error.message.includes('Check in first')) discard();
+        // Only the server saying they aren't checked in (or have no membership) stops the
+        // workout; no signal in the gym shouldn't.
+        if (/Check in first|No active membership/.test(error.message)) discard();
         else router.push('/workout-session');
       },
     });
@@ -60,7 +64,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
             label="Start workout"
             icon="play"
             size="compact"
-            disabled={!checkedIn || announce.isPending}
+            disabled={!canStart || announce.isPending}
             loading={announce.isPending && announce.variables?.title === workout.title}
             onPress={() => begin(workout)}
           />
@@ -71,7 +75,9 @@ export function StartWorkout({ gymId }: { gymId: string }) {
 
   return (
     <>
-      {!draft && !checkedIn ? (
+      {!draft && hasMembership === false ? (
+        <NoMembershipNotice action="start a workout" />
+      ) : !draft && !checkedIn ? (
         <Card>
           <ThemedText type="smallBold">Check in to start a workout</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">

@@ -24,7 +24,7 @@ insert into public.platform_admins (user_id) values ('d0000000-0000-0000-0000-00
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 set role authenticated;
 
-\echo 'S1 The default is ₹4,999 a year and the cut is 0.5% (expect 499900 600000 50)'
+\echo 'S1 The default is ₹4,999 a year and there''s no cut (expect 499900 600000 0)'
 select pg_temp.as_user('d0000000-0000-0000-0000-00000000000b');
 select branch_fee_cents, online_addon_cents, online_cut_bps from public.platform_settings;
 

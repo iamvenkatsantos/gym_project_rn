@@ -12,6 +12,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { DateStrip } from '@/features/bookings/components/date-strip';
+import { NoMembershipNotice } from '@/features/memberships/components/no-membership-notice';
+import { useHasMembership } from '@/features/memberships/hooks';
 import { upcomingDays } from '@/features/bookings/rules';
 import { SlotGrid } from '@/features/trainers/components/slot-grid';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
@@ -37,6 +39,7 @@ export default function BookTrainerScreen() {
   }, [days]);
   const busy = useBusySlots(trainerId, days[0], rangeEnd);
   const book = useBookSession(gym.gymId, profile.id);
+  const hasMembership = useHasMembership(gym.gymId, profile.id, gym.role);
 
   return (
     <Screen>
@@ -105,6 +108,8 @@ export default function BookTrainerScreen() {
                   </ThemedText>
                   <Button label="Done" onPress={() => router.back()} />
                 </Card>
+              ) : hasMembership === false ? (
+                <NoMembershipNotice action="book a trainer" />
               ) : (
                 <Button
                   label={

@@ -288,6 +288,7 @@ psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
+psql -d corefit_test -f supabase/tests/membership-limits.sql
 ```
 
 ## Scripts

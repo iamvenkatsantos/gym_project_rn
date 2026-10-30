@@ -9,6 +9,7 @@ import {
   listGymMembers,
   listInvites,
   listPeople,
+  promoteToTrainer,
   removePerson,
   updatePerson,
   withdrawInvite,
@@ -139,6 +140,15 @@ export function useUpdatePerson(gymId: string) {
     mutationFn: ({ userId, patch }: { userId: string; patch: Pick<GymPerson, 'status'> }) =>
       updatePerson(gymId, userId, patch),
     onSettled: invalidate,
+  });
+}
+
+export function usePromoteToTrainer(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => promoteToTrainer(gymId, userId),
+    // People, trainer links and pickers all change.
+    onSettled: () => queryClient.invalidateQueries(),
   });
 }
 

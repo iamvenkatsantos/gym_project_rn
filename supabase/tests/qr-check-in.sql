@@ -20,6 +20,12 @@ insert into public.gym_members (gym_id, user_id, role) values
  ('e1000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-00000000000c','trainer'),
  ('e1000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-00000000000d','supervisor'),
  ('e1000000-0000-0000-0000-000000000003','e0000000-0000-0000-0000-00000000000e','member');
+-- Members need a current membership to check in (membership-limits.sql covers that).
+insert into public.membership_plans (id, gym_id, name, price_cents, duration_days) values
+ ('e2000000-0000-0000-0000-000000000001','e1000000-0000-0000-0000-000000000001','Monthly',150000,30);
+insert into public.memberships (member_id, plan_id, starts_on, ends_on) values
+ ('e0000000-0000-0000-0000-00000000000b','e2000000-0000-0000-0000-000000000001',
+  current_date - 1, current_date + 29);
 
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 -- The code the front-desk screen shows now, or n windows ago.
