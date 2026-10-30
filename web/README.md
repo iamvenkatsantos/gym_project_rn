@@ -50,11 +50,15 @@ project; by default it uses CoreFit's.
 
 ## Deploying
 
-Any static host works. On Vercel, Netlify or Cloudflare Pages:
+It runs at **https://dashboard.vinven.net** as a Cloudflare Worker serving static files
+(`wrangler.jsonc`), deployed by Cloudflare Workers Builds on every push to `main`:
 
-- Root directory: `web` (the build reads `../src`, so deploy from the whole repo, not a copy of `web/`)
+- Cloudflare → Workers & Pages → Create application → Import a repository → `gym_project_rn`
+- Project name: `corefit-dashboard` (must match `name` in `wrangler.jsonc`)
 - Build command: `npm install && npm run build`
-- Output directory: `dist`
+- Deploy command: `npx wrangler deploy`
+- Advanced settings → Path: `web` (the build still reads `../src`, so connect the whole repo)
+- Then Settings → Domains & Routes → add the custom domain `dashboard.vinven.net`
 
 Pages live in the URL hash (`#/members`), so no rewrite rules are needed. Password sign-in needs no
 Supabase change. Forgot password emails the same 6-digit code as the app.
