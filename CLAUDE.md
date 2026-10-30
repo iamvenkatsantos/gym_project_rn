@@ -33,6 +33,7 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 | `supabase/functions/`        | `invite-member`, `accept-invite`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
 | `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                            |
 | `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                         |
+| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand                                                          |
 
 ## Roles and who sees what
 
@@ -179,6 +180,14 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
   `gym_members!gym_members_user_id_fkey(...)` or the workouts → profiles embed. An ambiguous embed
   fails with PGRST201 and breaks installed apps. Never add a second FK between `profiles` and
   `gym_members`.
+- **Network failures** (no signal, a mobile network resetting the connection) reach screens as
+  "Can't reach the server…" via `friendlyFetch` in `src/lib/network.ts`, the Supabase client's
+  fetch. Show `error.message` as is; don't special-case raw fetch errors.
+- **The app's Supabase URL is `https://api.vinven.net`,** a Cloudflare Worker (`infra/api-proxy/`)
+  that forwards everything to the supabase.co project, because some Indian mobile networks reset
+  connections to `*.supabase.co`. Keep `authStorageKey` (the old `sb-<ref>-auth-token`) so a URL
+  change never signs people out. Server-side URLs (Vault `project_url`, Razorpay webhook) stay on
+  supabase.co.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).

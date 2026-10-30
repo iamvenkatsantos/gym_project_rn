@@ -3,15 +3,18 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 
 import { env, isDemoMode } from '@/lib/env';
+import { friendlyFetch } from '@/lib/network';
 
 export const supabase: SupabaseClient | null = !isDemoMode
   ? createClient(env.supabaseUrl, env.supabaseAnonKey, {
       auth: {
         storage: AsyncStorage,
+        storageKey: env.authStorageKey,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
       },
+      global: { fetch: friendlyFetch() },
     })
   : null;
 
