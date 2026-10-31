@@ -9,7 +9,7 @@ import { formatAmount } from '@/lib/format';
 
 /**
  * Price rules for plan offers and the loyalty offer. The database mirrors them
- * in plan_offer_cents() and member_plan_price() (20261031010000_membership_offers),
+ * in plan_offer_cents() and member_plan_price() (20261031020000_membership_offers),
  * which is what online payments charge.
  */
 

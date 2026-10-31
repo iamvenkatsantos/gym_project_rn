@@ -182,6 +182,7 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" options={{ title: 'Home' }} />
+        <Stack.Screen name="permissions" options={{ headerShown: true, title: 'Permission' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'owner'}>
         <Stack.Screen name="owner" options={{ title: 'Dashboard' }} />
@@ -196,6 +197,10 @@ function RootNavigator() {
         {/* Only owners take reports out of the app; the server enforces it too. */}
         <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
         <Stack.Screen name="insights" options={{ headerShown: true, title: 'Insights' }} />
+        <Stack.Screen
+          name="trainer-hours"
+          options={{ headerShown: true, title: 'Trainer hours' }}
+        />
         <Stack.Screen name="gym-details" options={{ headerShown: true, title: 'Gym details' }} />
         <Stack.Screen
           name="import-members"

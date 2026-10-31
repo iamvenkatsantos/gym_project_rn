@@ -46,7 +46,7 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   `canCoach(role)` and `canManageGym(role)` from `src/features/auth/types.ts`. Owners and supervisors
   coach under Training → Coaching.
 - **Owner only:** CSV exports, importing members, Insights, suspending or removing people, membership
-  plans, gym details.
+  plans, gym details, trainer hours/LOP rules and approving trainer permissions.
 - **Roles never change once given** (`gym_members_lock_role` trigger). There is no role picker in
   the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
   already at the gym keeps their role. **One exception:** owners and supervisors can make an active
@@ -143,6 +143,21 @@ next to the auto check-out hours; supervisors see them read-only and Home shows 
 never blocked outside hours (Venkat, 2026-10-30), but `auto_check_out()` checks everyone still in out
 at closing time or after their role's hours, whichever comes first.
 Mapped trainers get pushes when their member starts and finishes a workout.
+
+**Trainer hours, LOP and permissions** (owner only, secret from trainers and supervisors). Owners set
+per-branch rules on Dashboard → **Trainer hours** → Rules (`trainer_hour_rules`, `set_trainer_hour_rules()`):
+working hours a day, allowed shortfall, LOP hours and weekly off days. A working day short by more
+than the allowed shortfall costs the rule's LOP hours; a day with no check-in and no permission costs
+the full day; off days and today never count, nor days before the rules were first saved
+(`starts_on`) or before the trainer joined. Hours worked add up every visit that day
+(`attendance.worked_minutes`, kept by the `attendance_worked_minutes` trigger on each check-out;
+`longest_visit_minutes` is kept too). Only `gym_members.role = 'trainer'` is tracked. Trainers ask
+for permission from Home → **Ask for permission** (`permissions`, `request_permission()`: a day, from/to
+time, a reason, optional note; owners get a push) and see only their requests and the answer, never
+hours or LOP. Owners approve or reject (`decide_permission()`, trainer gets a push); approved
+permission counts as time worked. `trainer_hours_month()` returns the days; the LOP maths is
+`applyRules`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
+knows no salaries.
 
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to
 mapped members (`assign-plan`). Mapping is many trainers per member (`member_trainers`), managed
