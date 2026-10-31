@@ -9,6 +9,7 @@ import type { GymInvite, GymPerson } from '@/features/members/types';
 import type { Membership, MembershipPlan } from '@/features/memberships/types';
 import type { AppNotification } from '@/features/notifications/types';
 import type { WorkoutLog } from '@/features/progress/types';
+import type { TrainerHourRules, WorkPermission } from '@/features/trainer-hours/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
 import type { Workout } from '@/features/workouts/types';
 
@@ -871,3 +872,42 @@ export function forGym<T>(gymId: string, items: T[]): T[] {
 export function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
 }
+
+/** The demo owner's working-hours rules for trainers, counted from last week. */
+export const mockTrainerHourRules: { current: TrainerHourRules | null } = {
+  current: {
+    requiredMinutes: 8 * 60,
+    shortLimitMinutes: 30,
+    lopMinutes: 4 * 60,
+    offDays: [0],
+    startsOn: mockDay(6),
+  },
+};
+
+/** Trainers' permission requests at the demo gym. */
+export const mockPermissions: WorkPermission[] = [
+  {
+    id: 'perm-1',
+    trainerId: 'u-trainer-2',
+    trainerName: 'Divya Raman',
+    day: mockDay(-2),
+    startsAt: 14 * 60,
+    endsAt: 17 * 60,
+    reason: 'medical',
+    note: 'Dentist appointment',
+    status: 'pending',
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'perm-2',
+    trainerId: 'u-trainer',
+    trainerName: 'Karthik Raja',
+    day: mockDay(3),
+    startsAt: 6 * 60,
+    endsAt: 8 * 60,
+    reason: 'family',
+    note: null,
+    status: 'approved',
+    createdAt: new Date(Date.now() - 4 * DAY).toISOString(),
+  },
+];

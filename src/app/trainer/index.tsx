@@ -1,3 +1,6 @@
+import { router } from 'expo-router';
+
+import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { LatestAnnouncement } from '@/features/announcements/components/latest-announcement';
 import { CheckInCard } from '@/features/attendance/components/check-in-card';
@@ -13,6 +16,12 @@ export default function TrainerScheduleScreen() {
     <Screen>
       <PlanBanner />
       <CheckInCard gymId={gym.gymId} userId={profile.id} role="trainer" />
+      <Button
+        label="Ask for permission"
+        icon="time-outline"
+        variant="secondary"
+        onPress={() => router.push('/permissions')}
+      />
       <LatestAnnouncement />
       <CoachSchedule />
     </Screen>
