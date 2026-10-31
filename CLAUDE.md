@@ -46,7 +46,7 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   `canCoach(role)` and `canManageGym(role)` from `src/features/auth/types.ts`. Owners and supervisors
   coach under Training → Coaching.
 - **Owner only:** CSV exports, importing members, Insights, suspending or removing people, membership
-  plans, gym details.
+  plans, gym details, trainer hours/LOP rules and approving trainer permissions.
 - **Roles never change once given** (`gym_members_lock_role` trigger). There is no role picker in
   the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
   already at the gym keeps their role. **One exception:** owners and supervisors can make an active
@@ -157,6 +157,21 @@ never blocked outside hours (Venkat, 2026-10-30), but `auto_check_out()` checks 
 at closing time or after their role's hours, whichever comes first.
 Mapped trainers get pushes when their member starts and finishes a workout.
 
+**Trainer hours, LOP and permissions** (owner only, secret from trainers and supervisors). Owners set
+per-branch rules on Dashboard → **Trainer hours** → Rules (`trainer_hour_rules`, `set_trainer_hour_rules()`):
+working hours a day, allowed shortfall, LOP hours and weekly off days. A working day short by more
+than the allowed shortfall costs the rule's LOP hours; a day with no check-in and no permission costs
+the full day; off days and today never count, nor days before the rules were first saved
+(`starts_on`) or before the trainer joined. Hours worked add up every visit that day
+(`attendance.worked_minutes`, kept by the `attendance_worked_minutes` trigger on each check-out;
+`longest_visit_minutes` is kept too). Only `gym_members.role = 'trainer'` is tracked. Trainers ask
+for permission from Home → **Ask for permission** (`permissions`, `request_permission()`: a day, from/to
+time, a reason, optional note; owners get a push) and see only their requests and the answer, never
+hours or LOP. Owners approve or reject (`decide_permission()`, trainer gets a push); approved
+permission counts as time worked. `trainer_hours_month()` returns the days; the LOP maths is
+`applyRules`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
+knows no salaries.
+
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to
 mapped members (`assign-plan`). Mapping is many trainers per member (`member_trainers`), managed
 by owners and supervisors from `match-trainers` (members without a trainer first), then
@@ -180,6 +195,20 @@ CoreFit Gym takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-3
 shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
+
+**Offers and discounts** (owner only to set). A plan can carry a time-limited offer
+(`membership_plans.offer_*`: 1–90% or a flat amount below the price, optional label, end date; set
+in `membership-plan-editor`); members see the price struck through. The **loyalty offer**
+(`gyms.loyalty_months`/`loyalty_percent`, `set_loyalty_offer()`, Payments → Loyalty offer, off by
+default, app suggests 2 months / 10%) takes a percentage off any renewal once the member has paid
+without a break for that many months (30 days each) up to the new start; breaks of up to 7 days are
+forgiven and complimentary memberships don't count. It applies automatically. The two never stack:
+the bigger discount wins. Percent discounts round to whole rupees. Online payments charge
+`member_plan_price()` (`start_online_payment`; the offer name goes into `online_payments.offer` and
+the membership note); the front desk gets the same price prefilled but can change it. App mirror:
+`src/features/memberships/offers.ts` (keep both in step). **Saved offers** (`saved_offers`, owners and
+supervisors) are announcements kept for reuse on New announcement; the plan editor's **Announce this
+offer** opens it filled in.
 
 **CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
 `branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`

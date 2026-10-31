@@ -27,6 +27,8 @@ import { RenewalRow } from '@/features/memberships/components/renewal-row';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 import { PlanBanner } from '@/features/subscription/components/plan-banner';
+import { usePermissions } from '@/features/trainer-hours/hooks';
+import { pendingCount } from '@/features/trainer-hours/rules';
 
 /** How much of each list the dashboard shows before the screen behind it. */
 const RENEWALS_SHOWN = 2;
@@ -44,6 +46,8 @@ export default function OwnerDashboardScreen() {
   const requests = useTrainerRequests(gym.gymId);
   const attendance = useDayAttendance(gym.gymId, 0);
   const enquiries = useEnquiries(gym.gymId);
+  // Trainer hours and permissions are owners' only.
+  const permissions = usePermissions(gym.gymId, undefined, gym.role === 'owner');
   const enquiryCounts = enquiries.data ? countEnquiries(enquiries.data) : undefined;
   const present = attendance.data ? countByRole(attendance.data) : undefined;
 
@@ -87,6 +91,12 @@ export default function OwnerDashboardScreen() {
     shortcuts.push(
       { label: 'Insights', icon: 'stats-chart-outline', onPress: () => router.push('/insights') },
       { label: 'Reports', icon: 'download-outline', onPress: () => router.push('/reports') },
+      {
+        label: 'Trainer hours',
+        icon: 'time-outline',
+        badge: permissions.data ? pendingCount(permissions.data) : undefined,
+        onPress: () => router.push('/trainer-hours'),
+      },
       {
         label: 'Gym details',
         icon: 'business-outline',

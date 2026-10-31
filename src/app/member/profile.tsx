@@ -14,7 +14,7 @@ import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { PlanCard } from '@/features/memberships/components/plan-card';
-import { useCurrentMembership, usePlans } from '@/features/memberships/hooks';
+import { useCurrentMembership, useMemberPrice, usePlans } from '@/features/memberships/hooks';
 import { membershipStatus } from '@/features/memberships/rules';
 import { useOnlinePaymentsEnabled, usePayOnline } from '@/features/payments/hooks';
 import { useWorkoutLogs } from '@/features/progress/hooks';
@@ -29,6 +29,7 @@ export default function MemberProfileScreen() {
   const logs = useWorkoutLogs(gym.gymId, profile.id).data;
   const online = useOnlinePaymentsEnabled(gym.gymId).data === true;
   const pay = usePayOnline(gym.gymId);
+  const priceOf = useMemberPrice(gym.gymId, profile.id);
   // A plan bought while one is running starts the day after it ends.
   const running = !!membership.data && membershipStatus(membership.data) !== 'expired';
 
@@ -74,14 +75,16 @@ export default function MemberProfileScreen() {
         {(list) =>
           list.map((plan) => {
             const current = plan.id === membership.data?.plan.id;
-            const price = formatAmount(plan.priceCents, plan.currency);
+            const offerPrice = priceOf(plan);
+            const price = formatAmount(offerPrice.priceCents, plan.currency);
             return (
               <PlanCard
                 key={plan.id}
                 plan={plan}
                 current={current}
+                price={offerPrice}
                 action={
-                  online && plan.priceCents >= 100 ? (
+                  online && offerPrice.priceCents >= 100 ? (
                     <Button
                       label={current ? `Renew · ${price}` : `Pay ${price}`}
                       icon="card-outline"

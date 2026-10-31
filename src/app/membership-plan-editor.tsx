@@ -6,15 +6,33 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { Screen } from '@/components/screen';
+import { SectionHeader } from '@/components/section-header';
+import { SegmentedControl } from '@/components/segmented-control';
 import { Stepper } from '@/components/stepper';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useArchivePlan, usePlans, useSavePlan } from '@/features/memberships/hooks';
-import type { MembershipPlan } from '@/features/memberships/types';
-import { formatPrice } from '@/lib/format';
+import { PlanCard } from '@/features/memberships/components/plan-card';
+import { offerActive, offerAnnouncement, offerProblem } from '@/features/memberships/offers';
+import { addDays, toIsoDate } from '@/features/memberships/rules';
+import type { MembershipPlan, PlanOffer } from '@/features/memberships/types';
+import { formatDate } from '@/lib/format';
 import { firstError, parseAmount, validateAmount, validateTitle } from '@/lib/validation';
+
+type OfferKind = 'none' | PlanOffer['type'];
+
+const offerKinds: { value: OfferKind; label: string }[] = [
+  { value: 'none', label: 'No offer' },
+  { value: 'percent', label: '% off' },
+  { value: 'flat', label: '₹ off' },
+];
+
+function daysUntil(isoDate: string, today: string) {
+  const ms = new Date(`${isoDate}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime();
+  return Math.round(ms / 86400000);
+}
 
 const durations = [
   { days: 30, label: '1 month' },
@@ -38,20 +56,64 @@ export default function MembershipPlanEditorScreen() {
       </Screen>
     );
   }
-  return <PlanForm key={plan?.id ?? 'new'} gymId={gym.gymId} plan={plan} />;
+  return <PlanForm key={plan?.id ?? 'new'} gymId={gym.gymId} gymName={gym.gymName} plan={plan} />;
 }
 
-function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
+function PlanForm({
+  gymId,
+  gymName,
+  plan,
+}: {
+  gymId: string;
+  gymName: string;
+  plan?: MembershipPlan;
+}) {
+  const today = toIsoDate(new Date());
+  const saved = plan?.offer ?? null;
+  // An offer that has ended starts over as no offer.
+  const savedLive = saved && saved.endsOn >= today ? saved : null;
   const [name, setName] = useState(plan?.name ?? '');
   const [price, setPrice] = useState(plan ? String(plan.priceCents / 100) : '');
   const [durationDays, setDurationDays] = useState(plan?.durationDays ?? 30);
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [offerKind, setOfferKind] = useState<OfferKind>(savedLive?.type ?? 'none');
+  const [offerText, setOfferText] = useState(
+    savedLive ? String(savedLive.type === 'flat' ? savedLive.value / 100 : savedLive.value) : '',
+  );
+  const [offerLabelText, setOfferLabel] = useState(savedLive?.label ?? '');
+  const [offerDays, setOfferDays] = useState(savedLive ? daysUntil(savedLive.endsOn, today) : 7);
   const save = useSavePlan(gymId);
   const archive = useArchivePlan();
   const nameError = validateTitle(name, { label: 'plan name', max: 40 });
   const priceError = validateAmount(price, { label: 'price' });
   const priceCents = priceError ? null : parseAmount(price);
-  const problem = firstError(nameError, priceError);
+  const offerValue =
+    offerKind === 'flat' ? (parseAmount(offerText) ?? 0) : Number(offerText.trim()) || 0;
+  const offer: PlanOffer | null =
+    offerKind === 'none'
+      ? null
+      : {
+          type: offerKind,
+          value: offerValue,
+          label: offerLabelText,
+          // Keep when a running offer started; a new one starts today.
+          startsOn: savedLive?.type === offerKind ? (savedLive.startsOn ?? null) : today,
+          endsOn: addDays(today, offerDays),
+        };
+  const offerError = offer ? offerProblem(offer, priceCents) : null;
+  const problem = firstError(nameError, priceError, offerError);
+  const preview: MembershipPlan | null =
+    priceCents !== null && name.trim()
+      ? {
+          id: plan?.id ?? 'new',
+          name: name.trim(),
+          priceCents,
+          currency: plan?.currency ?? 'INR',
+          durationDays,
+          offer: offer && !offerError ? offer : null,
+        }
+      : null;
+  const announce = plan && saved && offerActive(plan) ? offerAnnouncement(plan, gymName) : null;
 
   return (
     <Screen refreshable={false}>
@@ -100,23 +162,44 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
         />
       </View>
 
-      {priceCents !== null && name.trim() ? (
-        <Card>
+      <SectionHeader title="Offer" />
+      <SegmentedControl options={offerKinds} value={offerKind} onChange={setOfferKind} />
+      {offerKind === 'none' ? null : (
+        <>
+          <TextField
+            label={offerKind === 'percent' ? 'Discount (%)' : 'Amount off (₹)'}
+            placeholder={offerKind === 'percent' ? '10' : '200'}
+            value={offerText}
+            onChangeText={setOfferText}
+            keyboardType={offerKind === 'percent' ? 'number-pad' : 'decimal-pad'}
+            maxLength={offerKind === 'percent' ? 2 : 12}
+            error={offerText ? offerError : null}
+          />
+          <TextField
+            label="Offer name (optional)"
+            placeholder="e.g. Diwali offer"
+            value={offerLabelText}
+            onChangeText={setOfferLabel}
+            maxLength={30}
+          />
+          <Stepper
+            label="Offer ends"
+            value={offerDays}
+            min={0}
+            max={365}
+            format={(days) => `Till ${formatDate(addDays(today, days))}`}
+            onChange={setOfferDays}
+          />
+        </>
+      )}
+
+      {preview ? (
+        <View style={styles.field}>
           <ThemedText type="small" themeColor="textSecondary">
             Members will see
           </ThemedText>
-          <View style={styles.preview}>
-            <ThemedText type="heading" style={styles.flex}>
-              {name.trim()}
-            </ThemedText>
-            <ThemedText type="heading" themeColor="accent">
-              {formatPrice(priceCents, plan?.currency ?? 'INR')}
-            </ThemedText>
-          </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {durationDays} days
-          </ThemedText>
-        </Card>
+          <PlanCard plan={preview} />
+        </View>
       ) : null}
 
       {save.error ? (
@@ -131,7 +214,7 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
           save.mutate(
             {
               planId: plan?.id ?? null,
-              input: { name, priceCents: priceCents ?? 0, durationDays },
+              input: { name, priceCents: priceCents ?? 0, durationDays, offer },
             },
             { onSuccess: () => router.back() },
           )
@@ -141,6 +224,20 @@ function PlanForm({ gymId, plan }: { gymId: string; plan?: MembershipPlan }) {
         <ThemedText type="small" themeColor="textSecondary">
           Price changes apply to new sales. Members already on this plan keep what they paid.
         </ThemedText>
+      ) : null}
+      {announce ? (
+        <Button
+          label="Announce this offer"
+          icon="megaphone-outline"
+          variant="secondary"
+          size="compact"
+          onPress={() =>
+            router.push({
+              pathname: '/new-announcement',
+              params: { title: announce.title, body: announce.body, audience: 'members' },
+            })
+          }
+        />
       ) : null}
 
       {plan ? (
@@ -188,11 +285,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   chips: {
-    gap: Spacing.two,
-  },
-  preview: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
     gap: Spacing.two,
   },
   row: {
