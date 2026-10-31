@@ -1,4 +1,4 @@
-import type { Announcement } from '@/features/announcements/types';
+import type { Announcement, SavedOffer } from '@/features/announcements/types';
 import type { AttendanceDay } from '@/features/attendance/types';
 import type { Profile } from '@/features/auth/types';
 import type { BodyMeasurement, ProgressPhoto } from '@/features/body/types';
@@ -6,7 +6,7 @@ import type { Booking, GymClass } from '@/features/bookings/types';
 import type { TrainerLink, TrainerRequest } from '@/features/coaching/types';
 import type { MealPlan } from '@/features/diet/types';
 import type { GymInvite, GymPerson } from '@/features/members/types';
-import type { Membership, MembershipPlan } from '@/features/memberships/types';
+import type { LoyaltyOffer, Membership, MembershipPlan } from '@/features/memberships/types';
 import type { AppNotification } from '@/features/notifications/types';
 import type { WorkoutLog } from '@/features/progress/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
@@ -176,6 +176,15 @@ export const mockTrainerRequests: TrainerRequest[] = [
     response: '',
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     resolvedAt: null,
+  },
+];
+
+export const mockSavedOffers: SavedOffer[] = [
+  {
+    id: 'so-1',
+    audience: 'members',
+    title: 'Bring a friend, both get 10% off',
+    body: 'Join with a friend this month and both of you get 10% off your plan.',
   },
 ];
 
@@ -394,11 +403,38 @@ export const mockBookings: Booking[] = [
 
 export const mockPlans: MembershipPlan[] = [
   { id: 'p-1', name: 'Monthly', priceCents: 149900, currency: 'INR', durationDays: 30 },
-  { id: 'p-2', name: 'Quarterly', priceCents: 399900, currency: 'INR', durationDays: 90 },
+  {
+    id: 'p-2',
+    name: 'Quarterly',
+    priceCents: 399900,
+    currency: 'INR',
+    durationDays: 90,
+    offer: {
+      type: 'percent',
+      value: 10,
+      label: 'Diwali offer',
+      startsOn: null,
+      endsOn: daysFromToday(10),
+    },
+  },
   { id: 'p-3', name: 'Annual', priceCents: 1299900, currency: 'INR', durationDays: 365 },
 ];
 
+/** The demo gym's loyalty offer: 10% off after 2 months without a break. */
+export const mockLoyalty: { value: LoyaltyOffer | null } = { value: { months: 2, percent: 10 } };
+
 export const mockMemberships: Membership[] = [
+  // Nandini renewed without a break, so her next renewal gets the loyalty offer.
+  {
+    id: 'm-0',
+    memberId: 'u-member',
+    memberName: 'Nandini Ravi',
+    plan: mockPlans[0],
+    startsOn: daysFromToday(-55),
+    endsOn: daysFromToday(-26),
+    amountPaidCents: 149900,
+    paymentMethod: 'upi',
+  },
   {
     id: 'm-1',
     memberId: 'u-member',

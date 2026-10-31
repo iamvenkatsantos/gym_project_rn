@@ -1,7 +1,14 @@
 import type { Role } from '@/features/auth/types';
 import { visibleTo } from '@/features/announcements/rules';
-import type { Announcement, AnnouncementInput } from '@/features/announcements/types';
-import { delay, forGym, mockAnnouncements, mockId, mockProfiles } from '@/lib/mock-db';
+import type { Announcement, AnnouncementInput, SavedOffer } from '@/features/announcements/types';
+import {
+  delay,
+  forGym,
+  mockAnnouncements,
+  mockId,
+  mockProfiles,
+  mockSavedOffers,
+} from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type AnnouncementRow = {
@@ -66,5 +73,40 @@ export async function deleteAnnouncement(id: string) {
     return delay(undefined);
   }
   const { error } = await supabase.from('announcements').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** Offers saved for reuse, newest first. Only owners and supervisors see them. */
+export async function listSavedOffers(gymId: string): Promise<SavedOffer[]> {
+  if (!supabase) return delay(forGym(gymId, mockSavedOffers));
+  const rows = unwrap(
+    await supabase
+      .from('saved_offers')
+      .select('id, audience, title, body')
+      .eq('gym_id', gymId)
+      .order('created_at', { ascending: false }),
+  ) as SavedOffer[];
+  return rows;
+}
+
+export async function saveOffer(gymId: string, senderId: string, input: AnnouncementInput) {
+  const offer = { audience: input.audience, title: input.title.trim(), body: input.body.trim() };
+  if (!supabase) {
+    mockSavedOffers.unshift({ id: mockId('so'), ...offer });
+    return delay(undefined);
+  }
+  const { error } = await supabase
+    .from('saved_offers')
+    .insert({ ...offer, gym_id: gymId, created_by: senderId });
+  if (error) throw error;
+}
+
+export async function deleteSavedOffer(id: string) {
+  if (!supabase) {
+    const i = mockSavedOffers.findIndex((o) => o.id === id);
+    if (i >= 0) mockSavedOffers.splice(i, 1);
+    return delay(undefined);
+  }
+  const { error } = await supabase.from('saved_offers').delete().eq('id', id);
   if (error) throw error;
 }

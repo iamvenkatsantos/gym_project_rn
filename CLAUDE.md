@@ -168,6 +168,20 @@ shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
 
+**Offers and discounts** (owner only to set). A plan can carry a time-limited offer
+(`membership_plans.offer_*`: 1–90% or a flat amount below the price, optional label, end date; set
+in `membership-plan-editor`); members see the price struck through. The **loyalty offer**
+(`gyms.loyalty_months`/`loyalty_percent`, `set_loyalty_offer()`, Payments → Loyalty offer, off by
+default, app suggests 2 months / 10%) takes a percentage off any renewal once the member has paid
+without a break for that many months (30 days each) up to the new start; breaks of up to 7 days are
+forgiven and complimentary memberships don't count. It applies automatically. The two never stack:
+the bigger discount wins. Percent discounts round to whole rupees. Online payments charge
+`member_plan_price()` (`start_online_payment`; the offer name goes into `online_payments.offer` and
+the membership note); the front desk gets the same price prefilled but can change it. App mirror:
+`src/features/memberships/offers.ts` (keep both in step). **Saved offers** (`saved_offers`, owners and
+supervisors) are announcements kept for reuse on New announcement; the plan editor's **Announce this
+offer** opens it filled in.
+
 **CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
 `branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
