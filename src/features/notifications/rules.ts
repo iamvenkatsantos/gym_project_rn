@@ -1,4 +1,4 @@
-import type { GymRole } from '@/features/auth/types';
+import { canManageGym, type GymRole } from '@/features/auth/types';
 import type {
   AppNotification,
   NotificationKind,
@@ -49,6 +49,7 @@ const kinds: readonly NotificationKind[] = [
   'membership',
   'attendance',
   'announcement',
+  'birthday',
 ];
 
 /** The data a tapped push carries, or null if it isn't one of ours. */
@@ -66,4 +67,15 @@ export function parsePushData(data: unknown): PushData | null {
  */
 export function gymForPush(push: PushData, gyms: GymRole[]): string | null {
   return gyms.some((g) => g.gymId === push.gymId) ? push.gymId : null;
+}
+
+/**
+ * Where a tapped push opens: announcements their list, a birthday push the Birthdays
+ * screen for owners and supervisors (members' wishes stay in the inbox), anything else the inbox.
+ */
+export function pushRoute(push: PushData, gyms: GymRole[]) {
+  if (push.kind === 'announcement') return '/announcements' as const;
+  const role = gyms.find((g) => g.gymId === push.gymId)?.role;
+  if (push.kind === 'birthday' && role && canManageGym(role)) return '/birthdays' as const;
+  return '/notifications' as const;
 }

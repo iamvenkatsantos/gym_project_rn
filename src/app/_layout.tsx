@@ -212,6 +212,7 @@ function RootNavigator() {
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: 'Person' }} />
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
+        <Stack.Screen name="birthdays" options={{ headerShown: true, title: 'Birthdays' }} />
         <Stack.Screen
           name="payment-history/[memberId]"
           options={{ headerShown: true, title: 'Payments' }}
@@ -256,7 +257,10 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'New announcement' }}
         />
         {/* The branch's check-in QR: a live code for the desk, the poster and (owners) the rules. */}
-        <Stack.Screen name="check-in-qr" options={{ headerShown: true, title: 'Check-in settings' }} />
+        <Stack.Screen
+          name="check-in-qr"
+          options={{ headerShown: true, title: 'Check-in settings' }}
+        />
         <Stack.Screen
           name="check-in-display"
           options={{ headerShown: true, title: 'Live check-in QR' }}

@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -10,6 +10,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { canCoach, canManageGym, type Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { MemberBirthday } from '@/features/birthdays/components/member-birthday';
+import { callUrl, formatPhone, normalizePhone, whatsappUrl } from '@/features/enquiries/rules';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useTrainerLinks } from '@/features/coaching/hooks';
 import type { GymPerson } from '@/features/members/types';
@@ -87,6 +89,31 @@ function MakeTrainer({ gymId, person }: { gymId: string; person: GymPerson }) {
   );
 }
 
+/** Call or WhatsApp them from their mobile on file. */
+function ContactButtons({ phone }: { phone: string }) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.flex}>
+        <Button
+          label="Call"
+          icon="call"
+          size="compact"
+          onPress={() => Linking.openURL(callUrl(phone)).catch(() => {})}
+        />
+      </View>
+      <View style={styles.flex}>
+        <Button
+          label="WhatsApp"
+          icon="logo-whatsapp"
+          variant="secondary"
+          size="compact"
+          onPress={() => Linking.openURL(whatsappUrl(phone)).catch(() => {})}
+        />
+      </View>
+    </View>
+  );
+}
+
 /** Who invited (admitted) a member and when, and whether they've filled in their details. */
 function Admission({ person }: { person: GymPerson }) {
   if (!person.admittedAt) return null;
@@ -152,7 +179,7 @@ export default function PersonScreen() {
           </ThemedText>
           {person.phone ? (
             <ThemedText type="small" themeColor="textSecondary">
-              {person.phone}
+              {formatPhone(normalizePhone(person.phone))}
             </ThemedText>
           ) : null}
           <ThemedText type="small" themeColor="textSecondary">
@@ -166,6 +193,7 @@ export default function PersonScreen() {
         {!isSignedUp(person) ? <Pill label="Invited · not joined" tone="warning" /> : null}
         {isSelf ? <Pill label="You" tone="neutral" /> : null}
       </View>
+      {person.phone && !isSelf ? <ContactButtons phone={person.phone} /> : null}
 
       <ThemedText type="small" themeColor="textSecondary">
         {roleNote[person.role]}
@@ -175,6 +203,9 @@ export default function PersonScreen() {
       </ThemedText>
 
       {person.role === 'member' ? <Admission person={person} /> : null}
+      {person.role === 'member' && !suspended ? (
+        <MemberBirthday gymId={gym.gymId} gymName={gym.gymName} person={person} />
+      ) : null}
       {person.role === 'member' && !suspended ? (
         <MemberTrainers gymId={gym.gymId} member={person} />
       ) : null}

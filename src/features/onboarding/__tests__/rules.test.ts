@@ -4,7 +4,13 @@ import {
   validateOnboarding,
 } from '@/features/onboarding/rules';
 
-const filled = { fullName: 'Nila Raman', phone: '+91 98765 43210', weight: '60,5', height: '160' };
+const filled = {
+  fullName: 'Nila Raman',
+  phone: '+91 98765 43210',
+  dateOfBirth: '05/09/1998',
+  weight: '60,5',
+  height: '160',
+};
 
 describe('validateOnboarding', () => {
   it('passes a complete form with all three photos', () => {
@@ -14,11 +20,12 @@ describe('validateOnboarding', () => {
 
   it('asks for every field and names the missing photos', () => {
     const errors = validateOnboarding(
-      { fullName: '', phone: '', weight: '', height: '' },
+      { fullName: '', phone: '', dateOfBirth: '', weight: '', height: '' },
       new Set(['back']),
     );
     expect(errors.fullName).toBe('Enter a full name.');
     expect(errors.phone).toBe('Enter a phone number.');
+    expect(errors.dateOfBirth).toBe('Enter your date of birth.');
     expect(errors.weight).toBe('Enter your weight.');
     expect(errors.height).toBe('Enter your height.');
     expect(errors.photos).toBe('Add your front and side photos.');
@@ -41,6 +48,7 @@ describe('onboardingValues', () => {
     expect(onboardingValues({ ...filled, fullName: '  Nila   Raman ' })).toEqual({
       fullName: 'Nila Raman',
       phone: '9876543210',
+      dateOfBirth: '1998-09-05',
       weightKg: 60.5,
       heightCm: 160,
     });

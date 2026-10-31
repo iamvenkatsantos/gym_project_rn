@@ -12,6 +12,7 @@ import { useDayAttendance } from '@/features/attendance/hooks';
 import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { upcomingBirthdays } from '@/features/birthdays/rules';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { BranchSwitcher } from '@/features/branches/components/branch-switcher';
 import { classesOnDay } from '@/features/bookings/rules';
@@ -52,6 +53,9 @@ export default function OwnerDashboardScreen() {
   const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
+  const birthdaysToday = people.data
+    ? upcomingBirthdays(people.data, new Date(), 0).length
+    : undefined;
   const noTrainer =
     people.data && links.data ? unmappedMembers(people.data, links.data).length : undefined;
 
@@ -71,6 +75,12 @@ export default function OwnerDashboardScreen() {
       label: 'Attendance',
       icon: 'calendar-number-outline',
       onPress: () => router.push('/attendance'),
+    },
+    {
+      label: 'Birthdays',
+      icon: 'gift-outline',
+      badge: birthdaysToday,
+      onPress: () => router.push('/birthdays'),
     },
   ];
   if (gym.role === 'owner') {

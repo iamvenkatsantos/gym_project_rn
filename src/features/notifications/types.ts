@@ -6,7 +6,8 @@ export type NotificationKind =
   | 'booking'
   | 'membership'
   | 'attendance'
-  | 'announcement';
+  | 'announcement'
+  | 'birthday';
 
 /**
  * An in-app message: a nudge from the gym, news about trainer matching or bookings, or a

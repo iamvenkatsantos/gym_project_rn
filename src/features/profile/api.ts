@@ -62,14 +62,19 @@ export async function saveMyProfile(userId: string, details: ProfileDetails) {
       profile.phone = details.phone;
       profile.avatarPath = details.avatarPath;
       profile.avatarUrl = avatarUrl(details.avatarPath);
+      if (details.dateOfBirth !== undefined) profile.dateOfBirth = details.dateOfBirth;
     }
     return delay(undefined);
   }
-  const { error } = await supabase.rpc('save_my_profile', {
+  const args = {
     p_full_name: details.fullName,
     p_phone: details.phone,
     p_avatar_path: details.avatarPath,
-  });
+  };
+  const { error } =
+    details.dateOfBirth === undefined
+      ? await supabase.rpc('save_my_profile', args)
+      : await supabase.rpc('save_my_profile', { ...args, p_date_of_birth: details.dateOfBirth });
   if (error) throw error;
 }
 

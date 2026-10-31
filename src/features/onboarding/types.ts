@@ -7,6 +7,8 @@ export type PickedPhoto = { uri: string; mimeType: string };
 export type OnboardingInput = {
   fullName: string;
   phone: string;
+  /** YYYY-MM-DD. */
+  dateOfBirth: string;
   weightKg: number;
   heightCm: number;
   /** An optional profile photo, separate from the starting photos. */
