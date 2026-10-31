@@ -112,8 +112,8 @@ provider's hourly limit.
 
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,
-phone, weight, height, front/back/side photos via `complete_member_onboarding`, optional profile
-photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
+phone, date of birth, weight, height, front/back/side photos via `complete_member_onboarding`,
+optional profile photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
 `selectNeedsProfile`) → `profile-setup` (name, required mobile, optional photo via `save_my_profile`);
 no gym →
 `no-gym` (older new-owner invites → `set-up-gym`, `create_gym`); admin → `admin`; otherwise the
@@ -124,7 +124,20 @@ person, their gym's managers and, for members, their mapped trainers) and may ad
 Photos live in the public `avatars` bucket at `<user id>/<random>.<ext>` (`profiles.avatar_path`,
 checked to sit in the person's own folder); progress photos stay private. Anyone edits their photo,
 name and mobile on `edit-profile` (tap the profile card, or Edit profile on Profile/Account). Use
-`TrainerAvatar` with `url` to show a photo with initials as the fallback.
+`TrainerAvatar` with `url` to show a photo with initials as the fallback. The person screen has
+**Call** and **WhatsApp** buttons from the mobile on file (`callUrl`, `whatsappUrl`).
+
+**Birthdays.** Date of birth lives in `contact_details.date_of_birth` (same readers as the mobile).
+Members give it on the first-sign-in form (required; the 6-argument `complete_member_onboarding`,
+the 5-argument one stays for older installs); anyone can change theirs on `edit-profile`
+(optional, 4-argument `save_my_profile`); owners and supervisors add or fix a member's on the
+person screen (`set_member_birthday`, only once the member has a mobile on file). DOB is typed as
+DD/MM/YYYY (no native date picker, so no new build). `gym_people` returns it. On the day (the gym's
+day; 29 Feb falls on 28 Feb in other years, `is_birthday()`), owners and supervisors get a 9 am push
+(`send_birthday_reminders`, kind `birthday`, opens `birthdays`) and wish members from the
+**Birthdays** shortcut or the person screen: **Send wish** (`send_birthday_wish`, inbox + push, only
+on the birthday, once a year per gym) or **WhatsApp** (`birthdayMessage`). Rules in
+`src/features/birthdays/rules.ts`.
 
 **Attendance and QR.** Members and staff check in/out from Home. Members must be checked in to start
 a workout (`start_workout_attendance` raises "Check in first"). **No membership, no training:** a
@@ -218,7 +231,8 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
-`corefit-auto-check-out` (10 min), `corefit-purge-logs` (daily, trims cron and pg_net history).
+`corefit-auto-check-out` (10 min), `corefit-birthdays` (hourly, managers' 9 am birthday push),
+`corefit-purge-logs` (daily, trims cron and pg_net history).
 
 ## Conventions and gotchas
 

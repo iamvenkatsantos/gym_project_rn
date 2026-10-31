@@ -1,3 +1,4 @@
+import { parseBirthDate, validateBirthDate } from '@/features/birthdays/rules';
 import { parseMetric, validateMetric } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
 import { normalizePhone } from '@/features/enquiries/rules';
@@ -10,7 +11,13 @@ export const ONBOARDING_POSES: { value: PhotoPose; label: string }[] = [
   { value: 'side', label: 'Side' },
 ];
 
-export type OnboardingTexts = { fullName: string; phone: string; weight: string; height: string };
+export type OnboardingTexts = {
+  fullName: string;
+  phone: string;
+  dateOfBirth: string;
+  weight: string;
+  height: string;
+};
 
 export type OnboardingErrors = Record<keyof OnboardingTexts, string | null> & {
   photos: string | null;
@@ -27,6 +34,7 @@ export function validateOnboarding(
   return {
     fullName: validateName(texts.fullName, 'full name'),
     phone: validatePhone(texts.phone),
+    dateOfBirth: validateBirthDate(texts.dateOfBirth, { required: true }),
     weight: texts.weight.trim() ? validateMetric(texts.weight, 'weightKg') : 'Enter your weight.',
     height: texts.height.trim() ? validateMetric(texts.height, 'heightCm') : 'Enter your height.',
     photos: missing.length
@@ -36,7 +44,14 @@ export function validateOnboarding(
 }
 
 export function firstOnboardingError(errors: OnboardingErrors) {
-  return firstError(errors.fullName, errors.phone, errors.weight, errors.height, errors.photos);
+  return firstError(
+    errors.fullName,
+    errors.phone,
+    errors.dateOfBirth,
+    errors.weight,
+    errors.height,
+    errors.photos,
+  );
 }
 
 /** The typed values, cleaned up for saving. Only call once validateOnboarding passes. */
@@ -44,6 +59,7 @@ export function onboardingValues(texts: OnboardingTexts) {
   return {
     fullName: texts.fullName.trim().replace(/\s+/g, ' '),
     phone: normalizePhone(texts.phone),
+    dateOfBirth: parseBirthDate(texts.dateOfBirth)!,
     weightKg: parseMetric(texts.weight)!,
     heightCm: parseMetric(texts.height)!,
   };

@@ -1,5 +1,5 @@
 import type { GymRole } from '@/features/auth/types';
-import { gymForPush, parsePushData } from '@/features/notifications/rules';
+import { gymForPush, parsePushData, pushRoute } from '@/features/notifications/rules';
 
 const gyms: GymRole[] = [
   { gymId: 'anna-nagar', gymName: 'CoreFit Anna Nagar', role: 'member' },
@@ -27,5 +27,16 @@ describe('push data', () => {
   it('opens nothing for a gym they have left', () => {
     const push = { notificationId: 'n1', gymId: 'old-gym', kind: 'membership' } as const;
     expect(gymForPush(push, gyms)).toBeNull();
+  });
+
+  it('opens Birthdays for managers and the inbox for members', () => {
+    const owner: GymRole[] = [{ gymId: 'adyar', gymName: 'CoreFit Adyar', role: 'owner' }];
+    const birthday = (gymId: string) =>
+      ({ notificationId: 'n1', gymId, kind: 'birthday' }) as const;
+    expect(pushRoute(birthday('adyar'), owner)).toBe('/birthdays');
+    expect(pushRoute(birthday('anna-nagar'), gyms)).toBe('/notifications');
+    expect(pushRoute({ ...birthday('anna-nagar'), kind: 'announcement' }, gyms)).toBe(
+      '/announcements',
+    );
   });
 });

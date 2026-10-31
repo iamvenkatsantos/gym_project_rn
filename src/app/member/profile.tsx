@@ -114,7 +114,7 @@ export default function MemberProfileScreen() {
       <ListGroup>
         <ListRow
           label="Edit profile"
-          detail="Photo, name and mobile number"
+          detail="Photo, name, mobile and birthday"
           icon="person-circle-outline"
           onPress={() => router.push('/edit-profile')}
         />

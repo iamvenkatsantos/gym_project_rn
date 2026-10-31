@@ -221,6 +221,7 @@ function RootNavigator() {
         <Stack.Screen name="person/[userId]" options={{ headerShown: true, title: 'Person' }} />
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="renewals" options={{ headerShown: true, title: 'Renewals due' }} />
+        <Stack.Screen name="birthdays" options={{ headerShown: true, title: 'Birthdays' }} />
         <Stack.Screen
           name="payment-history/[memberId]"
           options={{ headerShown: true, title: 'Payments' }}

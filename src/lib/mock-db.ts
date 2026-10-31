@@ -123,6 +123,25 @@ export const mockPeople: GymPerson[] = [
   { ...person('u-member-6', 'Lakshmi Menon', 'member', 3), signedUp: false },
 ];
 
+/** A date of birth `years` back whose birthday is `inDays` from today, so demo birthdays line up. */
+function birthDate(years: number, inDays: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + inDays);
+  d.setFullYear(d.getFullYear() - years);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Demo birthdays: one today, a couple coming up, and Harish with none on file.
+for (const [id, years, inDays] of [
+  ['u-member', 27, 0],
+  ['u-member-2', 31, 4],
+  ['u-member-3', 24, 19],
+  ['u-member-6', 35, 120],
+] as const) {
+  mockPeople.find((p) => p.id === id)!.dateOfBirth = birthDate(years, inDays);
+}
+mockProfiles[0].dateOfBirth = mockPeople.find((p) => p.id === 'u-member')!.dateOfBirth;
+
 export const mockInvites: GymInvite[] = [
   {
     id: 'inv-1',
