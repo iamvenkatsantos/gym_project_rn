@@ -17,7 +17,13 @@ import { PersonRow } from '@/features/members/components/person-row';
 import { usePeople } from '@/features/members/hooks';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { PlanCard } from '@/features/memberships/components/plan-card';
-import { useMemberships, usePlans, useRecordMembership } from '@/features/memberships/hooks';
+import {
+  useLoyaltyOffer,
+  useMemberships,
+  usePlans,
+  useRecordMembership,
+} from '@/features/memberships/hooks';
+import { priceFor } from '@/features/memberships/offers';
 import {
   addDays,
   endDateFor,
@@ -44,6 +50,7 @@ export default function RecordMembershipScreen() {
   const plans = usePlans(gym.gymId);
   const memberships = useMemberships(gym.gymId);
   const record = useRecordMembership(gym.gymId);
+  const loyalty = useLoyaltyOffer(gym.gymId).data;
 
   const [memberId, setMemberId] = useState(params.memberId ?? null);
   const [query, setQuery] = useState('');
@@ -60,9 +67,12 @@ export default function RecordMembershipScreen() {
   );
   // A renewal starts on the member's current plan while it is still for sale.
   const plan = picked ?? plans.data?.find((p) => p.id === current?.plan.id) ?? null;
-  const amount = amountText ?? (plan ? String(plan.priceCents / 100) : '');
   const today = toIsoDate(new Date());
   const startsOn = startOverride ?? renewalStart(current);
+  const priceOf = (p: MembershipPlan) =>
+    priceFor(p, { loyalty, memberships: memberships.data, memberId: memberId ?? '', startsOn });
+  const price = plan ? priceOf(plan) : null;
+  const amount = amountText ?? (price ? String(price.priceCents / 100) : '');
   const endsOn = plan ? endDateFor(startsOn, plan.durationDays) : null;
   const amountError =
     method === 'complimentary' ? null : validateAmount(amount, { label: 'amount received' });
@@ -157,9 +167,9 @@ export default function RecordMembershipScreen() {
               key={p.id}
               accessibilityRole="radio"
               accessibilityState={{ checked: plan?.id === p.id }}
-              accessibilityLabel={`${p.name}, ${formatPrice(p.priceCents, p.currency)}`}
+              accessibilityLabel={`${p.name}, ${formatPrice(priceOf(p).priceCents, p.currency)}`}
               onPress={() => pickPlan(p)}>
-              <PlanCard plan={p} current={plan?.id === p.id} />
+              <PlanCard plan={p} current={plan?.id === p.id} price={priceOf(p)} />
             </Pressable>
           ))
         }
@@ -195,6 +205,11 @@ export default function RecordMembershipScreen() {
           />
         ))}
       </ScrollView>
+      {method === 'complimentary' || !price?.offer ? null : (
+        <ThemedText type="small" themeColor="accent">
+          {price.offer} · {price.savings}
+        </ThemedText>
+      )}
       {method === 'complimentary' ? null : (
         <TextField
           label="Amount received (₹)"

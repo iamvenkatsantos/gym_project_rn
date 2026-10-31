@@ -291,6 +291,7 @@ psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
 psql -d corefit_test -f supabase/tests/trainer-hours.sql
+psql -d corefit_test -f supabase/tests/membership-offers.sql
 ```
 
 ## Scripts
