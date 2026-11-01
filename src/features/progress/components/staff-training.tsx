@@ -12,6 +12,7 @@ import { ProgressOverview } from '@/features/progress/components/progress-overvi
 import { StartWorkout } from '@/features/progress/components/start-workout';
 import { useWorkoutLogs } from '@/features/progress/hooks';
 import { CoachSchedule } from '@/features/trainers/components/coach-schedule';
+import { CatchUpSetting } from '@/features/workouts/components/catch-up-setting';
 import { MyPlans } from '@/features/workouts/components/my-plans';
 import { TrainerPlans } from '@/features/workouts/components/trainer-plans';
 
@@ -57,6 +58,7 @@ export function StaffTraining() {
           <CoachSchedule />
           <SectionHeader title="Your plans" />
           <MyPlans />
+          <CatchUpSetting gymId={gym.gymId} />
           <SectionHeader title="Trainers' plans" />
           <TrainerPlans />
           <SectionHeader title="Diet plans" />

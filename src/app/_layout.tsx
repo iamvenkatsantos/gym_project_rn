@@ -291,6 +291,11 @@ function RootNavigator() {
           options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
         />
         <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen name="smart-plans" options={{ headerShown: true, title: 'Smart plans' }} />
+        <Stack.Screen
+          name="add-exercises"
+          options={{ presentation: 'modal', headerShown: true, title: 'Add exercises' }}
+        />
         <Stack.Screen
           name="assign-plan/[workoutId]"
           options={{ headerShown: true, title: 'Assign' }}

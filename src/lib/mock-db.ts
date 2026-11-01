@@ -288,6 +288,7 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-plank', 'Plank', 3, 30, null, 45),
     ],
     assignedMemberIds: ['u-member'],
+    memberDays: { 'u-member': [1, 3, 5] },
   },
   {
     id: 'w-2',
@@ -303,8 +304,12 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-walking-lunge', 'Walking lunge', 3, 12),
     ],
     assignedMemberIds: [],
+    memberDays: {},
   },
 ];
+
+/** Gym-wide settings the demo can change. */
+export const mockGymSettings = { workoutCatchUpDays: 1 };
 
 export const mockMealPlans: MealPlan[] = [
   {

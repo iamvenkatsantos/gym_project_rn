@@ -181,6 +181,18 @@ trigger), so the bar warns first. Members can ask for a trainer (`trainer_reques
 `workout-session` with an offline draft (`src/features/progress/draft-store.ts`, Zustand persist)
 uploaded idempotently by `workout_logs.client_id`. Diet plans and body progress (measurements,
 private progress photos) follow the same coach/member pattern.
+**Weekday plans:** on `assign-plan` the coach picks each member's days
+(`workout_assignments.days`, ISO 1 = Mon … 7 = Sun; empty = any day). Members see **Today**
+(due, catch-up or any-day plans, startable) and **This week** (not startable). A missed day stays
+open for the gym's catch-up days (`gyms.workout_catch_up_days`, 0–3, default 1, set by owners and
+supervisors on Training → Coaching via `set_workout_catch_up_days()`) unless the member already
+logged that plan since. App-only rule (`src/features/workouts/schedule.ts`); the server doesn't block.
+**Smart plans:** 15 ready-made plans, 5 per level (`src/features/workouts/smart-plans.ts`, shared
+library exercises only, matched to the DB by name); coaches copy one from My plans → **Smart plans**
+into `plan-editor`, then assign. **Stretches:** plan cards and `workout-session` show cool-down
+stretches for the plan's muscles (`stretches.ts`, max 6, app-only, not in the exercise library).
+Exercises are added on the `add-exercises` modal (search pinned on top, so the keyboard never
+covers results); picks go back to the editor through `useExercisePicks`.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,

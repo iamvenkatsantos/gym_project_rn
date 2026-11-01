@@ -14,6 +14,7 @@ import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { offerCheckOut } from '@/features/check-in/offer-check-out';
 import { type DraftSet, useWorkoutDraft } from '@/features/progress/draft-store';
 import { useFinishWorkout } from '@/features/progress/hooks';
+import { PlanStretches } from '@/features/workouts/components/plan-stretches';
 import { useTheme } from '@/hooks/use-theme';
 import { validateDecimal, validateWholeNumber } from '@/lib/validation';
 
@@ -236,6 +237,10 @@ export default function WorkoutSessionScreen() {
           </Pressable>
         </Card>
       ))}
+
+      <Card>
+        <PlanStretches items={draft.exercises} />
+      </Card>
 
       <Button
         label={finish.isError ? 'Retry saving workout' : 'Finish workout'}
