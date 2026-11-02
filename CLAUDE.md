@@ -181,10 +181,13 @@ hours; null `late_after_minutes` = off): a first check-in more than N minutes af
 `opens_at` is late, unless approved permission starts by then; every `late_streak_days` late working
 days in a row cost `late_lop_minutes` on the day the streak completes, then the count restarts (off
 days skipped; on-time or absent days reset; streaks count within the month; branches open 24 hours
-have no late). Late LOP adds to shortfall LOP. Every trainer is measured from opening time.
-`trainer_hours_month()` returns the days (with first check-in, permission start and opening, as
-minutes after midnight); the LOP maths is
-`applyRules`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
+have no late). Late LOP adds to shortfall LOP. **Evening shift** (Venkat, 2026-11-02): owners set
+`trainer_hour_rules.evening_starts_at` (`set_evening_shift_start()`, null = none) and mark evening
+trainers in Rules (`trainer_shifts`, `set_trainer_shift()`, owner-only, saved on tap; unlisted =
+morning). Evening trainers are late against the evening start, everyone else against opening.
+`trainer_hours_month()` returns the days (with first check-in, permission start, opening and the
+trainer's shift start, as minutes after midnight); the LOP maths is
+`applyRules`/`applyLateStreaks`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
 knows no salaries.
 
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to

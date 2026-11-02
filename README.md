@@ -295,6 +295,7 @@ psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
 psql -d corefit_test -f supabase/tests/trainer-hours.sql
 psql -d corefit_test -f supabase/tests/trainer-late-streaks.sql
+psql -d corefit_test -f supabase/tests/trainer-evening-shift.sql
 psql -d corefit_test -f supabase/tests/membership-offers.sql
 psql -d corefit_test -f supabase/tests/birthdays.sql
 ```

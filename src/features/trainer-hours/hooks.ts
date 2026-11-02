@@ -8,13 +8,20 @@ import {
   listPermissions,
   requestPermission,
   saveTrainerHourRules,
+  getTrainerShifts,
+  setTrainerShift,
 } from '@/features/trainer-hours/api';
-import type { PermissionInput, TrainerHourRulesInput } from '@/features/trainer-hours/types';
+import type {
+  PermissionInput,
+  TrainerHourRulesInput,
+  TrainerShift,
+} from '@/features/trainer-hours/types';
 
 export const trainerHourKeys = {
   all: ['trainer-hours'] as const,
   rules: (gymId: string) => [...trainerHourKeys.all, gymId, 'rules'] as const,
   month: (gymId: string, month: string) => [...trainerHourKeys.all, gymId, 'month', month] as const,
+  shifts: (gymId: string) => [...trainerHourKeys.all, gymId, 'shifts'] as const,
   permissions: (gymId: string, trainerId?: string) =>
     [...trainerHourKeys.all, gymId, 'permissions', trainerId ?? 'all'] as const,
 };
@@ -74,6 +81,23 @@ export function useDecidePermission() {
   return useMutation({
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
       decidePermission(id, approve),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: trainerHourKeys.all }),
+  });
+}
+
+/** Owners only: who works the evening shift. */
+export function useTrainerShifts(gymId: string) {
+  return useQuery({
+    queryKey: trainerHourKeys.shifts(gymId),
+    queryFn: () => getTrainerShifts(gymId),
+  });
+}
+
+export function useSetTrainerShift(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ trainerId, shift }: { trainerId: string; shift: TrainerShift }) =>
+      setTrainerShift(gymId, trainerId, shift),
     onSettled: () => queryClient.invalidateQueries({ queryKey: trainerHourKeys.all }),
   });
 }
