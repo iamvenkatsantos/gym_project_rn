@@ -176,7 +176,14 @@ the full day; off days and today never count, nor days before the rules were fir
 for permission from Home → **Ask for permission** (`permissions`, `request_permission()`: a day, from/to
 time, a reason, optional note; owners get a push) and see only their requests and the answer, never
 hours or LOP. Owners approve or reject (`decide_permission()`, trainer gets a push); approved
-permission counts as time worked. `trainer_hours_month()` returns the days; the LOP maths is
+permission counts as time worked. **Late streaks** (`set_trainer_late_rule()`, saved after the
+hours; null `late_after_minutes` = off): a first check-in more than N minutes after the branch's
+`opens_at` is late, unless approved permission starts by then; every `late_streak_days` late working
+days in a row cost `late_lop_minutes` on the day the streak completes, then the count restarts (off
+days skipped; on-time or absent days reset; streaks count within the month; branches open 24 hours
+have no late). Late LOP adds to shortfall LOP. Every trainer is measured from opening time.
+`trainer_hours_month()` returns the days (with first check-in, permission start and opening, as
+minutes after midnight); the LOP maths is
 `applyRules`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
 knows no salaries.
 
@@ -309,7 +316,7 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 
 Say in the PR which of these it needs:
 
-- **`npx supabase db push`** for any new migration (run from Venkat's machine).
+- **`npx supabase db push --remote`** for any new migration (run from Venkat's machine; the CLI now targets a local database without `--remote`).
 - **Function deploys** when `supabase/functions/` changes: `npx supabase functions deploy <name>`
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
 - **A new EAS build** when a native module or `app.json` changes (`npx eas-cli@latest build

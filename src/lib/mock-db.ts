@@ -955,6 +955,9 @@ export const mockTrainerHourRules: { current: TrainerHourRules | null } = {
     shortLimitMinutes: 30,
     lopMinutes: 4 * 60,
     offDays: [0],
+    lateAfterMinutes: 15,
+    lateStreakDays: 2,
+    lateLopMinutes: 4 * 60,
     startsOn: mockDay(6),
   },
 };

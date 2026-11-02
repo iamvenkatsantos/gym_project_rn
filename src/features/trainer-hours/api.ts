@@ -1,3 +1,4 @@
+import { mockOpeningTime } from '@/features/check-in/api';
 import { addDays, toIsoDate } from '@/features/memberships/rules';
 import { fromTime, toTime } from '@/features/trainer-hours/rules';
 import type {
@@ -26,6 +27,9 @@ type RulesRow = {
   short_limit_minutes: number;
   lop_minutes: number;
   off_days: number[];
+  late_after_minutes: number | null;
+  late_streak_days: number;
+  late_lop_minutes: number;
   starts_on: string;
 };
 
@@ -34,7 +38,9 @@ export async function getTrainerHourRules(gymId: string): Promise<TrainerHourRul
   if (!supabase) return delay(forGym(gymId, [mockTrainerHourRules.current])[0] ?? null);
   const { data: row, error } = await supabase
     .from('trainer_hour_rules')
-    .select('required_minutes, short_limit_minutes, lop_minutes, off_days, starts_on')
+    .select(
+      'required_minutes, short_limit_minutes, lop_minutes, off_days, late_after_minutes, late_streak_days, late_lop_minutes, starts_on',
+    )
     .eq('gym_id', gymId)
     .maybeSingle();
   if (error) throw error;
@@ -45,6 +51,9 @@ export async function getTrainerHourRules(gymId: string): Promise<TrainerHourRul
         shortLimitMinutes: data.short_limit_minutes,
         lopMinutes: data.lop_minutes,
         offDays: data.off_days,
+        lateAfterMinutes: data.late_after_minutes,
+        lateStreakDays: data.late_streak_days,
+        lateLopMinutes: data.late_lop_minutes,
         startsOn: data.starts_on,
       }
     : null;
@@ -66,6 +75,14 @@ export async function saveTrainerHourRules(gymId: string, rules: TrainerHourRule
     p_off_days: rules.offDays,
   });
   if (error) throw error;
+  // Second, since the working hours above create the branch's row.
+  const late = await supabase.rpc('set_trainer_late_rule', {
+    p_gym_id: gymId,
+    p_late_after_minutes: rules.lateAfterMinutes,
+    p_streak_days: rules.lateStreakDays,
+    p_lop_minutes: rules.lateLopMinutes,
+  });
+  if (late.error) throw late.error;
 }
 
 type PermissionRow = {
@@ -179,6 +196,9 @@ type DayRow = {
   worked_minutes: number;
   longest_visit_minutes: number;
   permission_minutes: number;
+  first_in_minute: number | null;
+  permission_from_minute: number | null;
+  opens_minute: number | null;
 };
 
 /** Each trainer's working days in a month, up to yesterday. Owners only. */
@@ -194,6 +214,9 @@ export async function getTrainerHoursMonth(gymId: string, month: string): Promis
     workedMinutes: r.worked_minutes,
     longestVisitMinutes: r.longest_visit_minutes,
     permissionMinutes: r.permission_minutes,
+    firstInMinute: r.first_in_minute,
+    permissionFromMinute: r.permission_from_minute,
+    opensMinute: r.opens_minute,
   }));
 }
 
@@ -212,6 +235,7 @@ function mockMonth(gymId: string, month: string): TrainerDay[] {
   ) {
     if (!rules.offDays.includes(new Date(`${day}T12:00:00`).getDay())) days.push(day);
   }
+  const opens = mockOpeningTime();
   return trainers.flatMap((t) =>
     days.map((day) => {
       const visit = mockAttendance.find((a) => a.userId === t.id && a.day === day);
@@ -219,16 +243,20 @@ function mockMonth(gymId: string, month: string): TrainerDay[] {
         visit?.checkedOutAt != null
           ? Math.round((Date.parse(visit.checkedOutAt) - Date.parse(visit.checkedInAt)) / 60000)
           : 0;
-      const permission = mockPermissions
-        .filter((p) => p.trainerId === t.id && p.day === day && p.status === 'approved')
-        .reduce((sum, p) => sum + p.endsAt - p.startsAt, 0);
+      const approved = mockPermissions.filter(
+        (p) => p.trainerId === t.id && p.day === day && p.status === 'approved',
+      );
+      const firstIn = visit ? new Date(visit.checkedInAt) : null;
       return {
         trainerId: t.id,
         fullName: t.fullName,
         day,
         workedMinutes: worked,
         longestVisitMinutes: worked,
-        permissionMinutes: permission,
+        permissionMinutes: approved.reduce((sum, p) => sum + p.endsAt - p.startsAt, 0),
+        firstInMinute: firstIn ? firstIn.getHours() * 60 + firstIn.getMinutes() : null,
+        permissionFromMinute: approved.length ? Math.min(...approved.map((p) => p.startsAt)) : null,
+        opensMinute: opens ? fromTime(opens) : null,
       };
     }),
   );
