@@ -1,7 +1,9 @@
 import { parseBirthDate, validateBirthDate } from '@/features/birthdays/rules';
 import { parseMetric, validateMetric } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
+import type { AdmissionDetails } from '@/features/onboarding/types';
 import { normalizePhone } from '@/features/enquiries/rules';
+import { parseMobile } from '@/features/members/import-rules';
 import { firstError, validateName, validatePhone } from '@/lib/validation';
 
 /** The three starting photos, in the order the gym asks for them. */
@@ -63,6 +65,45 @@ export function onboardingValues(texts: OnboardingTexts) {
     weightKg: parseMetric(texts.weight)!,
     heightCm: parseMetric(texts.height)!,
   };
+}
+
+/** The member's details as their inviter types them: the form's fields, without photos. */
+export type AdmissionTexts = OnboardingTexts;
+
+export type AdmissionErrors = Record<keyof AdmissionTexts, string | null>;
+
+export const EMPTY_ADMISSION: AdmissionTexts = {
+  fullName: '',
+  phone: '',
+  dateOfBirth: '',
+  weight: '',
+  height: '',
+};
+
+/** What's wrong with the details an inviter fills in for a new member. All are needed. */
+export function validateAdmission(texts: AdmissionTexts): AdmissionErrors {
+  return {
+    fullName: validateName(texts.fullName, 'full name'),
+    phone: parseMobile(texts.phone) ? null : 'Enter a 10-digit mobile number.',
+    dateOfBirth: validateBirthDate(texts.dateOfBirth, { required: true }),
+    weight: texts.weight.trim() ? validateMetric(texts.weight, 'weightKg') : 'Enter their weight.',
+    height: texts.height.trim() ? validateMetric(texts.height, 'heightCm') : 'Enter their height.',
+  };
+}
+
+export function firstAdmissionError(errors: AdmissionErrors) {
+  return firstError(
+    errors.fullName,
+    errors.phone,
+    errors.dateOfBirth,
+    errors.weight,
+    errors.height,
+  );
+}
+
+/** The inviter's typed details, cleaned up for saving. Only call once validateAdmission passes. */
+export function admissionValues(texts: AdmissionTexts): AdmissionDetails {
+  return { ...onboardingValues(texts), phone: parseMobile(texts.phone)! };
 }
 
 function joinWords(words: string[]) {
