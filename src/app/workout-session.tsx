@@ -6,15 +6,25 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
+import { SegmentedControl } from '@/components/segmented-control';
 import { ThemedText } from '@/components/themed-text';
 import { MaxFontScale, Radius, Spacing, TapTarget } from '@/constants/theme';
 import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
+import { useExercises } from '@/features/exercises/hooks';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { offerCheckOut } from '@/features/check-in/offer-check-out';
-import { type DraftSet, useWorkoutDraft } from '@/features/progress/draft-store';
+import {
+  type DraftExercise,
+  type DraftSet,
+  useWorkoutDraft,
+} from '@/features/progress/draft-store';
 import { useFinishWorkout } from '@/features/progress/hooks';
+import type { SelfCheck } from '@/features/progress/types';
+import { SelfCheckForm } from '@/features/self-workouts/components/self-check-form';
+import { cleanSelfCheck, selfCheckProblem } from '@/features/self-workouts/rules';
 import { PlanStretches } from '@/features/workouts/components/plan-stretches';
+import { useExercisePicks } from '@/features/workouts/exercise-picks';
 import { useTheme } from '@/hooks/use-theme';
 import { validateDecimal, validateWholeNumber } from '@/lib/validation';
 
@@ -54,12 +64,24 @@ function parseWeight(text: string): { value: number | null } | { error: string }
   return error ? { error } : { value: Number(text.trim().replace(',', '.')) };
 }
 
+const emptyCheck: SelfCheck = { effort: null, pain: null, note: null };
+
+type View_ = 'list' | 'focus';
+
 export default function WorkoutSessionScreen() {
   const theme = useTheme();
   const profile = useProfile();
   const gym = useActiveGym();
   const { draft, restUntil, toggleSet, updateSet, addSet, skipRest, discard } = useWorkoutDraft();
+  const replaceExercise = useWorkoutDraft((s) => s.replaceExercise);
+  const setSelfCheck = useWorkoutDraft((s) => s.setSelfCheck);
+  const openPicks = useExercisePicks((s) => s.open);
+  const library = useExercises(gym.gymId);
   const finish = useFinishWorkout(profile.id);
+  const isMember = gym.role === 'member';
+  const [view, setView] = useState<View_>('list');
+  const [focus, setFocus] = useState(0);
+  const [showCheckProblem, setShowCheckProblem] = useState(false);
   const now = useNow();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [openDemo, setOpenDemo] = useState<string | null>(null);
@@ -89,6 +111,145 @@ export default function WorkoutSessionScreen() {
     { color: theme.text, borderColor: theme.border, backgroundColor: theme.background },
   ];
 
+  const current = Math.min(focus, draft.exercises.length - 1);
+  const check = draft.selfCheck ?? emptyCheck;
+  const checkProblem = isMember ? selfCheckProblem(check) : null;
+
+  // Machine busy? Pick another exercise for the same muscle; sets and reps stay.
+  const replace = (ei: number) => {
+    const muscle =
+      library.data?.find((e) => e.id === draft.exercises[ei].exerciseId)?.muscleGroups[0] ?? null;
+    openPicks(
+      draft.exercises.map((e) => e.exerciseId),
+      (picked) => replaceExercise(ei, picked),
+      { single: true, muscle },
+    );
+    router.push('/add-exercises');
+  };
+  const renderExercise = (exercise: DraftExercise, ei: number) => (
+    <Card key={exercise.exerciseId}>
+      <Pressable
+        accessibilityRole="link"
+        onPress={() =>
+          router.push({
+            pathname: '/exercise/[exerciseId]',
+            params: { exerciseId: exercise.exerciseId },
+          })
+        }
+        style={styles.exerciseHeader}>
+        <ExerciseDemo
+          exerciseId={exercise.exerciseId}
+          name={exercise.name}
+          variant="thumb"
+          animate
+        />
+        <ThemedText type="heading" style={styles.flex}>
+          {exercise.name}
+        </ThemedText>
+        <Icon name="information-circle-outline" size={20} />
+      </Pressable>
+      <View style={styles.links}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: openDemo === exercise.exerciseId }}
+          onPress={() =>
+            setOpenDemo((id) => (id === exercise.exerciseId ? null : exercise.exerciseId))
+          }
+          style={styles.addSet}>
+          <Icon
+            name={openDemo === exercise.exerciseId ? 'chevron-up' : 'play-circle-outline'}
+            size={18}
+            color="accent"
+          />
+          <ThemedText type="linkPrimary">
+            {openDemo === exercise.exerciseId ? 'Hide demo' : 'Show demo'}
+          </ThemedText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Replace ${exercise.name}`}
+          onPress={() => replace(ei)}
+          style={styles.addSet}>
+          <Icon name="swap-horizontal" size={18} color="accent" />
+          <ThemedText type="linkPrimary">Replace</ThemedText>
+        </Pressable>
+      </View>
+      {openDemo === exercise.exerciseId ? (
+        <ExerciseDemo exerciseId={exercise.exerciseId} name={exercise.name} />
+      ) : null}
+
+      <View style={styles.setRow}>
+        <ThemedText type="label" themeColor="textSecondary" style={styles.setNumber}>
+          Set
+        </ThemedText>
+        <ThemedText type="label" themeColor="textSecondary" style={[styles.flex, styles.center]}>
+          Reps
+        </ThemedText>
+        <ThemedText type="label" themeColor="textSecondary" style={[styles.flex, styles.center]}>
+          kg
+        </ThemedText>
+        <View style={styles.check} />
+      </View>
+      {exercise.sets.map((set: DraftSet, si) => (
+        <Fragment key={si}>
+          <View style={styles.setRow}>
+            <ThemedText type="smallBold" style={styles.setNumber}>
+              {si + 1}
+            </ThemedText>
+            <TextInput
+              maxFontSizeMultiplier={MaxFontScale}
+              accessibilityLabel={`${exercise.name} set ${si + 1} reps`}
+              keyboardType="number-pad"
+              style={[inputStyle, styles.flex]}
+              defaultValue={String(set.reps)}
+              onEndEditing={(e) => {
+                const parsed = parseReps(e.nativeEvent.text);
+                setInputError(ei, si, 'error' in parsed ? parsed.error : null);
+                if ('value' in parsed) updateSet(ei, si, { reps: parsed.value });
+              }}
+            />
+            <TextInput
+              maxFontSizeMultiplier={MaxFontScale}
+              accessibilityLabel={`${exercise.name} set ${si + 1} weight in kg`}
+              keyboardType="decimal-pad"
+              placeholder="BW"
+              placeholderTextColor={theme.textSecondary}
+              style={[inputStyle, styles.flex]}
+              defaultValue={set.weightKg === null ? '' : String(set.weightKg)}
+              onEndEditing={(e) => {
+                const parsed = parseWeight(e.nativeEvent.text);
+                setInputError(ei, si, 'error' in parsed ? parsed.error : null);
+                if ('value' in parsed) updateSet(ei, si, { weightKg: parsed.value });
+              }}
+            />
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: set.done }}
+              accessibilityLabel={`${exercise.name} set ${si + 1} done`}
+              onPress={() => toggleSet(ei, si)}
+              style={[
+                styles.check,
+                {
+                  backgroundColor: set.done ? theme.primary : theme.backgroundSelected,
+                },
+              ]}>
+              <Icon name="checkmark" size={22} color={set.done ? 'onPrimary' : 'textSecondary'} />
+            </Pressable>
+          </View>
+          {inputErrors[`${ei}-${si}`] ? (
+            <ThemedText type="small" themeColor="danger" accessibilityLiveRegion="polite">
+              Set {si + 1}: {inputErrors[`${ei}-${si}`]}
+            </ThemedText>
+          ) : null}
+        </Fragment>
+      ))}
+      <Pressable accessibilityRole="button" onPress={() => addSet(ei)} style={styles.addSet}>
+        <Icon name="add" size={18} color="accent" />
+        <ThemedText type="linkPrimary">Add set</ThemedText>
+      </Pressable>
+    </Card>
+  );
+
   return (
     <Screen refreshable={false}>
       <Stack.Screen options={{ title: clock(now - new Date(draft.startedAt).getTime()) }} />
@@ -114,147 +275,79 @@ export default function WorkoutSessionScreen() {
         </Card>
       ) : null}
 
-      {draft.exercises.map((exercise, ei) => (
-        <Card key={exercise.exerciseId}>
-          <Pressable
-            accessibilityRole="link"
-            onPress={() =>
-              router.push({
-                pathname: '/exercise/[exerciseId]',
-                params: { exerciseId: exercise.exerciseId },
-              })
-            }
-            style={styles.exerciseHeader}>
-            <ExerciseDemo
-              exerciseId={exercise.exerciseId}
-              name={exercise.name}
-              variant="thumb"
-              animate
-            />
-            <ThemedText type="heading" style={styles.flex}>
-              {exercise.name}
-            </ThemedText>
-            <Icon name="information-circle-outline" size={20} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded: openDemo === exercise.exerciseId }}
-            onPress={() =>
-              setOpenDemo((id) => (id === exercise.exerciseId ? null : exercise.exerciseId))
-            }
-            style={styles.addSet}>
-            <Icon
-              name={openDemo === exercise.exerciseId ? 'chevron-up' : 'play-circle-outline'}
-              size={18}
-              color="accent"
-            />
-            <ThemedText type="linkPrimary">
-              {openDemo === exercise.exerciseId ? 'Hide demo' : 'Show demo'}
-            </ThemedText>
-          </Pressable>
-          {openDemo === exercise.exerciseId ? (
-            <ExerciseDemo exerciseId={exercise.exerciseId} name={exercise.name} />
-          ) : null}
-
+      {draft.exercises.length > 1 ? (
+        <SegmentedControl<View_>
+          options={[
+            { value: 'list', label: 'All exercises' },
+            { value: 'focus', label: 'One at a time' },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+      ) : null}
+      {view === 'list' || draft.exercises.length <= 1 ? (
+        draft.exercises.map(renderExercise)
+      ) : (
+        <>
+          <ThemedText type="label" themeColor="textSecondary">
+            Exercise {current + 1} of {draft.exercises.length}
+          </ThemedText>
+          {renderExercise(draft.exercises[current], current)}
           <View style={styles.setRow}>
-            <ThemedText type="label" themeColor="textSecondary" style={styles.setNumber}>
-              Set
-            </ThemedText>
-            <ThemedText
-              type="label"
-              themeColor="textSecondary"
-              style={[styles.flex, styles.center]}>
-              Reps
-            </ThemedText>
-            <ThemedText
-              type="label"
-              themeColor="textSecondary"
-              style={[styles.flex, styles.center]}>
-              kg
-            </ThemedText>
-            <View style={styles.check} />
+            <View style={styles.flex}>
+              <Button
+                label="Previous"
+                icon="chevron-back"
+                variant="secondary"
+                size="compact"
+                disabled={current === 0}
+                onPress={() => setFocus(current - 1)}
+              />
+            </View>
+            <View style={styles.flex}>
+              <Button
+                label="Next"
+                icon="chevron-forward"
+                variant="secondary"
+                size="compact"
+                disabled={current === draft.exercises.length - 1}
+                onPress={() => setFocus(current + 1)}
+              />
+            </View>
           </View>
-          {exercise.sets.map((set: DraftSet, si) => (
-            <Fragment key={si}>
-              <View style={styles.setRow}>
-                <ThemedText type="smallBold" style={styles.setNumber}>
-                  {si + 1}
-                </ThemedText>
-                <TextInput
-                  maxFontSizeMultiplier={MaxFontScale}
-                  accessibilityLabel={`${exercise.name} set ${si + 1} reps`}
-                  keyboardType="number-pad"
-                  style={[inputStyle, styles.flex]}
-                  defaultValue={String(set.reps)}
-                  onEndEditing={(e) => {
-                    const parsed = parseReps(e.nativeEvent.text);
-                    setInputError(ei, si, 'error' in parsed ? parsed.error : null);
-                    if ('value' in parsed) updateSet(ei, si, { reps: parsed.value });
-                  }}
-                />
-                <TextInput
-                  maxFontSizeMultiplier={MaxFontScale}
-                  accessibilityLabel={`${exercise.name} set ${si + 1} weight in kg`}
-                  keyboardType="decimal-pad"
-                  placeholder="BW"
-                  placeholderTextColor={theme.textSecondary}
-                  style={[inputStyle, styles.flex]}
-                  defaultValue={set.weightKg === null ? '' : String(set.weightKg)}
-                  onEndEditing={(e) => {
-                    const parsed = parseWeight(e.nativeEvent.text);
-                    setInputError(ei, si, 'error' in parsed ? parsed.error : null);
-                    if ('value' in parsed) updateSet(ei, si, { weightKg: parsed.value });
-                  }}
-                />
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: set.done }}
-                  accessibilityLabel={`${exercise.name} set ${si + 1} done`}
-                  onPress={() => toggleSet(ei, si)}
-                  style={[
-                    styles.check,
-                    {
-                      backgroundColor: set.done ? theme.primary : theme.backgroundSelected,
-                    },
-                  ]}>
-                  <Icon
-                    name="checkmark"
-                    size={22}
-                    color={set.done ? 'onPrimary' : 'textSecondary'}
-                  />
-                </Pressable>
-              </View>
-              {inputErrors[`${ei}-${si}`] ? (
-                <ThemedText type="small" themeColor="danger" accessibilityLiveRegion="polite">
-                  Set {si + 1}: {inputErrors[`${ei}-${si}`]}
-                </ThemedText>
-              ) : null}
-            </Fragment>
-          ))}
-          <Pressable accessibilityRole="button" onPress={() => addSet(ei)} style={styles.addSet}>
-            <Icon name="add" size={18} color="accent" />
-            <ThemedText type="linkPrimary">Add set</ThemedText>
-          </Pressable>
-        </Card>
-      ))}
+        </>
+      )}
 
       <Card>
         <PlanStretches items={draft.exercises} />
       </Card>
 
+      {isMember && doneSets > 0 ? (
+        <SelfCheckForm
+          value={check}
+          onChange={setSelfCheck}
+          showProblem={showCheckProblem}
+          problem={checkProblem}
+        />
+      ) : null}
       <Button
         label={finish.isError ? 'Retry saving workout' : 'Finish workout'}
         icon="flag-outline"
         disabled={doneSets === 0}
         loading={finish.isPending}
-        onPress={() =>
+        onPress={() => {
+          if (checkProblem) {
+            setShowCheckProblem(true);
+            return;
+          }
+          if (isMember) setSelfCheck(cleanSelfCheck(check));
           finish.mutate(undefined, {
             onSuccess: () => {
               router.replace(historyRoute[gym.role]);
               if (gym.role === 'member') offerCheckOut(gym.gymId, profile.id);
             },
-          })
-        }
+          });
+        }}
       />
       {finish.error ? (
         <ThemedText themeColor="danger">
@@ -342,6 +435,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.small,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  links: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: Spacing.four,
   },
   addSet: {
     flexDirection: 'row',

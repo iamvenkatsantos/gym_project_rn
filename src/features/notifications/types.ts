@@ -7,7 +7,9 @@ export type NotificationKind =
   | 'membership'
   | 'attendance'
   | 'announcement'
-  | 'birthday';
+  | 'birthday'
+  /** Self workouts switched on, a trainer edited a member's own plan or replied to a workout. */
+  | 'workout';
 
 /**
  * An in-app message: a nudge from the gym, news about trainer matching or bookings, or a

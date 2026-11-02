@@ -20,6 +20,7 @@ type WorkoutRow = {
     exercise: { id: string; name: string };
   }[];
   assignments: { member_id: string; days: number[] | null }[];
+  is_self: boolean;
 };
 
 function toWorkout(row: WorkoutRow): Workout {
@@ -45,6 +46,7 @@ function toWorkout(row: WorkoutRow): Workout {
     // Plans themselves reach members only from their own trainers (or when assigned).
     assignedMemberIds: row.assignments.map((a) => a.member_id),
     memberDays: Object.fromEntries(row.assignments.map((a) => [a.member_id, a.days ?? []])),
+    isSelf: row.is_self,
   };
 }
 
@@ -62,7 +64,7 @@ export async function listWorkouts(
   let query = supabase
     .from('workouts')
     .select(
-      'id, trainer_id, trainer:profiles!workouts_trainer_id_fkey(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id, days)',
+      'id, trainer_id, trainer:profiles!workouts_trainer_id_fkey(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id, days), is_self',
     )
     .eq('gym_id', gymId)
     .order('created_at', { ascending: false });

@@ -5,6 +5,8 @@ export type TrainerLink = {
   trainerId: string;
   trainerName: string;
   assignedAt: string;
+  /** This trainer let the member plan and run their own workouts. */
+  selfWorkouts?: boolean;
 };
 
 export type TrainerRequestStatus = 'pending' | 'approved' | 'declined' | 'withdrawn';

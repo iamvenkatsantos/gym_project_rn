@@ -3,7 +3,10 @@ import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
 import { useWorkouts } from '@/features/workouts/hooks';
 
-/** Other coaches' plans in the gym, read only, for owners and supervisors to review. */
+/**
+ * Other coaches' plans in the gym, read only, for owners and supervisors to review.
+ * Members' own plans (self workouts) show on each member's progress screen instead.
+ */
 export function TrainerPlans() {
   const profile = useProfile();
   const gym = useActiveGym();
@@ -12,11 +15,11 @@ export function TrainerPlans() {
   return (
     <QueryState
       query={workouts}
-      isEmpty={(list) => list.every((w) => w.trainerId === profile.id)}
+      isEmpty={(list) => list.every((w) => w.trainerId === profile.id || w.isSelf)}
       emptyText="Your trainers haven't written any plans yet.">
       {(list) =>
         list
-          .filter((w) => w.trainerId !== profile.id)
+          .filter((w) => w.trainerId !== profile.id && !w.isSelf)
           .map((workout) => <WorkoutCard key={workout.id} workout={workout} showAuthor />)
       }
     </QueryState>

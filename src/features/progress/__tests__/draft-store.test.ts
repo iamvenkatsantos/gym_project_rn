@@ -77,4 +77,27 @@ describe('workout draft', () => {
     ]);
     expect(log.completedAt).toBe('2026-10-26T10:00:00.000Z');
   });
+
+  it('replaces an exercise, keeps its sets and records the swap', () => {
+    store().start('gym-1', workout);
+    store().toggleSet(0, 0);
+    store().replaceExercise(0, { id: 'smith', name: 'Smith squat' });
+    const replaced = store().draft!.exercises[0];
+    expect(replaced).toMatchObject({ exerciseId: 'smith', name: 'Smith squat' });
+    expect(replaced.sets).toHaveLength(2);
+    expect(replaced.sets[0].done).toBe(true);
+    // An exercise already in the workout can't be picked again.
+    store().replaceExercise(0, { id: 'lunge', name: 'Lunge' });
+    expect(store().draft!.exercises[0].exerciseId).toBe('smith');
+    const log = draftToLog(store().draft!);
+    expect(log.swaps).toEqual(['Back squat → Smith squat']);
+    expect(log.sets[0].exerciseId).toBe('smith');
+  });
+
+  it('carries the self-check into the log', () => {
+    store().start('gym-1', workout);
+    expect(draftToLog(store().draft!).selfCheck).toBeNull();
+    store().setSelfCheck({ effort: 8, pain: 'Knee', note: null });
+    expect(draftToLog(store().draft!).selfCheck).toEqual({ effort: 8, pain: 'Knee', note: null });
+  });
 });

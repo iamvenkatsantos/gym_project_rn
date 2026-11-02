@@ -24,4 +24,6 @@ export type Workout = {
   assignedMemberIds: string[];
   /** Weekdays (1 = Monday ... 7 = Sunday) per assigned member. Missing or empty means any day. */
   memberDays: Record<string, number[]>;
+  /** A member's own plan (self workouts): trainerId is that member. */
+  isSelf?: boolean;
 };
