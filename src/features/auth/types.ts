@@ -37,6 +37,8 @@ export type Profile = {
    * undefined when it couldn't be read, in which case nobody is asked for it.
    */
   phone?: string | null;
+  /** Date of birth as YYYY-MM-DD; optional except on a member's first-sign-in form. */
+  dateOfBirth?: string | null;
   gyms: GymRole[];
   /** Runs CoreFit Gym itself: sees every owner and branch, and adds branches. */
   isPlatformAdmin?: boolean;

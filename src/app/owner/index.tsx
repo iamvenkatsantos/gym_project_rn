@@ -12,6 +12,7 @@ import { useDayAttendance } from '@/features/attendance/hooks';
 import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { upcomingBirthdays } from '@/features/birthdays/rules';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { BranchSwitcher } from '@/features/branches/components/branch-switcher';
 import { classesOnDay } from '@/features/bookings/rules';
@@ -26,6 +27,8 @@ import { RenewalRow } from '@/features/memberships/components/renewal-row';
 import { useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 import { PlanBanner } from '@/features/subscription/components/plan-banner';
+import { usePermissions } from '@/features/trainer-hours/hooks';
+import { pendingCount } from '@/features/trainer-hours/rules';
 
 /** How much of each list the dashboard shows before the screen behind it. */
 const RENEWALS_SHOWN = 2;
@@ -43,6 +46,8 @@ export default function OwnerDashboardScreen() {
   const requests = useTrainerRequests(gym.gymId);
   const attendance = useDayAttendance(gym.gymId, 0);
   const enquiries = useEnquiries(gym.gymId);
+  // Trainer hours and permissions are owners' only.
+  const permissions = usePermissions(gym.gymId, undefined, gym.role === 'owner');
   const enquiryCounts = enquiries.data ? countEnquiries(enquiries.data) : undefined;
   const present = attendance.data ? countByRole(attendance.data) : undefined;
 
@@ -52,6 +57,9 @@ export default function OwnerDashboardScreen() {
   const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
+  const birthdaysToday = people.data
+    ? upcomingBirthdays(people.data, new Date(), 0).length
+    : undefined;
   const noTrainer =
     people.data && links.data ? unmappedMembers(people.data, links.data).length : undefined;
 
@@ -72,11 +80,23 @@ export default function OwnerDashboardScreen() {
       icon: 'calendar-number-outline',
       onPress: () => router.push('/attendance'),
     },
+    {
+      label: 'Birthdays',
+      icon: 'gift-outline',
+      badge: birthdaysToday,
+      onPress: () => router.push('/birthdays'),
+    },
   ];
   if (gym.role === 'owner') {
     shortcuts.push(
       { label: 'Insights', icon: 'stats-chart-outline', onPress: () => router.push('/insights') },
       { label: 'Reports', icon: 'download-outline', onPress: () => router.push('/reports') },
+      {
+        label: 'Trainer hours',
+        icon: 'time-outline',
+        badge: permissions.data ? pendingCount(permissions.data) : undefined,
+        onPress: () => router.push('/trainer-hours'),
+      },
       {
         label: 'Gym details',
         icon: 'business-outline',

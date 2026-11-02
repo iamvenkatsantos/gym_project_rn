@@ -10,6 +10,10 @@ export const audiences: { value: Audience; label: string; detail: string }[] = [
   { value: 'staff', label: 'Staff', detail: 'Trainers, supervisors and owners' },
 ];
 
+export function isAudience(value: unknown): value is Audience {
+  return audiences.some((a) => a.value === value);
+}
+
 /** Ready-made titles for what gyms announce most. */
 export const announcementTemplates = [
   'Gym closed for the holiday',

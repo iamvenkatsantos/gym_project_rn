@@ -22,4 +22,6 @@ export type Workout = {
   exercises: PlanExercise[];
   /** Members this plan is assigned to. Members only ever see their own id here. */
   assignedMemberIds: string[];
+  /** Weekdays (1 = Monday ... 7 = Sunday) per assigned member. Missing or empty means any day. */
+  memberDays: Record<string, number[]>;
 };

@@ -1,11 +1,20 @@
 import type {
+  LoyaltyOffer,
   Membership,
   MembershipInput,
   MembershipPlan,
   PlanInput,
 } from '@/features/memberships/types';
 import { coversToday, toIsoDate } from '@/features/memberships/rules';
-import { delay, forGym, mockId, mockMemberships, mockPeople, mockPlans } from '@/lib/mock-db';
+import {
+  delay,
+  forGym,
+  mockId,
+  mockLoyalty,
+  mockMemberships,
+  mockPeople,
+  mockPlans,
+} from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type PlanRow = {
@@ -14,6 +23,11 @@ type PlanRow = {
   price_cents: number;
   currency: string;
   duration_days: number;
+  offer_type: 'percent' | 'flat' | null;
+  offer_value: number | null;
+  offer_label: string | null;
+  offer_starts_on: string | null;
+  offer_ends_on: string | null;
 };
 
 type MembershipRow = {
@@ -28,7 +42,8 @@ type MembershipRow = {
   plan: PlanRow;
 };
 
-const PLAN_COLUMNS = 'id, name, price_cents, currency, duration_days';
+const PLAN_COLUMNS =
+  'id, name, price_cents, currency, duration_days, offer_type, offer_value, offer_label, offer_starts_on, offer_ends_on';
 // The inner join lets queries filter memberships by the plan's gym.
 const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, created_at, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
 
@@ -39,6 +54,16 @@ function toPlan(row: PlanRow): MembershipPlan {
     priceCents: row.price_cents,
     currency: row.currency,
     durationDays: row.duration_days,
+    offer:
+      row.offer_type && row.offer_value && row.offer_ends_on
+        ? {
+            type: row.offer_type,
+            value: row.offer_value,
+            label: row.offer_label ?? '',
+            startsOn: row.offer_starts_on,
+            endsOn: row.offer_ends_on,
+          }
+        : null,
   };
 }
 
@@ -75,7 +100,8 @@ export async function getCurrentMembership(
   memberId: string,
 ): Promise<Membership | null> {
   if (!supabase) {
-    return delay(forGym(gymId, mockMemberships).find((m) => m.memberId === memberId) ?? null);
+    const mine = forGym(gymId, mockMemberships).filter((m) => m.memberId === memberId);
+    return delay(mine.sort((a, b) => b.endsOn.localeCompare(a.endsOn))[0] ?? null);
   }
   const { data, error } = await supabase
     .from('memberships')
@@ -132,14 +158,48 @@ export async function savePlan(gymId: string, planId: string | null, input: Plan
     mockPlans.sort((a, b) => a.priceCents - b.priceCents);
     return delay(undefined);
   }
+  const offer = fields.offer;
   const row = {
     name: fields.name,
     price_cents: fields.priceCents,
     duration_days: fields.durationDays,
+    offer_type: offer?.type ?? null,
+    offer_value: offer?.value ?? null,
+    offer_label: offer ? offer.label.trim() || null : null,
+    offer_starts_on: offer?.startsOn ?? null,
+    offer_ends_on: offer?.endsOn ?? null,
   };
   const { error } = planId
     ? await supabase.from('membership_plans').update(row).eq('id', planId)
     : await supabase.from('membership_plans').insert({ ...row, gym_id: gymId });
+  if (error) throw error;
+}
+
+/** The branch's loyalty offer, or null when it's off. Members read it too. */
+export async function fetchLoyaltyOffer(gymId: string): Promise<LoyaltyOffer | null> {
+  if (!supabase) return delay(forGym(gymId, [mockLoyalty.value])[0] ?? null);
+  const { data, error } = await supabase
+    .from('gyms')
+    .select('loyalty_months, loyalty_percent')
+    .eq('id', gymId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.loyalty_months && data.loyalty_percent
+    ? { months: data.loyalty_months, percent: data.loyalty_percent }
+    : null;
+}
+
+/** Owners: switch the loyalty offer on, or off with null. */
+export async function saveLoyaltyOffer(gymId: string, offer: LoyaltyOffer | null) {
+  if (!supabase) {
+    mockLoyalty.value = offer;
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('set_loyalty_offer', {
+    p_gym_id: gymId,
+    p_months: offer?.months ?? null,
+    p_percent: offer?.percent ?? null,
+  });
   if (error) throw error;
 }
 

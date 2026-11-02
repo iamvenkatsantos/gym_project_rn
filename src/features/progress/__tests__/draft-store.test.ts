@@ -11,6 +11,7 @@ const workout: Workout = {
   level: 'beginner',
   durationMinutes: 45,
   assignedMemberIds: [],
+  memberDays: {},
   exercises: [
     {
       exerciseId: 'squat',

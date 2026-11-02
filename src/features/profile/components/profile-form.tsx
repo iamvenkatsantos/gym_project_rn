@@ -4,6 +4,8 @@ import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { useProfile } from '@/features/auth/use-profile';
+import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
+import { birthDateInput } from '@/features/birthdays/rules';
 import type { PickedPhoto } from '@/features/onboarding/types';
 import { ProfilePhotoPicker } from '@/features/profile/components/profile-photo-picker';
 import { useSaveProfile } from '@/features/profile/hooks';
@@ -15,8 +17,9 @@ import {
 } from '@/features/profile/rules';
 
 /**
- * Photo (optional), name and mobile (required) for the signed-in person, saved in
- * one go. Used on the first-sign-in profile screen and on Edit profile.
+ * Photo (optional), name and mobile (required) and date of birth (optional) for the
+ * signed-in person, saved in one go. Used on the first-sign-in profile screen and on
+ * Edit profile. The date of birth only shows once the server can keep it.
  */
 export function ProfileForm({
   submitLabel,
@@ -30,7 +33,9 @@ export function ProfileForm({
   const [texts, setTexts] = useState<ProfileTexts>({
     fullName: profile.fullName,
     phone: profile.phone ?? '',
+    dateOfBirth: birthDateInput(profile.dateOfBirth),
   });
+  const canSaveBirthday = profile.dateOfBirth !== undefined;
   // undefined keeps the current photo, null removes it.
   const [photo, setPhoto] = useState<PickedPhoto | null | undefined>(undefined);
   const [submitted, setSubmitted] = useState(false);
@@ -45,7 +50,11 @@ export function ProfileForm({
   const submit = () => {
     setSubmitted(true);
     if (problem) return;
-    save.mutate({ ...profileValues(texts), photo }, { onSuccess: onSaved });
+    const { dateOfBirth, ...values } = profileValues(texts);
+    save.mutate(
+      { ...values, dateOfBirth: canSaveBirthday ? dateOfBirth : undefined, photo },
+      { onSuccess: onSaved },
+    );
   };
 
   return (
@@ -78,8 +87,17 @@ export function ProfileForm({
         error={errors.phone}
         showError={submitted}
       />
+      {canSaveBirthday ? (
+        <BirthDateField
+          label="Date of birth (optional)"
+          value={texts.dateOfBirth}
+          onChangeText={set('dateOfBirth')}
+          error={errors.dateOfBirth}
+          showError={submitted}
+        />
+      ) : null}
       <ThemedText type="small" themeColor="textSecondary">
-        Your mobile is only shown to your gym&apos;s managers and, for members, their trainers.
+        Only your gym&apos;s managers and, for members, their trainers see your mobile and birthday.
       </ThemedText>
       {save.error ? (
         <ThemedText themeColor="danger">Couldn&apos;t save: {save.error.message}</ThemedText>

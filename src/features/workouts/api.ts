@@ -1,6 +1,6 @@
 import type { PlanDraft } from '@/features/workouts/plan-draft';
 import type { Workout } from '@/features/workouts/types';
-import { delay, forGym, mockId, mockWorkouts } from '@/lib/mock-db';
+import { delay, forGym, mockGymSettings, mockId, mockWorkouts } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type WorkoutRow = {
@@ -19,7 +19,7 @@ type WorkoutRow = {
     rest_seconds: number;
     exercise: { id: string; name: string };
   }[];
-  assignments: { member_id: string }[];
+  assignments: { member_id: string; days: number[] | null }[];
 };
 
 function toWorkout(row: WorkoutRow): Workout {
@@ -44,6 +44,7 @@ function toWorkout(row: WorkoutRow): Workout {
     // RLS only returns the caller's own assignment to members, and all of them to the plan's author.
     // Plans themselves reach members only from their own trainers (or when assigned).
     assignedMemberIds: row.assignments.map((a) => a.member_id),
+    memberDays: Object.fromEntries(row.assignments.map((a) => [a.member_id, a.days ?? []])),
   };
 }
 
@@ -61,7 +62,7 @@ export async function listWorkouts(
   let query = supabase
     .from('workouts')
     .select(
-      'id, trainer_id, trainer:profiles!workouts_trainer_id_fkey(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id)',
+      'id, trainer_id, trainer:profiles!workouts_trainer_id_fkey(full_name), title, description, level, duration_minutes, exercises:workout_exercises(position, sets, reps, target_weight_kg, rest_seconds, exercise:exercises(id, name)), assignments:workout_assignments(member_id, days)',
     )
     .eq('gym_id', gymId)
     .order('created_at', { ascending: false });
@@ -89,7 +90,7 @@ export async function saveWorkout({
       return delay(existing.id);
     }
     const id = mockId('w');
-    mockWorkouts.unshift({ id, trainerId, assignedMemberIds: [], ...fields });
+    mockWorkouts.unshift({ id, trainerId, assignedMemberIds: [], memberDays: {}, ...fields });
     return delay(id);
   }
   return unwrap(
@@ -129,6 +130,10 @@ export async function setAssignment(workoutId: string, memberId: string, assigne
       workout.assignedMemberIds = assigned
         ? [...new Set([...workout.assignedMemberIds, memberId])]
         : workout.assignedMemberIds.filter((id) => id !== memberId);
+      if (!assigned) {
+        const { [memberId]: _dropped, ...rest } = workout.memberDays;
+        workout.memberDays = rest;
+      }
     }
     return delay(undefined);
   }
@@ -144,5 +149,41 @@ export async function setAssignment(workoutId: string, memberId: string, assigne
         .delete()
         .eq('workout_id', workoutId)
         .eq('member_id', memberId);
+  if (error) throw error;
+}
+
+/** The weekdays a member does an assigned plan; empty for any day. */
+export async function setAssignmentDays(workoutId: string, memberId: string, days: number[]) {
+  if (!supabase) {
+    const workout = mockWorkouts.find((w) => w.id === workoutId);
+    if (workout) workout.memberDays = { ...workout.memberDays, [memberId]: days };
+    return delay(undefined);
+  }
+  const { error } = await supabase
+    .from('workout_assignments')
+    .update({ days })
+    .eq('workout_id', workoutId)
+    .eq('member_id', memberId);
+  if (error) throw error;
+}
+
+/** How many days a missed weekday workout stays open at the gym. */
+export async function getCatchUpDays(gymId: string): Promise<number> {
+  if (!supabase) return delay(mockGymSettings.workoutCatchUpDays);
+  const row = unwrap(
+    await supabase.from('gyms').select('workout_catch_up_days').eq('id', gymId).single(),
+  ) as { workout_catch_up_days: number };
+  return row.workout_catch_up_days;
+}
+
+export async function setCatchUpDays(gymId: string, days: number) {
+  if (!supabase) {
+    mockGymSettings.workoutCatchUpDays = days;
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('set_workout_catch_up_days', {
+    p_gym_id: gymId,
+    p_days: days,
+  });
   if (error) throw error;
 }

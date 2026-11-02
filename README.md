@@ -282,6 +282,7 @@ psql -d corefit_test -f supabase/tests/plain-postgres-auth-stub.sql
 for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
 psql -d corefit_test -f supabase/tests/rls.sql
 psql -d corefit_test -f supabase/tests/workout-plans.sql
+psql -d corefit_test -f supabase/tests/workout-days.sql
 psql -d corefit_test -f supabase/tests/online-payments.sql
 psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
@@ -290,6 +291,9 @@ psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
+psql -d corefit_test -f supabase/tests/trainer-hours.sql
+psql -d corefit_test -f supabase/tests/membership-offers.sql
+psql -d corefit_test -f supabase/tests/birthdays.sql
 ```
 
 ## Scripts

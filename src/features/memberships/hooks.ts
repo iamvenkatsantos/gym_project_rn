@@ -1,17 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import {
   archivePlan,
+  fetchLoyaltyOffer,
   getCurrentMembership,
   hasCurrentMembership,
   listMemberships,
   listPlans,
   recordMembership,
   remindRenewal,
+  saveLoyaltyOffer,
   savePlan,
 } from '@/features/memberships/api';
 import type { Role } from '@/features/auth/types';
-import type { MembershipInput, PlanInput } from '@/features/memberships/types';
+import { priceFor } from '@/features/memberships/offers';
+import { latestByMember, renewalStart } from '@/features/memberships/rules';
+import type {
+  LoyaltyOffer,
+  MembershipInput,
+  MembershipPlan,
+  PlanInput,
+} from '@/features/memberships/types';
 
 export const membershipKeys = {
   all: ['memberships'] as const,
@@ -21,6 +31,7 @@ export const membershipKeys = {
   covered: (gymId: string, memberId: string) =>
     [...membershipKeys.all, gymId, 'covered', memberId] as const,
   list: (gymId: string) => [...membershipKeys.all, gymId, 'list'] as const,
+  loyalty: (gymId: string) => [...membershipKeys.all, gymId, 'loyalty'] as const,
 };
 
 export function usePlans(gymId: string) {
@@ -83,4 +94,41 @@ export function useRecordMembership(gymId: string) {
 
 export function useRemindRenewal(gymId: string) {
   return useMutation({ mutationFn: (memberId: string) => remindRenewal(gymId, memberId) });
+}
+
+export function useLoyaltyOffer(gymId: string) {
+  return useQuery({
+    queryKey: membershipKeys.loyalty(gymId),
+    queryFn: () => fetchLoyaltyOffer(gymId),
+  });
+}
+
+export function useSaveLoyaltyOffer(gymId: string) {
+  const invalidate = useInvalidateMemberships();
+  return useMutation({
+    mutationFn: (offer: LoyaltyOffer | null) => saveLoyaltyOffer(gymId, offer),
+    onSettled: invalidate,
+  });
+}
+
+/**
+ * A member's price for each plan, with the plan's offer or the loyalty offer,
+ * for a membership starting when their next one would. Online payments charge
+ * the same (member_plan_price() on the server).
+ */
+export function useMemberPrice(gymId: string, memberId: string) {
+  const loyalty = useLoyaltyOffer(gymId).data;
+  const memberships = useMemberships(gymId).data;
+  return useCallback(
+    (plan: MembershipPlan) => {
+      const latest = memberships ? latestByMember(memberships).get(memberId) : null;
+      return priceFor(plan, {
+        loyalty,
+        memberships,
+        memberId,
+        startsOn: renewalStart(latest),
+      });
+    },
+    [loyalty, memberships, memberId],
+  );
 }

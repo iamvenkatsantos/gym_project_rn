@@ -59,11 +59,17 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     ['id, full_name', 'role, status, onboarded_at'],
     ['id, full_name', 'role, status'],
   ];
-  const [first, adminResult, contactResult] = await Promise.all([
+  const selectContact = (columns: string) =>
+    client.from('contact_details').select(columns).eq('user_id', userId).maybeSingle();
+  const [first, adminResult, firstContact] = await Promise.all([
     selectProfile(...attempts[0]),
     client.rpc('is_platform_admin'),
-    client.from('contact_details').select('phone').eq('user_id', userId).maybeSingle(),
+    selectContact('phone, date_of_birth'),
   ]);
+  // Before the birthdays migration there's no date_of_birth column.
+  const contactResult =
+    firstContact.error?.code === '42703' ? await selectContact('phone') : firstContact;
+  const contact = contactResult.data as { phone: string; date_of_birth?: string | null } | null;
   let profileResult = first;
   // Saving a profile needs the profile photo migration; until it's pushed, nobody is asked.
   const canSaveProfile = first.error?.code !== '42703';
@@ -77,10 +83,9 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     ...toProfile(row),
     isPlatformAdmin: adminResult.data === true,
     // If the phone can't be read, leave it unknown so nobody gets stuck on the profile form.
-    phone:
-      contactResult.error || !canSaveProfile
-        ? undefined
-        : ((contactResult.data as { phone: string } | null)?.phone ?? null),
+    phone: contactResult.error || !canSaveProfile ? undefined : (contact?.phone ?? null),
+    // Undefined before the birthdays migration, so forms know not to send it.
+    dateOfBirth: contactResult === firstContact ? (contact?.date_of_birth ?? null) : undefined,
   };
 }
 

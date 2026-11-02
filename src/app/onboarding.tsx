@@ -16,6 +16,7 @@ import { useSignOut } from '@/features/auth/use-sign-out';
 import { useProgressPhotos } from '@/features/body/hooks';
 import { PHOTO_PICKER_OPTIONS } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
+import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
 import { useCompleteOnboarding } from '@/features/onboarding/hooks';
 import {
   firstOnboardingError,
@@ -44,6 +45,7 @@ export default function OnboardingScreen() {
   const [texts, setTexts] = useState<OnboardingTexts>({
     fullName: profile.fullName,
     phone: '',
+    dateOfBirth: '',
     weight: '',
     height: '',
   });
@@ -149,6 +151,12 @@ export default function OnboardingScreen() {
         textContentType="telephoneNumber"
         maxLength={16}
         error={errors.phone}
+        showError={submitted}
+      />
+      <BirthDateField
+        value={texts.dateOfBirth}
+        onChangeText={set('dateOfBirth')}
+        error={errors.dateOfBirth}
         showError={submitted}
       />
       <View style={styles.row}>

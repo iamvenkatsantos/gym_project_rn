@@ -46,7 +46,7 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
   `canCoach(role)` and `canManageGym(role)` from `src/features/auth/types.ts`. Owners and supervisors
   coach under Training → Coaching.
 - **Owner only:** CSV exports, importing members, Insights, suspending or removing people, membership
-  plans, gym details.
+  plans, gym details, trainer hours/LOP rules and approving trainer permissions.
 - **Roles never change once given** (`gym_members_lock_role` trigger). There is no role picker in
   the app; only a platform admin (or the SQL editor) can fix a wrong role. Re-inviting someone
   already at the gym keeps their role. **One exception:** owners and supervisors can make an active
@@ -112,8 +112,8 @@ provider's hourly limit.
 
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,
-phone, weight, height, front/back/side photos via `complete_member_onboarding`, optional profile
-photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
+phone, date of birth, weight, height, front/back/side photos via `complete_member_onboarding`,
+optional profile photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
 `selectNeedsProfile`) → `profile-setup` (name, required mobile, optional photo via `save_my_profile`);
 no gym →
 `no-gym` (older new-owner invites → `set-up-gym`, `create_gym`); admin → `admin`; otherwise the
@@ -124,7 +124,20 @@ person, their gym's managers and, for members, their mapped trainers) and may ad
 Photos live in the public `avatars` bucket at `<user id>/<random>.<ext>` (`profiles.avatar_path`,
 checked to sit in the person's own folder); progress photos stay private. Anyone edits their photo,
 name and mobile on `edit-profile` (tap the profile card, or Edit profile on Profile/Account). Use
-`TrainerAvatar` with `url` to show a photo with initials as the fallback.
+`TrainerAvatar` with `url` to show a photo with initials as the fallback. The person screen has
+**Call** and **WhatsApp** buttons from the mobile on file (`callUrl`, `whatsappUrl`).
+
+**Birthdays.** Date of birth lives in `contact_details.date_of_birth` (same readers as the mobile).
+Members give it on the first-sign-in form (required; the 6-argument `complete_member_onboarding`,
+the 5-argument one stays for older installs); anyone can change theirs on `edit-profile`
+(optional, 4-argument `save_my_profile`); owners and supervisors add or fix a member's on the
+person screen (`set_member_birthday`, only once the member has a mobile on file). DOB is typed as
+DD/MM/YYYY (no native date picker, so no new build). `gym_people` returns it. On the day (the gym's
+day; 29 Feb falls on 28 Feb in other years, `is_birthday()`), owners and supervisors get a 9 am push
+(`send_birthday_reminders`, kind `birthday`, opens `birthdays`) and wish members from the
+**Birthdays** shortcut or the person screen: **Send wish** (`send_birthday_wish`, inbox + push, only
+on the birthday, once a year per gym) or **WhatsApp** (`birthdayMessage`). Rules in
+`src/features/birthdays/rules.ts`.
 
 **Attendance and QR.** Members and staff check in/out from Home. Members must be checked in to start
 a workout (`start_workout_attendance` raises "Check in first"). **No membership, no training:** a
@@ -144,6 +157,21 @@ never blocked outside hours (Venkat, 2026-10-30), but `auto_check_out()` checks 
 at closing time or after their role's hours, whichever comes first.
 Mapped trainers get pushes when their member starts and finishes a workout.
 
+**Trainer hours, LOP and permissions** (owner only, secret from trainers and supervisors). Owners set
+per-branch rules on Dashboard → **Trainer hours** → Rules (`trainer_hour_rules`, `set_trainer_hour_rules()`):
+working hours a day, allowed shortfall, LOP hours and weekly off days. A working day short by more
+than the allowed shortfall costs the rule's LOP hours; a day with no check-in and no permission costs
+the full day; off days and today never count, nor days before the rules were first saved
+(`starts_on`) or before the trainer joined. Hours worked add up every visit that day
+(`attendance.worked_minutes`, kept by the `attendance_worked_minutes` trigger on each check-out;
+`longest_visit_minutes` is kept too). Only `gym_members.role = 'trainer'` is tracked. Trainers ask
+for permission from Home → **Ask for permission** (`permissions`, `request_permission()`: a day, from/to
+time, a reason, optional note; owners get a push) and see only their requests and the answer, never
+hours or LOP. Owners approve or reject (`decide_permission()`, trainer gets a push); approved
+permission counts as time worked. `trainer_hours_month()` returns the days; the LOP maths is
+`applyRules`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
+knows no salaries.
+
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to
 mapped members (`assign-plan`). Mapping is many trainers per member (`member_trainers`), managed
 by owners and supervisors from `match-trainers` (members without a trainer first), then
@@ -153,6 +181,18 @@ trigger), so the bar warns first. Members can ask for a trainer (`trainer_reques
 `workout-session` with an offline draft (`src/features/progress/draft-store.ts`, Zustand persist)
 uploaded idempotently by `workout_logs.client_id`. Diet plans and body progress (measurements,
 private progress photos) follow the same coach/member pattern.
+**Weekday plans:** on `assign-plan` the coach picks each member's days
+(`workout_assignments.days`, ISO 1 = Mon … 7 = Sun; empty = any day). Members see **Today**
+(due, catch-up or any-day plans, startable) and **This week** (not startable). A missed day stays
+open for the gym's catch-up days (`gyms.workout_catch_up_days`, 0–3, default 1, set by owners and
+supervisors on Training → Coaching via `set_workout_catch_up_days()`) unless the member already
+logged that plan since. App-only rule (`src/features/workouts/schedule.ts`); the server doesn't block.
+**Smart plans:** 15 ready-made plans, 5 per level (`src/features/workouts/smart-plans.ts`, shared
+library exercises only, matched to the DB by name); coaches copy one from My plans → **Smart plans**
+into `plan-editor`, then assign. **Stretches:** plan cards and `workout-session` show cool-down
+stretches for the plan's muscles (`stretches.ts`, max 6, app-only, not in the exercise library).
+Exercises are added on the `add-exercises` modal (search pinned on top, so the keyboard never
+covers results); picks go back to the editor through `useExercisePicks`.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,
@@ -167,6 +207,20 @@ CoreFit Gym takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-3
 shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
+
+**Offers and discounts** (owner only to set). A plan can carry a time-limited offer
+(`membership_plans.offer_*`: 1–90% or a flat amount below the price, optional label, end date; set
+in `membership-plan-editor`); members see the price struck through. The **loyalty offer**
+(`gyms.loyalty_months`/`loyalty_percent`, `set_loyalty_offer()`, Payments → Loyalty offer, off by
+default, app suggests 2 months / 10%) takes a percentage off any renewal once the member has paid
+without a break for that many months (30 days each) up to the new start; breaks of up to 7 days are
+forgiven and complimentary memberships don't count. It applies automatically. The two never stack:
+the bigger discount wins. Percent discounts round to whole rupees. Online payments charge
+`member_plan_price()` (`start_online_payment`; the offer name goes into `online_payments.offer` and
+the membership note); the front desk gets the same price prefilled but can change it. App mirror:
+`src/features/memberships/offers.ts` (keep both in step). **Saved offers** (`saved_offers`, owners and
+supervisors) are announcements kept for reuse on New announcement; the plan editor's **Announce this
+offer** opens it filled in.
 
 **CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
 `branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`
@@ -189,7 +243,8 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
-`corefit-auto-check-out` (10 min), `corefit-purge-logs` (daily, trims cron and pg_net history).
+`corefit-auto-check-out` (10 min), `corefit-birthdays` (hourly, managers' 9 am birthday push),
+`corefit-purge-logs` (daily, trims cron and pg_net history).
 
 ## Conventions and gotchas
 

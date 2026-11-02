@@ -16,3 +16,8 @@ export type AnnouncementInput = {
   title: string;
   body: string;
 };
+
+/** An offer saved once on New announcement, to post again later. */
+export type SavedOffer = AnnouncementInput & {
+  id: string;
+};

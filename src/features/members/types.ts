@@ -27,6 +27,8 @@ export type GymPerson = {
   onboarded?: boolean;
   /** False until they confirm an account (imported members); no trainer before then. */
   signedUp?: boolean;
+  /** Date of birth as YYYY-MM-DD, if it's on file. */
+  dateOfBirth?: string | null;
 };
 
 /** An invite waiting for someone to confirm an account with that email. */

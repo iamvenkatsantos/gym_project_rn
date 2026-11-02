@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -9,25 +9,54 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
-import { useSendAnnouncement } from '@/features/announcements/hooks';
+import {
+  useDeleteSavedOffer,
+  useSaveOffer,
+  useSavedOffers,
+  useSendAnnouncement,
+} from '@/features/announcements/hooks';
 import {
   MAX_BODY,
   MAX_TITLE,
   announcementProblem,
   announcementTemplates,
   audiences,
+  isAudience,
 } from '@/features/announcements/rules';
 import type { Audience } from '@/features/announcements/types';
 import { firstError, validateOptionalText, validateTitle } from '@/lib/validation';
 
-/** Owners and supervisors tell the gym about holidays, timings or offers. */
+/**
+ * Owners and supervisors tell the gym about holidays, timings or offers. Offers
+ * can be saved once and posted again. The plan editor opens it filled in.
+ */
 export default function NewAnnouncementScreen() {
+  const params = useLocalSearchParams<{ title?: string; body?: string; audience?: string }>();
   const profile = useProfile();
   const gym = useActiveGym();
   const send = useSendAnnouncement(gym.gymId, profile.id);
-  const [audience, setAudience] = useState<Audience>('everyone');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const saved = useSavedOffers(gym.gymId).data ?? [];
+  const keepOffer = useSaveOffer(gym.gymId, profile.id);
+  const removeOffer = useDeleteSavedOffer(gym.gymId);
+  const [audience, setAudience] = useState<Audience>(
+    isAudience(params.audience) ? params.audience : 'everyone',
+  );
+  const [title, setTitle] = useState(params.title ?? '');
+  const [body, setBody] = useState(params.body ?? '');
+  const [keep, setKeep] = useState(false);
+  const picked = saved.find((o) => o.title === title.trim() && o.body === body.trim());
+  const sending = send.isPending || keepOffer.isPending;
+
+  const sendNow = async () => {
+    const input = { audience, title, body };
+    try {
+      if (keep && !picked) await keepOffer.mutateAsync(input);
+      await send.mutateAsync(input);
+      router.back();
+    } catch {
+      // The error shows under the form.
+    }
+  };
   const problem = firstError(
     announcementProblem({ audience, title, body }),
     validateTitle(title, { label: 'title', max: MAX_TITLE }),
@@ -57,6 +86,40 @@ export default function NewAnnouncementScreen() {
         ) : null}
       </View>
 
+      {saved.length > 0 ? (
+        <View style={styles.field}>
+          <ThemedText type="label" themeColor="textSecondary">
+            Saved offers
+          </ThemedText>
+          <View style={styles.wrap}>
+            {saved.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.title}
+                selected={picked?.id === o.id}
+                onPress={() => {
+                  setAudience(o.audience);
+                  setTitle(o.title);
+                  setBody(o.body);
+                }}
+              />
+            ))}
+          </View>
+          {picked ? (
+            <View style={styles.wrap}>
+              <Button
+                label="Remove from saved"
+                icon="trash-outline"
+                variant="secondary"
+                size="compact"
+                loading={removeOffer.isPending}
+                onPress={() => removeOffer.mutate(picked.id)}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       <View style={styles.field}>
         <ThemedText type="label" themeColor="textSecondary">
           About
@@ -85,13 +148,25 @@ export default function NewAnnouncementScreen() {
         error={validateOptionalText(body, MAX_BODY)}
       />
 
-      {send.error ? <ThemedText themeColor="danger">{send.error.message}</ThemedText> : null}
+      {picked ? null : (
+        <View style={styles.wrap}>
+          <Chip
+            label="Save as an offer to reuse"
+            selected={keep}
+            onPress={() => setKeep((k) => !k)}
+          />
+        </View>
+      )}
+
+      {send.error || keepOffer.error ? (
+        <ThemedText themeColor="danger">{(send.error ?? keepOffer.error)?.message}</ThemedText>
+      ) : null}
       <Button
         label="Send announcement"
         icon="send-outline"
         disabled={!!problem}
-        loading={send.isPending}
-        onPress={() => send.mutate({ audience, title, body }, { onSuccess: () => router.back() })}
+        loading={sending}
+        onPress={sendNow}
       />
       <ThemedText type="small" themeColor="textSecondary">
         Everyone it’s for gets a push notification, and it stays on the gym’s announcements list.

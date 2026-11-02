@@ -6,6 +6,7 @@ import { Icon } from '@/components/icon';
 import { Pill, type PillTone } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { PlanStretches } from '@/features/workouts/components/plan-stretches';
 import type { Workout, WorkoutLevel } from '@/features/workouts/types';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -19,9 +20,14 @@ export function WorkoutCard({
   workout,
   action,
   showAuthor = false,
+  dayLabel,
 }: {
-  workout: Workout;
+  workout: Pick<Workout, 'title' | 'description' | 'level' | 'durationMinutes' | 'exercises'> & {
+    trainerName?: string;
+  };
   action?: ReactNode;
+  /** When the member does it, e.g. "Today" or "Next: Thu". */
+  dayLabel?: string;
   /** Names the coach who wrote the plan, for people looking at other coaches' plans. */
   showAuthor?: boolean;
 }) {
@@ -29,7 +35,10 @@ export function WorkoutCard({
 
   return (
     <Card>
-      <Pill label={workout.level} tone={levelTone[workout.level]} />
+      <View style={styles.pills}>
+        <Pill label={workout.level} tone={levelTone[workout.level]} />
+        {dayLabel ? <Pill label={dayLabel} tone="accent" icon="calendar-outline" /> : null}
+      </View>
       <ThemedText type="heading">{workout.title}</ThemedText>
       <View style={styles.meta}>
         <View style={styles.metaItem}>
@@ -67,12 +76,18 @@ export function WorkoutCard({
           </View>
         ))}
       </View>
+      <PlanStretches items={workout.exercises} />
       {action}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  pills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
   meta: {
     flexDirection: 'row',
     gap: Spacing.three,

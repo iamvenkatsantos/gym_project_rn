@@ -17,7 +17,9 @@ import { useAssignPlan } from '@/features/coaching/hooks';
 import { assignableMembers } from '@/features/coaching/rules';
 import { useCoachedMembers, usePeople } from '@/features/members/hooks';
 import { initials } from '@/features/trainers/rules';
-import { useWorkout } from '@/features/workouts/hooks';
+import { DayPicker } from '@/features/workouts/components/day-picker';
+import { useSetAssignmentDays, useWorkout } from '@/features/workouts/hooks';
+import { daysLabel } from '@/features/workouts/schedule';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function AssignPlanScreen() {
@@ -31,6 +33,7 @@ export default function AssignPlanScreen() {
   const members = useCoachedMembers(gym.gymId, profile.id);
   const people = usePeople(gym.gymId, { enabled: manager });
   const assign = useAssignPlan(gym.gymId, profile.id);
+  const setDays = useSetAssignmentDays();
   const [query, setQuery] = useState('');
 
   if (!workout) {
@@ -51,7 +54,7 @@ export default function AssignPlanScreen() {
         </ThemedText>
         <ThemedText type="title">{workout.title}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Members you assign see this plan first.{' '}
+          Pick each member&apos;s days, or none for any day.{' '}
           {manager
             ? 'Assigning someone you don’t coach yet also makes you their trainer.'
             : 'You can assign it to the members your gym matched with you.'}
@@ -82,62 +85,83 @@ export default function AssignPlanScreen() {
               {matches.map((member, i) => {
                 const assigned = workout.assignedMemberIds.includes(member.id);
                 const saving = assign.isPending && assign.variables?.memberId === member.id;
+                const days = workout.memberDays[member.id] ?? [];
                 return (
-                  <Pressable
+                  <View
                     key={member.id}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: assigned, busy: saving }}
-                    accessibilityLabel={member.fullName}
-                    disabled={saving}
-                    onPress={() =>
-                      assign.mutate({
-                        workoutId: workout.id,
-                        memberId: member.id,
-                        assigned: !assigned,
-                        mapFirst: !member.coached,
-                      })
-                    }
-                    style={({ pressed }) => [
-                      styles.row,
+                    style={[
+                      styles.member,
                       i > 0 && {
                         borderTopColor: theme.border,
                         borderTopWidth: StyleSheet.hairlineWidth,
                       },
-                      pressed && styles.pressed,
                     ]}>
-                    <View style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}>
-                      <ThemedText type="smallBold">{initials(member.fullName)}</ThemedText>
-                    </View>
-                    <View style={styles.name}>
-                      <ThemedText type="smallBold">{member.fullName}</ThemedText>
-                      {member.coached ? null : (
-                        <ThemedText type="small" themeColor="textSecondary">
-                          Not your member yet
-                        </ThemedText>
-                      )}
-                    </View>
-                    {saving ? (
-                      <ActivityIndicator color={theme.accent} />
-                    ) : (
-                      <View
-                        style={[
-                          styles.check,
-                          assigned
-                            ? { backgroundColor: theme.primary }
-                            : { borderColor: theme.border, borderWidth: 2 },
-                        ]}>
-                        {assigned ? <Icon name="checkmark" size={18} color="onPrimary" /> : null}
+                    <Pressable
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: assigned, busy: saving }}
+                      accessibilityLabel={member.fullName}
+                      disabled={saving}
+                      onPress={() =>
+                        assign.mutate({
+                          workoutId: workout.id,
+                          memberId: member.id,
+                          assigned: !assigned,
+                          mapFirst: !member.coached,
+                        })
+                      }
+                      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+                      <View style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}>
+                        <ThemedText type="smallBold">{initials(member.fullName)}</ThemedText>
                       </View>
-                    )}
-                  </Pressable>
+                      <View style={styles.name}>
+                        <ThemedText type="smallBold">{member.fullName}</ThemedText>
+                        {member.coached ? (
+                          assigned ? (
+                            <ThemedText type="small" themeColor="textSecondary">
+                              {daysLabel(days)}
+                            </ThemedText>
+                          ) : null
+                        ) : (
+                          <ThemedText type="small" themeColor="textSecondary">
+                            Not your member yet
+                          </ThemedText>
+                        )}
+                      </View>
+                      {saving ? (
+                        <ActivityIndicator color={theme.accent} />
+                      ) : (
+                        <View
+                          style={[
+                            styles.check,
+                            assigned
+                              ? { backgroundColor: theme.primary }
+                              : { borderColor: theme.border, borderWidth: 2 },
+                          ]}>
+                          {assigned ? <Icon name="checkmark" size={18} color="onPrimary" /> : null}
+                        </View>
+                      )}
+                    </Pressable>
+                    {assigned ? (
+                      <DayPicker
+                        label={`${member.fullName}'s days`}
+                        days={days}
+                        disabled={setDays.isPending && setDays.variables?.memberId === member.id}
+                        onChange={(next) =>
+                          setDays.mutate({ workoutId: workout.id, memberId: member.id, days: next })
+                        }
+                      />
+                    ) : null}
+                  </View>
                 );
               })}
             </Card>
           );
         }}
       </QueryState>
-      {assign.error ? (
-        <ThemedText themeColor="danger">Couldn&apos;t update: {assign.error.message}</ThemedText>
+      {assign.error || setDays.error ? (
+        <ThemedText themeColor="danger">
+          Couldn&apos;t update: {(assign.error ?? setDays.error)?.message}
+        </ThemedText>
       ) : null}
       <Button label="Done" variant="secondary" onPress={() => router.back()} />
     </Screen>
@@ -145,6 +169,10 @@ export default function AssignPlanScreen() {
 }
 
 const styles = StyleSheet.create({
+  member: {
+    gap: Spacing.two,
+    paddingBottom: Spacing.two,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

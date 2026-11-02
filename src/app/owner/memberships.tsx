@@ -10,13 +10,14 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { PlanCard } from '@/features/memberships/components/plan-card';
-import { useMemberships, usePlans } from '@/features/memberships/hooks';
+import { useLoyaltyOffer, useMemberships, usePlans } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 
 export default function OwnerMembershipsScreen() {
   const gym = useActiveGym();
   const memberships = useMemberships(gym.gymId);
   const plans = usePlans(gym.gymId);
+  const loyalty = useLoyaltyOffer(gym.gymId).data;
   // Supervisors record payments; selling plans stays with the owner.
   const isOwner = gym.role === 'owner';
   const renew = (memberId: string) =>
@@ -40,6 +41,19 @@ export default function OwnerMembershipsScreen() {
           icon="time-outline"
           onPress={() => router.push('/payment-history')}
         />
+        {isOwner ? (
+          <ListRow
+            divider
+            label="Loyalty offer"
+            detail={
+              loyalty
+                ? `${loyalty.percent}% off after ${loyalty.months} ${loyalty.months === 1 ? 'month' : 'months'} without a break`
+                : 'Off · reward members who keep paying'
+            }
+            icon="heart-outline"
+            onPress={() => router.push('/loyalty-offer')}
+          />
+        ) : null}
       </ListGroup>
 
       {isOwner && !noPlans ? (

@@ -12,7 +12,8 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
-import { ExercisePicker } from '@/features/workouts/components/exercise-picker';
+import { useExercises } from '@/features/exercises/hooks';
+import { useExercisePicks } from '@/features/workouts/exercise-picks';
 import { PlanExerciseEditor } from '@/features/workouts/components/plan-exercise-editor';
 import { useDeleteWorkout, useSaveWorkout, useWorkout } from '@/features/workouts/hooks';
 import {
@@ -27,14 +28,40 @@ import {
   updateExercise,
   type PlanDraft,
 } from '@/features/workouts/plan-draft';
+import { draftFromSmartPlan, smartPlans } from '@/features/workouts/smart-plans';
 import type { WorkoutLevel } from '@/features/workouts/types';
 import { firstError, validateOptionalText, validateTitle } from '@/lib/validation';
 
 export default function PlanEditorScreen() {
-  const { workoutId } = useLocalSearchParams<{ workoutId?: string }>();
+  const { workoutId, smartPlanId } = useLocalSearchParams<{
+    workoutId?: string;
+    smartPlanId?: string;
+  }>();
   const profile = useProfile();
   const gym = useActiveGym();
   const { workout, isPending } = useWorkout(gym.gymId, profile.id, workoutId);
+  const exercises = useExercises(gym.gymId);
+  const smartPlan = smartPlans.find((p) => p.id === smartPlanId);
+
+  if (smartPlan && !workoutId) {
+    if (!exercises.data) {
+      return (
+        <Screen refreshable={false}>
+          <ThemedText themeColor="textSecondary">
+            {exercises.error ? `Couldn't load exercises: ${exercises.error.message}` : 'Loading…'}
+          </ThemedText>
+        </Screen>
+      );
+    }
+    return (
+      <PlanForm
+        key={smartPlan.id}
+        gymId={gym.gymId}
+        trainerId={profile.id}
+        initial={draftFromSmartPlan(smartPlan, exercises.data)}
+      />
+    );
+  }
 
   if (!workoutId)
     return <PlanForm gymId={gym.gymId} trainerId={profile.id} initial={emptyPlan()} />;
@@ -76,6 +103,7 @@ function PlanForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const save = useSaveWorkout();
   const remove = useDeleteWorkout();
+  const openPicks = useExercisePicks((st) => st.open);
   const titleError = validateTitle(plan.title, { label: 'plan name' });
   const descriptionError = validateOptionalText(plan.description, 500);
   const problem = firstError(titleError, descriptionError, planProblem(plan));
@@ -158,10 +186,17 @@ function PlanForm({
           onRemove={() => setPlan((p) => removeExercise(p, i))}
         />
       ))}
-      <ExercisePicker
-        gymId={gymId}
-        excludeIds={plan.exercises.map((e) => e.exerciseId)}
-        onPick={(exercise) => setPlan((p) => addExercise(p, exercise))}
+      <Button
+        label="Add exercises"
+        icon="add-circle-outline"
+        variant="secondary"
+        onPress={() => {
+          openPicks(
+            plan.exercises.map((e) => e.exerciseId),
+            (exercise) => setPlan((p) => addExercise(p, exercise)),
+          );
+          router.push('/add-exercises');
+        }}
       />
 
       {showProblem && problem ? <ThemedText themeColor="danger">{problem}</ThemedText> : null}

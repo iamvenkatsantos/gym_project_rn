@@ -61,17 +61,23 @@ Deno.serve(async (req) => {
   });
 
   if (preview === true) {
-    // Read as the member, so they only see plans at their own gym.
-    const { data: plan } = await caller
-      .from('membership_plans')
-      .select('price_cents, currency')
-      .eq('id', planId)
-      .eq('gym_id', gymId)
-      .eq('active', true)
-      .maybeSingle();
-    if (!plan) return json({ error: "That plan isn't on sale any more" }, 400);
-    const { price } = await quote(adminClient(), gymId, plan.price_cents, plan.currency);
-    return json(price);
+    // Read as the member, so they only see plans at their own gym, at their price
+    // with any plan or loyalty offer (member_plan_price()).
+    const [{ data: plan }, { data: price }] = await Promise.all([
+      caller
+        .from('membership_plans')
+        .select('currency')
+        .eq('id', planId)
+        .eq('gym_id', gymId)
+        .eq('active', true)
+        .maybeSingle(),
+      caller.rpc('my_plan_price', { p_gym_id: gymId, p_plan_id: planId }).maybeSingle(),
+    ]);
+    const priceCents = (price as { price_cents: number } | null)?.price_cents;
+    if (!plan || priceCents == null)
+      return json({ error: "That plan isn't on sale any more" }, 400);
+    const { price: quoted } = await quote(adminClient(), gymId, priceCents, plan.currency);
+    return json(quoted);
   }
   // Checks the caller is a member, the branch takes online payments and the plan is on sale.
   const { data: paymentId, error } = await caller.rpc('start_online_payment', {

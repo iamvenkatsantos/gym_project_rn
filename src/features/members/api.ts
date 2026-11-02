@@ -53,6 +53,8 @@ type PersonRow = {
   avatar_path?: string | null;
   /** Missing before the invite codes migration. */
   signed_up?: boolean;
+  /** Missing before the birthdays migration. */
+  date_of_birth?: string | null;
 };
 
 type InviteRow = {
@@ -119,6 +121,7 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     onboarded: !!r.onboarded_at,
     avatarUrl: avatarUrl(r.avatar_path),
     signedUp: r.signed_up ?? true,
+    dateOfBirth: r.date_of_birth ?? null,
   }));
 }
 
