@@ -77,7 +77,7 @@ values in `src/lib/env.ts`). For a different project, set `EXPO_PUBLIC_SUPABASE_
 
 ```bash
 npx supabase link --project-ref <your-ref>
-npx supabase db push
+npx supabase db push --remote
 ```
 
 Then run `supabase/seed.sql` in the SQL editor to load the shared exercise library, and deploy the
@@ -158,7 +158,7 @@ every five minutes; each reminder has a dedupe key so it's sent once.
 
 One-time setup:
 
-1. `npx supabase db push` (enables `pg_cron` and `pg_net` and schedules the reminders job).
+1. `npx supabase db push --remote` (enables `pg_cron` and `pg_net` and schedules the reminders job).
 2. Pick a random secret (`openssl rand -hex 32`) and give it to both sides:
 
    ```bash

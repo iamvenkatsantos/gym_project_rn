@@ -316,7 +316,7 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 
 Say in the PR which of these it needs:
 
-- **`npx supabase db push`** for any new migration (run from Venkat's machine).
+- **`npx supabase db push --remote`** for any new migration (run from Venkat's machine; the CLI now targets a local database without `--remote`).
 - **Function deploys** when `supabase/functions/` changes: `npx supabase functions deploy <name>`
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
 - **A new EAS build** when a native module or `app.json` changes (`npx eas-cli@latest build
