@@ -10,6 +10,13 @@ type LogRow = {
   title: string;
   started_at: string;
   completed_at: string;
+  effort: number | null;
+  pain: string | null;
+  note: string | null;
+  swaps: string[] | null;
+  coach_reply: string | null;
+  replied_by_name: string | null;
+  replied_at: string | null;
   sets: {
     exercise_id: string;
     set_number: number;
@@ -20,7 +27,7 @@ type LogRow = {
 };
 
 const LOG_COLUMNS =
-  'client_id, workout_id, title, started_at, completed_at, sets:workout_log_sets(exercise_id, set_number, reps, weight_kg, exercise:exercises(name))';
+  'client_id, workout_id, title, started_at, completed_at, effort, pain, note, swaps, coach_reply, replied_by_name, replied_at, sets:workout_log_sets(exercise_id, set_number, reps, weight_kg, exercise:exercises(name))';
 
 function toLog(row: LogRow): WorkoutLog {
   return {
@@ -38,6 +45,15 @@ function toLog(row: LogRow): WorkoutLog {
         weightKg: s.weight_kg === null ? null : Number(s.weight_kg),
       }))
       .sort((a, b) => a.exerciseName.localeCompare(b.exerciseName) || a.setNumber - b.setNumber),
+    selfCheck:
+      row.effort === null && row.pain === null && row.note === null
+        ? null
+        : { effort: row.effort, pain: row.pain, note: row.note },
+    swaps: row.swaps ?? [],
+    reply:
+      row.coach_reply && row.replied_at
+        ? { text: row.coach_reply, byName: row.replied_by_name, at: row.replied_at }
+        : null,
   };
 }
 
@@ -138,6 +154,10 @@ export async function saveLog(gymId: string, memberId: string, log: WorkoutLog) 
       title: log.title,
       started_at: log.startedAt,
       completed_at: log.completedAt,
+      effort: log.selfCheck?.effort ?? null,
+      pain: log.selfCheck?.pain ?? null,
+      note: log.selfCheck?.note ?? null,
+      swaps: log.swaps ?? [],
     },
     { onConflict: 'client_id', ignoreDuplicates: true },
   );
@@ -157,4 +177,24 @@ export async function saveLog(gymId: string, memberId: string, log: WorkoutLog) 
     { onConflict: 'log_id,exercise_id,set_number', ignoreDuplicates: true },
   );
   if (setsError) throw setsError;
+}
+
+/** A member's trainer (or an owner or supervisor) replies once to their workout. */
+export async function replyToWorkout(
+  gymId: string,
+  memberId: string,
+  clientId: string,
+  text: string,
+  byName: string,
+) {
+  if (!supabase) {
+    const log = forGym(gymId, mockLogs[memberId] ?? []).find((l) => l.clientId === clientId);
+    if (log) log.reply = { text: text.trim(), byName, at: new Date().toISOString() };
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('reply_to_workout', {
+    p_client_id: clientId,
+    p_reply: text,
+  });
+  if (error) throw error;
 }

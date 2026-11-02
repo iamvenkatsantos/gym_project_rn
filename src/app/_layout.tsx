@@ -290,12 +290,7 @@ function RootNavigator() {
           name="invite-person"
           options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
         />
-        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
         <Stack.Screen name="smart-plans" options={{ headerShown: true, title: 'Smart plans' }} />
-        <Stack.Screen
-          name="add-exercises"
-          options={{ presentation: 'modal', headerShown: true, title: 'Add exercises' }}
-        />
         <Stack.Screen
           name="assign-plan/[workoutId]"
           options={{ headerShown: true, title: 'Assign' }}
@@ -317,6 +312,20 @@ function RootNavigator() {
         <Stack.Screen
           name="workout-session"
           options={{ headerShown: true, gestureEnabled: false, title: 'Workout' }}
+        />
+        {/*
+          Plans: coaches write theirs; members with self workouts on edit their own week,
+          which their trainers can edit too. The server checks who may save what.
+        */}
+        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen
+          name="add-exercises"
+          options={{ presentation: 'modal', headerShown: true, title: 'Add exercises' }}
+        />
+        <Stack.Screen name="self-plan" options={{ headerShown: true, title: 'My plan' }} />
+        <Stack.Screen
+          name="self-plan-setup"
+          options={{ headerShown: true, title: 'Set up my plan' }}
         />
         <Stack.Screen
           name="exercise/[exerciseId]"

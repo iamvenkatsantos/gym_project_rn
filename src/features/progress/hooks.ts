@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Role } from '@/features/auth/types';
-import { listGymLogs, listLogs, saveLog } from '@/features/progress/api';
+import { listGymLogs, listLogs, replyToWorkout, saveLog } from '@/features/progress/api';
 import { draftToLog, useWorkoutDraft } from '@/features/progress/draft-store';
 
 export const progressKeys = {
@@ -43,5 +43,15 @@ export function useFinishWorkout(memberId: string) {
       discard();
       return queryClient.invalidateQueries({ queryKey: progressKeys.all });
     },
+  });
+}
+
+/** A trainer's reply to one of their member's workouts. */
+export function useReplyToWorkout(gymId: string, memberId: string, byName: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, text }: { clientId: string; text: string }) =>
+      replyToWorkout(gymId, memberId, clientId, text, byName),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
   });
 }

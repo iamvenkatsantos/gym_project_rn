@@ -13,6 +13,8 @@ import { NoMembershipNotice } from '@/features/memberships/components/no-members
 import { useHasMembership } from '@/features/memberships/hooks';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
 import { useWorkoutLogs } from '@/features/progress/hooks';
+import { SelfWorkoutsCard } from '@/features/self-workouts/components/self-workouts-card';
+import { useSelfWorkoutsOn } from '@/features/self-workouts/hooks';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
 import { useCatchUpDays, useWorkouts } from '@/features/workouts/hooks';
 import {
@@ -45,6 +47,9 @@ export function StartWorkout({ gymId }: { gymId: string }) {
   const canStart = checkedIn && hasMembership !== false;
   const logs = useWorkoutLogs(gymId, profile.id);
   const catchUp = useCatchUpDays(gymId);
+  // Members' own plans only count while a trainer has self workouts on.
+  const self = useSelfWorkoutsOn(gymId, profile.id);
+  const selfOn = isMember && self.on === true;
 
   const begin = (workout: Workout) => {
     start(gymId, workout);
@@ -77,7 +82,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
     <WorkoutCard
       key={workout.id}
       workout={workout}
-      showAuthor={isMember}
+      showAuthor={isMember && !workout.isSelf}
       dayLabel={status && status.kind !== 'anytime' ? statusLabel(status) : undefined}
       action={
         draft || (status && !isDue(status)) ? undefined : (
@@ -115,6 +120,11 @@ export function StartWorkout({ gymId }: { gymId: string }) {
           />
         </Card>
       ) : null}
+      {selfOn && !draft ? (
+        <SelfWorkoutsCard
+          hasPlans={(workouts.data ?? []).some((w) => w.isSelf && w.trainerId === profile.id)}
+        />
+      ) : null}
       {draft ? (
         <Card highlighted>
           <ThemedText type="label" themeColor="accent">
@@ -130,9 +140,16 @@ export function StartWorkout({ gymId }: { gymId: string }) {
       ) : null}
       <QueryState
         query={workouts}
-        isEmpty={(w) => w.length === 0}
-        emptyText={isMember ? 'Your trainer hasn’t shared any plans yet.' : 'No plans yet.'}>
-        {(list) => {
+        isEmpty={(w) => w.filter((p) => !p.isSelf || selfOn).length === 0}
+        emptyText={
+          selfOn
+            ? 'Set up your plan above.'
+            : isMember
+              ? 'Your trainer hasn’t shared any plans yet.'
+              : 'No plans yet.'
+        }>
+        {(all) => {
+          const list = all.filter((w) => !w.isSelf || selfOn);
           const mine = list.filter((w) => w.assignedMemberIds.includes(profile.id));
           // Staff train from their own plans here; owners and supervisors review
           // other coaches' plans under Coaching.

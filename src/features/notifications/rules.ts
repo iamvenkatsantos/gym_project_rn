@@ -50,6 +50,7 @@ const kinds: readonly NotificationKind[] = [
   'attendance',
   'announcement',
   'birthday',
+  'workout',
 ];
 
 /** The data a tapped push carries, or null if it isn't one of ours. */

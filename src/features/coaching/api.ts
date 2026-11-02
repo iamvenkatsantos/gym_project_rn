@@ -14,6 +14,7 @@ type LinkRow = {
   member_id: string;
   trainer_id: string;
   assigned_at: string;
+  self_workouts: boolean;
   member: { full_name: string };
   trainer: { full_name: string };
 };
@@ -33,7 +34,7 @@ type RequestRow = {
 };
 
 const LINK_COLUMNS =
-  'member_id, trainer_id, assigned_at, member:profiles!member_trainers_member_id_fkey(full_name), trainer:profiles!member_trainers_trainer_id_fkey(full_name)';
+  'member_id, trainer_id, assigned_at, self_workouts, member:profiles!member_trainers_member_id_fkey(full_name), trainer:profiles!member_trainers_trainer_id_fkey(full_name)';
 const REQUEST_COLUMNS =
   'id, member_id, trainer_id, needs, comments, status, response, created_at, resolved_at, member:profiles!trainer_requests_member_id_fkey(full_name), trainer:profiles!trainer_requests_trainer_id_fkey(full_name)';
 
@@ -67,6 +68,7 @@ export async function listTrainerLinks(
     trainerId: r.trainer_id,
     trainerName: r.trainer.full_name,
     assignedAt: r.assigned_at,
+    selfWorkouts: r.self_workouts,
   }));
 }
 

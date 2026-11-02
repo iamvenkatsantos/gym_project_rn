@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
@@ -19,7 +19,8 @@ import { useTheme } from '@/hooks/use-theme';
 
 /**
  * Search pinned at the top and results below it, so the keyboard never covers
- * what's being searched. Taps add straight away; the screen stays open.
+ * what's being searched. Taps add straight away; the screen stays open, except
+ * when replacing one exercise mid-workout, which goes back after the pick.
  */
 export default function AddExercisesScreen() {
   const theme = useTheme();
@@ -29,8 +30,9 @@ export default function AddExercisesScreen() {
   const excludeIds = useExercisePicks((s) => s.excludeIds);
   const pick = useExercisePicks((s) => s.pick);
   const close = useExercisePicks((s) => s.close);
+  const options = useExercisePicks((s) => s.options);
   const [query, setQuery] = useState('');
-  const [muscle, setMuscle] = useState<string | null>(null);
+  const [muscle, setMuscle] = useState<string | null>(options.muscle ?? null);
   const [added, setAdded] = useState<string[]>([]);
 
   // Forget the plan's callback once this screen goes away.
@@ -44,6 +46,7 @@ export default function AddExercisesScreen() {
 
   return (
     <ThemedView style={styles.root}>
+      {options.single ? <Stack.Screen options={{ title: 'Replace exercise' }} /> : null}
       <KeyboardAvoidingView behavior="padding" style={styles.root}>
         <View style={styles.top}>
           <TextField
@@ -52,7 +55,7 @@ export default function AddExercisesScreen() {
             value={query}
             onChangeText={setQuery}
             autoCorrect={false}
-            autoFocus
+            autoFocus={!options.single}
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
@@ -93,6 +96,10 @@ export default function AddExercisesScreen() {
                 disabled={isAdded}
                 onPress={() => {
                   pick(item);
+                  if (options.single) {
+                    router.back();
+                    return;
+                  }
                   setAdded((a) => [...a, item.id]);
                 }}
                 style={({ pressed }) => [
@@ -122,8 +129,11 @@ export default function AddExercisesScreen() {
             { borderTopColor: theme.border, paddingBottom: Spacing.two + insets.bottom },
           ]}>
           <Button
-            label={added.length ? `Done, ${added.length} added` : 'Done'}
-            icon="checkmark"
+            label={
+              options.single ? 'Cancel' : added.length ? `Done, ${added.length} added` : 'Done'
+            }
+            icon={options.single ? 'close' : 'checkmark'}
+            variant={options.single ? 'secondary' : 'primary'}
             onPress={() => router.back()}
           />
         </View>

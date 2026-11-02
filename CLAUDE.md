@@ -193,6 +193,24 @@ into `plan-editor`, then assign. **Stretches:** plan cards and `workout-session`
 stretches for the plan's muscles (`stretches.ts`, max 6, app-only, not in the exercise library).
 Exercises are added on the `add-exercises` modal (search pinned on top, so the keyboard never
 covers results); picks go back to the editor through `useExercisePicks`.
+**Self workouts** (Venkat, 2026-11-01): only a member's own mapped coaches switch it on for them
+(member progress → **Self** tab, `set_self_workouts()`, `member_trainers.self_workouts`; any one
+coach's switch counts, `self_workouts_on()`). The member then answers goal, level, 3–6 days and
+split on `self-plan-setup`, and the app builds the week from the smart plans (`buildSelfPlans` in
+`src/features/self-workouts/rules.ts`: a rotation per level and split, a 4+ day week's last day
+goes to the goal, losing weight shortens rests) and saves it with `create_self_plan()`, which
+replaces their old own plans. Own plans are `workouts` rows with `is_self = true` and
+`trainer_id` = the member, assigned to themselves with their days, so they show in Today / This
+week; `self-plan` shows the week by day. Saving goes only through `save_self_workout()` /
+`delete_self_workout()`: the member while it's on, their coaches always (a coach's edit tells the
+member). The member's coaches and managers see own plans (`can_view_workout`), and coaches can
+also map their own plans from the Self tab. Switched off, own plans are hidden from the member
+and read-only for them. **After every workout** members answer a self-check on `workout-session`
+(effort 1–10 required, pain spot, note; `workout_logs.effort/pain/note`), which the "finished a
+workout" push to their trainers carries. Swaps from **Replace** (same-muscle pick) are logged in
+`workout_logs.swaps`. A coach or manager replies once (`reply_to_workout()`, inbox kind
+`workout`); a trigger stops members writing the reply. `workout-session` also has a **One at a
+time** view.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,

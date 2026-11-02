@@ -21,6 +21,7 @@ import {
   volumeKg,
 } from '@/features/progress/rules';
 import type { GymWorkoutLog } from '@/features/progress/types';
+import { SelfCheckLines } from '@/features/self-workouts/components/self-check-lines';
 import { formatRelativeDay } from '@/lib/format';
 
 type Layout = 'latest' | 'byTrainer';
@@ -161,6 +162,7 @@ function GymLogCard({ log, showRole, links, groupTrainer }: GymLogCardProps) {
           {durationMinutes(log)} min · {log.sets.length} sets
           {volume ? ` · ${Math.round(volume).toLocaleString()} kg lifted` : ''}
         </ThemedText>
+        <SelfCheckLines log={log} />
         {trainers ? (
           <View style={styles.row}>
             <Icon name="person-outline" size={14} color="textSecondary" />
