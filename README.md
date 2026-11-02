@@ -287,6 +287,7 @@ psql -d corefit_test -f supabase/tests/online-payments.sql
 psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
+psql -d corefit_test -f supabase/tests/admission-details.sql
 psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql

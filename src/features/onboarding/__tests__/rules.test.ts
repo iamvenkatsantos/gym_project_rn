@@ -1,6 +1,9 @@
 import {
+  admissionValues,
+  firstAdmissionError,
   firstOnboardingError,
   onboardingValues,
+  validateAdmission,
   validateOnboarding,
 } from '@/features/onboarding/rules';
 
@@ -46,6 +49,35 @@ describe('validateOnboarding', () => {
 describe('onboardingValues', () => {
   it('cleans up what was typed', () => {
     expect(onboardingValues({ ...filled, fullName: '  Nila   Raman ' })).toEqual({
+      fullName: 'Nila Raman',
+      phone: '9876543210',
+      dateOfBirth: '1998-09-05',
+      weightKg: 60.5,
+      heightCm: 160,
+    });
+  });
+});
+
+describe('validateAdmission', () => {
+  it('passes the details an inviter fills in, with no photos', () => {
+    expect(firstAdmissionError(validateAdmission(filled))).toBeNull();
+  });
+
+  it('needs every field', () => {
+    const errors = validateAdmission({ ...filled, dateOfBirth: '', weight: '' });
+    expect(errors.dateOfBirth).not.toBeNull();
+    expect(errors.weight).toBe('Enter their weight.');
+    expect(errors.height).toBeNull();
+  });
+
+  it('needs an Indian mobile number', () => {
+    expect(validateAdmission({ ...filled, phone: '12345' }).phone).toBe(
+      'Enter a 10-digit mobile number.',
+    );
+  });
+
+  it('cleans the values up for saving', () => {
+    expect(admissionValues({ ...filled, fullName: '  Nila   Raman ' })).toEqual({
       fullName: 'Nila Raman',
       phone: '9876543210',
       dateOfBirth: '1998-09-05',

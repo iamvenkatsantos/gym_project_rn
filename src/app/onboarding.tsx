@@ -17,6 +17,7 @@ import { useProgressPhotos } from '@/features/body/hooks';
 import { PHOTO_PICKER_OPTIONS } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
 import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
+import { birthDateInput } from '@/features/birthdays/rules';
 import { useCompleteOnboarding } from '@/features/onboarding/hooks';
 import {
   firstOnboardingError,
@@ -44,8 +45,9 @@ export default function OnboardingScreen() {
   const complete = useCompleteOnboarding(gym.gymId, profile.id);
   const [texts, setTexts] = useState<OnboardingTexts>({
     fullName: profile.fullName,
-    phone: '',
-    dateOfBirth: '',
+    // Anything already on file, such as the number a WhatsApp invite went to.
+    phone: profile.phone ?? '',
+    dateOfBirth: birthDateInput(profile.dateOfBirth),
     weight: '',
     height: '',
   });

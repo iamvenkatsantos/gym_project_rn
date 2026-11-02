@@ -83,6 +83,14 @@ WhatsApp or by email. **Invite on WhatsApp** saves the invite with a one-time 8-
 On `join` (or Sign in → I have an invite code) the person enters name and password; the
 `accept-invite` edge fn makes the account already confirmed (or takes over an imported one), which
 claims the invite, so each code works once. Signing up with the invited email still works too.
+**Admission details, both places:** on a member invite the inviter picks **They fill in** (default)
+or **Fill in now** (name, mobile, date of birth, weight, height; all required). The app then calls
+`save_admission_details()`, which keeps them on the `gym_invites` row (trainers only on invites they
+sent) or, for someone added straight away with an account, applies them now. On joining,
+`claim_gym_invites` applies them via `apply_admission_details()` (never overwrites a name, mobile or
+DOB they already have; weight/height become the first measurement) and sets `onboarded_at`, so the
+member skips `onboarding` and lands on Home. Starting photos stay with the member (Progress). The
+join screen prefills the inviter's name (`invite_by_code.full_name`).
 **Invite by email**: the `invite-member` edge fn calls
 `invite_to_gym()` (or, for an older new-gym invite, `invite_gym_owner()`) as the caller, then sends the
 email with the service role. Supervisors invite members and trainers; trainers invite members only,
@@ -113,7 +121,7 @@ provider's hourly limit.
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,
 phone, date of birth, weight, height, front/back/side photos via `complete_member_onboarding`,
-optional profile photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
+optional profile photo; skipped when the inviter filled in admission details); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
 `selectNeedsProfile`) → `profile-setup` (name, required mobile, optional photo via `save_my_profile`);
 no gym →
 `no-gym` (older new-owner invites → `set-up-gym`, `create_gym`); admin → `admin`; otherwise the

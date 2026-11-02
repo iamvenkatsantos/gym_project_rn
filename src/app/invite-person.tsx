@@ -12,11 +12,19 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople } from '@/features/members/hooks';
 import { whatsappUrl } from '@/features/enquiries/rules';
 import { parseMobile } from '@/features/members/import-rules';
 import { formatInviteCode, inviteMessage, normalizeEmail } from '@/features/members/rules';
+import {
+  admissionValues,
+  EMPTY_ADMISSION,
+  firstAdmissionError,
+  validateAdmission,
+  type AdmissionTexts,
+} from '@/features/onboarding/rules';
 import { validateEmail } from '@/lib/validation';
 import type { InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
 
@@ -64,6 +72,9 @@ function describe(
       };
 }
 
+/** Who fills in a new member's details: the member on first sign-in, or the inviter now. */
+type DetailsBy = 'member' | 'inviter';
+
 const ownerInviteRoles: { value: Role; label: string }[] = [
   { value: 'member', label: 'Member' },
   { value: 'trainer', label: 'Trainer' },
@@ -86,6 +97,9 @@ export default function InvitePersonScreen() {
   // WhatsApp or email is picked first; only then do the fields show.
   const [channel, setChannel] = useState<InviteChannel | null>(null);
   const [role, setRole] = useState<Role>('member');
+  const [detailsBy, setDetailsBy] = useState<DetailsBy>('member');
+  const [details, setDetails] = useState<AdmissionTexts>(EMPTY_ADMISSION);
+  const [submitted, setSubmitted] = useState(false);
   // New gyms and their owners are set up from Admin → Owners; an owner here is a co-owner.
   const inviteRole: InviteRole = role;
   // Trainers invite members, supervisors members and trainers, owners add supervisors
@@ -98,6 +112,14 @@ export default function InvitePersonScreen() {
   const whatsappNumber = parseMobile(mobile);
   const mobileError =
     channel === 'whatsapp' && !whatsappNumber ? 'Enter a 10-digit mobile number.' : null;
+  // The inviter can fill in what the member's first-sign-in form asks; then the member skips it.
+  const fillDetails = role === 'member' && detailsBy === 'inviter';
+  const detailErrors = validateAdmission({ ...details, phone: mobile });
+  const detailsProblem = fillDetails ? firstAdmissionError(detailErrors) : null;
+  const setDetail = (key: keyof AdmissionTexts) => (text: string) => {
+    setDetails((prev) => ({ ...prev, [key]: text }));
+    invite.reset();
+  };
   const result = invite.data
     ? describe(
         invite.data,
@@ -119,11 +141,14 @@ export default function InvitePersonScreen() {
   const canMessage =
     invite.variables?.channel === 'whatsapp' && invite.data?.result !== 'already_member';
   const send = (channel: InviteChannel) => {
+    setSubmitted(true);
+    if (detailsProblem) return;
     const variables = {
       email: normalizeEmail(email),
       role: inviteRole,
       channel,
       phone: channel === 'whatsapp' ? whatsappNumber : null,
+      admission: fillDetails ? admissionValues({ ...details, phone: mobile }) : null,
     };
     invite.mutate(variables, {
       onSuccess: (outcome) => {
@@ -185,7 +210,7 @@ export default function InvitePersonScreen() {
               invite.reset();
             }}
           />
-          {channel === 'whatsapp' ? (
+          {channel === 'whatsapp' || fillDetails ? (
             <TextField
               label="Mobile"
               placeholder="98400 12345"
@@ -198,7 +223,8 @@ export default function InvitePersonScreen() {
               textContentType="telephoneNumber"
               autoComplete="tel"
               maxLength={16}
-              error={mobile ? mobileError : null}
+              error={fillDetails ? detailErrors.phone : mobile ? mobileError : null}
+              showError={fillDetails ? submitted : undefined}
             />
           ) : null}
           <TextField
@@ -245,6 +271,76 @@ export default function InvitePersonScreen() {
             ) : null}
           </View>
 
+          {role === 'member' ? (
+            <View style={styles.field}>
+              <ThemedText type="label" themeColor="textSecondary">
+                Member details
+              </ThemedText>
+              <SegmentedControl<DetailsBy>
+                options={[
+                  { value: 'member', label: 'They fill in' },
+                  { value: 'inviter', label: 'Fill in now' },
+                ]}
+                value={detailsBy}
+                onChange={(next) => {
+                  setDetailsBy(next);
+                  invite.reset();
+                }}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                {fillDetails
+                  ? 'They skip the form and go straight to Home.'
+                  : 'They fill in a short form on first sign-in.'}
+              </ThemedText>
+            </View>
+          ) : null}
+          {fillDetails ? (
+            <>
+              <TextField
+                label="Full name"
+                value={details.fullName}
+                onChangeText={setDetail('fullName')}
+                autoComplete="name"
+                textContentType="name"
+                maxLength={60}
+                error={detailErrors.fullName}
+                showError={submitted}
+              />
+              <BirthDateField
+                value={details.dateOfBirth}
+                onChangeText={setDetail('dateOfBirth')}
+                error={detailErrors.dateOfBirth}
+                showError={submitted}
+              />
+              <View style={styles.row}>
+                <View style={styles.flex}>
+                  <TextField
+                    label="Weight (kg)"
+                    placeholder="72.5"
+                    value={details.weight}
+                    onChangeText={setDetail('weight')}
+                    keyboardType="decimal-pad"
+                    maxLength={5}
+                    error={detailErrors.weight}
+                    showError={submitted}
+                  />
+                </View>
+                <View style={styles.flex}>
+                  <TextField
+                    label="Height (cm)"
+                    placeholder="170"
+                    value={details.height}
+                    onChangeText={setDetail('height')}
+                    keyboardType="decimal-pad"
+                    maxLength={5}
+                    error={detailErrors.height}
+                    showError={submitted}
+                  />
+                </View>
+              </View>
+            </>
+          ) : null}
+
           {result ? (
             <Card highlighted>
               <View style={styles.result}>
@@ -257,6 +353,12 @@ export default function InvitePersonScreen() {
                   : result.detail}
               </ThemedText>
             </Card>
+          ) : null}
+          {invite.data?.detailsError ? (
+            <ThemedText type="small" themeColor="danger">
+              Details not saved: {invite.data.detailsError.replace(/\.$/, '')}. They fill in the
+              form instead.
+            </ThemedText>
           ) : null}
           {invite.error ? (
             <ThemedText themeColor="danger">{invite.error.message}</ThemedText>
@@ -279,6 +381,8 @@ export default function InvitePersonScreen() {
                   onPress={() => {
                     setEmail('');
                     setMobile('');
+                    setDetails(EMPTY_ADMISSION);
+                    setSubmitted(false);
                     invite.reset();
                   }}
                 />
