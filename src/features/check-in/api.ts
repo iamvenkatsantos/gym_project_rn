@@ -23,6 +23,11 @@ const mockQr: CheckInQr = {
 
 let mockHours: Pick<CheckInRules, 'opensAt' | 'closesAt'> = { opensAt: '05:30', closesAt: '22:00' };
 
+/** The demo branch's opening time ("HH:MM"), or null when it's open 24 hours. */
+export function mockOpeningTime() {
+  return mockHours.opensAt;
+}
+
 function mockWindow() {
   return Math.floor(Date.now() / 30000);
 }
