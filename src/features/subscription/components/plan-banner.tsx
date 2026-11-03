@@ -21,7 +21,7 @@ export function PlanBanner() {
         <ListRow
           icon="ribbon-outline"
           tone="danger"
-          label="CoreFit Gym plan not paid"
+          label="CoreFit plan not paid"
           detail={stops ? `Pay now · ${stops}` : 'Pay now'}
           onPress={() => router.push('/subscription')}
         />
@@ -33,7 +33,7 @@ export function PlanBanner() {
       <ListRow
         icon="alert-circle-outline"
         tone="danger"
-        label="Your gym's CoreFit Gym plan isn't paid"
+        label="Your gym's CoreFit plan isn't paid"
         detail={stops ? `${stops} unless the owner renews` : 'Ask the owner to renew'}
       />
     </ListGroup>

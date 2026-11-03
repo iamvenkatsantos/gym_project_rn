@@ -1,15 +1,16 @@
 # CLAUDE.md
 
-Guide for Claude sessions working on CoreFit Gym. Read this first, then `AGENTS.md` (Expo rules and
+Guide for Claude sessions working on CoreFit. Read this first, then `AGENTS.md` (Expo rules and
 code layout, imported below) and `README.md` (setup, push and Razorpay details).
 
 @AGENTS.md
 
 ## What this is
 
-CoreFit Gym (product of VinVen Technologies) is one Expo app for gym members, trainers, supervisors
-and owners, plus a platform admin who runs CoreFit Gym itself. Bundle id `com.corefit.gym`, URL
-scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
+CoreFit (product of VinVen Technologies) is one Expo app for gym members, trainers, supervisors
+and owners, plus a platform admin who runs CoreFit itself. Bundle id `com.corefit.gym`, URL
+scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from CoreFit Gym on
+2026-11-03); some older server messages in migrations still say "CoreFit Gym". Android ships first; iOS push (APNs) is not set up yet.
 
 - **App:** Expo SDK 58, Expo Router (`src/app/`), TypeScript strict, TanStack Query for server
   state, Zustand for the auth session and offline drafts.
@@ -250,9 +251,9 @@ payments are switched on per branch by the admin and cost the owner nothing extr
 opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the signature and calls
 `complete_online_payment()`, and the browser returns to `corefit://payment-return`. The gym's share
 goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`); member money
-never stays with CoreFit Gym. By default the owner pays all fees and the members see one price.
-CoreFit Gym takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
-shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math lives only in
+never stays with CoreFit. By default the owner pays all fees and the members see one price.
+CoreFit takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
+shows no CoreFit fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
 
@@ -270,10 +271,10 @@ the membership note); the front desk gets the same price prefilled but can chang
 supervisors) are announcements kept for reuse on New announcement; the plan editor's **Announce this
 offer** opens it filled in.
 
-**CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
+**CoreFit plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
 `branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
-Razorpay Payment Link into CoreFit Gym's own account (no Route), and `razorpay-webhook` calls
+Razorpay Payment Link into CoreFit's own account (no Route), and `razorpay-webhook` calls
 `complete_subscription_payment()`, which adds a year from the day after `paid_until` (or today if
 lapsed). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
 free months (`admin_give_free_months`).

@@ -103,7 +103,7 @@ export const mockProfiles: Profile[] = [
     id: 'u-admin',
     phone: '9840056789',
     fullName: 'CoreFit Admin',
-    // Runs CoreFit Gym itself rather than any one gym.
+    // Runs CoreFit itself rather than any one gym.
     gyms: [],
     isPlatformAdmin: true,
   },

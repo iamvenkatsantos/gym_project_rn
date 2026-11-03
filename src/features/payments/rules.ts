@@ -21,7 +21,7 @@ export function paymentState(payment: OnlinePayment, now: Date = new Date()): Pa
 
 /**
  * What the gym receives: the transfer to the owner's Razorpay account once it's
- * made, or until then what it will be after Razorpay's fees and CoreFit Gym's
+ * made, or until then what it will be after Razorpay's fees and CoreFit's
  * cut. Null until Razorpay's fee is known.
  */
 export function netAmount(

@@ -485,7 +485,7 @@ export async function findInviteByCode(code: string): Promise<InviteByCode | nul
     return delay(
       invite
         ? {
-            gymName: 'CoreFit Gym Demo',
+            gymName: 'CoreFit Demo',
             email: invite.email,
             role: invite.role,
             fullName: invite.fullName ?? null,
@@ -541,7 +541,7 @@ function wouldLeaveNoOwner(userId: string, next: Pick<GymPerson, 'role' | 'statu
 
 /**
  * Suspends or reactivates someone. Roles can't be changed once given; the database refuses
- * anyone but a CoreFit Gym admin.
+ * anyone but a CoreFit admin.
  */
 export async function updatePerson(
   gymId: string,

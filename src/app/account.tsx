@@ -35,7 +35,7 @@ export default function AccountScreen() {
   const signOut = useSignOut();
   // People an admin invited to run a gym can set up another one from here.
   const canSetUpGym = useCanSetUpGym();
-  // CoreFit Gym admins switch between the admin view and any gym they belong to.
+  // CoreFit admins switch between the admin view and any gym they belong to.
   const isAdmin = useIsPlatformAdmin();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const removeAccount = useMutation({
@@ -192,7 +192,7 @@ export default function AccountScreen() {
         </ListGroup>
       )}
       <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
-        CoreFit Gym {Constants.expoConfig?.version ?? ''}
+        CoreFit {Constants.expoConfig?.version ?? ''}
       </ThemedText>
     </Screen>
   );

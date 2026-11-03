@@ -39,7 +39,7 @@ function OwnerGate({ userId, email }: { userId: string; email: string }) {
               <div className="card">
                 <h1>Owners only</h1>
                 <p className="muted">
-                  {email} doesn’t own a gym on CoreFit Gym. The web dashboard is for gym owners;
+                  {email} doesn’t own a gym on CoreFit. The web dashboard is for gym owners;
                   members, trainers and supervisors can do everything in the app.
                 </p>
                 <button className="button" onClick={signOut}>

@@ -24,7 +24,7 @@ export const branchKeys = {
 };
 
 /**
- * After a fee or add-on change, the branch lists and each branch's CoreFit Gym plan both
+ * After a fee or add-on change, the branch lists and each branch's CoreFit plan both
  * show new amounts. ['subscription'] is subscriptionKeys.all, written out to avoid an
  * import cycle with the subscription hooks.
  */

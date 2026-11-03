@@ -55,7 +55,7 @@ function describe(
 }
 
 /**
- * CoreFit Gym's admin sets up a new gym and invites its owner. The owner never creates a
+ * CoreFit's admin sets up a new gym and invites its owner. The owner never creates a
  * gym; they only edit its details. Works with no gyms at all. The server checks it's the admin.
  */
 export default function InviteOwnerScreen() {

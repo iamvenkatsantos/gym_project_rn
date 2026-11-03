@@ -10,7 +10,7 @@ export function checkInLink({ gymId, code }: CheckInLink) {
   return `${SCHEME}://check-in?gym=${encodeURIComponent(gymId)}&code=${encodeURIComponent(code)}`;
 }
 
-/** The gym and code from a scanned QR, or null if it isn't a CoreFit Gym check-in QR. */
+/** The gym and code from a scanned QR, or null if it isn't a CoreFit check-in QR. */
 export function parseCheckInLink(data: string): CheckInLink | null {
   const match = /^corefit:\/\/\/?check-in\?(.*)$/i.exec(data.trim());
   if (!match) return null;

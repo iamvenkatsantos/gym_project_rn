@@ -42,7 +42,7 @@ export function useActiveBranchLocked() {
   return useBranchAccess(gymId).data?.locked === true;
 }
 
-/** What the branch pays CoreFit Gym. Owners and the admin only; off for everyone else. */
+/** What the branch pays CoreFit. Owners and the admin only; off for everyone else. */
 export function useSubscription(gymId: string, { enabled = true } = {}) {
   return useQuery({
     queryKey: subscriptionKeys.one(gymId),

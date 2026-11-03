@@ -85,7 +85,7 @@ export async function fetchSubscription(gymId: string): Promise<Subscription> {
   };
 }
 
-/** The branch's payments to CoreFit Gym, newest first. Owners and the admin only (RLS). */
+/** The branch's payments to CoreFit, newest first. Owners and the admin only (RLS). */
 export async function listSubscriptionPayments(gymId: string): Promise<SubscriptionPayment[]> {
   if (!supabase) return delay(mockPayments.filter((p) => p.gymId === gymId));
   const rows = unwrap(
@@ -112,7 +112,7 @@ export async function fetchSubscriptionPayment(id: string): Promise<Subscription
 
 /** Starts paying for the branch's next year: returns Razorpay's payment page to open. */
 export async function startSubscriptionPayment(gymId: string): Promise<StartedSubscriptionPayment> {
-  if (!supabase) throw new Error('Paying CoreFit Gym needs the live app');
+  if (!supabase) throw new Error('Paying CoreFit needs the live app');
   const { data, error } = await supabase.functions.invoke<StartedSubscriptionPayment>(
     'create-subscription-payment',
     { body: { gymId } },
@@ -122,7 +122,7 @@ export async function startSubscriptionPayment(gymId: string): Promise<StartedSu
     error instanceof FunctionsFetchError ||
     (error instanceof FunctionsHttpError && error.context.status === 404)
   ) {
-    throw new Error("Paying in the app isn't set up yet. Please contact CoreFit Gym.");
+    throw new Error("Paying in the app isn't set up yet. Please contact CoreFit.");
   }
   if (error instanceof FunctionsHttpError) {
     const body = await error.context.json().catch(() => null);

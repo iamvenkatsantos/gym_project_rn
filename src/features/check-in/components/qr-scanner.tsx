@@ -24,7 +24,7 @@ export default function QrScanner({ onScan }: { onScan: (data: string) => void }
       <Card>
         <ThemedText type="smallBold">Allow the camera to scan</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          CoreFit Gym only uses the camera here to read your gym&apos;s check-in QR.
+          CoreFit only uses the camera here to read your gym&apos;s check-in QR.
         </ThemedText>
         {permission.canAskAgain ? (
           <Button label="Allow camera" icon="camera-outline" onPress={requestPermission} />

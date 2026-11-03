@@ -146,7 +146,7 @@ describe('renewalMessage', () => {
     expect(
       renewalMessage(membership('2026-10-01', '2026-10-27'), 'CoreFit Anna Nagar', today),
     ).toBe(
-      `Hi Maya, your ${membership('2026-10-01', '2026-10-27').plan.name} membership at CoreFit Anna Nagar ends in 3 days, on 27 Oct 2026. Renew at the front desk or in the CoreFit Gym app to keep training without a break.`,
+      `Hi Maya, your ${membership('2026-10-01', '2026-10-27').plan.name} membership at CoreFit Anna Nagar ends in 3 days, on 27 Oct 2026. Renew at the front desk or in the CoreFit app to keep training without a break.`,
     );
     expect(renewalMessage(membership('2026-10-01', '2026-10-25'), 'X', today)).toContain(
       'ends tomorrow, on 25 Oct 2026',

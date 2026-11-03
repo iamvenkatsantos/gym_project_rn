@@ -9,7 +9,7 @@ type Mode = 'signIn' | 'forgot' | 'reset';
 
 /**
  * Owners sign in with the same email and password as the app. A forgotten
- * password is reset with the 6-digit code from the CoreFit Gym email.
+ * password is reset with the 6-digit code from the CoreFit email.
  */
 export function SignIn() {
   const [mode, setMode] = useState<Mode>('signIn');
@@ -72,7 +72,7 @@ export function SignIn() {
         <div className="brand">
           <img src="/logo.png" alt="" />
           <div>
-            CoreFit Gym
+            CoreFit
             <small>Owner dashboard</small>
           </div>
         </div>
@@ -80,7 +80,7 @@ export function SignIn() {
           <h1>{mode === 'signIn' ? 'Sign in' : 'Reset password'}</h1>
           <p className="muted">
             {mode === 'signIn'
-              ? 'Use the email and password you use in the CoreFit Gym app.'
+              ? 'Use the email and password you use in the CoreFit app.'
               : mode === 'forgot'
                 ? 'We’ll email you a code to set a new password.'
                 : 'Enter the code from the email and pick a new password.'}

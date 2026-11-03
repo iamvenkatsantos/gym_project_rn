@@ -25,7 +25,7 @@ export type OnlinePayment = {
   startsOn: string | null;
   endsOn: string | null;
   feeCents: number | null;
-  /** CoreFit Gym's cut, kept from what the gym receives. */
+  /** CoreFit's cut, kept from what the gym receives. */
   cutCents: number;
   /** What reached the owner's Razorpay account, once transferred. */
   transferCents: number | null;
@@ -42,7 +42,7 @@ export type PaymentQuote = {
   chargesCents: number;
   gatewayFeeCents: number;
   transferFeeCents: number;
-  /** CoreFit Gym's fee, when the member pays it. */
+  /** CoreFit's fee, when the member pays it. */
   platformFeeCents: number;
   currency: string;
 };

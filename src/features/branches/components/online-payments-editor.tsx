@@ -16,7 +16,7 @@ const ACCOUNT_PATTERN = /^acc_[A-Za-z0-9]{6,32}$/;
 
 /**
  * Admins only: online payments for one branch, free unless an add-on price is set. Members' payments go
- * to the owner's Razorpay linked account (Route), never to CoreFit Gym.
+ * to the owner's Razorpay linked account (Route), never to CoreFit.
  */
 export function OnlinePaymentsEditor({
   branch,
