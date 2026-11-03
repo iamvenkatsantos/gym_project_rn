@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -49,9 +49,9 @@ function clock(ms: number) {
   return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/** Where each role reads their own history after a workout. */
-const historyRoute = {
-  member: '/member/progress',
+/** Where each role lands after finishing: back where they start workouts. */
+const finishRoute = {
+  member: '/member/workouts',
   trainer: '/trainer/training',
   supervisor: '/supervisor/training',
   owner: '/owner/training',
@@ -101,6 +101,9 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
   const [view, setView] = useState<View_>('live');
   const [focus, setFocus] = useState(0);
   const [showCheckProblem, setShowCheckProblem] = useState(false);
+  const [cooledDown, setCooledDown] = useState(false);
+  const [endedEarly, setEndedEarly] = useState(false);
+  const onCoolDownDone = useCallback(() => setCooledDown(true), []);
   const now = useNow();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [openDemo, setOpenDemo] = useState<string | null>(null);
@@ -116,6 +119,9 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
   const showLive = view === 'live' && draft.exercises.length > 0;
 
   const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
+  // "How did it go?" comes last: after the cool-down in Live, or when ending early.
+  const askCheck =
+    isMember && doneSets > 0 && (!showLive || (cooledDown && !live.upNext) || endedEarly);
   const totalSets = draft.exercises.reduce((n, e) => n + e.sets.length, 0);
   const resting = restUntil !== null && restUntil > now;
 
@@ -292,7 +298,12 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
         ) : null}
 
         {showLive ? (
-          <LiveWorkout live={live} library={library.data} onReplace={replace} />
+          <LiveWorkout
+            live={live}
+            library={library.data}
+            onReplace={replace}
+            onCoolDownDone={onCoolDownDone}
+          />
         ) : (
           <>
             {resting ? (
@@ -319,7 +330,7 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
           </Card>
         )}
 
-        {isMember && doneSets > 0 ? (
+        {askCheck ? (
           <SelfCheckForm
             value={check}
             onChange={setSelfCheck}
@@ -333,6 +344,11 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
           disabled={doneSets === 0}
           loading={finish.isPending}
           onPress={() => {
+            // Ending early in Live: ask how it went first.
+            if (isMember && !askCheck) {
+              setEndedEarly(true);
+              return;
+            }
             if (checkProblem) {
               setShowCheckProblem(true);
               return;
@@ -340,7 +356,8 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
             if (isMember) setSelfCheck(cleanSelfCheck(check));
             finish.mutate(undefined, {
               onSuccess: () => {
-                router.replace(historyRoute[gym.role]);
+                router.replace(finishRoute[gym.role]);
+                discard();
                 if (gym.role === 'member') offerCheckOut(gym.gymId, profile.id);
               },
             });

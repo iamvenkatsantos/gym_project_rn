@@ -31,7 +31,6 @@ export function useGymWorkoutLogs(gymId: string, viewer: { id: string; role: Rol
  */
 export function useFinishWorkout(memberId: string) {
   const queryClient = useQueryClient();
-  const discard = useWorkoutDraft((s) => s.discard);
 
   return useMutation({
     mutationFn: async () => {
@@ -39,10 +38,9 @@ export function useFinishWorkout(memberId: string) {
       if (!draft) throw new Error('No workout in progress');
       await saveLog(draft.gymId, memberId, draftToLog(draft));
     },
-    onSuccess: () => {
-      discard();
-      return queryClient.invalidateQueries({ queryKey: progressKeys.all });
-    },
+    // The screen leaves first, then the draft is cleared: clearing it while the workout
+    // screen is open unmounts it before it can navigate.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
   });
 }
 

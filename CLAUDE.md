@@ -235,7 +235,10 @@ workout" push to their trainers carries. Swaps from **Replace** (same-muscle pic
 reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
 +15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake. After
 the last set the plan's stretches follow as a **Cool-down** (`CoolDown`, one per screen with its
-demo, each side separately, a Start/Skip/Next hold timer; not logged), then Finish. The
+demo, each side separately, a Start/Skip/Next hold timer; not logged). **How did it go?** (the
+self-check) shows only at the very end, after the cool-down, or when a member taps Finish early.
+Finishing goes back to where workouts start (members: Workouts tab); the draft is cleared only
+after leaving the screen, because clearing it first unmounts the session before it can navigate. The
 header says **Workout**; the elapsed time shows as "Workout time" under the plan name.
 **All exercises** keeps the old list.
 

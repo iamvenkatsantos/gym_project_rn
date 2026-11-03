@@ -111,12 +111,15 @@ export function LiveWorkout({
   live,
   library,
   onReplace,
+  onCoolDownDone,
 }: {
   live: Live;
   library: readonly Exercise[] | undefined;
   onReplace: (exercise: number) => void;
+  onCoolDownDone: () => void;
 }) {
-  useKeepAwake();
+  // Deactivating can reject (e.g. when the lock never activated on the web); don't crash on it.
+  useKeepAwake(undefined, { suppressDeactivateWarnings: true });
   const { skipRest, extendRest } = useWorkoutDraft();
   const { draft, now, restUntil, current, exercise, upNext, setIndex, howTo, setHowTo, go } = live;
   const info = library?.find((e) => e.id === exercise.exerciseId);
@@ -185,7 +188,7 @@ export function LiveWorkout({
     return (
       <>
         <Progress done={counts.done} total={counts.total} />
-        <CoolDown items={draft.exercises} now={now} />
+        <CoolDown items={draft.exercises} now={now} onDone={onCoolDownDone} />
       </>
     );
   }
