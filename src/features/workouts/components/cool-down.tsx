@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -22,9 +22,12 @@ function seconds(ms: number) {
 export function CoolDown({
   items,
   now,
+  onDone,
 }: {
   items: readonly { exerciseId: string; name: string }[];
   now: number;
+  /** Called once the last stretch is done or skipped (or there are none). */
+  onDone: () => void;
 }) {
   const steps = stretchSteps(usePlanStretches(items));
   const [index, setIndex] = useState(0);
@@ -32,8 +35,13 @@ export function CoolDown({
 
   const next = () => {
     setEndsAt(null);
-    setIndex((i) => i + 1);
+    if (index + 1 >= steps.length) onDone();
+    setIndex(index + 1);
   };
+  const noStretches = steps.length === 0;
+  useEffect(() => {
+    if (noStretches) onDone();
+  }, [noStretches, onDone]);
 
   if (index >= steps.length) {
     return (
@@ -41,7 +49,7 @@ export function CoolDown({
         <Icon name="trophy-outline" size={40} color="accent" />
         <ThemedText type="heading">Workout complete</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Finish below to save it.
+          Tell us how it went, then finish.
         </ThemedText>
         {steps.length > 0 ? (
           <Button
