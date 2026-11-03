@@ -3,6 +3,9 @@ import { render, screen } from '@testing-library/react-native';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
 import type { Workout } from '@/features/workouts/types';
 
+// Reanimated has no native side under Jest; the demo player isn't what's tested here.
+jest.mock('@/features/exercises/components/exercise-demo', () => ({ ExerciseDemo: () => null }));
+
 const workout: Workout = {
   id: 'w-1',
   trainerId: 't-1',

@@ -205,7 +205,9 @@ logged that plan since. App-only rule (`src/features/workouts/schedule.ts`); the
 **Smart plans:** 15 ready-made plans, 5 per level (`src/features/workouts/smart-plans.ts`, shared
 library exercises only, matched to the DB by name); coaches copy one from My plans → **Smart plans**
 into `plan-editor`, then assign. **Stretches:** plan cards and `workout-session` show cool-down
-stretches for the plan's muscles (`stretches.ts`, max 6, app-only, not in the exercise library).
+stretches for the plan's muscles (`stretches.ts`, max 6, app-only, not in the exercise library),
+each with a looping thumb that opens a full demo (photos in `assets/stretches/`, `stretch-demos.ts`,
+same Free Exercise DB source; a test checks every stretch has one).
 Exercises are added on the `add-exercises` modal (search pinned on top, so the keyboard never
 covers results); picks go back to the editor through `useExercisePicks`.
 **Self workouts** (Venkat, 2026-11-01): only a member's own mapped coaches switch it on for them
@@ -228,7 +230,8 @@ workout" push to their trainers carries. Swaps from **Replace** (same-muscle pic
 **Live workout** (Venkat, 2026-11-03): `workout-session` opens on **Live** (`LiveWorkout`,
 `src/features/progress/live.ts`): one exercise at a time with its demo, how-to steps and set dots;
 reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
-+15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake.
++15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake. The
+header says **Workout**; the elapsed time shows as "Workout time" under the plan name.
 **All exercises** keeps the old list.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors

@@ -1,4 +1,5 @@
 import type { Exercise } from '@/features/exercises/types';
+import { stretchDemos } from '@/features/workouts/stretch-demos';
 
 /**
  * Two-frame demonstrations (start and end position) for the shared library,
@@ -861,7 +862,8 @@ export function demoFor(
   exerciseId: string,
   imageUrl: Exercise['imageUrl'] = null,
 ): ExerciseMedia | null {
-  const demo = libraryDemos[seedIds[exerciseId] ?? exerciseId];
+  // Cool-down stretches share the player; their ids start with "s-".
+  const demo = libraryDemos[seedIds[exerciseId] ?? exerciseId] ?? stretchDemos[exerciseId];
   if (demo) return { frames: demo.frames, credit: DEMO_CREDIT };
   if (imageUrl) return { frames: [{ uri: imageUrl }], credit: null };
   return null;

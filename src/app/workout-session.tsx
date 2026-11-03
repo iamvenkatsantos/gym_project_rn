@@ -1,4 +1,4 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { Fragment, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -265,9 +265,14 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
   return (
     <View style={styles.root}>
       <Screen refreshable={false}>
-        <Stack.Screen options={{ title: clock(now - new Date(draft.startedAt).getTime()) }} />
         <View>
           <ThemedText type="title">{draft.title}</ThemedText>
+          <View style={styles.elapsed}>
+            <Icon name="time-outline" size={16} color="textSecondary" />
+            <ThemedText type="small" themeColor="textSecondary">
+              Workout time {clock(now - new Date(draft.startedAt).getTime())}
+            </ThemedText>
+          </View>
           {view === 'list' ? (
             <ThemedText type="small" themeColor="textSecondary">
               {doneSets} of {totalSets} sets done
@@ -387,6 +392,11 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  elapsed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   flex: {
     flex: 1,
