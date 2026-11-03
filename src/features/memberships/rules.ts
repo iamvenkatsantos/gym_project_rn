@@ -132,9 +132,9 @@ export function renewalMessage(membership: Membership, gymName: string, today: D
   const plan = `${membership.plan.name} membership at ${gymName}`;
   const ends = spellDate(membership.endsOn);
   if (membershipStatus(membership, today) === 'expired') {
-    return `Hi ${firstName}, your ${plan} ended on ${ends}. Renew at the front desk or in the CoreFit Gym app to get back to training.`;
+    return `Hi ${firstName}, your ${plan} ended on ${ends}. Renew at the front desk or in the CoreFit app to get back to training.`;
   }
   const left = daysRemaining(membership, today);
   const when = left <= 1 ? 'today' : left === 2 ? 'tomorrow' : `in ${left - 1} days`;
-  return `Hi ${firstName}, your ${plan} ends ${when}, on ${ends}. Renew at the front desk or in the CoreFit Gym app to keep training without a break.`;
+  return `Hi ${firstName}, your ${plan} ends ${when}, on ${ends}. Renew at the front desk or in the CoreFit app to keep training without a break.`;
 }

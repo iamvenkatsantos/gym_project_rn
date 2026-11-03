@@ -73,7 +73,7 @@ export function isLastActiveOwner(people: GymPerson[], userId: string) {
   return owners.length === 1 && owners[0].id === userId;
 }
 
-/** CoreFit Gym on Google Play. It opens once the app is listed there. */
+/** CoreFit on Google Play. It opens once the app is listed there. */
 export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
 
 const inviteAs: Record<InviteRole, string> = {
@@ -97,16 +97,16 @@ export function inviteMessage(
 ) {
   if (result === 'added') {
     return [
-      `Hi! You've been added to ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+      `Hi! You've been added to ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `Open CoreFit Gym and sign in with ${email}. Don't have the app? ${PLAY_STORE_URL}`,
+      `Open CoreFit and sign in with ${email}. Don't have the app? ${PLAY_STORE_URL}`,
     ].join('\n');
   }
   if (code) {
     return [
-      `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+      `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+      `1. Install CoreFit: ${PLAY_STORE_URL}`,
       `2. Tap this link: ${joinLink(code)}`,
       `   Or tap "I have an invite code" and enter ${formatInviteCode(code)}`,
       '3. Add your name and a password.',
@@ -115,9 +115,9 @@ export function inviteMessage(
     ].join('\n');
   }
   return [
-    `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+    `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
     '',
-    `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+    `1. Install CoreFit: ${PLAY_STORE_URL}`,
     `2. Tap Create account and use this email: ${email}`,
     '3. Enter the 6-digit code from the email.',
     '',

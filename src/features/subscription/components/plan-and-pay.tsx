@@ -30,7 +30,7 @@ export function PlanAndPay({
 
   return (
     <>
-      <SubscriptionCard sub={sub} title={`CoreFit Gym · ${gymName}`} />
+      <SubscriptionCard sub={sub} title={`CoreFit · ${gymName}`} />
       {status === 'unpaid' || status === 'expired' ? (
         <ThemedText type="small" themeColor="danger">
           Invites and member imports are off until you pay.

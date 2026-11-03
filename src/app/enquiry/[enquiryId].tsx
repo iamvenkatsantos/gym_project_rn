@@ -438,13 +438,13 @@ function TrialForm({ enquiry, onDone }: { enquiry: Enquiry; onDone: () => void }
 function describeInvite({ result, emailSent, emailError }: InviteOutcome, email: string) {
   switch (result) {
     case 'added':
-      return 'They already had a CoreFit Gym account, so they are a member now. Record their payment to start the membership.';
+      return 'They already had a CoreFit account, so they are a member now. Record their payment to start the membership.';
     case 'already_member':
       return 'They are already at this gym. Find them under People.';
     case 'invited':
       return emailSent
         ? `We emailed ${email} an invite. They join as a member once they set a password.`
-        : `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit Gym and sign up with this email.`;
+        : `${emailError ? `We couldn't email them: ${emailError.replace(/\.?$/, '.')}` : "We couldn't email them."} Ask them to install CoreFit and sign up with this email.`;
   }
 }
 

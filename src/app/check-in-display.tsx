@@ -44,7 +44,7 @@ export default function CheckInDisplayScreen() {
                   {code.gymName}
                 </ThemedText>
                 <ThemedText style={styles.center}>
-                  Scan with the CoreFit Gym app or your phone&apos;s camera to check in or out.
+                  Scan with the CoreFit app or your phone&apos;s camera to check in or out.
                 </ThemedText>
                 <View style={styles.qr}>
                   <QrCode

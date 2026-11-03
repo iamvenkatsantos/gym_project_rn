@@ -1,4 +1,4 @@
-# CoreFit Gym owner dashboard
+# CoreFit owner dashboard
 
 A web dashboard for gym owners, on the same Supabase project as the app. Owners sign in with the
 email and password they use in the app; anyone who doesn't own a gym is told to use the app instead.

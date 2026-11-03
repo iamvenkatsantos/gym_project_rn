@@ -72,7 +72,7 @@ export function BranchQrPoster({
         Scan again when you leave
       </Text>
       <Text allowFontScaling={false} style={styles.footer}>
-        Use the CoreFit Gym app or your phone&apos;s camera
+        Use the CoreFit app or your phone&apos;s camera
       </Text>
     </View>
   );

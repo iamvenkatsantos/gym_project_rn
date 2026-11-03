@@ -121,7 +121,7 @@ function PaymentDetails({ payment }: { payment: OnlinePayment }) {
             The money didn&apos;t reach the gym&apos;s Razorpay account yet
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {payment.transferError}. CoreFit Gym will settle it; the membership is already active.
+            {payment.transferError}. CoreFit will settle it; the membership is already active.
           </ThemedText>
         </Card>
       ) : null}

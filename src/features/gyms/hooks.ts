@@ -12,12 +12,12 @@ export const gymKeys = {
   details: (gymId: string) => [...gymKeys.all, gymId, 'details'] as const,
 };
 
-/** CoreFit Gym's own admins, from the signed-in profile. */
+/** CoreFit's own admins, from the signed-in profile. */
 export function useIsPlatformAdmin() {
   return useAuthStore((s) => s.profile?.isPlatformAdmin === true);
 }
 
-/** The admin runs CoreFit Gym, not a gym, so they never set one up for themself. */
+/** The admin runs CoreFit, not a gym, so they never set one up for themself. */
 export function useCanSetUpGym() {
   const isAdmin = useIsPlatformAdmin();
   return useQuery({ queryKey: gymKeys.canSetUp(), queryFn: canSetUpGym, enabled: !isAdmin });

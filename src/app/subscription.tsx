@@ -9,7 +9,7 @@ import { paidYears } from '@/features/subscription/rules';
 import type { SubscriptionPayment } from '@/features/subscription/types';
 import { formatAmount, formatDate } from '@/lib/format';
 
-/** Owners only: what this branch pays CoreFit Gym each year, and paying for the next year. */
+/** Owners only: what this branch pays CoreFit each year, and paying for the next year. */
 export default function SubscriptionScreen() {
   const gym = useActiveGym();
   const subscription = useSubscription(gym.gymId);
@@ -43,5 +43,5 @@ export default function SubscriptionScreen() {
 function paymentDetail(p: SubscriptionPayment) {
   if (p.method === 'online') return `${formatAmount(p.amountCents, p.currency)} · Paid online`;
   if (p.amountCents === 0) return p.note ? `Free · ${p.note}` : 'Free';
-  return `${formatAmount(p.amountCents, p.currency)} · ${p.note ?? 'Recorded by CoreFit Gym'}`;
+  return `${formatAmount(p.amountCents, p.currency)} · ${p.note ?? 'Recorded by CoreFit'}`;
 }

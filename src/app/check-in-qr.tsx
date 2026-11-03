@@ -243,8 +243,8 @@ export default function CheckInQrScreen() {
                     />
                   </View>
                   <ThemedText type="small" themeColor="textSecondary">
-                    The QR CoreFit Gym sent you for this branch. Put the printout at the front desk.
-                    A photo of it works from anywhere, so if it gets shared, ask CoreFit Gym for a
+                    The QR CoreFit sent you for this branch. Put the printout at the front desk.
+                    A photo of it works from anywhere, so if it gets shared, ask CoreFit for a
                     new one.
                   </ThemedText>
                 </>

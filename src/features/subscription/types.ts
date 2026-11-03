@@ -1,4 +1,4 @@
-/** What a branch pays CoreFit Gym each year, and how long it's paid for. */
+/** What a branch pays CoreFit each year, and how long it's paid for. */
 export type Subscription = {
   /** The branch's yearly fee: its own or the default. */
   feeCents: number;
@@ -19,7 +19,7 @@ export type SubscriptionPaymentStatus = 'created' | 'paid' | 'expired';
 export type SubscriptionPayment = {
   id: string;
   gymId: string;
-  /** online: through Razorpay; manual: recorded by the CoreFit Gym admin. */
+  /** online: through Razorpay; manual: recorded by the CoreFit admin. */
   method: 'online' | 'manual';
   amountCents: number;
   currency: string;

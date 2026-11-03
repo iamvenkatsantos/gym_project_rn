@@ -14,7 +14,7 @@ import { PlanAndPay } from '@/features/subscription/components/plan-and-pay';
 import { useSubscription } from '@/features/subscription/hooks';
 
 /**
- * The whole app at a branch whose CoreFit Gym plan ran out more than 5 days ago. The owner
+ * The whole app at a branch whose CoreFit plan ran out more than 5 days ago. The owner
  * pays here; everyone else waits for them. Paying unlocks it for everyone.
  */
 export default function PlanLockedScreen() {
@@ -32,8 +32,8 @@ export default function PlanLockedScreen() {
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
           {isOwner
-            ? 'Your CoreFit Gym plan isn’t paid. Pay to open the app for everyone.'
-            : 'Your gym’s CoreFit Gym plan isn’t paid. Ask the owner to renew.'}
+            ? 'Your CoreFit plan isn’t paid. Pay to open the app for everyone.'
+            : 'Your gym’s CoreFit plan isn’t paid. Ask the owner to renew.'}
         </ThemedText>
       </Card>
       {isOwner ? <OwnerPay gymId={gym.gymId} gymName={gym.gymName} /> : null}

@@ -114,7 +114,7 @@ export function Members() {
                 shown.length === 0 ? (
                   <Empty>
                     {rows.length === 0
-                      ? 'No members yet. Invite members from the CoreFit Gym app.'
+                      ? 'No members yet. Invite members from the CoreFit app.'
                       : 'No members match.'}
                   </Empty>
                 ) : (

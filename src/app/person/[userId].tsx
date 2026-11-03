@@ -144,7 +144,7 @@ export default function PersonScreen() {
   const update = useUpdatePerson(gym.gymId);
   const remove = useRemovePerson(gym.gymId);
   const [confirmRemove, setConfirmRemove] = useState(false);
-  // Only CoreFit Gym admins add owners, so they're the ones to ask for a second one.
+  // Only CoreFit admins add owners, so they're the ones to ask for a second one.
   const isAdmin = useIsPlatformAdmin();
   const person = people.data?.find((p) => p.id === userId);
 
@@ -237,7 +237,7 @@ export default function PersonScreen() {
             <Card>
               <ThemedText type="small" themeColor="textSecondary">
                 {isSelf ? 'You are' : 'This is'} the only owner, so this account can&apos;t be
-                suspended or removed. {isAdmin ? 'Invite' : 'Ask CoreFit Gym to add'} another owner
+                suspended or removed. {isAdmin ? 'Invite' : 'Ask CoreFit to add'} another owner
                 first.
               </ThemedText>
             </Card>

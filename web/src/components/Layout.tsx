@@ -21,7 +21,7 @@ export function Layout({
         <div className="brand">
           <img src="/logo.png" alt="" />
           <div>
-            CoreFit Gym
+            CoreFit
             <small>{gyms.length > 1 ? 'Owner dashboard' : gym.gymName}</small>
           </div>
         </div>

@@ -55,7 +55,7 @@ export default function AdminBranchScreen() {
                     <StatTile label="Staff" value={b.staff} icon="barbell-outline" compact />
                   </View>
 
-                  <SectionHeader title="CoreFit Gym plan" detail="Owner pays in the app" />
+                  <SectionHeader title="CoreFit plan" detail="Owner pays in the app" />
                   <BranchPlan gymId={b.gymId} />
 
                   <SectionHeader

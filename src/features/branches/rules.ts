@@ -83,7 +83,7 @@ export function ownerAccounts(branches: AdminBranch[], settings: BillingSettings
 }
 
 /**
- * Branches whose CoreFit Gym plan isn't paid: never paid, or the paid year ended before
+ * Branches whose CoreFit plan isn't paid: never paid, or the paid year ended before
  * `today` (YYYY-MM-DD). Free branches never are.
  */
 export function unpaidBranches(branches: AdminBranch[], settings: BillingSettings, today: string) {
@@ -142,7 +142,7 @@ function sum(branches: BranchStats[], key: NumberKey) {
 
 /**
  * What a ₹1,000 plan works out to at a branch: what the member pays and what the
- * owner receives after Razorpay's fees and CoreFit Gym's cut.
+ * owner receives after Razorpay's fees and CoreFit's cut.
  */
 export function onlinePaymentExample(feesOnMember: boolean, cutBps: number, baseCents = 100000) {
   const cutCents = Math.floor((baseCents * cutBps) / 10000);

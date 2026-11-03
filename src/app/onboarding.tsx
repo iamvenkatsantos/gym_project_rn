@@ -232,7 +232,7 @@ export default function OnboardingScreen() {
       {cameraBlocked ? (
         <>
           <ThemedText type="small" themeColor="warning">
-            CoreFit Gym can&apos;t use the camera. Allow it in Settings, or pick photos from your
+            CoreFit can&apos;t use the camera. Allow it in Settings, or pick photos from your
             gallery.
           </ThemedText>
           <Button
