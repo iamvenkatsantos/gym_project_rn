@@ -58,6 +58,16 @@ describe('workout draft', () => {
     expect(store().restUntil).toBeNull();
   });
 
+  it('adds time to the rest, and only while resting', () => {
+    store().start('gym-1', workout);
+    store().extendRest(15);
+    expect(store().restUntil).toBeNull();
+    store().toggleSet(0, 0);
+    const until = store().restUntil!;
+    store().extendRest(15);
+    expect(store().restUntil).toBe(until + 15_000);
+  });
+
   it('copies the last set when adding one', () => {
     store().start('gym-1', workout);
     store().updateSet(0, 1, { weightKg: 62.5 });

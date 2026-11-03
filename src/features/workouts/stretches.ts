@@ -22,7 +22,7 @@ export const stretches: Stretch[] = [
     muscles: ['legs'],
     holdSeconds: 30,
     perSide: true,
-    cue: 'Hold one ankle behind you, knees together, hips tucked.',
+    cue: 'Rest one foot on a bench behind you, hips tucked.',
   },
   {
     id: 's-kneeling-hip-flexor',
@@ -89,20 +89,20 @@ export const stretches: Stretch[] = [
     cue: 'Reach one arm overhead and lean away from it.',
   },
   {
-    id: 's-cobra',
-    name: 'Cobra stretch',
+    id: 's-overhead-reach',
+    name: 'Overhead reach',
     muscles: ['core', 'chest'],
     holdSeconds: 20,
     perSide: false,
-    cue: 'Lying face down, press up gently, hips stay down.',
+    cue: 'Lace your fingers, palms up, reach tall, shoulders down.',
   },
   {
-    id: 's-doorway-chest',
-    name: 'Doorway chest stretch',
+    id: 's-elbows-back',
+    name: 'Elbows-back chest stretch',
     muscles: ['chest', 'shoulders'],
     holdSeconds: 30,
-    perSide: true,
-    cue: 'Forearm on a door frame at shoulder height, step through.',
+    perSide: false,
+    cue: 'Hands on your lower back, squeeze the elbows back.',
   },
   {
     id: 's-cross-body-shoulder',
@@ -118,23 +118,23 @@ export const stretches: Stretch[] = [
     muscles: ['triceps', 'shoulders'],
     holdSeconds: 20,
     perSide: true,
-    cue: 'Hand down your upper back, press the elbow gently.',
+    cue: 'Hand behind your head, pull the elbow gently.',
   },
   {
-    id: 's-wall-biceps',
-    name: 'Wall biceps stretch',
+    id: 's-standing-biceps',
+    name: 'Standing biceps stretch',
     muscles: ['biceps', 'chest'],
     holdSeconds: 20,
-    perSide: true,
-    cue: 'Palm on a wall behind you, turn your body away.',
+    perSide: false,
+    cue: 'Clasp hands behind you, arms straight, lift gently.',
   },
   {
-    id: 's-wrist-flexor',
-    name: 'Wrist flexor stretch',
+    id: 's-kneeling-forearm',
+    name: 'Kneeling forearm stretch',
     muscles: ['forearms', 'biceps'],
     holdSeconds: 20,
-    perSide: true,
-    cue: 'Arm out, palm up, pull the fingers back gently.',
+    perSide: false,
+    cue: 'Palms flat, fingers to your knees, lean back gently.',
   },
   {
     id: 's-neck-side',
@@ -187,4 +187,18 @@ export function stretchesFor(muscles: readonly string[], limit = MAX_STRETCHES):
 /** "30s" or "30s each side". */
 export function holdLabel(stretch: Stretch) {
   return `${stretch.holdSeconds}s${stretch.perSide ? ' each side' : ''}`;
+}
+
+export type StretchStep = { stretch: Stretch; side: 'Left side' | 'Right side' | null };
+
+/** The cool-down as steps: a one-sided stretch is held once per side. */
+export function stretchSteps(list: readonly Stretch[]): StretchStep[] {
+  return list.flatMap((stretch): StretchStep[] =>
+    stretch.perSide
+      ? [
+          { stretch, side: 'Left side' },
+          { stretch, side: 'Right side' },
+        ]
+      : [{ stretch, side: null }],
+  );
 }

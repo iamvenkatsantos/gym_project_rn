@@ -5,6 +5,7 @@ import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing, TapTarget } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import { useExercises } from '@/features/exercises/hooks';
 import { starterExercises } from '@/features/exercises/library';
 import { holdLabel, stretchesFor } from '@/features/workouts/stretches';
@@ -25,9 +26,15 @@ function useMuscles(items: readonly Item[]) {
   });
 }
 
+/** The cool-down stretches for a plan's exercises. */
+export function usePlanStretches(items: readonly Item[]) {
+  return stretchesFor(useMuscles(items));
+}
+
 function StretchList({ items }: { items: readonly Item[] }) {
   const theme = useTheme();
-  const picked = stretchesFor(useMuscles(items));
+  const picked = usePlanStretches(items);
+  const [shown, setShown] = useState<string | null>(null);
   if (picked.length === 0) {
     return (
       <ThemedText type="small" themeColor="textSecondary">
@@ -37,21 +44,35 @@ function StretchList({ items }: { items: readonly Item[] }) {
   }
   return (
     <View style={styles.list}>
-      {picked.map((stretch) => (
-        <View key={stretch.id} style={[styles.item, { borderTopColor: theme.border }]}>
-          <View style={styles.itemHeader}>
-            <ThemedText type="smallBold" style={styles.flex}>
-              {stretch.name}
-            </ThemedText>
-            <ThemedText type="small" themeColor="accent">
-              {holdLabel(stretch)}
-            </ThemedText>
+      {picked.map((stretch) => {
+        const open = shown === stretch.id;
+        return (
+          <View key={stretch.id} style={[styles.item, { borderTopColor: theme.border }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: open }}
+              accessibilityHint={open ? 'Hides the demo' : 'Shows the demo'}
+              onPress={() => setShown(open ? null : stretch.id)}
+              style={({ pressed }) => [styles.itemHeader, pressed && styles.pressed]}>
+              <ExerciseDemo exerciseId={stretch.id} name={stretch.name} variant="thumb" animate />
+              <View style={styles.flex}>
+                <View style={styles.titleRow}>
+                  <ThemedText type="smallBold" style={styles.flex}>
+                    {stretch.name}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="accent">
+                    {holdLabel(stretch)}
+                  </ThemedText>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {stretch.cue}
+                </ThemedText>
+              </View>
+            </Pressable>
+            {open ? <ExerciseDemo exerciseId={stretch.id} name={stretch.name} /> : null}
           </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {stretch.cue}
-          </ThemedText>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -103,9 +124,14 @@ const styles = StyleSheet.create({
   item: {
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: Spacing.two,
-    gap: 2,
+    gap: Spacing.two,
   },
   itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  titleRow: {
     flexDirection: 'row',
     gap: Spacing.two,
   },

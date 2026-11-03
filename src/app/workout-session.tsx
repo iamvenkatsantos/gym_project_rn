@@ -1,4 +1,4 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { Fragment, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -18,7 +18,13 @@ import {
   type DraftExercise,
   type DraftSet,
   useWorkoutDraft,
+  type WorkoutDraft,
 } from '@/features/progress/draft-store';
+import {
+  LiveSetBar,
+  LiveWorkout,
+  useLiveWorkout,
+} from '@/features/progress/components/live-workout';
 import { useFinishWorkout } from '@/features/progress/hooks';
 import type { SelfCheck } from '@/features/progress/types';
 import { SelfCheckForm } from '@/features/self-workouts/components/self-check-form';
@@ -66,20 +72,33 @@ function parseWeight(text: string): { value: number | null } | { error: string }
 
 const emptyCheck: SelfCheck = { effort: null, pain: null, note: null };
 
-type View_ = 'list' | 'focus';
+type View_ = 'live' | 'list';
 
 export default function WorkoutSessionScreen() {
+  const draft = useWorkoutDraft((s) => s.draft);
+  if (!draft) {
+    return (
+      <Screen refreshable={false}>
+        <ThemedText themeColor="textSecondary">No workout in progress.</ThemedText>
+        <Button label="Back" variant="secondary" onPress={() => router.back()} />
+      </Screen>
+    );
+  }
+  return <ActiveSession draft={draft} />;
+}
+
+function ActiveSession({ draft }: { draft: WorkoutDraft }) {
   const theme = useTheme();
   const profile = useProfile();
   const gym = useActiveGym();
-  const { draft, restUntil, toggleSet, updateSet, addSet, skipRest, discard } = useWorkoutDraft();
+  const { restUntil, toggleSet, updateSet, addSet, skipRest, discard } = useWorkoutDraft();
   const replaceExercise = useWorkoutDraft((s) => s.replaceExercise);
   const setSelfCheck = useWorkoutDraft((s) => s.setSelfCheck);
   const openPicks = useExercisePicks((s) => s.open);
   const library = useExercises(gym.gymId);
   const finish = useFinishWorkout(profile.id);
   const isMember = gym.role === 'member';
-  const [view, setView] = useState<View_>('list');
+  const [view, setView] = useState<View_>('live');
   const [focus, setFocus] = useState(0);
   const [showCheckProblem, setShowCheckProblem] = useState(false);
   const now = useNow();
@@ -93,14 +112,8 @@ export default function WorkoutSessionScreen() {
       return error ? { ...rest, [`${ei}-${si}`]: error } : rest;
     });
 
-  if (!draft) {
-    return (
-      <Screen refreshable={false}>
-        <ThemedText themeColor="textSecondary">No workout in progress.</ThemedText>
-        <Button label="Back" variant="secondary" onPress={() => router.back()} />
-      </Screen>
-    );
-  }
+  const live = useLiveWorkout(draft, focus, setFocus, now);
+  const showLive = view === 'live' && draft.exercises.length > 0;
 
   const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
   const totalSets = draft.exercises.reduce((n, e) => n + e.sets.length, 0);
@@ -111,7 +124,6 @@ export default function WorkoutSessionScreen() {
     { color: theme.text, borderColor: theme.border, backgroundColor: theme.background },
   ];
 
-  const current = Math.min(focus, draft.exercises.length - 1);
   const check = draft.selfCheck ?? emptyCheck;
   const checkProblem = isMember ? selfCheckProblem(check) : null;
 
@@ -251,148 +263,143 @@ export default function WorkoutSessionScreen() {
   );
 
   return (
-    <Screen refreshable={false}>
-      <Stack.Screen options={{ title: clock(now - new Date(draft.startedAt).getTime()) }} />
-      <View>
-        <ThemedText type="title">{draft.title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {doneSets} of {totalSets} sets done
-        </ThemedText>
-      </View>
-
-      {resting ? (
-        <Card highlighted style={styles.rest}>
-          <Icon name="timer-outline" size={28} color="accent" />
-          <View style={styles.flex}>
-            <ThemedText type="label" themeColor="textSecondary">
-              Rest
-            </ThemedText>
-            <ThemedText type="title" themeColor="accent">
-              {clock(restUntil - now)}
+    <View style={styles.root}>
+      <Screen refreshable={false}>
+        <View>
+          <ThemedText type="title">{draft.title}</ThemedText>
+          <View style={styles.elapsed}>
+            <Icon name="time-outline" size={16} color="textSecondary" />
+            <ThemedText type="small" themeColor="textSecondary">
+              Workout time {clock(now - new Date(draft.startedAt).getTime())}
             </ThemedText>
           </View>
-          <Button label="Skip" variant="secondary" size="compact" onPress={skipRest} />
-        </Card>
-      ) : null}
+          {view === 'list' ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {doneSets} of {totalSets} sets done
+            </ThemedText>
+          ) : null}
+        </View>
 
-      {draft.exercises.length > 1 ? (
-        <SegmentedControl<View_>
-          options={[
-            { value: 'list', label: 'All exercises' },
-            { value: 'focus', label: 'One at a time' },
-          ]}
-          value={view}
-          onChange={setView}
-        />
-      ) : null}
-      {view === 'list' || draft.exercises.length <= 1 ? (
-        draft.exercises.map(renderExercise)
-      ) : (
-        <>
-          <ThemedText type="label" themeColor="textSecondary">
-            Exercise {current + 1} of {draft.exercises.length}
-          </ThemedText>
-          {renderExercise(draft.exercises[current], current)}
-          <View style={styles.setRow}>
-            <View style={styles.flex}>
-              <Button
-                label="Previous"
-                icon="chevron-back"
-                variant="secondary"
-                size="compact"
-                disabled={current === 0}
-                onPress={() => setFocus(current - 1)}
-              />
-            </View>
-            <View style={styles.flex}>
-              <Button
-                label="Next"
-                icon="chevron-forward"
-                variant="secondary"
-                size="compact"
-                disabled={current === draft.exercises.length - 1}
-                onPress={() => setFocus(current + 1)}
-              />
-            </View>
-          </View>
-        </>
-      )}
+        {draft.exercises.length > 0 ? (
+          <SegmentedControl<View_>
+            options={[
+              { value: 'live', label: 'Live' },
+              { value: 'list', label: 'All exercises' },
+            ]}
+            value={view}
+            onChange={setView}
+          />
+        ) : null}
 
-      <Card>
-        <PlanStretches items={draft.exercises} />
-      </Card>
+        {showLive ? (
+          <LiveWorkout live={live} library={library.data} onReplace={replace} />
+        ) : (
+          <>
+            {resting ? (
+              <Card highlighted style={styles.rest}>
+                <Icon name="timer-outline" size={28} color="accent" />
+                <View style={styles.flex}>
+                  <ThemedText type="label" themeColor="textSecondary">
+                    Rest
+                  </ThemedText>
+                  <ThemedText type="title" themeColor="accent">
+                    {clock(restUntil - now)}
+                  </ThemedText>
+                </View>
+                <Button label="Skip" variant="secondary" size="compact" onPress={skipRest} />
+              </Card>
+            ) : null}
+            {draft.exercises.map(renderExercise)}
+          </>
+        )}
 
-      {isMember && doneSets > 0 ? (
-        <SelfCheckForm
-          value={check}
-          onChange={setSelfCheck}
-          showProblem={showCheckProblem}
-          problem={checkProblem}
-        />
-      ) : null}
-      <Button
-        label={finish.isError ? 'Retry saving workout' : 'Finish workout'}
-        icon="flag-outline"
-        disabled={doneSets === 0}
-        loading={finish.isPending}
-        onPress={() => {
-          if (checkProblem) {
-            setShowCheckProblem(true);
-            return;
-          }
-          if (isMember) setSelfCheck(cleanSelfCheck(check));
-          finish.mutate(undefined, {
-            onSuccess: () => {
-              router.replace(historyRoute[gym.role]);
-              if (gym.role === 'member') offerCheckOut(gym.gymId, profile.id);
-            },
-          });
-        }}
-      />
-      {finish.error ? (
-        <ThemedText themeColor="danger">
-          Couldn&apos;t save: {finish.error.message}. Your workout is kept on this phone, so you can
-          retry when you&apos;re back online.
-        </ThemedText>
-      ) : null}
-      {confirmDiscard ? (
-        <Card>
-          <ThemedText type="smallBold">Discard this workout?</ThemedText>
-          <View style={styles.setRow}>
-            <View style={styles.flex}>
-              <Button
-                label="Keep going"
-                variant="secondary"
-                size="compact"
-                onPress={() => setConfirmDiscard(false)}
-              />
-            </View>
-            <View style={styles.flex}>
-              <Button
-                label="Discard"
-                variant="danger"
-                size="compact"
-                onPress={() => {
-                  discard();
-                  router.back();
-                }}
-              />
-            </View>
-          </View>
-        </Card>
-      ) : (
+        {showLive ? null : (
+          <Card>
+            <PlanStretches items={draft.exercises} />
+          </Card>
+        )}
+
+        {isMember && doneSets > 0 ? (
+          <SelfCheckForm
+            value={check}
+            onChange={setSelfCheck}
+            showProblem={showCheckProblem}
+            problem={checkProblem}
+          />
+        ) : null}
         <Button
-          label="Discard workout"
-          variant="danger"
-          size="compact"
-          onPress={() => setConfirmDiscard(true)}
+          label={finish.isError ? 'Retry saving workout' : 'Finish workout'}
+          icon="flag-outline"
+          disabled={doneSets === 0}
+          loading={finish.isPending}
+          onPress={() => {
+            if (checkProblem) {
+              setShowCheckProblem(true);
+              return;
+            }
+            if (isMember) setSelfCheck(cleanSelfCheck(check));
+            finish.mutate(undefined, {
+              onSuccess: () => {
+                router.replace(historyRoute[gym.role]);
+                if (gym.role === 'member') offerCheckOut(gym.gymId, profile.id);
+              },
+            });
+          }}
         />
-      )}
-    </Screen>
+        {finish.error ? (
+          <ThemedText themeColor="danger">
+            Couldn&apos;t save: {finish.error.message}. Your workout is kept on this phone, so you
+            can retry when you&apos;re back online.
+          </ThemedText>
+        ) : null}
+        {confirmDiscard ? (
+          <Card>
+            <ThemedText type="smallBold">Discard this workout?</ThemedText>
+            <View style={styles.setRow}>
+              <View style={styles.flex}>
+                <Button
+                  label="Keep going"
+                  variant="secondary"
+                  size="compact"
+                  onPress={() => setConfirmDiscard(false)}
+                />
+              </View>
+              <View style={styles.flex}>
+                <Button
+                  label="Discard"
+                  variant="danger"
+                  size="compact"
+                  onPress={() => {
+                    discard();
+                    router.back();
+                  }}
+                />
+              </View>
+            </View>
+          </Card>
+        ) : (
+          <Button
+            label="Discard workout"
+            variant="danger"
+            size="compact"
+            onPress={() => setConfirmDiscard(true)}
+          />
+        )}
+      </Screen>
+      {showLive ? <LiveSetBar live={live} /> : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  elapsed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
   flex: {
     flex: 1,
   },
