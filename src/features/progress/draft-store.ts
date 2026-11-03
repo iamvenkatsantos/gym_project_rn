@@ -44,6 +44,8 @@ type DraftState = {
   replaceExercise: (exercise: number, next: { id: string; name: string }) => void;
   setSelfCheck: (check: SelfCheck | null) => void;
   skipRest: () => void;
+  /** Adds seconds to the rest in progress. */
+  extendRest: (seconds: number) => void;
   discard: () => void;
 };
 
@@ -146,6 +148,11 @@ export const useWorkoutDraft = create<DraftState>()(
         if (draft) set({ draft: { ...draft, selfCheck: check } });
       },
       skipRest: () => set({ restUntil: null }),
+      extendRest: (seconds) => {
+        const { restUntil } = get();
+        if (restUntil !== null)
+          set({ restUntil: Math.max(restUntil, Date.now()) + seconds * 1000 });
+      },
       discard: () => set({ draft: null, restUntil: null }),
     }),
     { name: 'corefit-workout-draft', storage: createJSONStorage(() => AsyncStorage) },

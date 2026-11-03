@@ -224,8 +224,12 @@ and read-only for them. **After every workout** members answer a self-check on `
 (effort 1–10 required, pain spot, note; `workout_logs.effort/pain/note`), which the "finished a
 workout" push to their trainers carries. Swaps from **Replace** (same-muscle pick) are logged in
 `workout_logs.swaps`. A coach or manager replies once (`reply_to_workout()`, inbox kind
-`workout`); a trigger stops members writing the reply. `workout-session` also has a **One at a
-time** view.
+`workout`); a trigger stops members writing the reply.
+**Live workout** (Venkat, 2026-11-03): `workout-session` opens on **Live** (`LiveWorkout`,
+`src/features/progress/live.ts`): one exercise at a time with its demo, how-to steps and set dots;
+reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
++15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake.
+**All exercises** keeps the old list.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,
