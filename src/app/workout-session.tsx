@@ -313,9 +313,11 @@ function ActiveSession({ draft }: { draft: WorkoutDraft }) {
           </>
         )}
 
-        <Card>
-          <PlanStretches items={draft.exercises} />
-        </Card>
+        {showLive ? null : (
+          <Card>
+            <PlanStretches items={draft.exercises} />
+          </Card>
+        )}
 
         {isMember && doneSets > 0 ? (
           <SelfCheckForm

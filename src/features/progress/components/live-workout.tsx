@@ -23,6 +23,7 @@ import {
   setTarget,
   WEIGHT_STEP,
 } from '@/features/progress/live';
+import { CoolDown } from '@/features/workouts/components/cool-down';
 import { useTheme } from '@/hooks/use-theme';
 
 function clock(ms: number) {
@@ -184,13 +185,7 @@ export function LiveWorkout({
     return (
       <>
         <Progress done={counts.done} total={counts.total} />
-        <Card highlighted style={styles.restCard}>
-          <Icon name="trophy-outline" size={40} color="accent" />
-          <ThemedText type="heading">All sets done</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Stretch, then finish below.
-          </ThemedText>
-        </Card>
+        <CoolDown items={draft.exercises} now={now} />
       </>
     );
   }

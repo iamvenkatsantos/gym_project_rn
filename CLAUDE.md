@@ -230,7 +230,9 @@ workout" push to their trainers carries. Swaps from **Replace** (same-muscle pic
 **Live workout** (Venkat, 2026-11-03): `workout-session` opens on **Live** (`LiveWorkout`,
 `src/features/progress/live.ts`): one exercise at a time with its demo, how-to steps and set dots;
 reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
-+15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake. The
++15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake. After
+the last set the plan's stretches follow as a **Cool-down** (`CoolDown`, one per screen with its
+demo, each side separately, a Start/Skip/Next hold timer; not logged), then Finish. The
 header says **Workout**; the elapsed time shows as "Workout time" under the plan name.
 **All exercises** keeps the old list.
 

@@ -188,3 +188,17 @@ export function stretchesFor(muscles: readonly string[], limit = MAX_STRETCHES):
 export function holdLabel(stretch: Stretch) {
   return `${stretch.holdSeconds}s${stretch.perSide ? ' each side' : ''}`;
 }
+
+export type StretchStep = { stretch: Stretch; side: 'Left side' | 'Right side' | null };
+
+/** The cool-down as steps: a one-sided stretch is held once per side. */
+export function stretchSteps(list: readonly Stretch[]): StretchStep[] {
+  return list.flatMap((stretch): StretchStep[] =>
+    stretch.perSide
+      ? [
+          { stretch, side: 'Left side' },
+          { stretch, side: 'Right side' },
+        ]
+      : [{ stretch, side: null }],
+  );
+}

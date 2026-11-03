@@ -1,6 +1,6 @@
 import { demoFor } from '@/features/exercises/demos';
 import { stretchDemos } from '@/features/workouts/stretch-demos';
-import { stretches } from '@/features/workouts/stretches';
+import { stretches, stretchSteps } from '@/features/workouts/stretches';
 
 describe('stretch demos', () => {
   it('has start and end photos for every stretch', () => {
@@ -10,5 +10,17 @@ describe('stretch demos', () => {
   it('has no photos for stretches that no longer exist', () => {
     const ids = stretches.map((s) => s.id);
     expect(Object.keys(stretchDemos).filter((id) => !ids.includes(id))).toEqual([]);
+  });
+});
+
+describe('cool-down steps', () => {
+  it('holds one-sided stretches once per side', () => {
+    const quad = stretches.find((s) => s.id === 's-standing-quad')!;
+    const child = stretches.find((s) => s.id === 's-childs-pose')!;
+    expect(stretchSteps([quad, child]).map((s) => [s.stretch.id, s.side])).toEqual([
+      ['s-standing-quad', 'Left side'],
+      ['s-standing-quad', 'Right side'],
+      ['s-childs-pose', null],
+    ]);
   });
 });

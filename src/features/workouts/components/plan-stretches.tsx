@@ -26,9 +26,14 @@ function useMuscles(items: readonly Item[]) {
   });
 }
 
+/** The cool-down stretches for a plan's exercises. */
+export function usePlanStretches(items: readonly Item[]) {
+  return stretchesFor(useMuscles(items));
+}
+
 function StretchList({ items }: { items: readonly Item[] }) {
   const theme = useTheme();
-  const picked = stretchesFor(useMuscles(items));
+  const picked = usePlanStretches(items);
   const [shown, setShown] = useState<string | null>(null);
   if (picked.length === 0) {
     return (
