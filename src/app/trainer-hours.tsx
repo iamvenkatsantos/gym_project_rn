@@ -14,6 +14,7 @@ import { Spacing } from '@/constants/theme';
 import { AttendanceRow } from '@/features/attendance/components/attendance-row';
 import { dayLabel, formatMinutes } from '@/features/attendance/rules';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { usePeople } from '@/features/members/hooks';
 import { useCheckInRules } from '@/features/check-in/hooks';
 import { gymHours, timeOfDay } from '@/features/check-in/rules';
 import { PermissionCard } from '@/features/trainer-hours/components/permission-card';
@@ -21,6 +22,8 @@ import {
   useDecidePermission,
   usePermissions,
   useSaveTrainerHourRules,
+  useSetTrainerShift,
+  useTrainerShifts,
   useTrainerHourRules,
   useTrainerHoursMonth,
 } from '@/features/trainer-hours/hooks';
@@ -200,6 +203,45 @@ function RequestsView({ gymId }: { gymId: string }) {
   );
 }
 
+/** Owners mark who works evenings; saved on tap. */
+function ShiftPicker({ gymId }: { gymId: string }) {
+  const people = usePeople(gymId);
+  const shifts = useTrainerShifts(gymId);
+  const setShift = useSetTrainerShift(gymId);
+  const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
+
+  if (!people.data || !shifts.data) return null;
+  if (!trainers.length) return null;
+  return (
+    <>
+      {trainers.map((t) => (
+        <View key={t.id} style={styles.row}>
+          <ThemedText style={styles.flex}>{t.fullName}</ThemedText>
+          <View style={styles.shift}>
+            <SegmentedControl
+              options={[
+                { value: 'morning', label: 'Morning' },
+                { value: 'evening', label: 'Evening' },
+              ]}
+              value={
+                setShift.isPending && setShift.variables?.trainerId === t.id
+                  ? setShift.variables.shift
+                  : (shifts.data[t.id] ?? 'morning')
+              }
+              onChange={(shift) => setShift.mutate({ trainerId: t.id, shift })}
+            />
+          </View>
+        </View>
+      ))}
+      {setShift.error ? (
+        <ThemedText type="small" themeColor="danger">
+          Couldn&apos;t save: {setShift.error.message}
+        </ThemedText>
+      ) : null}
+    </>
+  );
+}
+
 function RulesView({
   gymId,
   rules,
@@ -338,6 +380,38 @@ function RulesView({
         </>
       ) : null}
 
+      <ThemedText type="smallBold">Evening shift</ThemedText>
+      <SegmentedControl
+        options={[
+          { value: 'on', label: 'On' },
+          { value: 'off', label: 'Off' },
+        ]}
+        value={draft.eveningStartsAt === null ? 'off' : 'on'}
+        onChange={(v) =>
+          set({ eveningStartsAt: v === 'off' ? null : (rules?.eveningStartsAt ?? 16 * 60) })
+        }
+      />
+      {draft.eveningStartsAt !== null ? (
+        <>
+          <View style={styles.row}>
+            <ThemedText style={styles.flex}>Starts at</ThemedText>
+            <Stepper
+              label="evening shift start"
+              value={draft.eveningStartsAt}
+              step={30}
+              min={0}
+              max={23 * 60 + 30}
+              format={timeOfDay}
+              onChange={(m) => set({ eveningStartsAt: m })}
+            />
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">
+            Evening trainers are late after this, not opening.
+          </ThemedText>
+          <ShiftPicker gymId={gymId} />
+        </>
+      ) : null}
+
       {problem ? (
         <ThemedText type="small" themeColor="danger">
           {problem}
@@ -433,6 +507,9 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
     minWidth: 96,
+  },
+  shift: {
+    minWidth: 180,
   },
   dayRow: {
     flexDirection: 'row',

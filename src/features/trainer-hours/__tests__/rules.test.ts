@@ -20,6 +20,7 @@ const rules: TrainerHourRules = {
   lateAfterMinutes: 15,
   lateStreakDays: 2,
   lateLopMinutes: 240,
+  eveningStartsAt: 960,
   startsOn: '2026-10-01',
 };
 
@@ -227,5 +228,20 @@ describe('summariseMonth with late streaks', () => {
     expect(month.lateDays).toBe(2);
     expect(month.lopMinutes).toBe(240 + 240);
     expect(month.lopDays.map((d) => [d.day, d.lopMinutes])).toEqual([['2026-10-21', 480]]);
+  });
+});
+
+describe('evening shifts', () => {
+  it('measures an evening trainer from their shift start', () => {
+    expect(isLate(day({ firstInMinute: 970, startMinute: 960 }), 15)).toBe(false);
+    expect(isLate(day({ firstInMinute: 980, startMinute: 960 }), 15)).toBe(true);
+  });
+
+  it('falls back to opening when the server sends no start', () => {
+    expect(isLate(day({ firstInMinute: 330, startMinute: undefined }), 15)).toBe(true);
+  });
+
+  it('is never late without a start time', () => {
+    expect(isLate(day({ firstInMinute: 980, startMinute: null }), 15)).toBe(false);
   });
 });

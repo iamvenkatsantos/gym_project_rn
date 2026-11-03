@@ -23,6 +23,8 @@ export type TrainerHourRules = {
   lateStreakDays: number;
   /** LOP for each late streak. */
   lateLopMinutes: number;
+  /** When the evening shift starts (minutes after midnight), or null for no evening shift. */
+  eveningStartsAt: number | null;
   /** YYYY-MM-DD: LOP counts from here, never before. */
   startsOn: string;
 };
@@ -66,7 +68,14 @@ export type TrainerDay = {
   permissionFromMinute: number | null;
   /** When the branch opens, or null when it's open 24 hours. */
   opensMinute: number | null;
+  /**
+   * When this trainer's shift starts: the evening start for evening trainers, otherwise opening.
+   * Missing from servers before evening shifts.
+   */
+  startMinute?: number | null;
 };
+
+export type TrainerShift = 'morning' | 'evening';
 
 /** A working day with the rules applied. */
 export type TrainerDayResult = TrainerDay & {

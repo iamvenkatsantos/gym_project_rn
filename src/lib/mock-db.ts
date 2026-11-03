@@ -958,8 +958,14 @@ export const mockTrainerHourRules: { current: TrainerHourRules | null } = {
     lateAfterMinutes: 15,
     lateStreakDays: 2,
     lateLopMinutes: 4 * 60,
+    eveningStartsAt: 14 * 60,
     startsOn: mockDay(6),
   },
+};
+
+/** Demo trainers on the evening shift; everyone else works mornings. */
+export const mockTrainerShifts: Record<string, 'morning' | 'evening'> = {
+  'u-trainer-2': 'evening',
 };
 
 /** Trainers' permission requests at the demo gym. */

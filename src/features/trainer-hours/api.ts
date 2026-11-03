@@ -8,6 +8,7 @@ import type {
   TrainerDay,
   TrainerHourRules,
   TrainerHourRulesInput,
+  TrainerShift,
   WorkPermission,
 } from '@/features/trainer-hours/types';
 import {
@@ -19,6 +20,7 @@ import {
   mockPeople,
   mockPermissions,
   mockTrainerHourRules,
+  mockTrainerShifts,
 } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -30,6 +32,7 @@ type RulesRow = {
   late_after_minutes: number | null;
   late_streak_days: number;
   late_lop_minutes: number;
+  evening_starts_at: string | null;
   starts_on: string;
 };
 
@@ -39,7 +42,7 @@ export async function getTrainerHourRules(gymId: string): Promise<TrainerHourRul
   const { data: row, error } = await supabase
     .from('trainer_hour_rules')
     .select(
-      'required_minutes, short_limit_minutes, lop_minutes, off_days, late_after_minutes, late_streak_days, late_lop_minutes, starts_on',
+      'required_minutes, short_limit_minutes, lop_minutes, off_days, late_after_minutes, late_streak_days, late_lop_minutes, evening_starts_at, starts_on',
     )
     .eq('gym_id', gymId)
     .maybeSingle();
@@ -54,6 +57,7 @@ export async function getTrainerHourRules(gymId: string): Promise<TrainerHourRul
         lateAfterMinutes: data.late_after_minutes,
         lateStreakDays: data.late_streak_days,
         lateLopMinutes: data.late_lop_minutes,
+        eveningStartsAt: data.evening_starts_at ? fromTime(data.evening_starts_at) : null,
         startsOn: data.starts_on,
       }
     : null;
@@ -83,6 +87,33 @@ export async function saveTrainerHourRules(gymId: string, rules: TrainerHourRule
     p_lop_minutes: rules.lateLopMinutes,
   });
   if (late.error) throw late.error;
+  const evening = await supabase.rpc('set_evening_shift_start', {
+    p_gym_id: gymId,
+    p_starts_at: rules.eveningStartsAt === null ? null : toTime(rules.eveningStartsAt),
+  });
+  if (evening.error) throw evening.error;
+}
+
+/** Each trainer's shift at the branch; trainers not listed work the morning shift. Owners only. */
+export async function getTrainerShifts(gymId: string): Promise<Record<string, TrainerShift>> {
+  if (!supabase) return delay(forGym(gymId, [mockTrainerShifts])[0] ?? {});
+  const rows = unwrap(
+    await supabase.from('trainer_shifts').select('trainer_id, shift').eq('gym_id', gymId),
+  ) as { trainer_id: string; shift: TrainerShift }[];
+  return Object.fromEntries(rows.map((r) => [r.trainer_id, r.shift]));
+}
+
+export async function setTrainerShift(gymId: string, trainerId: string, shift: TrainerShift) {
+  if (!supabase) {
+    mockTrainerShifts[trainerId] = shift;
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('set_trainer_shift', {
+    p_gym_id: gymId,
+    p_trainer_id: trainerId,
+    p_shift: shift,
+  });
+  if (error) throw error;
 }
 
 type PermissionRow = {
@@ -199,6 +230,7 @@ type DayRow = {
   first_in_minute: number | null;
   permission_from_minute: number | null;
   opens_minute: number | null;
+  start_minute?: number | null;
 };
 
 /** Each trainer's working days in a month, up to yesterday. Owners only. */
@@ -217,6 +249,7 @@ export async function getTrainerHoursMonth(gymId: string, month: string): Promis
     firstInMinute: r.first_in_minute,
     permissionFromMinute: r.permission_from_minute,
     opensMinute: r.opens_minute,
+    startMinute: r.start_minute,
   }));
 }
 
@@ -257,6 +290,12 @@ function mockMonth(gymId: string, month: string): TrainerDay[] {
         firstInMinute: firstIn ? firstIn.getHours() * 60 + firstIn.getMinutes() : null,
         permissionFromMinute: approved.length ? Math.min(...approved.map((p) => p.startsAt)) : null,
         opensMinute: opens ? fromTime(opens) : null,
+        startMinute:
+          mockTrainerShifts[t.id] === 'evening' && rules.eveningStartsAt !== null
+            ? rules.eveningStartsAt
+            : opens
+              ? fromTime(opens)
+              : null,
       };
     }),
   );

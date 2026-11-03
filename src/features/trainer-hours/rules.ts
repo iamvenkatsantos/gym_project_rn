@@ -46,6 +46,7 @@ export const defaultRules: TrainerHourRulesInput = {
   lateAfterMinutes: 15,
   lateStreakDays: 2,
   lateLopMinutes: 4 * 60,
+  eveningStartsAt: null,
 };
 
 /** "8 h", "7.5 h": hours for steppers and totals. */
@@ -91,17 +92,17 @@ export function applyRules(
 }
 
 /**
- * Late: the first check-in is more than lateAfterMinutes after the branch opens, and no approved
+ * Late: the first check-in is more than lateAfterMinutes after their shift starts (opening, or the evening start for evening trainers), and no approved
  * permission starts by then. Never late when the rule is off, the branch is open 24 hours or
  * they didn't come.
  */
 export function isLate(
-  day: Pick<TrainerDay, 'firstInMinute' | 'permissionFromMinute' | 'opensMinute'>,
+  day: Pick<TrainerDay, 'firstInMinute' | 'permissionFromMinute' | 'opensMinute' | 'startMinute'>,
   lateAfterMinutes: number | null,
 ) {
-  if (lateAfterMinutes === null || day.opensMinute === null || day.firstInMinute === null)
-    return false;
-  const by = day.opensMinute + lateAfterMinutes;
+  const start = day.startMinute !== undefined ? day.startMinute : day.opensMinute;
+  if (lateAfterMinutes === null || start === null || day.firstInMinute === null) return false;
+  const by = start + lateAfterMinutes;
   if (day.permissionFromMinute !== null && day.permissionFromMinute <= by) return false;
   return day.firstInMinute > by;
 }
