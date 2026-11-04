@@ -29,7 +29,7 @@ for search engines and store reviewers (no JavaScript):
 The home page is also the front page of **https://vinven.net**: `worker/index.js` runs only for
 `/` (`run_worker_first` in `wrangler.jsonc`), serves `about.html` on `vinven.net`, redirects
 `www.vinven.net` there, and leaves `/` as the dashboard on `dashboard.vinven.net` (which is
-`noindex`). To set it up: Cloudflare → Workers & Pages → `corefit-dashboard` → Settings → Domains &
+`noindex`). To set it up: Cloudflare → Workers & Pages → `gym-project-rn` (the Worker that has `dashboard.vinven.net`) → Settings → Domains &
 Routes → add custom domains `vinven.net` and `www.vinven.net`. Then add `vinven.net` in Google
 Search Console and submit `https://vinven.net/sitemap.xml`. App screenshots live in
 `public/img/` (WebP, taken from demo mode at 390×844).
