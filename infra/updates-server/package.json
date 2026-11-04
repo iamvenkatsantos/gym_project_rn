@@ -1,0 +1,9 @@
+{
+  "name": "corefit-updates-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/node.js",
+    "deploy": "npx wrangler deploy"
+  }
+}

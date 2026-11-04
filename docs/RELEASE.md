@@ -26,6 +26,12 @@ npx eas-cli@latest submit --profile production --platform ios
 npx eas-cli@latest submit --profile production --platform android   # goes to the internal track
 ```
 
+## Over-the-air updates
+
+`preview` and `production` builds take JS-only fixes from our own update server
+(`updates.vinven.net`, channels `develop` and `main`). Ship them with `npm run ota -- publish`; bump
+`expo.version` and rebuild when native code changes. See `infra/updates-server/README.md`.
+
 ## Before the first submission
 
 **Identity**
