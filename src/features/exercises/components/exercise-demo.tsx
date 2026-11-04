@@ -87,7 +87,13 @@ export function ExerciseDemo({
   const image = (
     <>
       {media.frames.map((source, i) => (
-        <DemoLayer key={i} source={source} index={i} shown={shown} />
+        <DemoLayer
+          key={i}
+          source={source}
+          index={i}
+          shown={shown}
+          fit={media.animated ? 'contain' : 'cover'}
+        />
       ))}
     </>
   );
@@ -155,7 +161,9 @@ function DemoLayer({
   source,
   index,
   shown,
+  fit,
 }: {
+  fit: 'contain' | 'cover';
   source: DemoFrame;
   index: number;
   shown: SharedValue<number>;
@@ -168,7 +176,7 @@ function DemoLayer({
       <Image
         source={source}
         style={StyleSheet.absoluteFill}
-        contentFit="cover"
+        contentFit={fit}
         transition={0}
         accessibilityIgnoresInvertColors
       />

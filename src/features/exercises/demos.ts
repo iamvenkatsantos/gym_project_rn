@@ -851,6 +851,20 @@ export type ExerciseMedia = {
   frames: DemoFrame[];
   /** Shown under the demo when the media needs attribution. */
   credit: string | null;
+  /** One looping animation (RepDB trial) instead of start/finish photos. */
+  animated?: boolean;
+};
+
+/**
+ * TRIAL ONLY, never merge: RepDB sample animations from repdb.co (CC BY-NC),
+ * to judge whether to buy RepDB Standard.
+ */
+const repdbTrial: Record<string, DemoFrame> = {
+  'e-lat-pulldown': require('@/assets/repdb-preview/animations_reverse-grip-lat-pulldown.webp'),
+  'e-back-squat': require('@/assets/repdb-preview/animations-female_front-squat.webp'),
+  'e-incline-dumbbell-curl': require('@/assets/repdb-preview/animations_incline-db-curl.webp'),
+  'e-lateral-raise': require('@/assets/repdb-preview/animations_side-lying-lateral-raise.webp'),
+  'e-close-grip-pulldown': require('@/assets/repdb-preview/animations-female_reverse-grip-lat-pulldown.webp'),
 };
 
 /**
@@ -863,6 +877,8 @@ export function demoFor(
   imageUrl: Exercise['imageUrl'] = null,
 ): ExerciseMedia | null {
   // Cool-down stretches share the player; their ids start with "s-".
+  const trial = repdbTrial[seedIds[exerciseId] ?? exerciseId];
+  if (trial) return { frames: [trial], credit: 'Animation: RepDB preview (trial)', animated: true };
   const demo = libraryDemos[seedIds[exerciseId] ?? exerciseId] ?? stretchDemos[exerciseId];
   if (demo) return { frames: demo.frames, credit: DEMO_CREDIT };
   if (imageUrl) return { frames: [{ uri: imageUrl }], credit: null };
