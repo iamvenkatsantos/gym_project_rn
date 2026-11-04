@@ -480,6 +480,8 @@ td .sub {
   min-height: 100vh;
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 16px;
   padding: 24px 16px;
 }
 
@@ -492,4 +494,16 @@ td .sub {
 
 .auth .brand {
   padding: 0;
+}
+
+.site-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  font-size: 14px;
+}
+
+.site-links a {
+  color: var(--text-secondary);
 }

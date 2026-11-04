@@ -153,6 +153,12 @@ export function SignIn() {
           {mode === 'signIn' ? 'Forgot password?' : 'Back to sign in'}
         </button>
       </form>
+      <nav className="site-links">
+        <a href="/about">About CoreFit</a>
+        <a href="/support">Support</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
     </main>
   );
 }
