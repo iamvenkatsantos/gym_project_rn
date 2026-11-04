@@ -295,6 +295,23 @@ export const mockWorkouts: Workout[] = [
     memberDays: { 'u-member': [1, 3, 5] },
   },
   {
+    id: 'w-vital',
+    trainerId: 'u-trainer',
+    trainerName: 'Karthik Raja',
+    title: 'Vital Animations trial',
+    description: 'Sample Vital Animations clips.',
+    level: 'beginner',
+    durationMinutes: 30,
+    exercises: [
+      prescribe('e-pec-deck', 'Pec deck', 3, 12, 30, 60),
+      prescribe('e-straight-arm-pulldown', 'Straight-arm pulldown', 3, 12, 20, 60),
+      prescribe('e-face-pull', 'Face pull', 3, 15, 15, 45),
+      prescribe('e-cable-crunch', 'Cable crunch', 3, 15, 25, 45),
+    ],
+    assignedMemberIds: ['u-member'],
+    memberDays: {},
+  },
+  {
     id: 'w-repdb',
     trainerId: 'u-trainer',
     trainerName: 'Karthik Raja',

@@ -855,6 +855,14 @@ export type ExerciseMedia = {
   animated?: boolean;
 };
 
+/** TRIAL ONLY, never merge: Vital Animations free-pack previews from vitalanimations.com. */
+const vitalTrial: Record<string, DemoFrame> = {
+  'e-pec-deck': require('@/assets/vital-preview/pec-deck.webp'),
+  'e-straight-arm-pulldown': require('@/assets/vital-preview/straight-arm-pulldown.webp'),
+  'e-face-pull': require('@/assets/vital-preview/face-pull.webp'),
+  'e-cable-crunch': require('@/assets/vital-preview/cable-crunch.webp'),
+};
+
 /**
  * TRIAL ONLY, never merge: RepDB sample animations from repdb.co (CC BY-NC),
  * to judge whether to buy RepDB Standard.
@@ -877,6 +885,13 @@ export function demoFor(
   imageUrl: Exercise['imageUrl'] = null,
 ): ExerciseMedia | null {
   // Cool-down stretches share the player; their ids start with "s-".
+  const vital = vitalTrial[seedIds[exerciseId] ?? exerciseId];
+  if (vital)
+    return {
+      frames: [vital],
+      credit: 'Animation: Vital Animations free pack (trial)',
+      animated: true,
+    };
   const trial = repdbTrial[seedIds[exerciseId] ?? exerciseId];
   if (trial) return { frames: [trial], credit: 'Animation: RepDB preview (trial)', animated: true };
   const demo = libraryDemos[seedIds[exerciseId] ?? exerciseId] ?? stretchDemos[exerciseId];
