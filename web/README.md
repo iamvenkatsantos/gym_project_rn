@@ -13,6 +13,22 @@ email and password they use in the app; anyone who doesn't own a gym is told to 
 
 Owners of more than one gym pick the gym in the sidebar.
 
+## Public pages
+
+`web/public/` also holds plain HTML pages anyone can open without signing in, built to read well
+for search engines and store reviewers (no JavaScript):
+
+| URL               | Page                                           |
+| ----------------- | ---------------------------------------------- |
+| `/about`          | What CoreFit does and pricing                  |
+| `/privacy`        | Privacy policy (App Store and Play)            |
+| `/terms`          | Terms of service                               |
+| `/support`        | Contact and common questions                   |
+| `/delete-account` | How to delete an account (Play's deletion URL) |
+
+They share `site.css`. Cloudflare serves `privacy.html` at `/privacy`; in `npm run dev` open
+`/privacy.html`. Add new pages to `sitemap.xml`.
+
 ## Why a separate Vite app
 
 The dashboard is a desktop tool full of tables, so it's a small React app built with Vite rather

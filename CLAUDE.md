@@ -19,6 +19,11 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 - **Owner web dashboard:** a separate Vite app in `web/` that reuses pure files from `src/` (see
   `web/README.md`). Live at `https://dashboard.vinven.net` (Cloudflare Workers Builds, deploys on
   push to `main`). Never import React Native code into it. No QR on the web.
+- **Public pages:** plain HTML in `web/public/` served by the same worker, no sign-in:
+  `/about` (features and pricing, for search), `/privacy`, `/terms`, `/support` and
+  `/delete-account` (Play's deletion URL). The app links them from `src/constants/legal.ts`;
+  support email is `support@vinven.net` (Cloudflare Email Routing). Update them when pricing,
+  data collected, service providers or the delete flow change.
 
 ## Folder map
 

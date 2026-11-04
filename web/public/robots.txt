@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dashboard.vinven.net/sitemap.xml
