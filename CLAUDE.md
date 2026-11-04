@@ -368,8 +368,8 @@ Say in the PR which of these it needs:
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
 - **A new EAS build** when a native module or `app.json` native config changes (`npx eas-cli@latest
 build --profile preview` for the APK), with `expo.version` bumped. JS-only changes need none:
-  ship them with **`npm run ota -- publish --channel develop`** (from `develop`) or `--channel main`
-  (from `main`, after the release merge).
+  ship them with **`npm run ota:dev`** (from `develop`) or **`npm run ota:prod`** (from `main`,
+  after the release merge); add `-- -m "what changed"`. Store builds: `npm run build:prod`.
 - **`cd infra/updates-server && npx wrangler deploy`** when `infra/updates-server/` changes.
 - **Nothing** for `web/` changes: the dashboard redeploys itself on merge; run `cd web && npm run build` first.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.

@@ -105,6 +105,17 @@ npm run ota -- rollback --channel main --to <update id>              # back to a
 npm run ota -- rollback --channel main --embedded                    # back to the build's own code
 ```
 
+Shortcuts in `package.json`:
+
+```bash
+npm run ota:dev -- -m "Fix check-in button"    # publish to develop (preview builds)
+npm run ota:prod -- -m "Fix check-in button"   # publish to main (production builds), from main
+npm run ota:list:prod                          # what's live on main
+npm run ota:rollback:prod                      # main back to the previous update
+npm run build:preview                          # local Android preview APK
+npm run build:prod                             # store builds, Android and iOS, on EAS
+```
+
 Add `--platform android` to publish one platform only, `--dry-run` to build and sign without
 uploading.
 
