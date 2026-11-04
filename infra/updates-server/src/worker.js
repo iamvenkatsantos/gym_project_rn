@@ -17,6 +17,9 @@ function r2Store(bucket) {
     async put(key, body) {
       await bucket.put(key, body);
     },
+    async delete(key) {
+      await bucket.delete(key);
+    },
     async list(prefix) {
       const keys = [];
       let cursor;

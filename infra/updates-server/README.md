@@ -103,6 +103,8 @@ npm run ota -- list     --channel main                               # what's li
 npm run ota -- rollback --channel main                               # back to the previous update
 npm run ota -- rollback --channel main --to <update id>              # back to a given update
 npm run ota -- rollback --channel main --embedded                    # back to the build's own code
+npm run ota -- prune                                                 # see what old updates and files can go
+npm run ota -- prune --yes                                           # delete them (keeps the last 5 per channel)
 ```
 
 Shortcuts in `package.json`:
@@ -115,6 +117,11 @@ npm run ota:rollback:prod                      # main back to the previous updat
 npm run build:preview                          # local Android preview APK
 npm run build:prod                             # store builds, Android and iOS, on EAS
 ```
+
+**Freeing storage:** never delete files by hand in the R2 dashboard. Assets are shared between
+updates, so a wrong delete breaks phones. `prune` keeps the last 5 updates in each channel's history
+(`--keep <n>` to change) and every file they use, and deletes the rest. Don't run it during a
+publish. It needs the server redeployed once (`npx wrangler deploy`) after this was added.
 
 Add `--platform android` to publish one platform only, `--dry-run` to build and sign without
 uploading.

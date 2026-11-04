@@ -16,6 +16,8 @@
 //   GET  /admin/objects/<key>      publish script reads (Bearer token)
 //   PUT  /admin/objects/<key>      publish script writes (Bearer token)
 //   GET  /admin/assets             publish script lists uploaded assets (Bearer token)
+//   GET  /admin/keys/<folder>      prune lists assets, updates or channels (Bearer token)
+//   DELETE /admin/objects/<key>    prune removes what no channel needs (Bearer token)
 
 const PLATFORMS = new Set(['android', 'ios']);
 const SAFE_PART = /^[A-Za-z0-9._-]{1,64}$/;
@@ -45,6 +47,7 @@ const CONTENT_TYPES = {
  *   get(key: string): Promise<{ body: ReadableStream | Uint8Array | string, size?: number } | null>,
  *   put(key: string, body: ArrayBuffer): Promise<void>,
  *   list(prefix: string): Promise<string[]>,
+ *   delete(key: string): Promise<void>,
  * }} Store
  */
 
@@ -137,6 +140,12 @@ async function serveAdmin(request, rest, store) {
     const keys = await store.list('assets/');
     return json(200, { assets: keys.map((k) => k.slice('assets/'.length)) });
   }
+  // Every key under assets/, updates/ or channels/, for `npm run ota -- prune`.
+  if (rest.startsWith('keys/') && request.method === 'GET') {
+    const prefix = rest.slice('keys/'.length);
+    if (!['assets', 'updates', 'channels'].includes(prefix)) return text(400, 'Bad prefix');
+    return json(200, { keys: await store.list(`${prefix}/`) });
+  }
   if (rest.startsWith('objects/')) {
     const key = rest.slice('objects/'.length);
     if (!OBJECT_KEY.test(key)) return text(400, 'Bad key');
@@ -148,6 +157,10 @@ async function serveAdmin(request, rest, store) {
     if (request.method === 'PUT') {
       await store.put(key, await request.arrayBuffer());
       return text(200, 'saved');
+    }
+    if (request.method === 'DELETE') {
+      await store.delete(key);
+      return text(200, 'deleted');
     }
   }
   return text(404, 'Not found');
