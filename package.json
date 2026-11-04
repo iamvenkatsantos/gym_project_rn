@@ -29,6 +29,7 @@
     "expo-status-bar": "~58.0.4",
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.6",
+    "expo-updates": "~58.0.18",
     "expo-web-browser": "~58.0.6",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
@@ -66,7 +67,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "ota": "node scripts/ota.mjs"
   },
   "private": true,
   "jest": {

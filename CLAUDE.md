@@ -36,6 +36,8 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                                              |
 | `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                                           |
 | `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand                                                                            |
+| `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
+| `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
 
 ## Roles and who sees what
 
@@ -303,6 +305,22 @@ saves tokens with `register_push_token` in `use-push-notifications.ts`. Only cal
 device token actually changed: re-registering from the token listener caused a loop of ~400k API
 calls a day. Push needs a dev/preview build (not Expo Go on Android).
 
+**Over-the-air updates** (self-hosted, not EAS Update; Venkat 2026-11-04). `expo-updates` talks
+to our own server at `updates.vinven.net/manifest` (`infra/updates-server/`, the Expo Updates
+protocol v1 on a Cloudflare Worker with the R2 bucket `corefit-updates`; the same code runs on Node
+for a later move to our own server). Only builds whose `eas.json` profile sets `APP_UPDATES_CHANNEL`
+ask for updates (`app.config.ts`): `preview` → channel `develop`, `production` → `main`; development
+and demo builds never do. `runtimeVersion` is `appVersion`, so an update reaches only builds with the
+same `expo.version`: **bump `expo.version` whenever native code or native config changes**, and make
+a new build. Publish from the matching branch with `npm run ota -- publish --channel develop|main`;
+the script exports with that profile's `eas.json` env, uploads content-addressed files, and signs
+each manifest with `keys/private-key.pem` (git-ignored, on Venkat's Mac only; the app ships
+`certs/certificate.pem` and rejects unsigned updates). `npm run ota -- rollback` republishes the
+previous update under a new id (phones only take newer ones) or, with `--embedded`, sends phones
+back to the build's own code. Phones download on launch (and on return to the front, hourly, via
+`useOtaUpdates`) and apply on the next launch; Account shows the running update's short id. Setup
+and test steps: `infra/updates-server/README.md`.
+
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
 `corefit-auto-check-out` (10 min), `corefit-birthdays` (hourly, managers' 9 am birthday push),
@@ -348,8 +366,11 @@ Say in the PR which of these it needs:
 - **`npx supabase db push --remote`** for any new migration (run from Venkat's machine; the CLI now targets a local database without `--remote`).
 - **Function deploys** when `supabase/functions/` changes: `npx supabase functions deploy <name>`
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
-- **A new EAS build** when a native module or `app.json` changes (`npx eas-cli@latest build
---profile preview` for the APK). JS-only changes need none.
+- **A new EAS build** when a native module or `app.json` native config changes (`npx eas-cli@latest
+build --profile preview` for the APK), with `expo.version` bumped. JS-only changes need none:
+  ship them with **`npm run ota -- publish --channel develop`** (from `develop`) or `--channel main`
+  (from `main`, after the release merge).
+- **`cd infra/updates-server && npx wrangler deploy`** when `infra/updates-server/` changes.
 - **Nothing** for `web/` changes: the dashboard redeploys itself on merge; run `cd web && npm run build` first.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.
 
@@ -362,6 +383,7 @@ concise and derived from the code.
 ## Secrets
 
 Never commit or paste secrets: Razorpay keys, webhook secrets, the service role key, push webhook
-secret, Expo access token. They live in `npx supabase secrets set …` and Supabase Vault
+secret, Expo access token, the OTA signing key (`keys/private-key.pem`) and publish token
+(`.env.ota.local`, Worker secret `PUBLISH_TOKEN`). They live in `npx supabase secrets set …` and Supabase Vault
 (`project_url`, `push_webhook_secret`). The Supabase URL and anon key in `eas.json` and
 `src/lib/env.ts` are public client values.

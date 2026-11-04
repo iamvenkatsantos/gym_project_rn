@@ -19,6 +19,7 @@ import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
+import { useOtaUpdates } from '@/features/updates/use-ota-updates';
 import { useColorSchemeName } from '@/hooks/use-theme';
 import { queryClient } from '@/lib/query-client';
 
@@ -69,6 +70,7 @@ function RootNavigator() {
   useAuthBootstrap();
   useAuthLinks();
   usePushNotifications();
+  useOtaUpdates();
   const status = useAuthStore((s) => s.status);
   const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
   // New members fill in their details and photos before anything else.
