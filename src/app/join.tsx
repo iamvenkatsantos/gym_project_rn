@@ -11,6 +11,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { signInWithPassword } from '@/features/auth/api';
+import { loginLabel } from '@/lib/mobile-login';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { acceptInvite, findInviteByCode } from '@/features/members/api';
 import { formatInviteCode, isInviteCode, normalizeInviteCode } from '@/features/members/rules';
@@ -100,7 +101,7 @@ export default function JoinScreen() {
             </View>
             <ThemedText type="small" themeColor="textSecondary">
               Joining as {found.role === 'member' ? 'a member' : `a ${found.role}`}. You’ll sign in
-              with {found.email}.
+              with {loginLabel(found.email)}.
             </ThemedText>
           </Card>
           <TextField

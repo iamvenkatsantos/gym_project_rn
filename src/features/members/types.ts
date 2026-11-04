@@ -61,6 +61,8 @@ export type InviteOutcome = {
   emailError: string | null;
   /** The one-time join code of a WhatsApp invite. */
   code?: string | null;
+  /** The email the invite went to; for a WhatsApp invite without one, the mobile login. */
+  email?: string;
   /** Why the member details the inviter filled in weren't saved. */
   detailsError?: string | null;
 };

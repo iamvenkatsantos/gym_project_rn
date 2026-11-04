@@ -12,6 +12,7 @@ import { formatInviteCode, inviteMessage } from '@/features/members/rules';
 import type { GymInvite } from '@/features/members/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/lib/format';
+import { loginLabel } from '@/lib/mobile-login';
 
 /** Sends a WhatsApp invite's message again, with the same code. */
 function resend(invite: GymInvite, gymName: string) {
@@ -66,7 +67,7 @@ export function PendingInvites({
             <Icon name={invite.code ? 'logo-whatsapp' : 'mail-outline'} size={20} />
             <View style={styles.flex}>
               <ThemedText type="smallBold" numberOfLines={1}>
-                {invite.email}
+                {loginLabel(invite.email)}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                 {inviteDetail(invite)}
@@ -75,7 +76,7 @@ export function PendingInvites({
             {invite.code ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Send ${invite.email} the invite on WhatsApp again`}
+                accessibilityLabel={`Send ${loginLabel(invite.email)} the invite on WhatsApp again`}
                 hitSlop={8}
                 onPress={() => resend(invite, gymName)}>
                 <Icon name="share-social-outline" size={22} color="accent" />
@@ -84,7 +85,7 @@ export function PendingInvites({
             {canWithdraw(invite.role) ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Withdraw invite for ${invite.email}`}
+                accessibilityLabel={`Withdraw invite for ${loginLabel(invite.email)}`}
                 hitSlop={8}
                 disabled={withdraw.isPending}
                 onPress={() => withdraw.mutate(invite.id)}>

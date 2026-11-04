@@ -59,19 +59,27 @@ describe('onboardingValues', () => {
 });
 
 describe('validateAdmission', () => {
+  const allPoses = new Set(['front', 'back', 'side'] as const);
+
+  it('asks the inviter for the missing photos', () => {
+    expect(validateAdmission(filled, new Set(['front'])).photos).toBe(
+      'Add their back and side photos.',
+    );
+  });
+
   it('passes the details an inviter fills in, with no photos', () => {
-    expect(firstAdmissionError(validateAdmission(filled))).toBeNull();
+    expect(firstAdmissionError(validateAdmission(filled, allPoses))).toBeNull();
   });
 
   it('needs every field', () => {
-    const errors = validateAdmission({ ...filled, dateOfBirth: '', weight: '' });
+    const errors = validateAdmission({ ...filled, dateOfBirth: '', weight: '' }, allPoses);
     expect(errors.dateOfBirth).not.toBeNull();
     expect(errors.weight).toBe('Enter their weight.');
     expect(errors.height).toBeNull();
   });
 
   it('needs an Indian mobile number', () => {
-    expect(validateAdmission({ ...filled, phone: '12345' }).phone).toBe(
+    expect(validateAdmission({ ...filled, phone: '12345' }, allPoses).phone).toBe(
       'Enter a 10-digit mobile number.',
     );
   });

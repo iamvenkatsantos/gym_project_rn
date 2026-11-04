@@ -88,6 +88,7 @@ npx supabase functions deploy delete-account   # account deletion (store require
 npx supabase functions deploy invite-member    # emails invites from the People tab
 npx supabase functions deploy import-members   # member import from a CSV
 npx supabase functions deploy accept-invite    # joining with a WhatsApp invite code
+npx supabase functions deploy reset-password   # password reset codes for mobile sign-ins
 npx supabase functions deploy join --no-verify-jwt   # the tappable join link in WhatsApp invites
 npx supabase functions deploy send-push --no-verify-jwt   # push notifications, see below
 npx supabase functions deploy create-payment                # online payments, see below
@@ -125,8 +126,11 @@ Supabase settings these emails need (Dashboard → Authentication):
    about 2 emails an hour, so invites to anyone else fail without it.
 3. **Emails → Templates:** paste the branded templates from `supabase/templates/` (each file's
    first line names the template and its subject): `invite.html` into **Invite user**,
-   `recovery.html` into **Reset password** and `confirmation.html` into **Confirm signup**. They
-   show the CoreFit logo, the gym, the role and a code.
+   `recovery.html` into **Reset password**, `confirmation.html` into **Confirm signup** and
+   `email-change.html` into **Change email address**. They show the CoreFit logo, the gym, the
+   role and a code.
+4. **Providers → Email:** turn **Secure email change** off. Members who sign in with their mobile
+   number add an email from Edit profile, and their mobile login has no inbox to confirm from.
 
 Every one of these emails has a code as well as a link. The link only opens the app on a phone
 that has it; the code works anywhere: on the sign-in screen tap **Got a code by email? Enter it**.
@@ -289,6 +293,8 @@ psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/admission-details.sql
+psql -d corefit_test -f supabase/tests/whatsapp-without-email.sql
+psql -d corefit_test -f supabase/tests/password-reset-codes.sql
 psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql

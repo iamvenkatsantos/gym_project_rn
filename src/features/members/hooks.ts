@@ -19,7 +19,9 @@ import { branchKeys } from '@/features/branches/hooks';
 import type { ImportRow } from '@/features/members/import-rules';
 import type { MemberKind } from '@/features/members/rules';
 import type { GymPerson, InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
-import type { AdmissionDetails } from '@/features/onboarding/types';
+import { uploadAdmissionPhotos } from '@/features/body/api';
+import type { PhotoPose } from '@/features/body/types';
+import type { AdmissionDetails, PickedPhoto } from '@/features/onboarding/types';
 
 export const memberKeys = {
   all: ['members'] as const,
@@ -71,6 +73,7 @@ export function useInvitePerson(gymId: string) {
       channel,
       phone = null,
       admission = null,
+      photos = null,
     }: {
       email: string;
       role: InviteRole;
@@ -79,12 +82,15 @@ export function useInvitePerson(gymId: string) {
       phone?: string | null;
       /** A new member's details, filled in by whoever invites them. */
       admission?: AdmissionDetails | null;
+      /** Their front, side and back photos, taken by whoever invites them. */
+      photos?: Partial<Record<PhotoPose, PickedPhoto>> | null;
     }): Promise<InviteOutcome> => {
       const outcome = await invitePerson(gymId, email, role, channel === 'email', phone);
       if (!admission || role !== 'member' || outcome.result === 'already_member') return outcome;
       // The invite is in either way; only the details are left to try again.
       try {
-        await saveAdmissionDetails(gymId, email, admission);
+        const paths = photos ? await uploadAdmissionPhotos(gymId, photos) : null;
+        await saveAdmissionDetails(gymId, outcome.email ?? email, admission, paths);
         return outcome;
       } catch (error) {
         return {

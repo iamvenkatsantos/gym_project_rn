@@ -17,6 +17,7 @@ import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
 import { isDemoMode } from '@/lib/env';
+import { isMobileTyped, signInEmail } from '@/lib/mobile-login';
 import {
   firstError,
   MAX_PASSWORD,
@@ -64,7 +65,7 @@ export default function SignInScreen() {
     router.replace('/');
   };
   const passwordSignIn = useMutation({
-    mutationFn: () => signInWithPassword(email.trim(), password),
+    mutationFn: () => signInWithPassword(signInEmail(email), password),
     onSuccess: onSignedIn,
   });
   const createAccount = useMutation({
@@ -79,7 +80,13 @@ export default function SignInScreen() {
     demoSignIn.error;
   const awaitingConfirmation = mode === 'signUp' && createAccount.isSuccess && !createAccount.data;
   const nameError = mode === 'signUp' ? validateName(fullName) : null;
-  const emailError = validateEmail(email);
+  // Members invited on WhatsApp without an email sign in with their mobile number.
+  const mobileTyped = mode === 'signIn' && isMobileTyped(email);
+  const emailError = mobileTyped
+    ? null
+    : mode === 'signIn' && !email.trim()
+      ? 'Enter your email or mobile number.'
+      : validateEmail(email);
   // Existing passwords only need to be there; new ones must be strong enough.
   const passwordError =
     mode === 'signUp' ? validateNewPassword(password) : password ? null : 'Enter your password.';
@@ -212,9 +219,11 @@ export default function SignInScreen() {
                 ) : null}
                 <TextField
                   ref={emailRef}
-                  label="Email"
+                  label={mode === 'signIn' ? 'Email or mobile' : 'Email'}
                   icon="mail-outline"
-                  placeholder="name@example.com"
+                  placeholder={
+                    mode === 'signIn' ? 'name@example.com or mobile' : 'name@example.com'
+                  }
                   autoCapitalize="none"
                   autoComplete="email"
                   autoCorrect={false}
@@ -253,7 +262,9 @@ export default function SignInScreen() {
                     accessibilityRole="button"
                     disabled={resetPassword.isPending || resetPassword.isSuccess}
                     hitSlop={8}
-                    onPress={() => (emailError ? setResetHint(true) : resetPassword.mutate())}
+                    onPress={() =>
+                      emailError || mobileTyped ? setResetHint(true) : resetPassword.mutate()
+                    }
                     style={styles.forgot}>
                     <ThemedText type="linkPrimary">
                       {resetPassword.isPending
@@ -263,6 +274,19 @@ export default function SignInScreen() {
                           : 'Forgot password?'}
                     </ThemedText>
                   </Pressable>
+                ) : null}
+                {mode === 'signIn' && resetHint && mobileTyped ? (
+                  <View style={[styles.notice, { borderColor: theme.accent }]}>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Ask your gym for a reset code on WhatsApp.
+                    </ThemedText>
+                    <Button
+                      label="I have a reset code"
+                      icon="keypad-outline"
+                      size="compact"
+                      onPress={() => router.push('/reset-password')}
+                    />
+                  </View>
                 ) : null}
                 {mode === 'signIn' && resetHint && emailError ? (
                   <ThemedText type="small" themeColor="textSecondary">

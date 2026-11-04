@@ -59,7 +59,11 @@ Deno.serve(async (req) => {
   if (!account)
     return json({ error: 'Code not found or expired. Ask the gym for a new one.' }, 404);
   if (account.confirmed) {
-    return json({ error: `You already have an account. Sign in with ${account.email}.` }, 409);
+    // Invites without an email sign in with the mobile number (see mobile_login_email()).
+    const signInWith = account.email.endsWith('@m.vinven.net')
+      ? 'your mobile number'
+      : account.email;
+    return json({ error: `You already have an account. Sign in with ${signInWith}.` }, 409);
   }
 
   let userId = account.user_id;

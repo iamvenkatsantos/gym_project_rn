@@ -224,3 +224,55 @@ export async function restoreProfile(): Promise<Profile | null> {
   const { data } = await supabase.auth.getSession();
   return data.session ? fetchProfile(data.session.user.id) : null;
 }
+
+/** The error message an edge function sent back, or a generic one. */
+async function functionError(error: unknown): Promise<Error> {
+  const context = (error as { context?: Response } | null)?.context;
+  const body =
+    context && typeof context.json === 'function' ? await context.json().catch(() => null) : null;
+  if (body?.error) return new Error(body.error);
+  return error instanceof Error ? error : new Error('Something went wrong');
+}
+
+/**
+ * Owners and supervisors: a one-time code for someone who signs in with their mobile
+ * number to choose a new password. Sent to them on WhatsApp; it works once, for a day.
+ */
+export async function createPasswordResetCode(gymId: string, userId: string): Promise<string> {
+  if (!supabase) {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return delay(
+      Array.from({ length: 8 }, () => alphabet[Math.floor(Math.random() * 32)]).join(''),
+    );
+  }
+  return unwrap(
+    await supabase.rpc('create_password_reset_code', { p_gym_id: gymId, p_user_id: userId }),
+  ) as string;
+}
+
+/** Sets a new password with a reset code from the gym, then signs in. */
+export async function resetPasswordWithCode(code: string, password: string): Promise<Profile> {
+  if (!supabase) throw new Error('Demo mode can’t reset passwords. Pick a demo role instead.');
+  const { data, error } = await supabase.functions.invoke<{ email: string }>('reset-password', {
+    body: { code, password },
+  });
+  if (error || !data) throw await functionError(error);
+  return signInWithPassword(data.email, password);
+}
+
+/**
+ * Starts adding a real email to a mobile sign-in: Supabase emails a code to the new
+ * address. Needs "Secure email change" off, since the mobile login has no inbox to confirm.
+ */
+export async function requestEmailChange(email: string) {
+  if (!supabase) throw new Error('Demo mode can’t change emails.');
+  const { error } = await supabase.auth.updateUser({ email });
+  if (error) throw error;
+}
+
+/** Confirms the new email with the code sent to it. They sign in with it from now on. */
+export async function confirmEmailChange(email: string, token: string) {
+  if (!supabase) throw new Error('Demo mode can’t change emails.');
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email_change' });
+  if (error) throw error;
+}

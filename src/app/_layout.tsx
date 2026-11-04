@@ -107,6 +107,10 @@ function RootNavigator() {
         <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />
         <Stack.Screen name="enter-code" options={{ headerShown: true, title: 'Enter your code' }} />
         <Stack.Screen name="join" options={{ headerShown: true, title: 'Join your gym' }} />
+        <Stack.Screen
+          name="reset-password"
+          options={{ headerShown: true, title: 'Reset password' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={settingPassword}>
         <Stack.Screen name="set-password" options={{ title: 'Choose a password' }} />
@@ -209,10 +213,7 @@ function RootNavigator() {
         {/* Owners of more than one branch see them side by side. */}
         <Stack.Screen name="branches" options={{ headerShown: true, title: 'All branches' }} />
         {/* What the branch pays CoreFit each year, paid in the app. */}
-        <Stack.Screen
-          name="subscription"
-          options={{ headerShown: true, title: 'CoreFit plan' }}
-        />
+        <Stack.Screen name="subscription" options={{ headerShown: true, title: 'CoreFit plan' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>
         <Stack.Screen name="supervisor" options={{ title: 'Dashboard' }} />

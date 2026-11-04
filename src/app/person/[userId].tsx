@@ -1,6 +1,7 @@
+import { useMutation } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -22,12 +23,14 @@ import {
   useRemovePerson,
   useUpdatePerson,
 } from '@/features/members/hooks';
-import { isLastActiveOwner, isSignedUp } from '@/features/members/rules';
+import { isLastActiveOwner, isSignedUp, resetCodeMessage } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { useMemberships } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
+import { isMobileLogin, loginLabel } from '@/lib/mobile-login';
+import { createPasswordResetCode } from '@/features/auth/api';
 
 /** What each role can do, shown under the role pill. */
 const roleNote: Record<Role, string> = {
@@ -86,6 +89,47 @@ function MakeTrainer({ gymId, person }: { gymId: string; person: GymPerson }) {
         </View>
       </View>
     </Card>
+  );
+}
+
+/**
+ * Owners and supervisors: people who sign in with their mobile number have no reset
+ * email, so this makes a one-time reset code and sends it on WhatsApp.
+ */
+function SendResetCode({
+  gymId,
+  gymName,
+  person,
+}: {
+  gymId: string;
+  gymName: string;
+  person: GymPerson;
+}) {
+  const send = useMutation({
+    mutationFn: () => createPasswordResetCode(gymId, person.id),
+    onSuccess: (code) => {
+      const message = resetCodeMessage(gymName, code);
+      const opened = person.phone
+        ? Linking.openURL(whatsappUrl(person.phone, message))
+        : Share.share({ message });
+      opened.catch(() => {});
+    },
+  });
+  return (
+    <>
+      <Button
+        label={send.isSuccess ? 'Reset code sent' : 'Send password reset code'}
+        icon="key-outline"
+        variant="secondary"
+        loading={send.isPending}
+        onPress={() => send.mutate()}
+      />
+      {send.error ? (
+        <ThemedText type="small" themeColor="danger">
+          {send.error.message}
+        </ThemedText>
+      ) : null}
+    </>
   );
 }
 
@@ -175,7 +219,7 @@ export default function PersonScreen() {
         <View style={styles.flex}>
           <ThemedText type="title">{person.fullName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {person.email}
+            {loginLabel(person.email)}
           </ThemedText>
           {person.phone ? (
             <ThemedText type="small" themeColor="textSecondary">
@@ -202,6 +246,9 @@ export default function PersonScreen() {
           : ' Roles can’t be changed once given.'}
       </ThemedText>
 
+      {canManageGym(gym.role) && !isSelf && isMobileLogin(person.email) && isSignedUp(person) ? (
+        <SendResetCode gymId={gym.gymId} gymName={gym.gymName} person={person} />
+      ) : null}
       {person.role === 'member' ? <Admission person={person} /> : null}
       {person.role === 'member' && !suspended ? (
         <MemberBirthday gymId={gym.gymId} gymName={gym.gymName} person={person} />

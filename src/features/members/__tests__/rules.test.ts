@@ -12,6 +12,7 @@ import {
   normalizeInviteCode,
   isValidEmail,
   normalizeEmail,
+  resetCodeMessage,
 } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
 
@@ -150,5 +151,13 @@ describe('invite codes', () => {
   it('treats people as signed up unless told otherwise', () => {
     expect(isSignedUp({})).toBe(true);
     expect(isSignedUp({ signedUp: false })).toBe(false);
+  });
+});
+
+describe('resetCodeMessage', () => {
+  it('carries the formatted code and where to enter it', () => {
+    const message = resetCodeMessage('Pulse Fitness', 'K7P2QX4M');
+    expect(message).toContain('K7P2-QX4M');
+    expect(message).toContain('I have a reset code');
   });
 });

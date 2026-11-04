@@ -30,19 +30,24 @@ export function validateOnboarding(
   texts: OnboardingTexts,
   posesWithPhoto: ReadonlySet<PhotoPose>,
 ): OnboardingErrors {
-  const missing = ONBOARDING_POSES.filter((p) => !posesWithPhoto.has(p.value)).map((p) =>
-    p.label.toLowerCase(),
-  );
   return {
     fullName: validateName(texts.fullName, 'full name'),
     phone: validatePhone(texts.phone),
     dateOfBirth: validateBirthDate(texts.dateOfBirth, { required: true }),
     weight: texts.weight.trim() ? validateMetric(texts.weight, 'weightKg') : 'Enter your weight.',
     height: texts.height.trim() ? validateMetric(texts.height, 'heightCm') : 'Enter your height.',
-    photos: missing.length
-      ? `Add your ${joinWords(missing)} photo${missing.length > 1 ? 's' : ''}.`
-      : null,
+    photos: photosError(posesWithPhoto, 'your'),
   };
+}
+
+/** "Add your back photo." when a starting photo is missing, else null. */
+export function photosError(posesWithPhoto: ReadonlySet<PhotoPose>, whose: 'your' | 'their') {
+  const missing = ONBOARDING_POSES.filter((p) => !posesWithPhoto.has(p.value)).map((p) =>
+    p.label.toLowerCase(),
+  );
+  return missing.length
+    ? `Add ${whose} ${joinWords(missing)} photo${missing.length > 1 ? 's' : ''}.`
+    : null;
 }
 
 export function firstOnboardingError(errors: OnboardingErrors) {
@@ -70,7 +75,9 @@ export function onboardingValues(texts: OnboardingTexts) {
 /** The member's details as their inviter types them: the form's fields, without photos. */
 export type AdmissionTexts = OnboardingTexts;
 
-export type AdmissionErrors = Record<keyof AdmissionTexts, string | null>;
+export type AdmissionErrors = Record<keyof AdmissionTexts, string | null> & {
+  photos: string | null;
+};
 
 export const EMPTY_ADMISSION: AdmissionTexts = {
   fullName: '',
@@ -81,13 +88,19 @@ export const EMPTY_ADMISSION: AdmissionTexts = {
 };
 
 /** What's wrong with the details an inviter fills in for a new member. All are needed. */
-export function validateAdmission(texts: AdmissionTexts): AdmissionErrors {
+export function validateAdmission(
+  texts: AdmissionTexts,
+  posesWithPhoto: ReadonlySet<PhotoPose>,
+): AdmissionErrors {
   return {
     fullName: validateName(texts.fullName, 'full name'),
     phone: parseMobile(texts.phone) ? null : 'Enter a 10-digit mobile number.',
-    dateOfBirth: validateBirthDate(texts.dateOfBirth, { required: true }),
+    dateOfBirth: texts.dateOfBirth.trim()
+      ? validateBirthDate(texts.dateOfBirth)
+      : 'Enter their date of birth.',
     weight: texts.weight.trim() ? validateMetric(texts.weight, 'weightKg') : 'Enter their weight.',
     height: texts.height.trim() ? validateMetric(texts.height, 'heightCm') : 'Enter their height.',
+    photos: photosError(posesWithPhoto, 'their'),
   };
 }
 
@@ -98,6 +111,7 @@ export function firstAdmissionError(errors: AdmissionErrors) {
     errors.dateOfBirth,
     errors.weight,
     errors.height,
+    errors.photos,
   );
 }
 

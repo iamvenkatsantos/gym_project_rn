@@ -16,6 +16,8 @@ import type {
 import type { Role } from '@/features/auth/types';
 import type { ImportRow } from '@/features/members/import-rules';
 import type { AdmissionDetails } from '@/features/onboarding/types';
+import type { PhotoPose } from '@/features/body/types';
+import { mobileLoginEmail } from '@/lib/mobile-login';
 import {
   coachRoles,
   normalizeEmail,
@@ -164,13 +166,15 @@ export async function invitePerson(
   phone: string | null = null,
 ): Promise<InviteOutcome> {
   if (!supabase) {
+    // A WhatsApp invite without an email signs in with the mobile number.
+    const login = !email && phone ? mobileLoginEmail(phone) : email;
     const result =
-      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(email, role, phone);
+      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(login, role, phone);
     const code =
       result === 'invited' && phone
-        ? (mockInvites.find((i) => i.email === normalizeEmail(email))?.code ?? null)
+        ? (mockInvites.find((i) => i.email === normalizeEmail(login))?.code ?? null)
         : null;
-    return { result, emailSent: false, emailError: null, code };
+    return { result, emailSent: false, emailError: null, code, email: normalizeEmail(login) };
   }
 
   // A WhatsApp invite to the gym carries a one-time code to join with.
@@ -183,8 +187,19 @@ export async function invitePerson(
     });
     // Before the invite codes migration, save it without a code.
     if (error?.code !== 'PGRST202') {
-      const [row] = unwrap({ data, error }) as { result: InviteResult; code: string | null }[];
-      return { result: row.result, emailSent: false, emailError: null, code: row.code };
+      const [row] = unwrap({ data, error }) as {
+        result: InviteResult;
+        code: string | null;
+        /** The email used; missing before the WhatsApp-without-email migration. */
+        email?: string;
+      }[];
+      return {
+        result: row.result,
+        emailSent: false,
+        emailError: null,
+        code: row.code,
+        email: row.email ?? email,
+      };
     }
   }
 
@@ -229,6 +244,8 @@ export async function saveAdmissionDetails(
   gymId: string,
   email: string,
   details: AdmissionDetails,
+  /** Storage paths of the front, side and back photos the inviter uploaded. */
+  photos: Partial<Record<PhotoPose, string>> | null = null,
 ): Promise<void> {
   if (!supabase) {
     const normalized = normalizeEmail(email);
@@ -246,6 +263,7 @@ export async function saveAdmissionDetails(
     p_date_of_birth: details.dateOfBirth,
     p_weight_kg: details.weightKg,
     p_height_cm: details.heightCm,
+    ...(photos ? { p_photos: photos } : {}),
   });
   if (error?.code === 'PGRST202') throw new Error('Update the server to save member details.');
   if (error) throw error;
