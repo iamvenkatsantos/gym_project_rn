@@ -73,7 +73,7 @@ async function publish(channel, platforms, env) {
 
   console.log('Exporting the JS bundle…');
   const outDir = join(ROOT, 'dist-ota');
-  rmSync(outDir, { recursive: true, force: true });
+  removeDir(outDir);
   run(
     'npx',
     ['expo', 'export', ...platforms.flatMap((p) => ['--platform', p]), '--output-dir', outDir],
@@ -142,7 +142,7 @@ async function publish(channel, platforms, env) {
   for (const { platform, manifest } of releases) {
     await saveAndPoint({ channel, platform, manifest, privateKey, token, message, commit });
   }
-  rmSync(outDir, { recursive: true, force: true });
+  removeDir(outDir);
   console.log('\n✔ Published. Phones get it on their next launch and run it on the one after.');
 }
 
@@ -370,6 +370,15 @@ function run(cmd, cmdArgs, env, { quiet = false } = {}) {
     stdio: quiet ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'inherit'],
     maxBuffer: 64 * 1024 * 1024,
   });
+}
+
+/** macOS (Spotlight, Finder) can hold files for a moment; retry, and never fail a publish over it. */
+function removeDir(dir) {
+  try {
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {
+    // Left behind: the next publish clears it, and git ignores dist-ota/.
+  }
 }
 
 function git(gitArgs) {
