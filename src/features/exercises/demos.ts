@@ -855,6 +855,15 @@ export type ExerciseMedia = {
   animated?: boolean;
 };
 
+/** TRIAL: Open Exercise Figures (github.com/AbanoubAmir/open-exercise-figures, CC0). */
+const oefTrial: Record<string, DemoFrame> = {
+  'e-bench-press': require('@/assets/oef-trial/0025.webp'),
+  'e-back-squat': require('@/assets/oef-trial/0043.webp'),
+  'e-lat-pulldown': require('@/assets/oef-trial/2330.webp'),
+  'e-overhead-press': require('@/assets/oef-trial/0426.webp'),
+  's-overhead-triceps': require('@/assets/oef-trial/0643.webp'),
+};
+
 /** TRIAL ONLY, never merge: Vital Animations free-pack previews from vitalanimations.com. */
 const vitalTrial: Record<string, DemoFrame> = {
   'e-pec-deck': require('@/assets/vital-preview/pec-deck.webp'),
@@ -885,6 +894,9 @@ export function demoFor(
   imageUrl: Exercise['imageUrl'] = null,
 ): ExerciseMedia | null {
   // Cool-down stretches share the player; their ids start with "s-".
+  const oef = oefTrial[seedIds[exerciseId] ?? exerciseId];
+  if (oef)
+    return { frames: [oef], credit: 'Animation: Open Exercise Figures (CC0)', animated: true };
   const vital = vitalTrial[seedIds[exerciseId] ?? exerciseId];
   if (vital)
     return {

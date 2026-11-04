@@ -295,6 +295,23 @@ export const mockWorkouts: Workout[] = [
     memberDays: { 'u-member': [1, 3, 5] },
   },
   {
+    id: 'w-oef',
+    trainerId: 'u-trainer',
+    trainerName: 'Karthik Raja',
+    title: 'Open figures trial',
+    description: 'Free CC0 animations.',
+    level: 'beginner',
+    durationMinutes: 30,
+    exercises: [
+      prescribe('e-bench-press', 'Bench press', 1, 8, 40, 0),
+      prescribe('e-back-squat', 'Back squat', 1, 8, 60, 0),
+      prescribe('e-lat-pulldown', 'Lat pulldown', 1, 10, 40, 0),
+      prescribe('e-overhead-press', 'Overhead press', 1, 10, 10, 0),
+    ],
+    assignedMemberIds: ['u-member'],
+    memberDays: {},
+  },
+  {
     id: 'w-vital',
     trainerId: 'u-trainer',
     trainerName: 'Karthik Raja',
