@@ -3,184 +3,564 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark light" />
     <title>CoreFit – Gym management app for owners, trainers and members</title>
     <meta
       name="description"
-      content="CoreFit runs your gym from one app: QR check-in, memberships and renewals, online payments, workout and diet plans, trainer hours and an owner web dashboard. ₹4,999 a year per branch." />
-    <link rel="canonical" href="https://dashboard.vinven.net/about" />
+      content="CoreFit is a gym management app made in India: QR check-in, memberships and renewals, online payments, workout and diet plans, trainer hours and a web dashboard. ₹4,999 a year per branch." />
+    <link rel="canonical" href="https://vinven.net/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="CoreFit – Gym management app" />
+    <meta property="og:site_name" content="CoreFit" />
+    <meta property="og:title" content="CoreFit – Run your gym from one app" />
     <meta
       property="og:description"
       content="Check-ins, memberships, payments, workouts and trainers in one app. ₹4,999 a year per branch." />
-    <meta property="og:url" content="https://dashboard.vinven.net/about" />
-    <meta property="og:image" content="https://dashboard.vinven.net/logo.png" />
+    <meta property="og:url" content="https://vinven.net/" />
+    <meta property="og:image" content="https://vinven.net/img/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0b0b0f" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="preload" as="image" href="/img/owner-dashboard.webp" />
     <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/home.css" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "CoreFit",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Android, iOS, Web",
-        "description": "Gym management app for gym owners, trainers and members.",
-        "offers": {
-          "@type": "Offer",
-          "price": "4999",
-          "priceCurrency": "INR",
-          "description": "Per branch, per year"
-        },
-        "publisher": { "@type": "Organization", "name": "VinVen Technologies" }
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "name": "CoreFit",
+            "alternateName": "CoreFit gym app",
+            "url": "https://vinven.net/",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Android, Web",
+            "description": "Gym management app for gym owners, trainers and members: QR check-in, memberships, online payments, workout and diet plans.",
+            "offers": {
+              "@type": "Offer",
+              "price": "4999",
+              "priceCurrency": "INR",
+              "description": "Per branch, per year"
+            },
+            "publisher": { "@id": "https://vinven.net/#org" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://vinven.net/#org",
+            "name": "VinVen Technologies",
+            "url": "https://vinven.net/",
+            "logo": "https://vinven.net/logo.png",
+            "email": "support@vinven.net",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Needamangalam",
+              "addressRegion": "Tamil Nadu",
+              "addressCountry": "IN"
+            }
+          }
+        ]
       }
     </script>
   </head>
-  <body>
-    <header class="site">
+  <body class="home">
+    <header class="site home-nav">
       <div class="wrap">
-        <a class="logo" href="/about"><img src="/logo.png" alt="" />CoreFit</a>
+        <a class="logo" href="/about"
+          ><img src="/logo.png" alt="" width="36" height="36" />CoreFit</a
+        >
         <nav>
-          <a href="/about" aria-current="page">About</a>
+          <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
           <a href="/support">Support</a>
-          <a href="/">Owner sign in</a>
+          <a href="https://dashboard.vinven.net/">Owner sign in</a>
         </nav>
       </div>
     </header>
 
-    <main class="wrap">
-      <span class="pill">Made in India for gyms</span>
-      <h1>Run your gym from one app</h1>
-      <p class="lead">
-        CoreFit brings check-ins, memberships, payments, workouts and trainers together for gym
-        owners, trainers and members.
-      </p>
-      <div class="actions">
-        <a class="button" href="#pricing">See pricing</a>
-        <a class="button secondary" href="/support">Talk to us</a>
-      </div>
+    <main>
+      <!-- Hero -->
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow">Gym management app · Made in India</span>
+            <h1>Run your whole gym from <span class="hl">one app</span></h1>
+            <p class="lead">
+              Check-ins, memberships, payments, workouts and trainers. For the owner, the front
+              desk, every trainer and every member.
+            </p>
+            <div class="actions">
+              <a
+                class="button"
+                href="mailto:support@vinven.net?subject=CoreFit%20demo%20for%20my%20gym"
+                >Book a free demo</a
+              >
+              <a class="button ghost" href="#pricing">See pricing</a>
+            </div>
+            <ul class="hero-points">
+              <li>₹4,999 a year per branch</li>
+              <li>Free for members and trainers</li>
+              <li>We set it up for you</li>
+            </ul>
+          </div>
+          <div class="hero-phones" aria-hidden="true">
+            <figure class="phone phone-back left">
+              <img src="/img/member-home.webp" alt="" width="585" height="1266" />
+            </figure>
+            <figure class="phone phone-front">
+              <img src="/img/owner-dashboard.webp" alt="" width="585" height="1266" />
+            </figure>
+            <figure class="phone phone-back right">
+              <img src="/img/live.webp" alt="" width="585" height="1266" />
+            </figure>
+          </div>
+        </div>
+      </section>
 
-      <h2>For gym owners</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Memberships and renewals</h3>
-          <p class="muted">
-            Plans, offers, loyalty discounts and renewal reminders on push or WhatsApp.
+      <!-- Facts strip -->
+      <section class="facts">
+        <div class="wrap facts-grid">
+          <div><strong>4 roles</strong><span>Owner, supervisor, trainer, member</span></div>
+          <div><strong>0% cut</strong><span>Member payments go straight to you</span></div>
+          <div><strong>QR check-in</strong><span>Every branch, live or printed</span></div>
+          <div><strong>App + web</strong><span>Android app and owner dashboard</span></div>
+        </div>
+      </section>
+
+      <!-- Roles -->
+      <section class="section" id="features">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Everyone gets their own app</span>
+            <h2>One app, the right screens for each role</h2>
+          </div>
+          <div class="roles">
+            <article class="role-card">
+              <span class="role-icon"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 10h.01M15 10h.01" /></svg
+              ></span>
+              <h3>Owners</h3>
+              <p>Members, money, staff and every branch, live.</p>
+            </article>
+            <article class="role-card">
+              <span class="role-icon"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <rect x="3" y="6" width="18" height="13" rx="2" />
+                  <path d="M3 10h18M7 15h4" /></svg
+              ></span>
+              <h3>Supervisors</h3>
+              <p>Front desk: payments, renewals and trainer matching.</p>
+            </article>
+            <article class="role-card">
+              <span class="role-icon"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12" /></svg
+              ></span>
+              <h3>Trainers</h3>
+              <p>Workout and diet plans, sessions and member progress.</p>
+            </article>
+            <article class="role-card">
+              <span class="role-icon"
+                ><svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg
+              ></span>
+              <h3>Members</h3>
+              <p>Check in, train, book and renew from their phone.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature rows -->
+      <section class="section feature">
+        <div class="wrap feature-grid">
+          <div class="feature-copy">
+            <span class="eyebrow">For owners</span>
+            <h2>Your gym, live on your phone</h2>
+            <p class="lead">
+              Active members, renewals due, who came in today and which trainers are in.
+            </p>
+            <ul class="ticks">
+              <li>Switch branches or see all of them together</li>
+              <li>Revenue, new members and lapsed members in Insights</li>
+              <li>CSV reports for your accountant</li>
+            </ul>
+          </div>
+          <div class="feature-phones">
+            <figure class="phone">
+              <img
+                src="/img/owner-dashboard.webp"
+                alt="Owner dashboard with active members, renewals due and today's check-ins"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+            <figure class="phone offset">
+              <img
+                src="/img/insights.webp"
+                alt="Insights with revenue for the last six months"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature alt">
+        <div class="wrap feature-grid reverse">
+          <div class="feature-copy">
+            <span class="eyebrow">Memberships and payments</span>
+            <h2>Renewals that don't slip</h2>
+            <p class="lead">Members get reminders before their plan ends. You renew in one tap.</p>
+            <ul class="ticks">
+              <li>Push reminders 7, 3 and 1 days before, plus WhatsApp</li>
+              <li>Cash, UPI or online by card and UPI through Razorpay</li>
+              <li>Festival offers and loyalty discounts that apply themselves</li>
+              <li>Money goes to your own Razorpay account, never ours</li>
+            </ul>
+          </div>
+          <div class="feature-phones">
+            <figure class="phone">
+              <img
+                src="/img/renewals.webp"
+                alt="Renewals due with Renew, Remind and WhatsApp buttons"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+            <figure class="phone offset">
+              <img
+                src="/img/payments.webp"
+                alt="Membership plans with a Diwali offer price"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature">
+        <div class="wrap feature-grid">
+          <div class="feature-copy">
+            <span class="eyebrow">Attendance</span>
+            <h2>Scan in. Scan out. Done.</h2>
+            <p class="lead">A QR for every branch. See who's in the gym right now.</p>
+            <ul class="ticks">
+              <li>Only members with an active membership can check in</li>
+              <li>Automatic check-out at closing time</li>
+              <li>Trainer hours, permission requests and loss-of-pay rules</li>
+            </ul>
+          </div>
+          <div class="feature-phones">
+            <figure class="phone">
+              <img
+                src="/img/attendance.webp"
+                alt="Attendance for today with trainers and members in the gym"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+            <figure class="phone offset">
+              <img
+                src="/img/trainer-hours.webp"
+                alt="Trainer permission requests waiting for approval"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature alt">
+        <div class="wrap feature-grid reverse">
+          <div class="feature-copy">
+            <span class="eyebrow">For trainers</span>
+            <h2>Plans, diets and real progress</h2>
+            <p class="lead">Trainers build weekly plans and see how each member is doing.</p>
+            <ul class="ticks">
+              <li>15 ready-made smart plans to start from</li>
+              <li>Diet plans with daily calories and meals</li>
+              <li>Weight, body fat and measurements over time</li>
+              <li>A note from the member after every workout</li>
+            </ul>
+          </div>
+          <div class="feature-phones">
+            <figure class="phone">
+              <img
+                src="/img/trainer-body.webp"
+                alt="A member's weight trend and body measurements"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+            <figure class="phone offset">
+              <img
+                src="/img/diet.webp"
+                alt="A vegetarian diet plan with daily targets"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature">
+        <div class="wrap feature-grid">
+          <div class="feature-copy">
+            <span class="eyebrow">For members</span>
+            <h2>A coach in every pocket</h2>
+            <p class="lead">
+              Guided workouts, one exercise at a time, with demos and a rest timer.
+            </p>
+            <ul class="ticks">
+              <li>Today's plan from their trainer, ready to start</li>
+              <li>Cool-down stretches after every workout</li>
+              <li>Book classes and 1:1 trainer sessions</li>
+              <li>Renew their membership online</li>
+            </ul>
+          </div>
+          <div class="feature-phones">
+            <figure class="phone">
+              <img
+                src="/img/live.webp"
+                alt="Live workout showing a back squat demo with reps and weight"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+            <figure class="phone offset">
+              <img
+                src="/img/bookings.webp"
+                alt="Bookings with a 1:1 session and trainers"
+                width="585"
+                height="1266"
+                loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- Web dashboard -->
+      <section class="section alt">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Owner web dashboard</span>
+            <h2>The big picture on a big screen</h2>
+            <p class="lead">
+              Members, payments and attendance at your desk. Same sign-in as the app.
+            </p>
+          </div>
+          <figure class="browser">
+            <div class="browser-bar">
+              <span></span><span></span><span></span><em>dashboard.vinven.net</em>
+            </div>
+            <img
+              src="/img/web-dashboard.webp"
+              alt="Owner web dashboard with renewals due, today's check-ins and payments by method"
+              width="1100"
+              height="690"
+              loading="lazy" />
+          </figure>
+        </div>
+      </section>
+
+      <!-- More -->
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">And much more</span>
+            <h2>Everything a gym needs</h2>
+          </div>
+          <div class="mini-grid">
+            <div>
+              <h3>WhatsApp invites</h3>
+              <p>Members join with a one-time code.</p>
+            </div>
+            <div>
+              <h3>Import members</h3>
+              <p>Bring members over from another app with a CSV.</p>
+            </div>
+            <div>
+              <h3>Classes</h3>
+              <p>Weekly class schedules with spots and bookings.</p>
+            </div>
+            <div>
+              <h3>Enquiries</h3>
+              <p>Track walk-ins and trials with follow-up reminders.</p>
+            </div>
+            <div>
+              <h3>Announcements</h3>
+              <p>Holiday notices and offers on every member's phone.</p>
+            </div>
+            <div>
+              <h3>Birthdays</h3>
+              <p>A morning reminder and a one-tap wish.</p>
+            </div>
+            <div>
+              <h3>Many branches</h3>
+              <p>Every branch with its own QR, plans and reports.</p>
+            </div>
+            <div>
+              <h3>Light and dark</h3>
+              <p>Easy on the eyes, day or night.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section class="section alt">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Getting started</span>
+            <h2>Live in a day</h2>
+          </div>
+          <ol class="steps">
+            <li><strong>Talk to us</strong><span>We set up your gym, branches and plans.</span></li>
+            <li>
+              <strong>Add your people</strong
+              ><span>Invite on WhatsApp or import your member list.</span>
+            </li>
+            <li>
+              <strong>Open the doors</strong><span>Print the QR. Members check in and train.</span>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section class="section" id="pricing">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Pricing</span>
+            <h2>One simple price</h2>
+            <p class="lead">No per-member fees. No cut of your payments.</p>
+          </div>
+          <div class="pricing">
+            <div class="price-card featured">
+              <span class="badge">For gym owners</span>
+              <p class="price">₹4,999 <small>/ year per branch</small></p>
+              <p class="muted">That's about ₹14 a day.</p>
+              <ul class="ticks">
+                <li>Unlimited members and staff</li>
+                <li>Every feature, app and web dashboard</li>
+                <li>Online payments at no extra CoreFit fee</li>
+                <li>Setup and training included</li>
+              </ul>
+              <a class="button" href="mailto:support@vinven.net?subject=CoreFit%20for%20my%20gym"
+                >Get CoreFit</a
+              >
+            </div>
+            <div class="price-card">
+              <span class="badge muted-badge">For members and trainers</span>
+              <p class="price">Free</p>
+              <p class="muted">Join with the invite from your gym.</p>
+              <ul class="ticks">
+                <li>Guided workouts and plans</li>
+                <li>Check-in, bookings and renewals</li>
+                <li>No ads, ever</li>
+              </ul>
+              <a class="button ghost" href="/support">How to join</a>
+            </div>
+          </div>
+          <p class="muted small center">
+            Razorpay charges its own fee on online payments, paid by the gym.
           </p>
         </div>
-        <div class="card">
-          <h3>Online payments</h3>
-          <p class="muted">
-            Members pay by UPI or card. Money goes straight to your own Razorpay account.
-          </p>
-        </div>
-        <div class="card">
-          <h3>QR check-in</h3>
-          <p class="muted">A check-in QR per branch, opening hours and automatic check-out.</p>
-        </div>
-        <div class="card">
-          <h3>Trainer hours</h3>
-          <p class="muted">Hours worked, permissions and loss-of-pay rules for every trainer.</p>
-        </div>
-        <div class="card">
-          <h3>Insights and exports</h3>
-          <p class="muted">Collections, attendance and members at a glance, plus CSV reports.</p>
-        </div>
-        <div class="card">
-          <h3>Web dashboard</h3>
-          <p class="muted">Members, payments and attendance on a big screen at your desk.</p>
-        </div>
-        <div class="card">
-          <h3>Many branches</h3>
-          <p class="muted">Switch branches or see all of them together.</p>
-        </div>
-        <div class="card">
-          <h3>Easy joining</h3>
-          <p class="muted">Invite on WhatsApp or email, or import members from another app.</p>
-        </div>
-      </div>
+      </section>
 
-      <h2>For trainers</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Workout and diet plans</h3>
-          <p class="muted">Build weekly plans and assign them to your members.</p>
+      <!-- FAQ -->
+      <section class="section alt">
+        <div class="wrap narrow">
+          <div class="section-head">
+            <span class="eyebrow">Questions</span>
+            <h2>Good to know</h2>
+          </div>
+          <details>
+            <summary>Is CoreFit on iPhone?</summary>
+            <p>Android first. iPhone is coming soon; the web dashboard works on any device.</p>
+          </details>
+          <details>
+            <summary>Can I move my members from another app?</summary>
+            <p>Yes. Fill in our CSV template and import them with their plans and dates.</p>
+          </details>
+          <details>
+            <summary>Where does member payment money go?</summary>
+            <p>Straight to your own Razorpay account. CoreFit never holds it and takes no cut.</p>
+          </details>
+          <details>
+            <summary>Is our data safe?</summary>
+            <p>
+              Every record is locked to its gym and role. Read our
+              <a href="/privacy">privacy policy</a>.
+            </p>
+          </details>
+          <details>
+            <summary>I have more than one branch.</summary>
+            <p>Each branch is ₹4,999 a year. You see them separately or all together.</p>
+          </details>
         </div>
-        <div class="card">
-          <h3>Member progress</h3>
-          <p class="muted">See workouts, body measurements and progress photos.</p>
-        </div>
-      </div>
+      </section>
 
-      <h2>For members</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Guided workouts</h3>
-          <p class="muted">
-            One exercise at a time with demos, rest timer and cool-down stretches.
-          </p>
+      <!-- CTA -->
+      <section class="cta">
+        <div class="wrap">
+          <img src="/logo.png" alt="" width="64" height="64" />
+          <h2>Ready to run a smarter gym?</h2>
+          <p class="lead">Write to us and we'll set up your gym with you.</p>
+          <div class="actions center">
+            <a
+              class="button"
+              href="mailto:support@vinven.net?subject=CoreFit%20demo%20for%20my%20gym"
+              >Email support@vinven.net</a
+            >
+          </div>
         </div>
-        <div class="card">
-          <h3>Bookings and check-in</h3>
-          <p class="muted">Scan in, book classes and trainer sessions, renew online.</p>
-        </div>
-        <div class="card">
-          <h3>Track progress</h3>
-          <p class="muted">Workout history, measurements and private progress photos.</p>
-        </div>
-      </div>
-
-      <h2 id="pricing">Pricing</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Gym owners</h3>
-          <p class="price">₹4,999 <small>/ year per branch</small></p>
-          <ul>
-            <li>Unlimited members and staff</li>
-            <li>Every feature, app and web dashboard</li>
-            <li>Online payments at no extra CoreFit fee</li>
-            <li>Setup help included</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>Members and trainers</h3>
-          <p class="price">Free</p>
-          <ul>
-            <li>Join with the invite from your gym</li>
-            <li>No ads</li>
-          </ul>
-        </div>
-      </div>
-      <p class="muted small">
-        CoreFit takes no cut of member payments. Razorpay charges its own payment fee, paid by the
-        gym.
-      </p>
-
-      <h2>Get CoreFit for your gym</h2>
-      <p>We set up your gym and first branch for you. Write to us to get started.</p>
-      <div class="actions">
-        <a class="button" href="mailto:support@vinven.net?subject=CoreFit%20for%20my%20gym"
-          >Email support@vinven.net</a
-        >
-      </div>
-
-      <h2>About us</h2>
-      <p>
-        CoreFit is a product of VinVen Technologies, Needamangalam, Thiruvarur, Tamil Nadu, India.
-        Udyam registration UDYAM-TN-25-0063917.
-      </p>
+      </section>
     </main>
 
     <footer class="site">
       <div class="wrap">
         <nav>
-          <a href="/about">About</a>
+          <a href="/about">Home</a>
           <a href="/support">Support</a>
           <a href="/privacy">Privacy policy</a>
           <a href="/terms">Terms</a>
           <a href="/delete-account">Delete account</a>
+          <a href="https://dashboard.vinven.net/">Owner sign in</a>
         </nav>
+        <p>
+          CoreFit is a product of VinVen Technologies, Needamangalam, Thiruvarur, Tamil Nadu, India
+          · Udyam UDYAM-TN-25-0063917
+        </p>
         <p>© 2026 VinVen Technologies</p>
       </div>
     </footer>
