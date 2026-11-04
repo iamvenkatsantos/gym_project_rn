@@ -37,12 +37,16 @@ export const statusPill: Record<
 /** Sunday first, as Date.getDay() counts. */
 export const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-/** Until the owner saves their own: 8 hours, 2 hours short allowed, 4 hours LOP, Sunday off. */
+/** Until the owner saves their own: 8 h, 2 h short allowed, 4 h LOP, Sunday off; late after 15 min, 2 days in a row cost 4 h. */
 export const defaultRules: TrainerHourRulesInput = {
   requiredMinutes: 8 * 60,
   shortLimitMinutes: 2 * 60,
   lopMinutes: 4 * 60,
   offDays: [0],
+  lateAfterMinutes: 15,
+  lateStreakDays: 2,
+  lateLopMinutes: 4 * 60,
+  eveningStartsAt: null,
 };
 
 /** "8 h", "7.5 h": hours for steppers and totals. */
@@ -60,13 +64,14 @@ export function rulesProblem(rules: TrainerHourRulesInput) {
 }
 
 /**
- * A working day with the rules applied. Approved permission counts as time worked. A day with
- * no check-in and no permission costs the full day; a day short by more than the allowed
- * shortfall costs the rule's LOP hours.
+ * A working day with the shortfall rule applied. Approved permission counts as time worked. A
+ * day with no check-in and no permission costs the full day; a day short by more than the
+ * allowed shortfall costs the rule's LOP hours. Late streaks are added by summariseMonth.
  */
 export function applyRules(
   day: TrainerDay,
-  rules: Pick<TrainerHourRules, 'requiredMinutes' | 'shortLimitMinutes' | 'lopMinutes'>,
+  rules: Pick<TrainerHourRules, 'requiredMinutes' | 'shortLimitMinutes' | 'lopMinutes'> &
+    Partial<Pick<TrainerHourRules, 'lateAfterMinutes'>>,
 ): TrainerDayResult {
   const credited = day.workedMinutes + day.permissionMinutes;
   const shortMinutes = Math.max(0, rules.requiredMinutes - credited);
@@ -76,32 +81,83 @@ export function applyRules(
     : shortMinutes > rules.shortLimitMinutes
       ? rules.lopMinutes
       : 0;
-  return { ...day, shortMinutes, lopMinutes, absent };
+  return {
+    ...day,
+    shortMinutes,
+    lopMinutes,
+    absent,
+    late: isLate(day, rules.lateAfterMinutes ?? null),
+    lateLopMinutes: 0,
+  };
 }
 
-/** The month per trainer, most LOP first. The server leaves out off days and today. */
-export function summariseMonth(days: TrainerDay[], rules: TrainerHourRules): TrainerMonth[] {
-  const byTrainer = new Map<string, TrainerMonth>();
-  for (const day of days) {
-    const result = applyRules(day, rules);
-    const month = byTrainer.get(day.trainerId) ?? {
-      trainerId: day.trainerId,
-      fullName: day.fullName,
-      workingDays: 0,
-      workedMinutes: 0,
-      lopMinutes: 0,
-      lopDays: [],
+/**
+ * Late: the first check-in is more than lateAfterMinutes after their shift starts (opening, or the evening start for evening trainers), and no approved
+ * permission starts by then. Never late when the rule is off, the branch is open 24 hours or
+ * they didn't come.
+ */
+export function isLate(
+  day: Pick<TrainerDay, 'firstInMinute' | 'permissionFromMinute' | 'opensMinute' | 'startMinute'>,
+  lateAfterMinutes: number | null,
+) {
+  const start = day.startMinute !== undefined ? day.startMinute : day.opensMinute;
+  if (lateAfterMinutes === null || start === null || day.firstInMinute === null) return false;
+  const by = start + lateAfterMinutes;
+  if (day.permissionFromMinute !== null && day.permissionFromMinute <= by) return false;
+  return day.firstInMinute > by;
+}
+
+/**
+ * One trainer's working days, oldest first, with late streaks charged: every lateStreakDays late
+ * days in a row cost lateLopMinutes on the day the streak completes, then the count starts
+ * again. An on-time or absent day resets it; off days aren't in the list, so they don't.
+ */
+export function applyLateStreaks(
+  days: TrainerDayResult[],
+  rules: Pick<TrainerHourRules, 'lateStreakDays' | 'lateLopMinutes'>,
+): TrainerDayResult[] {
+  let run = 0;
+  return days.map((d) => {
+    if (!d.late) {
+      run = 0;
+      return d;
+    }
+    run += 1;
+    if (run < rules.lateStreakDays) return d;
+    run = 0;
+    return {
+      ...d,
+      lateLopMinutes: rules.lateLopMinutes,
+      lopMinutes: d.lopMinutes + rules.lateLopMinutes,
     };
-    month.workingDays += 1;
-    month.workedMinutes += day.workedMinutes;
-    month.lopMinutes += result.lopMinutes;
-    if (result.lopMinutes > 0) month.lopDays.push(result);
-    byTrainer.set(day.trainerId, month);
+  });
+}
+
+/**
+ * The month per trainer, most LOP first. The server leaves out off days and today. Streaks
+ * count within the month.
+ */
+export function summariseMonth(days: TrainerDay[], rules: TrainerHourRules): TrainerMonth[] {
+  const byTrainer = new Map<string, TrainerDay[]>();
+  for (const day of days) {
+    byTrainer.set(day.trainerId, [...(byTrainer.get(day.trainerId) ?? []), day]);
   }
-  for (const month of byTrainer.values()) month.lopDays.sort((a, b) => a.day.localeCompare(b.day));
-  return [...byTrainer.values()].sort(
-    (a, b) => b.lopMinutes - a.lopMinutes || a.fullName.localeCompare(b.fullName),
-  );
+  const months = [...byTrainer.values()].map((list): TrainerMonth => {
+    const results = applyLateStreaks(
+      [...list].sort((a, b) => a.day.localeCompare(b.day)).map((d) => applyRules(d, rules)),
+      rules,
+    );
+    return {
+      trainerId: list[0].trainerId,
+      fullName: list[0].fullName,
+      workingDays: results.length,
+      workedMinutes: results.reduce((sum, d) => sum + d.workedMinutes, 0),
+      lopMinutes: results.reduce((sum, d) => sum + d.lopMinutes, 0),
+      lateDays: results.filter((d) => d.late).length,
+      lopDays: results.filter((d) => d.lopMinutes > 0),
+    };
+  });
+  return months.sort((a, b) => b.lopMinutes - a.lopMinutes || a.fullName.localeCompare(b.fullName));
 }
 
 /** What's wrong with a permission request, or null. */

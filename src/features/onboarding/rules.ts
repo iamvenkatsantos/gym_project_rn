@@ -1,7 +1,9 @@
 import { parseBirthDate, validateBirthDate } from '@/features/birthdays/rules';
 import { parseMetric, validateMetric } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
+import type { AdmissionDetails } from '@/features/onboarding/types';
 import { normalizePhone } from '@/features/enquiries/rules';
+import { parseMobile } from '@/features/members/import-rules';
 import { firstError, validateName, validatePhone } from '@/lib/validation';
 
 /** The three starting photos, in the order the gym asks for them. */
@@ -28,19 +30,24 @@ export function validateOnboarding(
   texts: OnboardingTexts,
   posesWithPhoto: ReadonlySet<PhotoPose>,
 ): OnboardingErrors {
-  const missing = ONBOARDING_POSES.filter((p) => !posesWithPhoto.has(p.value)).map((p) =>
-    p.label.toLowerCase(),
-  );
   return {
     fullName: validateName(texts.fullName, 'full name'),
     phone: validatePhone(texts.phone),
     dateOfBirth: validateBirthDate(texts.dateOfBirth, { required: true }),
     weight: texts.weight.trim() ? validateMetric(texts.weight, 'weightKg') : 'Enter your weight.',
     height: texts.height.trim() ? validateMetric(texts.height, 'heightCm') : 'Enter your height.',
-    photos: missing.length
-      ? `Add your ${joinWords(missing)} photo${missing.length > 1 ? 's' : ''}.`
-      : null,
+    photos: photosError(posesWithPhoto, 'your'),
   };
+}
+
+/** "Add your back photo." when a starting photo is missing, else null. */
+export function photosError(posesWithPhoto: ReadonlySet<PhotoPose>, whose: 'your' | 'their') {
+  const missing = ONBOARDING_POSES.filter((p) => !posesWithPhoto.has(p.value)).map((p) =>
+    p.label.toLowerCase(),
+  );
+  return missing.length
+    ? `Add ${whose} ${joinWords(missing)} photo${missing.length > 1 ? 's' : ''}.`
+    : null;
 }
 
 export function firstOnboardingError(errors: OnboardingErrors) {
@@ -63,6 +70,54 @@ export function onboardingValues(texts: OnboardingTexts) {
     weightKg: parseMetric(texts.weight)!,
     heightCm: parseMetric(texts.height)!,
   };
+}
+
+/** The member's details as their inviter types them: the form's fields, without photos. */
+export type AdmissionTexts = OnboardingTexts;
+
+export type AdmissionErrors = Record<keyof AdmissionTexts, string | null> & {
+  photos: string | null;
+};
+
+export const EMPTY_ADMISSION: AdmissionTexts = {
+  fullName: '',
+  phone: '',
+  dateOfBirth: '',
+  weight: '',
+  height: '',
+};
+
+/** What's wrong with the details an inviter fills in for a new member. All are needed. */
+export function validateAdmission(
+  texts: AdmissionTexts,
+  posesWithPhoto: ReadonlySet<PhotoPose>,
+): AdmissionErrors {
+  return {
+    fullName: validateName(texts.fullName, 'full name'),
+    phone: parseMobile(texts.phone) ? null : 'Enter a 10-digit mobile number.',
+    dateOfBirth: texts.dateOfBirth.trim()
+      ? validateBirthDate(texts.dateOfBirth)
+      : 'Enter their date of birth.',
+    weight: texts.weight.trim() ? validateMetric(texts.weight, 'weightKg') : 'Enter their weight.',
+    height: texts.height.trim() ? validateMetric(texts.height, 'heightCm') : 'Enter their height.',
+    photos: photosError(posesWithPhoto, 'their'),
+  };
+}
+
+export function firstAdmissionError(errors: AdmissionErrors) {
+  return firstError(
+    errors.fullName,
+    errors.phone,
+    errors.dateOfBirth,
+    errors.weight,
+    errors.height,
+    errors.photos,
+  );
+}
+
+/** The inviter's typed details, cleaned up for saving. Only call once validateAdmission passes. */
+export function admissionValues(texts: AdmissionTexts): AdmissionDetails {
+  return { ...onboardingValues(texts), phone: parseMobile(texts.phone)! };
 }
 
 function joinWords(words: string[]) {

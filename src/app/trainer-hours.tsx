@@ -14,11 +14,16 @@ import { Spacing } from '@/constants/theme';
 import { AttendanceRow } from '@/features/attendance/components/attendance-row';
 import { dayLabel, formatMinutes } from '@/features/attendance/rules';
 import { useActiveGym } from '@/features/auth/use-profile';
+import { usePeople } from '@/features/members/hooks';
+import { useCheckInRules } from '@/features/check-in/hooks';
+import { gymHours, timeOfDay } from '@/features/check-in/rules';
 import { PermissionCard } from '@/features/trainer-hours/components/permission-card';
 import {
   useDecidePermission,
   usePermissions,
   useSaveTrainerHourRules,
+  useSetTrainerShift,
+  useTrainerShifts,
   useTrainerHourRules,
   useTrainerHoursMonth,
 } from '@/features/trainer-hours/hooks';
@@ -46,6 +51,8 @@ function dayDetail(d: TrainerMonth['lopDays'][number]) {
   if (d.absent) return 'Absent';
   const parts = [`Worked ${formatMinutes(d.workedMinutes)}`];
   if (d.permissionMinutes) parts.push(`permission ${formatMinutes(d.permissionMinutes)}`);
+  if (d.lateLopMinutes && d.firstInMinute !== null)
+    parts.push(`late streak, in ${timeOfDay(d.firstInMinute)}`);
   return parts.join(' · ');
 }
 
@@ -61,7 +68,13 @@ function TrainerLop({ month, divider }: { month: TrainerMonth; divider: boolean 
         onPress={() => setOpen((o) => !o)}>
         <AttendanceRow
           name={month.fullName}
-          detail={`${lopDays} of ${month.workingDays} days short · Worked ${hoursLabel(month.workedMinutes)}`}
+          detail={[
+            `${month.workingDays} days`,
+            `Worked ${hoursLabel(month.workedMinutes)}`,
+            month.lateDays ? `${month.lateDays} late` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
           pill={
             month.lopMinutes
               ? { label: `LOP ${hoursLabel(month.lopMinutes)}`, tone: 'danger' }
@@ -190,6 +203,45 @@ function RequestsView({ gymId }: { gymId: string }) {
   );
 }
 
+/** Owners mark who works evenings; saved on tap. */
+function ShiftPicker({ gymId }: { gymId: string }) {
+  const people = usePeople(gymId);
+  const shifts = useTrainerShifts(gymId);
+  const setShift = useSetTrainerShift(gymId);
+  const trainers = (people.data ?? []).filter((p) => p.role === 'trainer' && p.status === 'active');
+
+  if (!people.data || !shifts.data) return null;
+  if (!trainers.length) return null;
+  return (
+    <>
+      {trainers.map((t) => (
+        <View key={t.id} style={styles.row}>
+          <ThemedText style={styles.flex}>{t.fullName}</ThemedText>
+          <View style={styles.shift}>
+            <SegmentedControl
+              options={[
+                { value: 'morning', label: 'Morning' },
+                { value: 'evening', label: 'Evening' },
+              ]}
+              value={
+                setShift.isPending && setShift.variables?.trainerId === t.id
+                  ? setShift.variables.shift
+                  : (shifts.data[t.id] ?? 'morning')
+              }
+              onChange={(shift) => setShift.mutate({ trainerId: t.id, shift })}
+            />
+          </View>
+        </View>
+      ))}
+      {setShift.error ? (
+        <ThemedText type="small" themeColor="danger">
+          Couldn&apos;t save: {setShift.error.message}
+        </ThemedText>
+      ) : null}
+    </>
+  );
+}
+
 function RulesView({
   gymId,
   rules,
@@ -201,6 +253,7 @@ function RulesView({
 }) {
   const [draft, setDraft] = useState<TrainerHourRulesInput>(rules ?? defaultRules);
   const save = useSaveTrainerHourRules(gymId);
+  const opening = gymHours(useCheckInRules(gymId).data)?.opensAt ?? null;
   const set = (next: Partial<TrainerHourRulesInput>) => {
     save.reset();
     setDraft((d) => ({ ...d, ...next }));
@@ -270,6 +323,94 @@ function RulesView({
       <ThemedText type="small" themeColor="textSecondary">
         Approved permission counts as worked.
       </ThemedText>
+
+      <ThemedText type="smallBold">Late check-in LOP</ThemedText>
+      <SegmentedControl
+        options={[
+          { value: 'on', label: 'On' },
+          { value: 'off', label: 'Off' },
+        ]}
+        value={draft.lateAfterMinutes === null ? 'off' : 'on'}
+        onChange={(v) =>
+          set({ lateAfterMinutes: v === 'off' ? null : (rules?.lateAfterMinutes ?? 15) })
+        }
+      />
+      {draft.lateAfterMinutes !== null ? (
+        <>
+          <View style={styles.row}>
+            <ThemedText style={styles.flex}>Late after opening by</ThemedText>
+            <Stepper
+              label="minutes after opening that count as late"
+              value={draft.lateAfterMinutes}
+              step={5}
+              min={0}
+              max={120}
+              format={(m) => `${m} min`}
+              onChange={(m) => set({ lateAfterMinutes: m })}
+            />
+          </View>
+          <View style={styles.row}>
+            <ThemedText style={styles.flex}>Late days in a row</ThemedText>
+            <Stepper
+              label="late days in a row"
+              value={draft.lateStreakDays}
+              min={1}
+              max={7}
+              format={(n) => (n === 1 ? '1 day' : `${n} days`)}
+              onChange={(n) => set({ lateStreakDays: n })}
+            />
+          </View>
+          <View style={styles.row}>
+            <ThemedText style={styles.flex}>LOP each time</ThemedText>
+            <Stepper
+              label="LOP for late days in a row"
+              value={draft.lateLopMinutes}
+              step={30}
+              min={30}
+              max={16 * 60}
+              format={hoursLabel}
+              onChange={(m) => set({ lateLopMinutes: m })}
+            />
+          </View>
+          <ThemedText type="small" themeColor={opening === null ? 'danger' : 'textSecondary'}>
+            {opening === null
+              ? 'Set opening hours on Check-in settings first.'
+              : `In after ${timeOfDay(opening + draft.lateAfterMinutes)} is late. ${draft.lateStreakDays} in a row: ${hoursLabel(draft.lateLopMinutes)} LOP.`}
+          </ThemedText>
+        </>
+      ) : null}
+
+      <ThemedText type="smallBold">Evening shift</ThemedText>
+      <SegmentedControl
+        options={[
+          { value: 'on', label: 'On' },
+          { value: 'off', label: 'Off' },
+        ]}
+        value={draft.eveningStartsAt === null ? 'off' : 'on'}
+        onChange={(v) =>
+          set({ eveningStartsAt: v === 'off' ? null : (rules?.eveningStartsAt ?? 16 * 60) })
+        }
+      />
+      {draft.eveningStartsAt !== null ? (
+        <>
+          <View style={styles.row}>
+            <ThemedText style={styles.flex}>Starts at</ThemedText>
+            <Stepper
+              label="evening shift start"
+              value={draft.eveningStartsAt}
+              step={30}
+              min={0}
+              max={23 * 60 + 30}
+              format={timeOfDay}
+              onChange={(m) => set({ eveningStartsAt: m })}
+            />
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">
+            Evening trainers are late after this, not opening.
+          </ThemedText>
+          <ShiftPicker gymId={gymId} />
+        </>
+      ) : null}
 
       {problem ? (
         <ThemedText type="small" themeColor="danger">
@@ -366,6 +507,9 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
     minWidth: 96,
+  },
+  shift: {
+    minWidth: 180,
   },
   dayRow: {
     flexDirection: 'row',

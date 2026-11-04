@@ -1,0 +1,25 @@
+// updates.vinven.net: CoreFit Gym's over-the-air update server (Expo Updates protocol).
+// Deploy from this folder: npx wrangler deploy. Secret: npx wrangler secret put PUBLISH_TOKEN.
+{
+	"name": "corefit-updates",
+	"main": "src/worker.js",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": false,
+	"routes": [
+		{
+			"pattern": "updates.vinven.net",
+			"custom_domain": true
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "UPDATES",
+			"bucket_name": "corefit-updates"
+		},
+		{
+			"bucket_name": "corefit-updates",
+			"binding": "corefit_updates",
+			"remote": true
+		}
+	],
+}

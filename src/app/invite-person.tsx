@@ -12,11 +12,22 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
+import type { PhotoPose } from '@/features/body/types';
+import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople } from '@/features/members/hooks';
 import { whatsappUrl } from '@/features/enquiries/rules';
 import { parseMobile } from '@/features/members/import-rules';
 import { formatInviteCode, inviteMessage, normalizeEmail } from '@/features/members/rules';
+import {
+  admissionValues,
+  EMPTY_ADMISSION,
+  firstAdmissionError,
+  validateAdmission,
+  type AdmissionTexts,
+} from '@/features/onboarding/rules';
+import { StartingPhotos } from '@/features/onboarding/components/starting-photos';
+import type { PickedPhoto } from '@/features/onboarding/types';
 import { validateEmail } from '@/lib/validation';
 import type { InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
 
@@ -64,6 +75,9 @@ function describe(
       };
 }
 
+/** Who fills in a new member's details: the member on first sign-in, or the inviter now. */
+type DetailsBy = 'member' | 'inviter';
+
 const ownerInviteRoles: { value: Role; label: string }[] = [
   { value: 'member', label: 'Member' },
   { value: 'trainer', label: 'Trainer' },
@@ -86,31 +100,43 @@ export default function InvitePersonScreen() {
   // WhatsApp or email is picked first; only then do the fields show.
   const [channel, setChannel] = useState<InviteChannel | null>(null);
   const [role, setRole] = useState<Role>('member');
+  const [detailsBy, setDetailsBy] = useState<DetailsBy>('member');
+  const [details, setDetails] = useState<AdmissionTexts>(EMPTY_ADMISSION);
+  const [submitted, setSubmitted] = useState(false);
+  const [photos, setPhotos] = useState<Partial<Record<PhotoPose, PickedPhoto>>>({});
   // New gyms and their owners are set up from Admin → Owners; an owner here is a co-owner.
   const inviteRole: InviteRole = role;
   // Trainers invite members, supervisors members and trainers, owners add supervisors
-  // too, and only CoreFit Gym admins add co-owners. The server checks all of this again.
+  // too, and only CoreFit admins add co-owners. The server checks all of this again.
   const isAdmin = useIsPlatformAdmin();
   const roles = isAdmin
     ? ownerInviteRoles
     : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : isTrainer ? 1 : 2);
-  const emailError = validateEmail(email);
+  // WhatsApp invites can go without an email: they sign in with the mobile number.
+  const emailError = channel === 'whatsapp' && !email.trim() ? null : validateEmail(email);
   const whatsappNumber = parseMobile(mobile);
   const mobileError =
     channel === 'whatsapp' && !whatsappNumber ? 'Enter a 10-digit mobile number.' : null;
+  // The inviter can fill in what the member's first-sign-in form asks; then the member skips it.
+  const fillDetails = role === 'member' && detailsBy === 'inviter';
+  const detailErrors = validateAdmission(
+    { ...details, phone: mobile },
+    new Set(Object.keys(photos) as PhotoPose[]),
+  );
+  const detailsProblem = fillDetails ? firstAdmissionError(detailErrors) : null;
+  const setDetail = (key: keyof AdmissionTexts) => (text: string) => {
+    setDetails((prev) => ({ ...prev, [key]: text }));
+    invite.reset();
+  };
+  // The email the invite went to; without one, the mobile login.
+  const sentTo = invite.data?.email ?? invite.variables?.email ?? '';
   const result = invite.data
-    ? describe(
-        invite.data,
-        invite.variables.email,
-        invite.variables.role,
-        !isTrainer,
-        invite.variables.channel,
-      )
+    ? describe(invite.data, sentTo, invite.variables.role, !isTrainer, invite.variables.channel)
     : null;
   const message = invite.data
     ? inviteMessage(
         gym.gymName,
-        invite.variables.email,
+        sentTo,
         invite.variables.role,
         invite.data.result,
         invite.data.code,
@@ -119,11 +145,15 @@ export default function InvitePersonScreen() {
   const canMessage =
     invite.variables?.channel === 'whatsapp' && invite.data?.result !== 'already_member';
   const send = (channel: InviteChannel) => {
+    setSubmitted(true);
+    if (detailsProblem) return;
     const variables = {
       email: normalizeEmail(email),
       role: inviteRole,
       channel,
       phone: channel === 'whatsapp' ? whatsappNumber : null,
+      admission: fillDetails ? admissionValues({ ...details, phone: mobile }) : null,
+      photos: fillDetails ? photos : null,
     };
     invite.mutate(variables, {
       onSuccess: (outcome) => {
@@ -131,7 +161,7 @@ export default function InvitePersonScreen() {
           sendOnWhatsApp(
             inviteMessage(
               gym.gymName,
-              variables.email,
+              outcome.email ?? variables.email,
               variables.role,
               outcome.result,
               outcome.code,
@@ -145,7 +175,7 @@ export default function InvitePersonScreen() {
   // Inviting someone who's already here doesn't change their role, and roles never change.
   const existing =
     invite.data?.result === 'already_member'
-      ? people.data?.find((p) => p.email === invite.variables?.email)
+      ? people.data?.find((p) => p.email === sentTo)
       : undefined;
   const invitedRole = invite.variables?.role === 'gym_owner' ? undefined : invite.variables?.role;
   const roleDiffers = existing && invitedRole && existing.role !== invitedRole;
@@ -185,7 +215,7 @@ export default function InvitePersonScreen() {
               invite.reset();
             }}
           />
-          {channel === 'whatsapp' ? (
+          {channel === 'whatsapp' || fillDetails ? (
             <TextField
               label="Mobile"
               placeholder="98400 12345"
@@ -198,11 +228,12 @@ export default function InvitePersonScreen() {
               textContentType="telephoneNumber"
               autoComplete="tel"
               maxLength={16}
-              error={mobile ? mobileError : null}
+              error={fillDetails ? detailErrors.phone : mobile ? mobileError : null}
+              showError={fillDetails ? submitted : undefined}
             />
           ) : null}
           <TextField
-            label={channel === 'whatsapp' ? 'Email they sign up with' : 'Email'}
+            label={channel === 'whatsapp' ? 'Email (optional)' : 'Email'}
             placeholder="name@example.com"
             value={email}
             onChangeText={(text) => {
@@ -245,6 +276,92 @@ export default function InvitePersonScreen() {
             ) : null}
           </View>
 
+          {role === 'member' ? (
+            <View style={styles.field}>
+              <ThemedText type="label" themeColor="textSecondary">
+                Member details
+              </ThemedText>
+              <SegmentedControl<DetailsBy>
+                options={[
+                  { value: 'member', label: 'They fill in' },
+                  { value: 'inviter', label: 'Fill in now' },
+                ]}
+                value={detailsBy}
+                onChange={(next) => {
+                  setDetailsBy(next);
+                  invite.reset();
+                }}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                {fillDetails
+                  ? 'They skip the form and go straight to Home.'
+                  : 'They fill in a short form on first sign-in.'}
+              </ThemedText>
+            </View>
+          ) : null}
+          {fillDetails ? (
+            <>
+              <TextField
+                label="Full name"
+                value={details.fullName}
+                onChangeText={setDetail('fullName')}
+                autoComplete="name"
+                textContentType="name"
+                maxLength={60}
+                error={detailErrors.fullName}
+                showError={submitted}
+              />
+              <BirthDateField
+                value={details.dateOfBirth}
+                onChangeText={setDetail('dateOfBirth')}
+                error={detailErrors.dateOfBirth}
+                showError={submitted}
+              />
+              <View style={styles.row}>
+                <View style={styles.flex}>
+                  <TextField
+                    label="Weight (kg)"
+                    placeholder="72.5"
+                    value={details.weight}
+                    onChangeText={setDetail('weight')}
+                    keyboardType="decimal-pad"
+                    maxLength={5}
+                    error={detailErrors.weight}
+                    showError={submitted}
+                  />
+                </View>
+                <View style={styles.flex}>
+                  <TextField
+                    label="Height (cm)"
+                    placeholder="170"
+                    value={details.height}
+                    onChangeText={setDetail('height')}
+                    keyboardType="decimal-pad"
+                    maxLength={5}
+                    error={detailErrors.height}
+                    showError={submitted}
+                  />
+                </View>
+              </View>
+              <ThemedText type="label" themeColor="textSecondary">
+                Starting photos
+              </ThemedText>
+              <StartingPhotos
+                uriFor={(pose) => photos[pose]?.uri}
+                onPick={(pose, photo) => {
+                  setPhotos((prev) => ({ ...prev, [pose]: photo }));
+                  invite.reset();
+                }}
+                highlightMissing={submitted}
+              />
+              {submitted && detailErrors.photos ? (
+                <ThemedText type="small" themeColor="danger">
+                  {detailErrors.photos}
+                </ThemedText>
+              ) : null}
+            </>
+          ) : null}
+
           {result ? (
             <Card highlighted>
               <View style={styles.result}>
@@ -257,6 +374,12 @@ export default function InvitePersonScreen() {
                   : result.detail}
               </ThemedText>
             </Card>
+          ) : null}
+          {invite.data?.detailsError ? (
+            <ThemedText type="small" themeColor="danger">
+              Details not saved: {invite.data.detailsError.replace(/\.$/, '')}. They fill in the
+              form instead.
+            </ThemedText>
           ) : null}
           {invite.error ? (
             <ThemedText themeColor="danger">{invite.error.message}</ThemedText>
@@ -279,6 +402,9 @@ export default function InvitePersonScreen() {
                   onPress={() => {
                     setEmail('');
                     setMobile('');
+                    setDetails(EMPTY_ADMISSION);
+                    setPhotos({});
+                    setSubmitted(false);
                     invite.reset();
                   }}
                 />

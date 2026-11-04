@@ -23,6 +23,11 @@ const mockQr: CheckInQr = {
 
 let mockHours: Pick<CheckInRules, 'opensAt' | 'closesAt'> = { opensAt: '05:30', closesAt: '22:00' };
 
+/** The demo branch's opening time ("HH:MM"), or null when it's open 24 hours. */
+export function mockOpeningTime() {
+  return mockHours.opensAt;
+}
+
 function mockWindow() {
   return Math.floor(Date.now() / 30000);
 }
@@ -216,7 +221,7 @@ export async function saveCheckInSettings(gymId: string, settings: CheckInSettin
 
 export type AdminBranchQr = { gymName: string; posterCode: string; posterEnabled: boolean };
 
-/** CoreFit Gym admins: a branch's printed QR, to send to its owner. */
+/** CoreFit admins: a branch's printed QR, to send to its owner. */
 export async function getAdminBranchQr(gymId: string): Promise<AdminBranchQr> {
   if (!supabase) {
     return delay({
@@ -234,7 +239,7 @@ export async function getAdminBranchQr(gymId: string): Promise<AdminBranchQr> {
   return { gymName: r.gym_name, posterCode: r.poster_code, posterEnabled: r.poster_enabled };
 }
 
-/** CoreFit Gym admins: a new printed QR for the branch, switched on. Old printouts stop working. */
+/** CoreFit admins: a new printed QR for the branch, switched on. Old printouts stop working. */
 export async function resetAdminBranchQr(gymId: string) {
   if (!supabase) {
     mockQr.posterCode = `demo-poster-${Date.now()}`;

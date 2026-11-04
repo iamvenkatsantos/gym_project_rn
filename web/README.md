@@ -1,4 +1,4 @@
-# CoreFit Gym owner dashboard
+# CoreFit owner dashboard
 
 A web dashboard for gym owners, on the same Supabase project as the app. Owners sign in with the
 email and password they use in the app; anyone who doesn't own a gym is told to use the app instead.
@@ -12,6 +12,22 @@ email and password they use in the app; anyone who doesn't own a gym is told to 
 | Exports    | The payments, memberships and attendance CSVs from the app's Export reports              |
 
 Owners of more than one gym pick the gym in the sidebar.
+
+## Public pages
+
+`web/public/` also holds plain HTML pages anyone can open without signing in, built to read well
+for search engines and store reviewers (no JavaScript):
+
+| URL               | Page                                           |
+| ----------------- | ---------------------------------------------- |
+| `/about`          | What CoreFit does and pricing                  |
+| `/privacy`        | Privacy policy (App Store and Play)            |
+| `/terms`          | Terms of service                               |
+| `/support`        | Contact and common questions                   |
+| `/delete-account` | How to delete an account (Play's deletion URL) |
+
+They share `site.css`. Cloudflare serves `privacy.html` at `/privacy`; in `npm run dev` open
+`/privacy.html`. Add new pages to `sitemap.xml`.
 
 ## Why a separate Vite app
 

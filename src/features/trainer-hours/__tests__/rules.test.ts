@@ -1,5 +1,7 @@
 import {
+  applyLateStreaks,
   applyRules,
+  isLate,
   fromTime,
   monthStart,
   permissionProblem,
@@ -15,6 +17,10 @@ const rules: TrainerHourRules = {
   shortLimitMinutes: 120,
   lopMinutes: 240,
   offDays: [0],
+  lateAfterMinutes: 15,
+  lateStreakDays: 2,
+  lateLopMinutes: 240,
+  eveningStartsAt: 960,
   startsOn: '2026-10-01',
 };
 
@@ -25,6 +31,9 @@ const day = (over: Partial<TrainerDay> = {}): TrainerDay => ({
   workedMinutes: 480,
   longestVisitMinutes: 480,
   permissionMinutes: 0,
+  firstInMinute: 300,
+  permissionFromMinute: null,
+  opensMinute: 300,
   ...over,
 });
 
@@ -157,5 +166,82 @@ describe('times and months', () => {
   it('finds month starts', () => {
     expect(monthStart(0, new Date(2026, 9, 31))).toBe('2026-10-01');
     expect(monthStart(10, new Date(2026, 9, 31))).toBe('2025-12-01');
+  });
+});
+
+describe('isLate', () => {
+  it('allows the grace minutes after opening', () => {
+    expect(isLate(day({ firstInMinute: 315 }), 15)).toBe(false);
+    expect(isLate(day({ firstInMinute: 316 }), 15)).toBe(true);
+  });
+
+  it('is never late with the rule off, open 24 hours or absent', () => {
+    expect(isLate(day({ firstInMinute: 360 }), null)).toBe(false);
+    expect(isLate(day({ firstInMinute: 360, opensMinute: null }), 15)).toBe(false);
+    expect(isLate(day({ firstInMinute: null }), 15)).toBe(false);
+  });
+
+  it('excuses approved permission that starts by the late time', () => {
+    expect(isLate(day({ firstInMinute: 420, permissionFromMinute: 300 }), 15)).toBe(false);
+    expect(isLate(day({ firstInMinute: 420, permissionFromMinute: 600 }), 15)).toBe(true);
+  });
+});
+
+describe('applyLateStreaks', () => {
+  const run = (pattern: string, streak = 2) =>
+    applyLateStreaks(
+      [...pattern].map((c, i) =>
+        applyRules(
+          day({
+            day: `2026-10-${String(10 + i)}`,
+            firstInMinute: c === 'L' ? 360 : c === 'A' ? null : 300,
+            workedMinutes: c === 'A' ? 0 : 480,
+          }),
+          rules,
+        ),
+      ),
+      { lateStreakDays: streak, lateLopMinutes: 240 },
+    ).map((d) => d.lateLopMinutes);
+
+  it('charges once per streak, then counts again', () => {
+    expect(run('LLLL')).toEqual([0, 240, 0, 240]);
+  });
+
+  it('resets on an on-time or absent day', () => {
+    expect(run('LOLALL')).toEqual([0, 0, 0, 0, 0, 240]);
+  });
+
+  it('charges every late day with a streak of 1', () => {
+    expect(run('LOL', 1)).toEqual([240, 0, 240]);
+  });
+});
+
+describe('summariseMonth with late streaks', () => {
+  it('adds late LOP on top of shortfall LOP and counts late days', () => {
+    const [month] = summariseMonth(
+      [
+        day({ day: '2026-10-21', firstInMinute: 360, workedMinutes: 300 }),
+        day({ day: '2026-10-20', firstInMinute: 360 }),
+      ],
+      rules,
+    );
+    expect(month.lateDays).toBe(2);
+    expect(month.lopMinutes).toBe(240 + 240);
+    expect(month.lopDays.map((d) => [d.day, d.lopMinutes])).toEqual([['2026-10-21', 480]]);
+  });
+});
+
+describe('evening shifts', () => {
+  it('measures an evening trainer from their shift start', () => {
+    expect(isLate(day({ firstInMinute: 970, startMinute: 960 }), 15)).toBe(false);
+    expect(isLate(day({ firstInMinute: 980, startMinute: 960 }), 15)).toBe(true);
+  });
+
+  it('falls back to opening when the server sends no start', () => {
+    expect(isLate(day({ firstInMinute: 330, startMinute: undefined }), 15)).toBe(true);
+  });
+
+  it('is never late without a start time', () => {
+    expect(isLate(day({ firstInMinute: 980, startMinute: null }), 15)).toBe(false);
   });
 });

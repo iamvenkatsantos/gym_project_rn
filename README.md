@@ -1,6 +1,6 @@
-# CoreFit Gym
+# CoreFit
 
-<img src="assets/images/icon.png" width="96" alt="CoreFit Gym icon" />
+<img src="assets/images/icon.png" width="96" alt="CoreFit icon" />
 
 A React Native app for gym members, trainers, supervisors and owners. One app, four roles: each
 user lands in their own area after signing in.
@@ -77,7 +77,7 @@ values in `src/lib/env.ts`). For a different project, set `EXPO_PUBLIC_SUPABASE_
 
 ```bash
 npx supabase link --project-ref <your-ref>
-npx supabase db push
+npx supabase db push --remote
 ```
 
 Then run `supabase/seed.sql` in the SQL editor to load the shared exercise library, and deploy the
@@ -88,11 +88,12 @@ npx supabase functions deploy delete-account   # account deletion (store require
 npx supabase functions deploy invite-member    # emails invites from the People tab
 npx supabase functions deploy import-members   # member import from a CSV
 npx supabase functions deploy accept-invite    # joining with a WhatsApp invite code
+npx supabase functions deploy reset-password   # password reset codes for mobile sign-ins
 npx supabase functions deploy join --no-verify-jwt   # the tappable join link in WhatsApp invites
 npx supabase functions deploy send-push --no-verify-jwt   # push notifications, see below
 npx supabase functions deploy create-payment                # online payments, see below
 npx supabase functions deploy razorpay-webhook --no-verify-jwt
-npx supabase functions deploy create-subscription-payment   # owners paying CoreFit Gym
+npx supabase functions deploy create-subscription-payment   # owners paying CoreFit
 ```
 
 A new gym's first owner is added in SQL:
@@ -107,7 +108,7 @@ insert into gym_members (gym_id, user_id, role) values ('<gym id>', '<user id>',
 Owners invite people from **People** by email and pick their role. Supervisors can invite
 members and trainers; only owners add supervisors and owners.
 
-- Someone with a CoreFit Gym account joins straight away.
+- Someone with a CoreFit account joins straight away.
 - Anyone else gets an invite email with a code and a link. They enter the code in the app (or tap
   the link on their phone), choose their name and a password, and land on their role's screens. They can also just **Create an account** with that
   email instead.
@@ -125,8 +126,11 @@ Supabase settings these emails need (Dashboard → Authentication):
    about 2 emails an hour, so invites to anyone else fail without it.
 3. **Emails → Templates:** paste the branded templates from `supabase/templates/` (each file's
    first line names the template and its subject): `invite.html` into **Invite user**,
-   `recovery.html` into **Reset password** and `confirmation.html` into **Confirm signup**. They
-   show the CoreFit logo, the gym, the role and a code.
+   `recovery.html` into **Reset password**, `confirmation.html` into **Confirm signup** and
+   `email-change.html` into **Change email address**. They show the CoreFit logo, the gym, the
+   role and a code.
+4. **Providers → Email:** turn **Secure email change** off. Members who sign in with their mobile
+   number add an email from Edit profile, and their mobile login has no inbox to confirm from.
 
 Every one of these emails has a code as well as a link. The link only opens the app on a phone
 that has it; the code works anywhere: on the sign-in screen tap **Got a code by email? Enter it**.
@@ -158,7 +162,7 @@ every five minutes; each reminder has a dedupe key so it's sent once.
 
 One-time setup:
 
-1. `npx supabase db push` (enables `pg_cron` and `pg_net` and schedules the reminders job).
+1. `npx supabase db push --remote` (enables `pg_cron` and `pg_net` and schedules the reminders job).
 2. Pick a random secret (`openssl rand -hex 32`) and give it to both sides:
 
    ```bash
@@ -201,7 +205,7 @@ limit 5;` shows what `pg_net` got back.
 
 ### Online payments (Razorpay)
 
-Members can pay for a plan in the app when the CoreFit Gym admin switches **Online payments** on
+Members can pay for a plan in the app when the CoreFit admin switches **Online payments** on
 for their branch (Admin → branch → Online payments). It's a paid add-on per branch
 (`platform_settings.online_addon_cents`, ₹6,000 a year by default) and off by default. Cash and UPI
 entries at the front desk keep working.
@@ -220,12 +224,12 @@ How a payment works:
 4. If the branch has the owner's Route linked account (`acc_...`), the gym's share is transferred
    to it. Razorpay takes its Route transfer fee (0.25% + GST) from our balance on top of the
    transfer, so the transfer is the most that leaves room for it after Razorpay's gateway fee and
-   CoreFit Gym's cut (`online_cut_bps`, 0.5%). Money never stays with CoreFit Gym. With
+   CoreFit's cut (`online_cut_bps`, 0.5%). Money never stays with CoreFit. With
    live keys, a branch without a linked account can't take payments.
 
 Who pays Razorpay's fees is set per branch (Admin → branch → Online payments). By default the
 owner does: members see one price, and Razorpay's gateway fee (2% + GST), its transfer fee (0.25% +
-GST) and CoreFit Gym's 0.5% cut come out of what the owner receives. A ₹1,000 plan nets the owner
+GST) and CoreFit's 0.5% cut come out of what the owner receives. A ₹1,000 plan nets the owner
 ₹968.53, so owners raise their prices to cover the fees if they want to. A branch can instead pass
 the fees and the cut on to members: `create-payment` adds them to the price and the app shows the
 member the breakdown before opening Razorpay. Either way the membership, Insights and exports count
@@ -282,15 +286,22 @@ psql -d corefit_test -f supabase/tests/plain-postgres-auth-stub.sql
 for f in supabase/migrations/*.sql; do psql -d corefit_test -f "$f"; done
 psql -d corefit_test -f supabase/tests/rls.sql
 psql -d corefit_test -f supabase/tests/workout-plans.sql
+psql -d corefit_test -f supabase/tests/workout-days.sql
+psql -d corefit_test -f supabase/tests/self-workouts.sql
 psql -d corefit_test -f supabase/tests/online-payments.sql
 psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
+psql -d corefit_test -f supabase/tests/admission-details.sql
+psql -d corefit_test -f supabase/tests/whatsapp-without-email.sql
+psql -d corefit_test -f supabase/tests/password-reset-codes.sql
 psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
 psql -d corefit_test -f supabase/tests/trainer-hours.sql
+psql -d corefit_test -f supabase/tests/trainer-late-streaks.sql
+psql -d corefit_test -f supabase/tests/trainer-evening-shift.sql
 psql -d corefit_test -f supabase/tests/membership-offers.sql
 psql -d corefit_test -f supabase/tests/birthdays.sql
 ```

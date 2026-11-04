@@ -41,6 +41,8 @@ export type GymInvite = {
   code?: string | null;
   phone?: string | null;
   codeExpiresAt?: string | null;
+  /** The name the inviter gave, when they filled in the member's details. */
+  fullName?: string | null;
 };
 
 /** A role at this gym, or 'gym_owner': the owner of a new gym of their own. */
@@ -59,10 +61,20 @@ export type InviteOutcome = {
   emailError: string | null;
   /** The one-time join code of a WhatsApp invite. */
   code?: string | null;
+  /** The email the invite went to; for a WhatsApp invite without one, the mobile login. */
+  email?: string;
+  /** Why the member details the inviter filled in weren't saved. */
+  detailsError?: string | null;
 };
 
 /** What the join screen shows for an invite code. */
-export type InviteByCode = { gymName: string; email: string; role: Role };
+export type InviteByCode = {
+  gymName: string;
+  email: string;
+  role: Role;
+  /** The name the inviter gave, to fill in the join form. */
+  fullName?: string | null;
+};
 
 export type PeopleFilter = 'all' | Role | 'suspended';
 

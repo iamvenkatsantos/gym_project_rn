@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing, withAlpha } from '@/constants/theme';
 import type { GymRole, Profile } from '@/features/auth/types';
 import { useAccountEmail } from '@/features/auth/use-profile';
+import { isMobileLogin } from '@/lib/mobile-login';
 import { initials } from '@/features/trainers/rules';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -56,7 +57,8 @@ export function ProfileHeader({ profile, gym }: { profile: Profile; gym: GymRole
           <ThemedText type="heading" numberOfLines={1}>
             {profile.fullName}
           </ThemedText>
-          {email.data ? (
+          {/* A mobile sign-in's login address isn't an email anyone reads; the mobile shows below. */}
+          {email.data && !isMobileLogin(email.data) ? (
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
               {email.data}
             </ThemedText>

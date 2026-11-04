@@ -119,7 +119,7 @@ const mockBranches: AdminBranch[] = [
   },
 ];
 
-/** Demo data only: one branch, for the demo CoreFit Gym plan. */
+/** Demo data only: one branch, for the demo CoreFit plan. */
 export function mockBranch(gymId: string) {
   return mockBranches.find((b) => b.gymId === gymId);
 }

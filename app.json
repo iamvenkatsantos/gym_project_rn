@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CoreFit Gym",
+    "name": "CoreFit",
     "slug": "corefit",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -47,10 +47,11 @@
         }
       ],
       "expo-sharing",
+      "expo-updates",
       [
         "expo-camera",
         {
-          "cameraPermission": "CoreFit Gym uses the camera to scan your gym's check-in QR and to take progress photos.",
+          "cameraPermission": "CoreFit uses the camera to scan your gym's check-in QR and to take progress photos.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -58,8 +59,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "CoreFit Gym uses your photos so you can add progress photos.",
-          "cameraPermission": "CoreFit Gym uses the camera to scan your gym's check-in QR and to take progress photos.",
+          "photosPermission": "CoreFit uses your photos so you can add progress photos.",
+          "cameraPermission": "CoreFit uses the camera to scan your gym's check-in QR and to take progress photos.",
           "microphonePermission": false
         }
       ]

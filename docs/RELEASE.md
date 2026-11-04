@@ -26,11 +26,17 @@ npx eas-cli@latest submit --profile production --platform ios
 npx eas-cli@latest submit --profile production --platform android   # goes to the internal track
 ```
 
+## Over-the-air updates
+
+`preview` and `production` builds take JS-only fixes from our own update server
+(`updates.vinven.net`, channels `develop` and `main`). Ship them with `npm run ota -- publish`; bump
+`expo.version` and rebuild when native code changes. See `infra/updates-server/README.md`.
+
 ## Before the first submission
 
 **Identity**
 
-- [x] App name: CoreFit Gym (`expo.name` in app.json). It is the home-screen name and the App Store
+- [x] App name: CoreFit (`expo.name` in app.json). It is the home-screen name and the App Store
       and Play listing name; the slug `corefit` and the `corefit://` scheme stay as they are.
 - [x] Bundle ID / package: `com.corefit.gym`. It can't change after the first upload to either
       store.
@@ -63,10 +69,13 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
       (see "Inviting people and signing in" in the README).
 - [ ] App Review sign-in: the app is invite-only, so create a member and a trainer account at a test
       gym and enter one in App Store Connect (App Review Information) and Play Console (App access).
-- [ ] Publish a real privacy policy and terms, then update `src/constants/legal.ts` and the store
-      listings. Play also needs a web page for account deletion requests.
-- [ ] App Store privacy labels and Play Data safety form. Data collected today: name, email, gym
-      bookings and membership history, all linked to the account, none used for tracking.
+- [x] Privacy policy, terms, support and account deletion pages at
+      `https://dashboard.vinven.net/{privacy,terms,support,delete-account}` (`web/public/`), linked
+      from `src/constants/legal.ts`. Paste these URLs into both store listings.
+- [ ] App Store privacy labels and Play Data safety form. Data collected (see `/privacy`): name,
+      email, mobile, date of birth, weight/height, body measurements, photos, attendance,
+      workouts, bookings, memberships and payments, push token; all linked to the account, none
+      used for tracking or ads. Payment card/UPI details go only to Razorpay.
 - [ ] A reviewer account (member role, with a membership and bookings) for App Review and Play's
       app access section, because every screen is behind sign-in.
 - [ ] Store screenshots (6.9" iPhone and phone sizes for Play) and descriptions.

@@ -141,7 +141,7 @@ export default function MemberProfileScreen() {
         />
       </ListGroup>
       <ThemedText type="small" themeColor="textSecondary" style={styles.footer}>
-        {gym.gymName} · CoreFit Gym
+        {gym.gymName} · CoreFit
       </ThemedText>
     </Screen>
   );

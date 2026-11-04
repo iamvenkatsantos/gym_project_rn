@@ -11,6 +11,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { signInWithPassword } from '@/features/auth/api';
+import { loginLabel } from '@/lib/mobile-login';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { acceptInvite, findInviteByCode } from '@/features/members/api';
 import { formatInviteCode, isInviteCode, normalizeInviteCode } from '@/features/members/rules';
@@ -30,7 +31,8 @@ import {
 export default function JoinScreen() {
   const params = useLocalSearchParams<{ code?: string }>();
   const [code, setCode] = useState(params.code ? formatInviteCode(params.code) : '');
-  const [fullName, setFullName] = useState('');
+  // Null until they type, so the name their inviter gave fills in first.
+  const [typedName, setFullName] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const clean = normalizeInviteCode(code);
@@ -42,6 +44,7 @@ export default function JoinScreen() {
     enabled: complete,
     retry: false,
   });
+  const fullName = typedName ?? invite.data?.fullName ?? '';
   const join = useMutation({
     mutationFn: async () => {
       const email = await acceptInvite(clean, fullName.trim(), password);
@@ -98,7 +101,7 @@ export default function JoinScreen() {
             </View>
             <ThemedText type="small" themeColor="textSecondary">
               Joining as {found.role === 'member' ? 'a member' : `a ${found.role}`}. You’ll sign in
-              with {found.email}.
+              with {loginLabel(found.email)}.
             </ThemedText>
           </Card>
           <TextField

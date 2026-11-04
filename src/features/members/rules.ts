@@ -1,4 +1,5 @@
 import { canCoach, type Role } from '@/features/auth/types';
+import { isMobileLogin, loginLabel } from '@/lib/mobile-login';
 import type { GymPerson, InviteResult, InviteRole, PeopleFilter } from '@/features/members/types';
 import { env } from '@/lib/env';
 import { normalizeEmail, validateEmail } from '@/lib/validation';
@@ -73,7 +74,7 @@ export function isLastActiveOwner(people: GymPerson[], userId: string) {
   return owners.length === 1 && owners[0].id === userId;
 }
 
-/** CoreFit Gym on Google Play. It opens once the app is listed there. */
+/** CoreFit on Google Play. It opens once the app is listed there. */
 export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
 
 const inviteAs: Record<InviteRole, string> = {
@@ -95,33 +96,45 @@ export function inviteMessage(
   result: InviteResult,
   code?: string | null,
 ) {
+  // Invites without an email sign in with the mobile number.
+  const signInWith = isMobileLogin(email) ? `your mobile number ${loginLabel(email)}` : email;
   if (result === 'added') {
     return [
-      `Hi! You've been added to ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+      `Hi! You've been added to ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `Open CoreFit Gym and sign in with ${email}. Don't have the app? ${PLAY_STORE_URL}`,
+      `Open CoreFit and sign in with ${signInWith}. Don't have the app? ${PLAY_STORE_URL}`,
     ].join('\n');
   }
   if (code) {
     return [
-      `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+      `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+      `1. Install CoreFit: ${PLAY_STORE_URL}`,
       `2. Tap this link: ${joinLink(code)}`,
       `   Or tap "I have an invite code" and enter ${formatInviteCode(code)}`,
       '3. Add your name and a password.',
       '',
-      `You'll sign in with ${email}. The code works once, for 7 days.`,
+      `You'll sign in with ${signInWith}. The code works once, for 7 days.`,
     ].join('\n');
   }
   return [
-    `Hi! You're invited to join ${gymName} on CoreFit Gym as ${inviteAs[role]}.`,
+    `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
     '',
-    `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+    `1. Install CoreFit: ${PLAY_STORE_URL}`,
     `2. Tap Create account and use this email: ${email}`,
     '3. Enter the 6-digit code from the email.',
     '',
     `You'll be in ${gymName} as soon as you confirm.`,
+  ].join('\n');
+}
+
+/** The WhatsApp message carrying a password reset code for a mobile sign-in. */
+export function resetCodeMessage(gymName: string, code: string) {
+  return [
+    `Your ${gymName} password reset code on CoreFit: ${formatInviteCode(code)}`,
+    '',
+    'Open CoreFit, type your mobile number, tap Forgot password? then I have a reset code.',
+    'The code works once, for a day.',
   ].join('\n');
 }
 

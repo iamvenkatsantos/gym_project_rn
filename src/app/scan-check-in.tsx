@@ -22,7 +22,7 @@ export default function ScanCheckInScreen() {
           <ThemedText type="smallBold">Use your phone&apos;s camera</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             This version of the app can&apos;t scan yet. Open your phone&apos;s camera (or Google
-            Lens), point it at the QR at the front desk and tap the link. CoreFit Gym opens and
+            Lens), point it at the QR at the front desk and tap the link. CoreFit opens and
             checks you in. The next app update adds scanning here.
           </ThemedText>
         </Card>
@@ -50,7 +50,7 @@ export default function ScanCheckInScreen() {
       </Suspense>
       {notOurs ? (
         <ThemedText type="small" themeColor="danger" accessibilityLiveRegion="polite">
-          That isn&apos;t a CoreFit Gym check-in QR. Scan the one at your gym&apos;s front desk.
+          That isn&apos;t a CoreFit check-in QR. Scan the one at your gym&apos;s front desk.
         </ThemedText>
       ) : null}
     </Screen>

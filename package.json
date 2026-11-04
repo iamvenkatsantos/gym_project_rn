@@ -29,6 +29,7 @@
     "expo-status-bar": "~58.0.4",
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.6",
+    "expo-updates": "~58.0.18",
     "expo-web-browser": "~58.0.6",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
@@ -66,7 +67,14 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "ota": "node scripts/ota.mjs",
+    "ota:dev": "node scripts/ota.mjs publish --channel develop",
+    "ota:prod": "node scripts/ota.mjs publish --channel main",
+    "ota:list:prod": "node scripts/ota.mjs list --channel main",
+    "ota:rollback:prod": "node scripts/ota.mjs rollback --channel main",
+    "build:preview": "npx eas-cli@latest build --profile preview --platform android --local",
+    "build:prod": "npx eas-cli@latest build --profile production --platform all"
   },
   "private": true,
   "jest": {

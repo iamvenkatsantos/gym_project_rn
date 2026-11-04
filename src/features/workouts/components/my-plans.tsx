@@ -16,7 +16,18 @@ export function MyPlans() {
 
   return (
     <>
-      <Button label="New plan" icon="add" onPress={() => router.push('/plan-editor')} />
+      <View style={styles.actions}>
+        <View style={styles.flex}>
+          <Button label="New plan" icon="add" onPress={() => router.push('/plan-editor')} />
+        </View>
+        <View style={styles.flex}>
+          <Button
+            label="Smart plans"
+            variant="secondary"
+            onPress={() => router.push('/smart-plans')}
+          />
+        </View>
+      </View>
       <QueryState
         query={workouts}
         isEmpty={(w) => w.length === 0}

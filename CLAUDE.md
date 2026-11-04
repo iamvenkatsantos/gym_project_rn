@@ -1,15 +1,16 @@
 # CLAUDE.md
 
-Guide for Claude sessions working on CoreFit Gym. Read this first, then `AGENTS.md` (Expo rules and
+Guide for Claude sessions working on CoreFit. Read this first, then `AGENTS.md` (Expo rules and
 code layout, imported below) and `README.md` (setup, push and Razorpay details).
 
 @AGENTS.md
 
 ## What this is
 
-CoreFit Gym (product of VinVen Technologies) is one Expo app for gym members, trainers, supervisors
-and owners, plus a platform admin who runs CoreFit Gym itself. Bundle id `com.corefit.gym`, URL
-scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
+CoreFit (product of VinVen Technologies) is one Expo app for gym members, trainers, supervisors
+and owners, plus a platform admin who runs CoreFit itself. Bundle id `com.corefit.gym`, URL
+scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from CoreFit Gym on
+2026-11-03); some older server messages in migrations still say "CoreFit Gym". Android ships first; iOS push (APNs) is not set up yet.
 
 - **App:** Expo SDK 58, Expo Router (`src/app/`), TypeScript strict, TanStack Query for server
   state, Zustand for the auth session and offline drafts.
@@ -18,23 +19,30 @@ scheme `corefit://`. Android ships first; iOS push (APNs) is not set up yet.
 - **Owner web dashboard:** a separate Vite app in `web/` that reuses pure files from `src/` (see
   `web/README.md`). Live at `https://dashboard.vinven.net` (Cloudflare Workers Builds, deploys on
   push to `main`). Never import React Native code into it. No QR on the web.
+- **Public pages:** plain HTML in `web/public/` served by the same worker, no sign-in:
+  `/about` (features and pricing, for search), `/privacy`, `/terms`, `/support` and
+  `/delete-account` (Play's deletion URL). The app links them from `src/constants/legal.ts`;
+  support email is `support@vinven.net` (Cloudflare Email Routing). Update them when pricing,
+  data collected, service providers or the delete flow change.
 
 ## Folder map
 
-| Path                         | What lives there                                                                                                                                           |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/app/_layout.tsx`        | Root navigator: every gate and role is a `Stack.Protected` guard                                                                                           |
-| `src/app/<role>/`            | Tab areas: `member`, `trainer`, `supervisor`, `owner`, `admin`                                                                                             |
-| `src/app/*.tsx`, `[id]` dirs | Shared stack screens (person, plan-editor, record-membership, check-in, …)                                                                                 |
-| `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                                                                  |
-| `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                                                           |
-| `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                                                             |
-| `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                                                                    |
-| `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                                             |
-| `supabase/functions/`        | `invite-member`, `accept-invite`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
-| `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                            |
-| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                         |
-| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand                                                          |
+| Path                         | What lives there                                                                                                                                                             |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/_layout.tsx`        | Root navigator: every gate and role is a `Stack.Protected` guard                                                                                                             |
+| `src/app/<role>/`            | Tab areas: `member`, `trainer`, `supervisor`, `owner`, `admin`                                                                                                               |
+| `src/app/*.tsx`, `[id]` dirs | Shared stack screens (person, plan-editor, record-membership, check-in, …)                                                                                                   |
+| `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                                                                                    |
+| `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                                                                             |
+| `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                                                                               |
+| `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                                                                                      |
+| `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                                                               |
+| `supabase/functions/`        | `invite-member`, `accept-invite`, `reset-password`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
+| `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                                              |
+| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                                           |
+| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand                                                                            |
+| `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
+| `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
 
 ## Roles and who sees what
 
@@ -83,6 +91,27 @@ WhatsApp or by email. **Invite on WhatsApp** saves the invite with a one-time 8-
 On `join` (or Sign in → I have an invite code) the person enters name and password; the
 `accept-invite` edge fn makes the account already confirmed (or takes over an imported one), which
 claims the invite, so each code works once. Signing up with the invited email still works too.
+**Admission details, both places:** on a member invite the inviter picks **They fill in** (default)
+or **Fill in now** (name, mobile, date of birth, weight, height; all required). The app then calls
+`save_admission_details()`, which keeps them on the `gym_invites` row (trainers only on invites they
+sent) or, for someone added straight away with an account, applies them now. On joining,
+`claim_gym_invites` applies them via `apply_admission_details()` (never overwrites a name, mobile or
+DOB they already have; weight/height become the first measurement) and sets `onboarded_at`, so the
+member skips `onboarding` and lands on Home. Fill in now also takes the front, side and back
+photos (`StartingPhotos`, required in the app): the inviter uploads them to
+`<gym>/admissions/<folder>/` in `progress-photos` (staff-only insert policy; readable once they're a
+member's `progress_photos`), they're kept in `gym_invites.photo_paths` and become the member's first
+progress photos on join. The join screen prefills the inviter's name (`invite_by_code.full_name`).
+**WhatsApp invites without an email:** the email is optional on WhatsApp. Without one the account's
+email is `<10 digits>@m.vinven.net` (`mobile_login_email()`, a domain with no mail), and the person
+signs in with their mobile number: Sign in takes "Email or mobile" and `signInEmail()` maps a mobile to
+that address (`src/lib/mobile-login.ts`; show it with `loginLabel()`, never raw). **Their password
+reset** (Venkat, 2026-11-04, both ways): owners and supervisors tap **Send password reset code** on
+the person screen (`create_password_reset_code()`, mobile logins only so nobody takes over an email
+account, 1 day, works once) and send it on WhatsApp; the person taps Forgot password? with their
+mobile → **I have a reset code** → `reset-password` screen and edge fn. Or they add an email on
+Edit profile (`AddEmail`, `updateUser` + `verifyOtp` type `email_change`; needs Supabase "Secure
+email change" off) and sign in with it from then on.
 **Invite by email**: the `invite-member` edge fn calls
 `invite_to_gym()` (or, for an older new-gym invite, `invite_gym_owner()`) as the caller, then sends the
 email with the service role. Supervisors invite members and trainers; trainers invite members only,
@@ -92,7 +121,7 @@ and those members are auto-mapped to them. Every member invite records an admiss
 attaches pending invites when the user confirms. Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
 **No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
-pickers. Login is email only (no phone OTP); Google or other
+pickers. Login is email + password, or mobile + password for WhatsApp invites without an email (no phone OTP); Google or other
 OAuth may come later.
 
 **Member import.** Owners bring members over from another app on People → `import-members`: share
@@ -113,7 +142,7 @@ provider's hourly limit.
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;
 invited without password → `set-password`; member with `needsOnboarding` → `onboarding` (name,
 phone, date of birth, weight, height, front/back/side photos via `complete_member_onboarding`,
-optional profile photo); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
+optional profile photo; skipped when the inviter filled in admission details); anyone else without a mobile number (`Profile.phone === null`, mostly staff, via
 `selectNeedsProfile`) → `profile-setup` (name, required mobile, optional photo via `save_my_profile`);
 no gym →
 `no-gym` (older new-owner invites → `set-up-gym`, `create_gym`); admin → `admin`; otherwise the
@@ -168,8 +197,18 @@ the full day; off days and today never count, nor days before the rules were fir
 for permission from Home → **Ask for permission** (`permissions`, `request_permission()`: a day, from/to
 time, a reason, optional note; owners get a push) and see only their requests and the answer, never
 hours or LOP. Owners approve or reject (`decide_permission()`, trainer gets a push); approved
-permission counts as time worked. `trainer_hours_month()` returns the days; the LOP maths is
-`applyRules`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
+permission counts as time worked. **Late streaks** (`set_trainer_late_rule()`, saved after the
+hours; null `late_after_minutes` = off): a first check-in more than N minutes after the branch's
+`opens_at` is late, unless approved permission starts by then; every `late_streak_days` late working
+days in a row cost `late_lop_minutes` on the day the streak completes, then the count restarts (off
+days skipped; on-time or absent days reset; streaks count within the month; branches open 24 hours
+have no late). Late LOP adds to shortfall LOP. **Evening shift** (Venkat, 2026-11-02): owners set
+`trainer_hour_rules.evening_starts_at` (`set_evening_shift_start()`, null = none) and mark evening
+trainers in Rules (`trainer_shifts`, `set_trainer_shift()`, owner-only, saved on tap; unlisted =
+morning). Evening trainers are late against the evening start, everyone else against opening.
+`trainer_hours_month()` returns the days (with first check-in, permission start, opening and the
+trainer's shift start, as minutes after midnight); the LOP maths is
+`applyRules`/`applyLateStreaks`/`summariseMonth` in `src/features/trainer-hours/rules.ts`. LOP is in hours; the app
 knows no salaries.
 
 **Workouts and plans.** Coaches build plans (`plan-editor`, `save_workout`) and assign them to
@@ -181,6 +220,48 @@ trigger), so the bar warns first. Members can ask for a trainer (`trainer_reques
 `workout-session` with an offline draft (`src/features/progress/draft-store.ts`, Zustand persist)
 uploaded idempotently by `workout_logs.client_id`. Diet plans and body progress (measurements,
 private progress photos) follow the same coach/member pattern.
+**Weekday plans:** on `assign-plan` the coach picks each member's days
+(`workout_assignments.days`, ISO 1 = Mon … 7 = Sun; empty = any day). Members see **Today**
+(due, catch-up or any-day plans, startable) and **This week** (not startable). A missed day stays
+open for the gym's catch-up days (`gyms.workout_catch_up_days`, 0–3, default 1, set by owners and
+supervisors on Training → Coaching via `set_workout_catch_up_days()`) unless the member already
+logged that plan since. App-only rule (`src/features/workouts/schedule.ts`); the server doesn't block.
+**Smart plans:** 15 ready-made plans, 5 per level (`src/features/workouts/smart-plans.ts`, shared
+library exercises only, matched to the DB by name); coaches copy one from My plans → **Smart plans**
+into `plan-editor`, then assign. **Stretches:** plan cards and `workout-session` show cool-down
+stretches for the plan's muscles (`stretches.ts`, max 6, app-only, not in the exercise library),
+each with a looping thumb that opens a full demo (photos in `assets/stretches/`, `stretch-demos.ts`,
+same Free Exercise DB source; a test checks every stretch has one).
+Exercises are added on the `add-exercises` modal (search pinned on top, so the keyboard never
+covers results); picks go back to the editor through `useExercisePicks`.
+**Self workouts** (Venkat, 2026-11-01): only a member's own mapped coaches switch it on for them
+(member progress → **Self** tab, `set_self_workouts()`, `member_trainers.self_workouts`; any one
+coach's switch counts, `self_workouts_on()`). The member then answers goal, level, 3–6 days and
+split on `self-plan-setup`, and the app builds the week from the smart plans (`buildSelfPlans` in
+`src/features/self-workouts/rules.ts`: a rotation per level and split, a 4+ day week's last day
+goes to the goal, losing weight shortens rests) and saves it with `create_self_plan()`, which
+replaces their old own plans. Own plans are `workouts` rows with `is_self = true` and
+`trainer_id` = the member, assigned to themselves with their days, so they show in Today / This
+week; `self-plan` shows the week by day. Saving goes only through `save_self_workout()` /
+`delete_self_workout()`: the member while it's on, their coaches always (a coach's edit tells the
+member). The member's coaches and managers see own plans (`can_view_workout`), and coaches can
+also map their own plans from the Self tab. Switched off, own plans are hidden from the member
+and read-only for them. **After every workout** members answer a self-check on `workout-session`
+(effort 1–10 required, pain spot, note; `workout_logs.effort/pain/note`), which the "finished a
+workout" push to their trainers carries. Swaps from **Replace** (same-muscle pick) are logged in
+`workout_logs.swaps`. A coach or manager replies once (`reply_to_workout()`, inbox kind
+`workout`); a trigger stops members writing the reply.
+**Live workout** (Venkat, 2026-11-03): `workout-session` opens on **Live** (`LiveWorkout`,
+`src/features/progress/live.ts`): one exercise at a time with its demo, how-to steps and set dots;
+reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
++15s, Skip and Up next; an exercise's last set moves on by itself; the screen stays awake. After
+the last set the plan's stretches follow as a **Cool-down** (`CoolDown`, one per screen with its
+demo, each side separately, a Start/Skip/Next hold timer; not logged). **How did it go?** (the
+self-check) shows only at the very end, after the cool-down, or when a member taps Finish early.
+Finishing goes back to where workouts start (members: Workouts tab); the draft is cleared only
+after leaving the screen, because clearing it first unmounts the session before it can navigate. The
+header says **Workout**; the elapsed time shows as "Workout time" under the plan name.
+**All exercises** keeps the old list.
 
 **Memberships and payments.** Owners set plans (`membership-plan-editor`); owners and supervisors
 record cash/UPI payments and renewals (`record-membership`) and chase renewals (`renewals`,
@@ -190,9 +271,9 @@ payments are switched on per branch by the admin and cost the owner nothing extr
 opened in the in-app browser (no native SDK), `razorpay-webhook` verifies the signature and calls
 `complete_online_payment()`, and the browser returns to `corefit://payment-return`. The gym's share
 goes to the owner's Razorpay **Route** linked account (`gyms.razorpay_account_id`); member money
-never stays with CoreFit Gym. By default the owner pays all fees and the members see one price.
-CoreFit Gym takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
-shows no CoreFit Gym fee; the setting and math stay in case it returns. Fee math lives only in
+never stays with CoreFit. By default the owner pays all fees and the members see one price.
+CoreFit takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
+shows no CoreFit fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
 refunds in the app.
 
@@ -210,10 +291,10 @@ the membership note); the front desk gets the same price prefilled but can chang
 supervisors) are announcements kept for reuse on New announcement; the plan editor's **Announce this
 offer** opens it filled in.
 
-**CoreFit Gym plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
+**CoreFit plan (owners pay us).** Each branch pays a yearly bill (fee + online add-on, now ₹0,
 `branch_yearly_bill()`); `gyms.paid_until` is the last day covered. Owners pay on `subscription`
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
-Razorpay Payment Link into CoreFit Gym's own account (no Route), and `razorpay-webhook` calls
+Razorpay Payment Link into CoreFit's own account (no Route), and `razorpay-webhook` calls
 `complete_subscription_payment()`, which adds a year from the day after `paid_until` (or today if
 lapsed). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
 free months (`admin_give_free_months`).
@@ -228,6 +309,23 @@ a statement trigger posts it through `pg_net` to `send-push`, which sends via Ex
 saves tokens with `register_push_token` in `use-push-notifications.ts`. Only call it when the
 device token actually changed: re-registering from the token listener caused a loop of ~400k API
 calls a day. Push needs a dev/preview build (not Expo Go on Android).
+
+**Over-the-air updates** (self-hosted, not EAS Update; Venkat 2026-11-04). `expo-updates` talks
+to our own server at `updates.vinven.net/manifest` (`infra/updates-server/`, the Expo Updates
+protocol v1 on a Cloudflare Worker with the R2 bucket `corefit-updates`; the same code runs on Node
+for a later move to our own server). Only builds whose `eas.json` profile sets `APP_UPDATES_CHANNEL`
+ask for updates (`app.config.ts`): `preview` → channel `develop`, `production` → `main`; development
+and demo builds never do. `runtimeVersion` is `appVersion`, so an update reaches only builds with the
+same `expo.version`: **bump `expo.version` whenever native code or native config changes**, and make
+a new build. Publish from the matching branch with `npm run ota -- publish --channel develop|main`;
+the script exports with that profile's `eas.json` env, uploads content-addressed files, and signs
+each manifest with `keys/private-key.pem` (git-ignored, on Venkat's Mac only; the app ships
+`certs/certificate.pem` and rejects unsigned updates). `npm run ota -- rollback` republishes the
+previous update under a new id (phones only take newer ones) or, with `--embedded`, sends phones
+back to the build's own code. `npm run ota -- prune --yes` frees storage (keeps the last 5
+updates per channel and the files they use; never delete R2 files by hand). Phones download on launch (and on return to the front, hourly, via
+`useOtaUpdates`) and apply on the next launch; Account shows the running update's short id. Setup
+and test steps: `infra/updates-server/README.md`.
 
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
@@ -271,11 +369,14 @@ calls a day. Push needs a dev/preview build (not Expo Go on Android).
 
 Say in the PR which of these it needs:
 
-- **`npx supabase db push`** for any new migration (run from Venkat's machine).
+- **`npx supabase db push --remote`** for any new migration (run from Venkat's machine; the CLI now targets a local database without `--remote`).
 - **Function deploys** when `supabase/functions/` changes: `npx supabase functions deploy <name>`
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
-- **A new EAS build** when a native module or `app.json` changes (`npx eas-cli@latest build
---profile preview` for the APK). JS-only changes need none.
+- **A new EAS build** when a native module or `app.json` native config changes (`npx eas-cli@latest
+build --profile preview` for the APK), with `expo.version` bumped. JS-only changes need none:
+  ship them with **`npm run ota:dev`** (from `develop`) or **`npm run ota:prod`** (from `main`,
+  after the release merge); add `-- -m "what changed"`. Store builds: `npm run build:prod`.
+- **`cd infra/updates-server && npx wrangler deploy`** when `infra/updates-server/` changes.
 - **Nothing** for `web/` changes: the dashboard redeploys itself on merge; run `cd web && npm run build` first.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.
 
@@ -288,6 +389,7 @@ concise and derived from the code.
 ## Secrets
 
 Never commit or paste secrets: Razorpay keys, webhook secrets, the service role key, push webhook
-secret, Expo access token. They live in `npx supabase secrets set …` and Supabase Vault
+secret, Expo access token, the OTA signing key (`keys/private-key.pem`) and publish token
+(`.env.ota.local`, Worker secret `PUBLISH_TOKEN`). They live in `npx supabase secrets set …` and Supabase Vault
 (`project_url`, `push_webhook_secret`). The Supabase URL and anon key in `eas.json` and
 `src/lib/env.ts` are public client values.

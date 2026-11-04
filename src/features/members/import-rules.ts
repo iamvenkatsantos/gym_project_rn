@@ -321,9 +321,9 @@ export function isSpreadsheetFile(fileName: string) {
  */
 export function joinMessage(gymName: string) {
   return [
-    `Hi! ${gymName} is now on the CoreFit Gym app, and your membership is already in it.`,
+    `Hi! ${gymName} is now on the CoreFit app, and your membership is already in it.`,
     '',
-    `1. Install CoreFit Gym: ${PLAY_STORE_URL}`,
+    `1. Install CoreFit: ${PLAY_STORE_URL}`,
     '2. Tap Create account and use the email you gave the gym.',
     '3. Enter the 6-digit code from the email and choose a password.',
     '',

@@ -45,3 +45,8 @@ example
 
 # Supabase CLI link state (written by `supabase link`)
 supabase/.temp/
+
+# Over-the-air updates: the signing key never leaves Venkat's machine; the certificate is public
+keys/
+!certs/certificate.pem
+dist-ota/

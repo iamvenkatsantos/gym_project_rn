@@ -11,13 +11,15 @@ import { BodyProgress } from '@/features/body/components/body-progress';
 import { useCoachedMembers } from '@/features/members/hooks';
 import { ProgressOverview } from '@/features/progress/components/progress-overview';
 import { useWorkoutLogs } from '@/features/progress/hooks';
+import { CoachSelfWorkouts } from '@/features/self-workouts/components/coach-self-workouts';
 
-type Tab = 'workouts' | 'body';
+type Tab = 'workouts' | 'self' | 'body';
 
 /**
  * Someone's workouts, measurements and progress photos as their trainer, supervisor or
  * owner sees them. The database only shares these along that hierarchy
- * (can_view_workout_logs). Read only: members log their own.
+ * (can_view_workout_logs). Read only: members log their own. Self shows a member's self
+ * workouts: the switch, their own plan and self-checks to reply to.
  */
 export default function MemberProgressScreen() {
   const { memberId, name } = useLocalSearchParams<{ memberId: string; name?: string }>();
@@ -45,6 +47,7 @@ export default function MemberProgressScreen() {
       <SegmentedControl<Tab>
         options={[
           { value: 'workouts', label: 'Workouts' },
+          { value: 'self', label: 'Self' },
           { value: 'body', label: 'Body' },
         ]}
         value={tab}
@@ -57,6 +60,13 @@ export default function MemberProgressScreen() {
           emptyText="No workouts logged yet.">
           {(list) => <ProgressOverview logs={list} />}
         </QueryState>
+      ) : tab === 'self' ? (
+        <CoachSelfWorkouts
+          gymId={gym.gymId}
+          memberId={memberId}
+          memberName={member?.fullName ?? name ?? 'This member'}
+          viewer={{ id: profile.id, name: profile.fullName, role: gym.role }}
+        />
       ) : (
         <BodyProgress gymId={gym.gymId} memberId={memberId} editable={false} />
       )}

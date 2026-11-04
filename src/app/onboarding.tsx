@@ -1,8 +1,6 @@
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
@@ -14,9 +12,10 @@ import { Radius, Spacing, withAlpha } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { useProgressPhotos } from '@/features/body/hooks';
-import { PHOTO_PICKER_OPTIONS } from '@/features/body/rules';
 import type { PhotoPose } from '@/features/body/types';
 import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
+import { birthDateInput } from '@/features/birthdays/rules';
+import { StartingPhotos } from '@/features/onboarding/components/starting-photos';
 import { useCompleteOnboarding } from '@/features/onboarding/hooks';
 import {
   firstOnboardingError,
@@ -44,14 +43,14 @@ export default function OnboardingScreen() {
   const complete = useCompleteOnboarding(gym.gymId, profile.id);
   const [texts, setTexts] = useState<OnboardingTexts>({
     fullName: profile.fullName,
-    phone: '',
-    dateOfBirth: '',
+    // Anything already on file, such as the number a WhatsApp invite went to.
+    phone: profile.phone ?? '',
+    dateOfBirth: birthDateInput(profile.dateOfBirth),
     weight: '',
     height: '',
   });
   const [avatar, setAvatar] = useState<PickedPhoto | null>(null);
   const [picked, setPicked] = useState<Partial<Record<PhotoPose, PickedPhoto>>>({});
-  const [cameraBlocked, setCameraBlocked] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   // A photo saved on an earlier try counts, unless they've picked a new one since.
@@ -66,37 +65,6 @@ export default function OnboardingScreen() {
 
   const set = (key: keyof OnboardingTexts) => (text: string) =>
     setTexts((prev) => ({ ...prev, [key]: text }));
-
-  const keep = (pose: PhotoPose, result: ImagePicker.ImagePickerResult) => {
-    const asset = result.canceled ? null : result.assets[0];
-    if (asset) {
-      setPicked((prev) => ({
-        ...prev,
-        [pose]: { uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg' },
-      }));
-    }
-  };
-
-  const takePhoto = async (pose: PhotoPose) => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      setCameraBlocked(true);
-      return;
-    }
-    setCameraBlocked(false);
-    keep(pose, await ImagePicker.launchCameraAsync(PHOTO_PICKER_OPTIONS));
-  };
-
-  // The system photo picker needs no permission.
-  const choosePhoto = async (pose: PhotoPose) =>
-    keep(pose, await ImagePicker.launchImageLibraryAsync(PHOTO_PICKER_OPTIONS));
-
-  const askForPhoto = (pose: PhotoPose, label: string) =>
-    Alert.alert(`${label} photo`, undefined, [
-      { text: 'Take photo', onPress: () => takePhoto(pose) },
-      { text: 'From gallery', onPress: () => choosePhoto(pose) },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
 
   const save = () => {
     setSubmitted(true);
@@ -191,55 +159,15 @@ export default function OnboardingScreen() {
         A front, back and side photo to compare with later. Stand in good light in workout clothes.
         Only you, your trainer and the gym&apos;s managers can see them.
       </ThemedText>
-      <View style={styles.row}>
-        {ONBOARDING_POSES.map(({ value: pose, label }) => {
-          const uri = picked[pose]?.uri ?? uploadedUrl(pose);
-          const done = !!picked[pose] || hasUploaded(pose);
-          return (
-            <Pressable
-              key={pose}
-              accessibilityRole="button"
-              accessibilityLabel={done ? `Change ${label} photo` : `Add ${label} photo`}
-              onPress={() => askForPhoto(pose, label)}
-              style={({ pressed }) => [
-                styles.slot,
-                {
-                  backgroundColor: theme.backgroundSelected,
-                  borderColor: submitted && !done ? theme.danger : theme.border,
-                },
-                pressed && styles.pressed,
-              ]}>
-              {uri ? (
-                <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              ) : (
-                <Icon name="camera-outline" size={28} />
-              )}
-              <View style={[styles.slotLabel, { backgroundColor: theme.backgroundElement }]}>
-                {done ? <Icon name="checkmark-circle" size={16} color="accent" /> : null}
-                <ThemedText type="smallBold">{label}</ThemedText>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      <StartingPhotos
+        uriFor={(pose) => picked[pose]?.uri ?? uploadedUrl(pose)}
+        onPick={(pose, photo) => setPicked((prev) => ({ ...prev, [pose]: photo }))}
+        highlightMissing={submitted}
+      />
       {submitted && errors.photos ? (
         <ThemedText type="small" themeColor="danger">
           {errors.photos}
         </ThemedText>
-      ) : null}
-      {cameraBlocked ? (
-        <>
-          <ThemedText type="small" themeColor="warning">
-            CoreFit Gym can&apos;t use the camera. Allow it in Settings, or pick photos from your
-            gallery.
-          </ThemedText>
-          <Button
-            label="Open Settings"
-            variant="secondary"
-            size="compact"
-            onPress={() => Linking.openSettings()}
-          />
-        </>
       ) : null}
 
       {complete.error ? (

@@ -3,7 +3,7 @@ import { randomUUID } from 'expo-crypto';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { WorkoutLog } from '@/features/progress/types';
+import type { SelfCheck, WorkoutLog } from '@/features/progress/types';
 import type { Workout } from '@/features/workouts/types';
 
 export type DraftSet = {
@@ -26,6 +26,10 @@ export type WorkoutDraft = {
   title: string;
   startedAt: string;
   exercises: DraftExercise[];
+  /** Answered on Finish; kept so a failed upload retries with it. Missing on older drafts. */
+  selfCheck?: SelfCheck | null;
+  /** "Old → New" for each exercise replaced mid-workout. Missing on older drafts. */
+  swaps?: string[];
 };
 
 type DraftState = {
@@ -36,7 +40,12 @@ type DraftState = {
   updateSet: (exercise: number, set: number, patch: Partial<Omit<DraftSet, 'done'>>) => void;
   toggleSet: (exercise: number, set: number) => void;
   addSet: (exercise: number) => void;
+  /** Swaps an exercise for another (e.g. the machine is busy), keeping its sets and reps. */
+  replaceExercise: (exercise: number, next: { id: string; name: string }) => void;
+  setSelfCheck: (check: SelfCheck | null) => void;
   skipRest: () => void;
+  /** Adds seconds to the rest in progress. */
+  extendRest: (seconds: number) => void;
   discard: () => void;
 };
 
@@ -117,7 +126,33 @@ export const useWorkoutDraft = create<DraftState>()(
           },
         });
       },
+      replaceExercise: (exercise, next) => {
+        const { draft } = get();
+        if (!draft) return;
+        const current = draft.exercises[exercise];
+        if (!current || current.exerciseId === next.id) return;
+        // Each exercise appears once in a workout; logged sets are keyed by it.
+        if (draft.exercises.some((e) => e.exerciseId === next.id)) return;
+        set({
+          draft: {
+            ...draft,
+            exercises: draft.exercises.map((e, i) =>
+              i === exercise ? { ...e, exerciseId: next.id, name: next.name } : e,
+            ),
+            swaps: [...(draft.swaps ?? []), `${current.name} → ${next.name}`].slice(-30),
+          },
+        });
+      },
+      setSelfCheck: (check) => {
+        const { draft } = get();
+        if (draft) set({ draft: { ...draft, selfCheck: check } });
+      },
       skipRest: () => set({ restUntil: null }),
+      extendRest: (seconds) => {
+        const { restUntil } = get();
+        if (restUntil !== null)
+          set({ restUntil: Math.max(restUntil, Date.now()) + seconds * 1000 });
+      },
       discard: () => set({ draft: null, restUntil: null }),
     }),
     { name: 'corefit-workout-draft', storage: createJSONStorage(() => AsyncStorage) },
@@ -143,5 +178,7 @@ export function draftToLog(draft: WorkoutDraft, completedAt: Date = new Date()):
           weightKg: s.weightKg,
         })),
     ),
+    selfCheck: draft.selfCheck ?? null,
+    swaps: draft.swaps ?? [],
   };
 }

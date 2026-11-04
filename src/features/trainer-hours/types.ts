@@ -14,6 +14,17 @@ export type TrainerHourRules = {
   /** LOP for a short day. A day with no check-in and no permission costs the full day. */
   lopMinutes: number;
   offDays: number[];
+  /**
+   * Late: first check-in more than this many minutes after the branch opens. Null switches
+   * late LOP off.
+   */
+  lateAfterMinutes: number | null;
+  /** Late working days in a row that cost LOP once, before the count starts again. */
+  lateStreakDays: number;
+  /** LOP for each late streak. */
+  lateLopMinutes: number;
+  /** When the evening shift starts (minutes after midnight), or null for no evening shift. */
+  eveningStartsAt: number | null;
   /** YYYY-MM-DD: LOP counts from here, never before. */
   startsOn: string;
 };
@@ -51,14 +62,31 @@ export type TrainerDay = {
   /** The longest single visit that day. */
   longestVisitMinutes: number;
   permissionMinutes: number;
+  /** Minutes after midnight of the day's first check-in; null when they didn't come. */
+  firstInMinute: number | null;
+  /** When the day's earliest approved permission starts, or null. */
+  permissionFromMinute: number | null;
+  /** When the branch opens, or null when it's open 24 hours. */
+  opensMinute: number | null;
+  /**
+   * When this trainer's shift starts: the evening start for evening trainers, otherwise opening.
+   * Missing from servers before evening shifts.
+   */
+  startMinute?: number | null;
 };
+
+export type TrainerShift = 'morning' | 'evening';
 
 /** A working day with the rules applied. */
 export type TrainerDayResult = TrainerDay & {
   /** Short of the required hours after counting permission. */
   shortMinutes: number;
+  /** All LOP for the day: shortfall plus any late streak that ends here. */
   lopMinutes: number;
   absent: boolean;
+  late: boolean;
+  /** LOP from a late streak that ends this day. */
+  lateLopMinutes: number;
 };
 
 /** One trainer's month for the owner's LOP report. */
@@ -68,6 +96,7 @@ export type TrainerMonth = {
   workingDays: number;
   workedMinutes: number;
   lopMinutes: number;
+  lateDays: number;
   /** Days that cost LOP, oldest first. */
   lopDays: TrainerDayResult[];
 };

@@ -40,7 +40,7 @@ export function subscriptionLine(sub: Subscription) {
   }
 }
 
-/** The branch's CoreFit Gym plan: price per year, status and the add-on when there is one. */
+/** The branch's CoreFit plan: price per year, status and the add-on when there is one. */
 export function SubscriptionCard({ sub, title }: { sub: Subscription; title: string }) {
   const status = subscriptionStatus(sub);
   const money = (cents: number) => formatAmount(cents, sub.currency);

@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { type ReactNode } from 'react';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -11,14 +12,25 @@ import { canStartWorkout } from '@/features/attendance/rules';
 import { NoMembershipNotice } from '@/features/memberships/components/no-membership-notice';
 import { useHasMembership } from '@/features/memberships/hooks';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
+import { useWorkoutLogs } from '@/features/progress/hooks';
+import { SelfWorkoutsCard } from '@/features/self-workouts/components/self-workouts-card';
+import { useSelfWorkoutsOn } from '@/features/self-workouts/hooks';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
-import { useWorkouts } from '@/features/workouts/hooks';
+import { useCatchUpDays, useWorkouts } from '@/features/workouts/hooks';
+import {
+  isDue,
+  lastDoneByPlan,
+  planDayStatus,
+  statusLabel,
+  type PlanDayStatus,
+} from '@/features/workouts/schedule';
 import type { Workout } from '@/features/workouts/types';
 
 /**
  * The workout in progress, or the plans to start one from: a member's trainers' plans, or a
  * coach's own. Anyone at the gym can train; members need a current membership and to check
- * in first, and starting tells their trainers.
+ * in first, and starting tells their trainers. Assigned plans with weekdays are only
+ * startable on their days, or within the gym's catch-up days after a missed one.
  */
 export function StartWorkout({ gymId }: { gymId: string }) {
   const profile = useProfile();
@@ -33,6 +45,11 @@ export function StartWorkout({ gymId }: { gymId: string }) {
   const hasMembership = useHasMembership(gymId, profile.id, gym.role);
   const checkedIn = !isMember || canStartWorkout(attendance.data);
   const canStart = checkedIn && hasMembership !== false;
+  const logs = useWorkoutLogs(gymId, profile.id);
+  const catchUp = useCatchUpDays(gymId);
+  // Members' own plans only count while a trainer has self workouts on.
+  const self = useSelfWorkoutsOn(gymId, profile.id);
+  const selfOn = isMember && self.on === true;
 
   const begin = (workout: Workout) => {
     start(gymId, workout);
@@ -53,13 +70,22 @@ export function StartWorkout({ gymId }: { gymId: string }) {
     });
   };
 
-  const card = (workout: Workout) => (
+  const statusOf = (workout: Workout): PlanDayStatus =>
+    planDayStatus(
+      workout.memberDays[profile.id] ?? [],
+      new Date(),
+      catchUp.data ?? 1,
+      lastDoneByPlan(logs.data ?? []).get(workout.id) ?? null,
+    );
+
+  const card = (workout: Workout, status?: PlanDayStatus) => (
     <WorkoutCard
       key={workout.id}
       workout={workout}
-      showAuthor={isMember}
+      showAuthor={isMember && !workout.isSelf}
+      dayLabel={status && status.kind !== 'anytime' ? statusLabel(status) : undefined}
       action={
-        draft ? undefined : (
+        draft || (status && !isDue(status)) ? undefined : (
           <Button
             label="Start workout"
             icon="play"
@@ -94,6 +120,11 @@ export function StartWorkout({ gymId }: { gymId: string }) {
           />
         </Card>
       ) : null}
+      {selfOn && !draft ? (
+        <SelfWorkoutsCard
+          hasPlans={(workouts.data ?? []).some((w) => w.isSelf && w.trainerId === profile.id)}
+        />
+      ) : null}
       {draft ? (
         <Card highlighted>
           <ThemedText type="label" themeColor="accent">
@@ -109,9 +140,16 @@ export function StartWorkout({ gymId }: { gymId: string }) {
       ) : null}
       <QueryState
         query={workouts}
-        isEmpty={(w) => w.length === 0}
-        emptyText={isMember ? 'Your trainer hasn’t shared any plans yet.' : 'No plans yet.'}>
-        {(list) => {
+        isEmpty={(w) => w.filter((p) => !p.isSelf || selfOn).length === 0}
+        emptyText={
+          selfOn
+            ? 'Set up your plan above.'
+            : isMember
+              ? 'Your trainer hasn’t shared any plans yet.'
+              : 'No plans yet.'
+        }>
+        {(all) => {
+          const list = all.filter((w) => !w.isSelf || selfOn);
           const mine = list.filter((w) => w.assignedMemberIds.includes(profile.id));
           // Staff train from their own plans here; owners and supervisors review
           // other coaches' plans under Coaching.
@@ -128,10 +166,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
           return (
             <>
               {mine.length > 0 ? (
-                <>
-                  <SectionHeader title="From your trainer" detail={`${mine.length} assigned`} />
-                  {mine.map(card)}
-                </>
+                <AssignedPlans plans={mine} statusOf={statusOf} card={card} />
               ) : null}
               {others.length > 0 ? (
                 <>
@@ -144,13 +179,46 @@ export function StartWorkout({ gymId }: { gymId: string }) {
                         : 'Your plans'
                     }
                   />
-                  {others.map(card)}
+                  {others.map((w) => card(w))}
                 </>
               ) : null}
             </>
           );
         }}
       </QueryState>
+    </>
+  );
+}
+
+/** A member's assigned plans: what's due today first, then the rest of the week. */
+function AssignedPlans({
+  plans,
+  statusOf,
+  card,
+}: {
+  plans: Workout[];
+  statusOf: (workout: Workout) => PlanDayStatus;
+  card: (workout: Workout, status: PlanDayStatus) => ReactNode;
+}) {
+  const withStatus = plans.map((workout) => ({ workout, status: statusOf(workout) }));
+  const due = withStatus.filter((p) => isDue(p.status));
+  const later = withStatus.filter((p) => !isDue(p.status));
+  return (
+    <>
+      <SectionHeader title="Today" detail={`${due.length} to do`} />
+      {due.length === 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {later.length > 0 ? 'Rest day. Your next plans are below.' : 'Rest day.'}
+        </ThemedText>
+      ) : (
+        due.map((p) => card(p.workout, p.status))
+      )}
+      {later.length > 0 ? (
+        <>
+          <SectionHeader title="This week" />
+          {later.map((p) => card(p.workout, p.status))}
+        </>
+      ) : null}
     </>
   );
 }

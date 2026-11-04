@@ -9,6 +9,7 @@ import { isSignedUp } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
 import { initials } from '@/features/trainers/rules';
 import { useTheme } from '@/hooks/use-theme';
+import { loginLabel } from '@/lib/mobile-login';
 
 export const roleTone: Record<GymPerson['role'], PillTone> = {
   member: 'neutral',
@@ -73,7 +74,7 @@ export function PersonRow({
         </ThemedText>
         {hideEmail ? null : (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {person.email}
+            {loginLabel(person.email)}
           </ThemedText>
         )}
         {detail ? (

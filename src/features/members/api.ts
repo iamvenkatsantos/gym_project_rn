@@ -15,6 +15,9 @@ import type {
 } from '@/features/members/types';
 import type { Role } from '@/features/auth/types';
 import type { ImportRow } from '@/features/members/import-rules';
+import type { AdmissionDetails } from '@/features/onboarding/types';
+import type { PhotoPose } from '@/features/body/types';
+import { mobileLoginEmail } from '@/lib/mobile-login';
 import {
   coachRoles,
   normalizeEmail,
@@ -163,13 +166,15 @@ export async function invitePerson(
   phone: string | null = null,
 ): Promise<InviteOutcome> {
   if (!supabase) {
+    // A WhatsApp invite without an email signs in with the mobile number.
+    const login = !email && phone ? mobileLoginEmail(phone) : email;
     const result =
-      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(email, role, phone);
+      role === 'gym_owner' ? await delay('invited' as const) : await mockInvite(login, role, phone);
     const code =
       result === 'invited' && phone
-        ? (mockInvites.find((i) => i.email === normalizeEmail(email))?.code ?? null)
+        ? (mockInvites.find((i) => i.email === normalizeEmail(login))?.code ?? null)
         : null;
-    return { result, emailSent: false, emailError: null, code };
+    return { result, emailSent: false, emailError: null, code, email: normalizeEmail(login) };
   }
 
   // A WhatsApp invite to the gym carries a one-time code to join with.
@@ -182,8 +187,19 @@ export async function invitePerson(
     });
     // Before the invite codes migration, save it without a code.
     if (error?.code !== 'PGRST202') {
-      const [row] = unwrap({ data, error }) as { result: InviteResult; code: string | null }[];
-      return { result: row.result, emailSent: false, emailError: null, code: row.code };
+      const [row] = unwrap({ data, error }) as {
+        result: InviteResult;
+        code: string | null;
+        /** The email used; missing before the WhatsApp-without-email migration. */
+        email?: string;
+      }[];
+      return {
+        result: row.result,
+        emailSent: false,
+        emailError: null,
+        code: row.code,
+        email: row.email ?? email,
+      };
     }
   }
 
@@ -217,6 +233,40 @@ export async function invitePerson(
     emailError:
       result === 'invited' ? 'The invite-member function is not deployed to Supabase yet.' : null,
   };
+}
+
+/**
+ * Saves the details the inviter filled in for a new member. A pending invite keeps them
+ * until the member joins; someone just added with an account gets them now. Either way
+ * the member skips the first-sign-in form.
+ */
+export async function saveAdmissionDetails(
+  gymId: string,
+  email: string,
+  details: AdmissionDetails,
+  /** Storage paths of the front, side and back photos the inviter uploaded. */
+  photos: Partial<Record<PhotoPose, string>> | null = null,
+): Promise<void> {
+  if (!supabase) {
+    const normalized = normalizeEmail(email);
+    const invite = mockInvites.find((i) => i.email === normalized);
+    if (invite) invite.fullName = details.fullName;
+    const person = mockPeople.find((p) => p.email === normalized);
+    if (person) Object.assign(person, { phone: details.phone, onboarded: true });
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('save_admission_details', {
+    p_gym_id: gymId,
+    p_email: email,
+    p_full_name: details.fullName,
+    p_phone: details.phone,
+    p_date_of_birth: details.dateOfBirth,
+    p_weight_kg: details.weightKg,
+    p_height_cm: details.heightCm,
+    ...(photos ? { p_photos: photos } : {}),
+  });
+  if (error?.code === 'PGRST202') throw new Error('Update the server to save member details.');
+  if (error) throw error;
 }
 
 /**
@@ -451,16 +501,27 @@ export async function findInviteByCode(code: string): Promise<InviteByCode | nul
   if (!supabase) {
     const invite = mockInvites.find((i) => i.code === clean);
     return delay(
-      invite ? { gymName: 'CoreFit Gym Demo', email: invite.email, role: invite.role } : null,
+      invite
+        ? {
+            gymName: 'CoreFit Demo',
+            email: invite.email,
+            role: invite.role,
+            fullName: invite.fullName ?? null,
+          }
+        : null,
     );
   }
   const rows = unwrap(await supabase.rpc('invite_by_code', { p_code: clean })) as {
     gym_name: string;
     email: string;
     role: Role;
+    /** The name the inviter gave; missing before the admission details migration. */
+    full_name?: string | null;
   }[];
   const row = rows[0];
-  return row ? { gymName: row.gym_name, email: row.email, role: row.role } : null;
+  return row
+    ? { gymName: row.gym_name, email: row.email, role: row.role, fullName: row.full_name ?? null }
+    : null;
 }
 
 /**
@@ -498,7 +559,7 @@ function wouldLeaveNoOwner(userId: string, next: Pick<GymPerson, 'role' | 'statu
 
 /**
  * Suspends or reactivates someone. Roles can't be changed once given; the database refuses
- * anyone but a CoreFit Gym admin.
+ * anyone but a CoreFit admin.
  */
 export async function updatePerson(
   gymId: string,

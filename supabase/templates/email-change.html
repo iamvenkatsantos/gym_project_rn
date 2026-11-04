@@ -1,0 +1,40 @@
+<!-- Supabase → Authentication → Emails → Templates → Change email address.
+     Subject: Your CoreFit email code
+     Used when someone who signs in with their mobile number adds an email
+     (Edit profile → Add an email). Needs Authentication → Providers → Email →
+     "Secure email change" off: their mobile login has no inbox to confirm from. -->
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#0B0B0F;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0B0B0F" style="background:#0B0B0F;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#F5F5F7;">
+            <tr>
+              <td align="center" style="padding-bottom:24px;">
+                <img src="https://raw.githubusercontent.com/iamvenkatsantos/gym_project_rn/main/assets/images/logo.png" width="72" height="72" alt="CoreFit" style="display:block;border:0;" />
+                <div style="font-size:22px;font-weight:800;letter-spacing:0.5px;padding-top:8px;">CoreFit</div>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#16161D" style="background:#16161D;border-radius:16px;padding:28px 24px;">
+                <div style="font-size:24px;font-weight:800;line-height:1.3;">Confirm your email</div>
+                <div style="font-size:15px;line-height:1.6;color:#A1A1AA;padding-top:12px;">
+                  Enter this code in CoreFit to add this email to your account. You'll sign in with it from now on.
+                </div>
+
+                <div style="font-size:13px;color:#A1A1AA;padding-top:24px;">Your code</div>
+                <div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#3DDC5C;padding-top:4px;">{{ .Token }}</div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 16px 0;font-size:12px;line-height:1.6;color:#71717A;">
+                Sent to {{ .NewEmail }}. If you didn't ask for this, ignore it.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

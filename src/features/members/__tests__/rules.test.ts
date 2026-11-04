@@ -12,6 +12,7 @@ import {
   normalizeInviteCode,
   isValidEmail,
   normalizeEmail,
+  resetCodeMessage,
 } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
 
@@ -101,26 +102,26 @@ describe('coaches', () => {
 describe('inviteMessage', () => {
   it('tells someone new which email to sign up with', () => {
     const text = inviteMessage('Iron Den', 'kavi@mail.com', 'trainer', 'invited');
-    expect(text).toContain("You're invited to join Iron Den on CoreFit Gym as a trainer.");
+    expect(text).toContain("You're invited to join Iron Den on CoreFit as a trainer.");
     expect(text).toContain('Tap Create account and use this email: kavi@mail.com');
     expect(text).toContain("You'll be in Iron Den as soon as you confirm.");
   });
 
   it('invites a new gym owner to the gym the admin set up for them', () => {
     const text = inviteMessage('AMR Fitness', 'raj@mail.com', 'gym_owner', 'invited', 'K7P2QX4M');
-    expect(text).toContain("You're invited to join AMR Fitness on CoreFit Gym as the owner.");
+    expect(text).toContain("You're invited to join AMR Fitness on CoreFit as the owner.");
     expect(text).toContain('K7P2-QX4M');
   });
 
   it('tells a new gym owner with an account their gym is ready', () => {
     const text = inviteMessage('AMR Fitness', 'raj@mail.com', 'gym_owner', 'added');
-    expect(text).toContain("You've been added to AMR Fitness on CoreFit Gym as the owner.");
+    expect(text).toContain("You've been added to AMR Fitness on CoreFit as the owner.");
     expect(text).toContain('sign in with raj@mail.com');
   });
 
   it('just says to sign in when they already have an account', () => {
     const text = inviteMessage('Iron Den', 'anu@mail.com', 'member', 'added');
-    expect(text).toContain("You've been added to Iron Den on CoreFit Gym as a member.");
+    expect(text).toContain("You've been added to Iron Den on CoreFit as a member.");
     expect(text).toContain('sign in with anu@mail.com');
   });
 });
@@ -150,5 +151,13 @@ describe('invite codes', () => {
   it('treats people as signed up unless told otherwise', () => {
     expect(isSignedUp({})).toBe(true);
     expect(isSignedUp({ signedUp: false })).toBe(false);
+  });
+});
+
+describe('resetCodeMessage', () => {
+  it('carries the formatted code and where to enter it', () => {
+    const message = resetCodeMessage('Pulse Fitness', 'K7P2QX4M');
+    expect(message).toContain('K7P2-QX4M');
+    expect(message).toContain('I have a reset code');
   });
 });

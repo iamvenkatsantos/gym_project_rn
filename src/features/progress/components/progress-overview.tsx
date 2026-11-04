@@ -13,6 +13,7 @@ import {
   workoutsThisWeek,
 } from '@/features/progress/rules';
 import type { WorkoutLog } from '@/features/progress/types';
+import { SelfCheckLines } from '@/features/self-workouts/components/self-check-lines';
 import { formatRelativeDay } from '@/lib/format';
 
 /** Stats, personal records and history for one member's logs. Used by the member and their trainer. */
@@ -61,6 +62,7 @@ export function ProgressOverview({ logs }: { logs: WorkoutLog[] }) {
               {durationMinutes(log)} min · {log.sets.length} sets
               {volume ? ` · ${Math.round(volume).toLocaleString()} kg lifted` : ''}
             </ThemedText>
+            <SelfCheckLines log={log} />
           </Card>
         );
       })}

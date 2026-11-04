@@ -19,6 +19,7 @@ import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
+import { useOtaUpdates } from '@/features/updates/use-ota-updates';
 import { useColorSchemeName } from '@/hooks/use-theme';
 import { queryClient } from '@/lib/query-client';
 
@@ -69,6 +70,7 @@ function RootNavigator() {
   useAuthBootstrap();
   useAuthLinks();
   usePushNotifications();
+  useOtaUpdates();
   const status = useAuthStore((s) => s.status);
   const settingPassword = useAuthStore((s) => s.status === 'signedIn' && s.needsPassword);
   // New members fill in their details and photos before anything else.
@@ -80,7 +82,7 @@ function RootNavigator() {
   const gymRole = useAuthStore((s) =>
     settingPassword || onboarding || profileSetup ? undefined : selectActiveGym(s)?.role,
   );
-  // A branch whose CoreFit Gym plan lapsed more than 5 days ago gets only the locked screen.
+  // A branch whose CoreFit plan lapsed more than 5 days ago gets only the locked screen.
   const branchLocked = useActiveBranchLocked();
   const locked = !!gymRole && branchLocked;
   const role = locked ? undefined : gymRole;
@@ -102,11 +104,15 @@ function RootNavigator() {
         headerShadowVisible: false,
         headerTitleStyle: { fontWeight: '700' },
       }}>
-      <Stack.Screen name="index" options={{ title: 'CoreFit Gym' }} />
+      <Stack.Screen name="index" options={{ title: 'CoreFit' }} />
       <Stack.Protected guard={status === 'signedOut'}>
         <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />
         <Stack.Screen name="enter-code" options={{ headerShown: true, title: 'Enter your code' }} />
         <Stack.Screen name="join" options={{ headerShown: true, title: 'Join your gym' }} />
+        <Stack.Screen
+          name="reset-password"
+          options={{ headerShown: true, title: 'Reset password' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={settingPassword}>
         <Stack.Screen name="set-password" options={{ title: 'Choose a password' }} />
@@ -126,7 +132,7 @@ function RootNavigator() {
       <Stack.Protected guard={locked && !inAdmin}>
         <Stack.Screen
           name="plan-locked"
-          options={{ headerShown: true, headerBackVisible: false, title: 'CoreFit Gym plan' }}
+          options={{ headerShown: true, headerBackVisible: false, title: 'CoreFit plan' }}
         />
       </Stack.Protected>
       <Stack.Protected guard={onboarding}>
@@ -148,7 +154,7 @@ function RootNavigator() {
         <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
         <Stack.Screen name="set-up-gym" options={{ headerShown: true, title: 'Set up your gym' }} />
       </Stack.Protected>
-      {/* CoreFit Gym's admin: owners, branches and billing. The server checks every call too. */}
+      {/* CoreFit's admin: owners, branches and billing. The server checks every call too. */}
       <Stack.Protected guard={inAdmin}>
         <Stack.Screen name="admin" options={{ title: 'Overview' }} />
         <Stack.Screen
@@ -208,11 +214,8 @@ function RootNavigator() {
         />
         {/* Owners of more than one branch see them side by side. */}
         <Stack.Screen name="branches" options={{ headerShown: true, title: 'All branches' }} />
-        {/* What the branch pays CoreFit Gym each year, paid in the app. */}
-        <Stack.Screen
-          name="subscription"
-          options={{ headerShown: true, title: 'CoreFit Gym plan' }}
-        />
+        {/* What the branch pays CoreFit each year, paid in the app. */}
+        <Stack.Screen name="subscription" options={{ headerShown: true, title: 'CoreFit plan' }} />
       </Stack.Protected>
       <Stack.Protected guard={role === 'supervisor'}>
         <Stack.Screen name="supervisor" options={{ title: 'Dashboard' }} />
@@ -290,7 +293,7 @@ function RootNavigator() {
           name="invite-person"
           options={{ presentation: 'modal', headerShown: true, title: 'Invite someone' }}
         />
-        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen name="smart-plans" options={{ headerShown: true, title: 'Smart plans' }} />
         <Stack.Screen
           name="assign-plan/[workoutId]"
           options={{ headerShown: true, title: 'Assign' }}
@@ -312,6 +315,20 @@ function RootNavigator() {
         <Stack.Screen
           name="workout-session"
           options={{ headerShown: true, gestureEnabled: false, title: 'Workout' }}
+        />
+        {/*
+          Plans: coaches write theirs; members with self workouts on edit their own week,
+          which their trainers can edit too. The server checks who may save what.
+        */}
+        <Stack.Screen name="plan-editor" options={{ headerShown: true, title: 'Plan' }} />
+        <Stack.Screen
+          name="add-exercises"
+          options={{ presentation: 'modal', headerShown: true, title: 'Add exercises' }}
+        />
+        <Stack.Screen name="self-plan" options={{ headerShown: true, title: 'My plan' }} />
+        <Stack.Screen
+          name="self-plan-setup"
+          options={{ headerShown: true, title: 'Set up my plan' }}
         />
         <Stack.Screen
           name="exercise/[exerciseId]"

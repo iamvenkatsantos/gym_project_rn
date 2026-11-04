@@ -101,7 +101,7 @@ export default function BranchesScreen() {
               ))}
               <ThemedText type="small" themeColor="textSecondary">
                 Each branch keeps its own members, staff and payments. To add a branch, contact
-                CoreFit Gym.
+                CoreFit.
               </ThemedText>
             </>
           );

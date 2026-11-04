@@ -36,7 +36,7 @@ export default function NoGymScreen() {
 
   if (canSetUp.data) {
     return (
-      <Screen title="Welcome to CoreFit Gym">
+      <Screen title="Welcome to CoreFit">
         <Card>
           <Icon name="business-outline" size={28} color="accent" />
           <ThemedText type="heading">Set up your gym</ThemedText>

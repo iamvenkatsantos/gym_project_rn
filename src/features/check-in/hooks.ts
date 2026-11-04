@@ -72,7 +72,7 @@ export function useSaveGymHours(gymId: string) {
   });
 }
 
-/** CoreFit Gym admins: the branch's printed QR. */
+/** CoreFit admins: the branch's printed QR. */
 export function useAdminBranchQr(gymId: string) {
   return useQuery({ queryKey: checkInKeys.admin(gymId), queryFn: () => getAdminBranchQr(gymId) });
 }

@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -23,6 +24,7 @@ import { useSignOut } from '@/features/auth/use-sign-out';
 import { branchLabel } from '@/features/branches/rules';
 import { useCanSetUpGym, useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
+import { versionLabel } from '@/features/updates/rules';
 import { queryClient } from '@/lib/query-client';
 
 export default function AccountScreen() {
@@ -35,7 +37,7 @@ export default function AccountScreen() {
   const signOut = useSignOut();
   // People an admin invited to run a gym can set up another one from here.
   const canSetUpGym = useCanSetUpGym();
-  // CoreFit Gym admins switch between the admin view and any gym they belong to.
+  // CoreFit admins switch between the admin view and any gym they belong to.
   const isAdmin = useIsPlatformAdmin();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const removeAccount = useMutation({
@@ -192,7 +194,8 @@ export default function AccountScreen() {
         </ListGroup>
       )}
       <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
-        CoreFit Gym {Constants.expoConfig?.version ?? ''}
+        CoreFit{' '}
+        {versionLabel(Constants.expoConfig?.version, Updates.updateId, Updates.isEmbeddedLaunch)}
       </ThemedText>
     </Screen>
   );

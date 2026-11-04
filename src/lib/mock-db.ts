@@ -9,6 +9,7 @@ import type { GymInvite, GymPerson } from '@/features/members/types';
 import type { LoyaltyOffer, Membership, MembershipPlan } from '@/features/memberships/types';
 import type { AppNotification } from '@/features/notifications/types';
 import type { WorkoutLog } from '@/features/progress/types';
+import type { SelfPrefs } from '@/features/self-workouts/types';
 import type { TrainerHourRules, WorkPermission } from '@/features/trainer-hours/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
 import type { Workout } from '@/features/workouts/types';
@@ -102,7 +103,7 @@ export const mockProfiles: Profile[] = [
     id: 'u-admin',
     phone: '9840056789',
     fullName: 'CoreFit Admin',
-    // Runs CoreFit Gym itself rather than any one gym.
+    // Runs CoreFit itself rather than any one gym.
     gyms: [],
     isPlatformAdmin: true,
   },
@@ -176,9 +177,12 @@ function link(memberId: string, trainerId: string, daysAgo: number): TrainerLink
   };
 }
 
-/** Who trains whom. Nandini has two trainers; Priya and Harish have none yet. */
+/**
+ * Who trains whom. Nandini has two trainers; Priya and Harish have none yet. Karthik lets
+ * Nandini plan her own workouts (self workouts).
+ */
 export const mockTrainerLinks: TrainerLink[] = [
-  link('u-member', 'u-trainer', 90),
+  { ...link('u-member', 'u-trainer', 90), selfWorkouts: true },
   link('u-member', 'u-trainer-2', 30),
   link('u-member-2', 'u-trainer', 80),
 ];
@@ -288,6 +292,7 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-plank', 'Plank', 3, 30, null, 45),
     ],
     assignedMemberIds: ['u-member'],
+    memberDays: { 'u-member': [1, 3, 5] },
   },
   {
     id: 'w-2',
@@ -303,8 +308,15 @@ export const mockWorkouts: Workout[] = [
       prescribe('e-walking-lunge', 'Walking lunge', 3, 12),
     ],
     assignedMemberIds: [],
+    memberDays: {},
   },
 ];
+
+/** Gym-wide settings the demo can change. */
+export const mockGymSettings = { workoutCatchUpDays: 1 };
+
+/** Members' self-workout answers (goal, level, days, split), by member id. */
+export const mockSelfPrefs: Record<string, SelfPrefs> = {};
 
 export const mockMealPlans: MealPlan[] = [
   {
@@ -597,15 +609,23 @@ const set = (
   weightKg,
 });
 
+/** A past workout with the member's self-check. */
+function withCheck(log: WorkoutLog, selfCheck: WorkoutLog['selfCheck']): WorkoutLog {
+  return { ...log, selfCheck };
+}
+
 /** A few weeks of history, keyed by the id of the person who trained. Staff train too. */
 export const mockLogs: Record<string, WorkoutLog[]> = {
   'u-member': [
-    pastLog(1, 'Full body starter', [
-      set('e-goblet-squat', 'Goblet squat', 1, 12, 16),
-      set('e-goblet-squat', 'Goblet squat', 2, 12, 16),
-      set('e-push-up', 'Push-up', 1, 14, null),
-      set('e-dumbbell-row', 'Dumbbell row', 1, 12, 18),
-    ]),
+    withCheck(
+      pastLog(1, 'Full body starter', [
+        set('e-goblet-squat', 'Goblet squat', 1, 12, 16),
+        set('e-goblet-squat', 'Goblet squat', 2, 12, 16),
+        set('e-push-up', 'Push-up', 1, 14, null),
+        set('e-dumbbell-row', 'Dumbbell row', 1, 12, 18),
+      ]),
+      { effort: 7, pain: 'Knee', note: 'Squats felt heavy on the left knee.' },
+    ),
     pastLog(2, 'Lower body strength', [
       set('e-back-squat', 'Back squat', 1, 5, 55),
       set('e-back-squat', 'Back squat', 2, 5, 57.5),
@@ -935,8 +955,17 @@ export const mockTrainerHourRules: { current: TrainerHourRules | null } = {
     shortLimitMinutes: 30,
     lopMinutes: 4 * 60,
     offDays: [0],
+    lateAfterMinutes: 15,
+    lateStreakDays: 2,
+    lateLopMinutes: 4 * 60,
+    eveningStartsAt: 14 * 60,
     startsOn: mockDay(6),
   },
+};
+
+/** Demo trainers on the evening shift; everyone else works mornings. */
+export const mockTrainerShifts: Record<string, 'morning' | 'evening'> = {
+  'u-trainer-2': 'evening',
 };
 
 /** Trainers' permission requests at the demo gym. */

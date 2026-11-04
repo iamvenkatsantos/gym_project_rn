@@ -1,6 +1,6 @@
 export type BranchOwner = { id: string; fullName: string; email: string };
 
-/** One branch as the CoreFit Gym admin sees it. */
+/** One branch as the CoreFit admin sees it. */
 export type AdminBranch = {
   brandId: string;
   brandName: string;
@@ -14,7 +14,7 @@ export type AdminBranch = {
   razorpayAccountId: string | null;
   /** Whether members pay Razorpay's fees on top of the price, so the owner gets it all. */
   feesOnMember: boolean;
-  /** The last day the branch's CoreFit Gym plan is paid for; null if never paid. */
+  /** The last day the branch's CoreFit plan is paid for; null if never paid. */
   paidUntil: string | null;
   address: string;
   city: string;
@@ -27,17 +27,17 @@ export type AdminBranch = {
   createdAt: string;
 };
 
-/** What CoreFit Gym charges: a default yearly fee for each branch, plus add-ons. */
+/** What CoreFit charges: a default yearly fee for each branch, plus add-ons. */
 export type BillingSettings = {
   branchFeeCents: number;
   /** The online payments add-on per year, per branch that has it on. 0 since 2026-10-30. */
   onlineAddonCents: number;
-  /** CoreFit Gym's cut of each online payment, in basis points (100 = 1%). */
+  /** CoreFit's cut of each online payment, in basis points (100 = 1%). */
   onlineCutBps: number;
   currency: string;
 };
 
-/** A brand with its branches. CoreFit Gym bills per branch. */
+/** A brand with its branches. CoreFit bills per branch. */
 export type AdminBrand = {
   brandId: string;
   brandName: string;

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Role } from '@/features/auth/types';
-import { listGymLogs, listLogs, saveLog } from '@/features/progress/api';
+import { listGymLogs, listLogs, replyToWorkout, saveLog } from '@/features/progress/api';
 import { draftToLog, useWorkoutDraft } from '@/features/progress/draft-store';
 
 export const progressKeys = {
@@ -31,7 +31,6 @@ export function useGymWorkoutLogs(gymId: string, viewer: { id: string; role: Rol
  */
 export function useFinishWorkout(memberId: string) {
   const queryClient = useQueryClient();
-  const discard = useWorkoutDraft((s) => s.discard);
 
   return useMutation({
     mutationFn: async () => {
@@ -39,9 +38,18 @@ export function useFinishWorkout(memberId: string) {
       if (!draft) throw new Error('No workout in progress');
       await saveLog(draft.gymId, memberId, draftToLog(draft));
     },
-    onSuccess: () => {
-      discard();
-      return queryClient.invalidateQueries({ queryKey: progressKeys.all });
-    },
+    // The screen leaves first, then the draft is cleared: clearing it while the workout
+    // screen is open unmounts it before it can navigate.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+  });
+}
+
+/** A trainer's reply to one of their member's workouts. */
+export function useReplyToWorkout(gymId: string, memberId: string, byName: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, text }: { clientId: string; text: string }) =>
+      replyToWorkout(gymId, memberId, clientId, text, byName),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
   });
 }
