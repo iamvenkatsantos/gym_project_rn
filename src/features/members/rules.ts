@@ -1,4 +1,5 @@
 import { canCoach, type Role } from '@/features/auth/types';
+import { isMobileLogin, loginLabel } from '@/lib/mobile-login';
 import type { GymPerson, InviteResult, InviteRole, PeopleFilter } from '@/features/members/types';
 import { env } from '@/lib/env';
 import { normalizeEmail, validateEmail } from '@/lib/validation';
@@ -95,11 +96,13 @@ export function inviteMessage(
   result: InviteResult,
   code?: string | null,
 ) {
+  // Invites without an email sign in with the mobile number.
+  const signInWith = isMobileLogin(email) ? `your mobile number ${loginLabel(email)}` : email;
   if (result === 'added') {
     return [
       `Hi! You've been added to ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `Open CoreFit and sign in with ${email}. Don't have the app? ${PLAY_STORE_URL}`,
+      `Open CoreFit and sign in with ${signInWith}. Don't have the app? ${PLAY_STORE_URL}`,
     ].join('\n');
   }
   if (code) {
@@ -111,7 +114,7 @@ export function inviteMessage(
       `   Or tap "I have an invite code" and enter ${formatInviteCode(code)}`,
       '3. Add your name and a password.',
       '',
-      `You'll sign in with ${email}. The code works once, for 7 days.`,
+      `You'll sign in with ${signInWith}. The code works once, for 7 days.`,
     ].join('\n');
   }
   return [

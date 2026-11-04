@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { Role } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
+import type { PhotoPose } from '@/features/body/types';
 import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { useInvitePerson, usePeople } from '@/features/members/hooks';
@@ -25,6 +26,8 @@ import {
   validateAdmission,
   type AdmissionTexts,
 } from '@/features/onboarding/rules';
+import { StartingPhotos } from '@/features/onboarding/components/starting-photos';
+import type { PickedPhoto } from '@/features/onboarding/types';
 import { validateEmail } from '@/lib/validation';
 import type { InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
 
@@ -100,6 +103,7 @@ export default function InvitePersonScreen() {
   const [detailsBy, setDetailsBy] = useState<DetailsBy>('member');
   const [details, setDetails] = useState<AdmissionTexts>(EMPTY_ADMISSION);
   const [submitted, setSubmitted] = useState(false);
+  const [photos, setPhotos] = useState<Partial<Record<PhotoPose, PickedPhoto>>>({});
   // New gyms and their owners are set up from Admin → Owners; an owner here is a co-owner.
   const inviteRole: InviteRole = role;
   // Trainers invite members, supervisors members and trainers, owners add supervisors
@@ -108,31 +112,31 @@ export default function InvitePersonScreen() {
   const roles = isAdmin
     ? ownerInviteRoles
     : ownerInviteRoles.slice(0, gym.role === 'owner' ? 3 : isTrainer ? 1 : 2);
-  const emailError = validateEmail(email);
+  // WhatsApp invites can go without an email: they sign in with the mobile number.
+  const emailError = channel === 'whatsapp' && !email.trim() ? null : validateEmail(email);
   const whatsappNumber = parseMobile(mobile);
   const mobileError =
     channel === 'whatsapp' && !whatsappNumber ? 'Enter a 10-digit mobile number.' : null;
   // The inviter can fill in what the member's first-sign-in form asks; then the member skips it.
   const fillDetails = role === 'member' && detailsBy === 'inviter';
-  const detailErrors = validateAdmission({ ...details, phone: mobile });
+  const detailErrors = validateAdmission(
+    { ...details, phone: mobile },
+    new Set(Object.keys(photos) as PhotoPose[]),
+  );
   const detailsProblem = fillDetails ? firstAdmissionError(detailErrors) : null;
   const setDetail = (key: keyof AdmissionTexts) => (text: string) => {
     setDetails((prev) => ({ ...prev, [key]: text }));
     invite.reset();
   };
+  // The email the invite went to; without one, the mobile login.
+  const sentTo = invite.data?.email ?? invite.variables?.email ?? '';
   const result = invite.data
-    ? describe(
-        invite.data,
-        invite.variables.email,
-        invite.variables.role,
-        !isTrainer,
-        invite.variables.channel,
-      )
+    ? describe(invite.data, sentTo, invite.variables.role, !isTrainer, invite.variables.channel)
     : null;
   const message = invite.data
     ? inviteMessage(
         gym.gymName,
-        invite.variables.email,
+        sentTo,
         invite.variables.role,
         invite.data.result,
         invite.data.code,
@@ -149,6 +153,7 @@ export default function InvitePersonScreen() {
       channel,
       phone: channel === 'whatsapp' ? whatsappNumber : null,
       admission: fillDetails ? admissionValues({ ...details, phone: mobile }) : null,
+      photos: fillDetails ? photos : null,
     };
     invite.mutate(variables, {
       onSuccess: (outcome) => {
@@ -156,7 +161,7 @@ export default function InvitePersonScreen() {
           sendOnWhatsApp(
             inviteMessage(
               gym.gymName,
-              variables.email,
+              outcome.email ?? variables.email,
               variables.role,
               outcome.result,
               outcome.code,
@@ -170,7 +175,7 @@ export default function InvitePersonScreen() {
   // Inviting someone who's already here doesn't change their role, and roles never change.
   const existing =
     invite.data?.result === 'already_member'
-      ? people.data?.find((p) => p.email === invite.variables?.email)
+      ? people.data?.find((p) => p.email === sentTo)
       : undefined;
   const invitedRole = invite.variables?.role === 'gym_owner' ? undefined : invite.variables?.role;
   const roleDiffers = existing && invitedRole && existing.role !== invitedRole;
@@ -228,7 +233,7 @@ export default function InvitePersonScreen() {
             />
           ) : null}
           <TextField
-            label={channel === 'whatsapp' ? 'Email they sign up with' : 'Email'}
+            label={channel === 'whatsapp' ? 'Email (optional)' : 'Email'}
             placeholder="name@example.com"
             value={email}
             onChangeText={(text) => {
@@ -338,6 +343,22 @@ export default function InvitePersonScreen() {
                   />
                 </View>
               </View>
+              <ThemedText type="label" themeColor="textSecondary">
+                Starting photos
+              </ThemedText>
+              <StartingPhotos
+                uriFor={(pose) => photos[pose]?.uri}
+                onPick={(pose, photo) => {
+                  setPhotos((prev) => ({ ...prev, [pose]: photo }));
+                  invite.reset();
+                }}
+                highlightMissing={submitted}
+              />
+              {submitted && detailErrors.photos ? (
+                <ThemedText type="small" themeColor="danger">
+                  {detailErrors.photos}
+                </ThemedText>
+              ) : null}
             </>
           ) : null}
 
@@ -382,6 +403,7 @@ export default function InvitePersonScreen() {
                     setEmail('');
                     setMobile('');
                     setDetails(EMPTY_ADMISSION);
+                    setPhotos({});
                     setSubmitted(false);
                     invite.reset();
                   }}

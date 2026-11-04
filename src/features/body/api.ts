@@ -4,6 +4,7 @@ import { File } from 'expo-file-system';
 import type {
   BodyMeasurement,
   MeasurementInput,
+  PhotoPose,
   PhotoUpload,
   ProgressPhoto,
 } from '@/features/body/types';
@@ -197,6 +198,31 @@ export async function uploadPhoto(gymId: string, memberId: string, upload: Photo
     await supabase.storage.from(BUCKET).remove([path]);
     throw error;
   }
+}
+
+/**
+ * Uploads a new member's front, side and back photos before they have an account, to
+ * <gym>/admissions/<folder>/ (the inviter can write there). When the member joins, the
+ * database turns them into their first progress photos. Returns each pose's path.
+ */
+export async function uploadAdmissionPhotos(
+  gymId: string,
+  photos: Partial<Record<PhotoPose, { uri: string; mimeType: string }>>,
+): Promise<Partial<Record<PhotoPose, string>>> {
+  const entries = Object.entries(photos) as [PhotoPose, { uri: string; mimeType: string }][];
+  if (!supabase) return delay(Object.fromEntries(entries.map(([pose, p]) => [pose, p.uri])));
+  const folder = `${gymId}/admissions/${randomUUID()}`;
+  const paths: Partial<Record<PhotoPose, string>> = {};
+  for (const [pose, photo] of entries) {
+    const path = `${folder}/${pose}.${extensionFor(photo.mimeType)}`;
+    const bytes = await new File(photo.uri).arrayBuffer();
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, bytes, { contentType: photo.mimeType, upsert: false });
+    if (error) throw error;
+    paths[pose] = path;
+  }
+  return paths;
 }
 
 export async function deletePhoto(memberId: string, photo: ProgressPhoto) {

@@ -28,6 +28,7 @@ import { MembershipRow } from '@/features/memberships/components/membership-card
 import { useMemberships } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
+import { loginLabel } from '@/lib/mobile-login';
 
 /** What each role can do, shown under the role pill. */
 const roleNote: Record<Role, string> = {
@@ -175,7 +176,7 @@ export default function PersonScreen() {
         <View style={styles.flex}>
           <ThemedText type="title">{person.fullName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {person.email}
+            {loginLabel(person.email)}
           </ThemedText>
           {person.phone ? (
             <ThemedText type="small" themeColor="textSecondary">

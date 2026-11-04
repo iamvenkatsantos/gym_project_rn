@@ -90,8 +90,16 @@ or **Fill in now** (name, mobile, date of birth, weight, height; all required). 
 sent) or, for someone added straight away with an account, applies them now. On joining,
 `claim_gym_invites` applies them via `apply_admission_details()` (never overwrites a name, mobile or
 DOB they already have; weight/height become the first measurement) and sets `onboarded_at`, so the
-member skips `onboarding` and lands on Home. Starting photos stay with the member (Progress). The
-join screen prefills the inviter's name (`invite_by_code.full_name`).
+member skips `onboarding` and lands on Home. Fill in now also takes the front, side and back
+photos (`StartingPhotos`, required in the app): the inviter uploads them to
+`<gym>/admissions/<folder>/` in `progress-photos` (staff-only insert policy; readable once they're a
+member's `progress_photos`), they're kept in `gym_invites.photo_paths` and become the member's first
+progress photos on join. The join screen prefills the inviter's name (`invite_by_code.full_name`).
+**WhatsApp invites without an email:** the email is optional on WhatsApp. Without one the account's
+email is `<10 digits>@m.vinven.net` (`mobile_login_email()`, a domain with no mail), and the person
+signs in with their mobile number: Sign in takes "Email or mobile" and `signInEmail()` maps a mobile to
+that address (`src/lib/mobile-login.ts`; show it with `loginLabel()`, never raw). Mobile sign-ins have
+no password reset email yet.
 **Invite by email**: the `invite-member` edge fn calls
 `invite_to_gym()` (or, for an older new-gym invite, `invite_gym_owner()`) as the caller, then sends the
 email with the service role. Supervisors invite members and trainers; trainers invite members only,
@@ -101,7 +109,7 @@ and those members are auto-mapped to them. Every member invite records an admiss
 attaches pending invites when the user confirms. Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
 **No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
-pickers. Login is email only (no phone OTP); Google or other
+pickers. Login is email + password, or mobile + password for WhatsApp invites without an email (no phone OTP); Google or other
 OAuth may come later.
 
 **Member import.** Owners bring members over from another app on People → `import-members`: share
