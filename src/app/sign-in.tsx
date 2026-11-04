@@ -276,9 +276,17 @@ export default function SignInScreen() {
                   </Pressable>
                 ) : null}
                 {mode === 'signIn' && resetHint && mobileTyped ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Mobile sign-ins have no reset email. Ask your gym for help.
-                  </ThemedText>
+                  <View style={[styles.notice, { borderColor: theme.accent }]}>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Ask your gym for a reset code on WhatsApp.
+                    </ThemedText>
+                    <Button
+                      label="I have a reset code"
+                      icon="keypad-outline"
+                      size="compact"
+                      onPress={() => router.push('/reset-password')}
+                    />
+                  </View>
                 ) : null}
                 {mode === 'signIn' && resetHint && emailError ? (
                   <ThemedText type="small" themeColor="textSecondary">

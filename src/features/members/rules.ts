@@ -128,6 +128,16 @@ export function inviteMessage(
   ].join('\n');
 }
 
+/** The WhatsApp message carrying a password reset code for a mobile sign-in. */
+export function resetCodeMessage(gymName: string, code: string) {
+  return [
+    `Your ${gymName} password reset code on CoreFit: ${formatInviteCode(code)}`,
+    '',
+    'Open CoreFit, type your mobile number, tap Forgot password? then I have a reset code.',
+    'The code works once, for a day.',
+  ].join('\n');
+}
+
 /** "K7P2QX4M" as "K7P2-QX4M", easier to read out and type. */
 export function formatInviteCode(code: string) {
   const clean = normalizeInviteCode(code);
