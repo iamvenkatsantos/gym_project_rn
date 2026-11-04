@@ -6,6 +6,7 @@
 //   npm run ota -- rollback --channel develop                 # back to the previous update
 //   npm run ota -- rollback --channel develop --to <id>       # back to a given update
 //   npm run ota -- rollback --channel develop --embedded      # back to the code inside the build
+//   npm run ota -- prune [--keep 5] [--yes]                   # delete old updates and unused files
 //
 // Options: --platform android|ios|all (default all), --server <url>, --force (skip git checks),
 // --dry-run (publish: build and sign but upload nothing).
@@ -43,8 +44,11 @@ try {
 async function main() {
   const command = args._[0];
   const channel = args.channel;
+  if (command === 'prune') return prune();
   if (!['publish', 'list', 'rollback'].includes(command)) {
-    throw new Error('Usage: npm run ota -- <publish|list|rollback> --channel <develop|main>');
+    throw new Error(
+      'Usage: npm run ota -- <publish|list|rollback> --channel <develop|main>, or prune',
+    );
   }
   if (!CHANNEL_PROFILES[channel]) throw new Error('--channel must be develop or main');
   const platforms =
@@ -73,7 +77,7 @@ async function publish(channel, platforms, env) {
 
   console.log('Exporting the JS bundle…');
   const outDir = join(ROOT, 'dist-ota');
-  rmSync(outDir, { recursive: true, force: true });
+  removeDir(outDir);
   run(
     'npx',
     ['expo', 'export', ...platforms.flatMap((p) => ['--platform', p]), '--output-dir', outDir],
@@ -142,7 +146,7 @@ async function publish(channel, platforms, env) {
   for (const { platform, manifest } of releases) {
     await saveAndPoint({ channel, platform, manifest, privateKey, token, message, commit });
   }
-  rmSync(outDir, { recursive: true, force: true });
+  removeDir(outDir);
   console.log('\n✔ Published. Phones get it on their next launch and run it on the one after.');
 }
 
@@ -226,6 +230,61 @@ async function rollback(channel, platforms, env) {
       commit: record.commit,
     });
   }
+}
+
+// ---------- prune ----------
+
+// Frees storage. Keeps, for every channel, runtime version and platform, the newest --keep
+// updates in its history (default 5, so rollback still works), plus every file those updates use.
+// Deletes all other update records and asset files. Shows what it would delete unless --yes.
+// Don't run it while a publish is uploading: that publish's new files aren't referenced yet.
+async function prune() {
+  const token = publishToken();
+  const keep = Number(args.keep ?? 5);
+  if (!Number.isInteger(keep) || keep < 1) throw new Error('--keep must be 1 or more');
+
+  const listKeys = async (folder) => {
+    const res = await api('GET', `/admin/keys/${folder}`, token);
+    if (!res) throw new Error('The server is too old for prune: redeploy infra/updates-server.');
+    return res.keys;
+  };
+  const pointerKeys = await listKeys('channels');
+  const updateKeys = await listKeys('updates');
+  const assetKeys = await listKeys('assets');
+
+  const keptIds = new Set();
+  for (const key of pointerKeys) {
+    const pointer = await getJson(key, token);
+    if (!pointer) continue;
+    if (pointer.type === 'update') keptIds.add(pointer.updateId);
+    const updates = pointer.history.filter((e) => e.type === 'update').slice(0, keep);
+    for (const entry of updates) keptIds.add(entry.updateId);
+  }
+
+  const idOf = (key) => key.slice(key.lastIndexOf('/') + 1).replace(/\.json$/, '');
+  const keptUpdates = updateKeys.filter((key) => keptIds.has(idOf(key)));
+  const oldUpdates = updateKeys.filter((key) => !keptIds.has(idOf(key)));
+
+  const usedAssets = new Set();
+  for (const key of keptUpdates) {
+    const record = await getJson(key, token);
+    const manifest = JSON.parse(record.manifest);
+    for (const asset of [manifest.launchAsset, ...manifest.assets]) {
+      usedAssets.add(`assets/${asset.url.slice(asset.url.lastIndexOf('/') + 1)}`);
+    }
+  }
+  const unusedAssets = assetKeys.filter((key) => !usedAssets.has(key));
+
+  console.log(`Keeping ${keptUpdates.length} updates and ${usedAssets.size} files.`);
+  console.log(`Old: ${oldUpdates.length} updates and ${unusedAssets.length} unused files.`);
+  if (!oldUpdates.length && !unusedAssets.length) return console.log('Nothing to delete.');
+  if (!args.yes) return console.log('Run again with --yes to delete them.');
+
+  // Records first, so a file is never gone while a kept update still points at it.
+  await inBatches([...oldUpdates, ...unusedAssets], 6, (key) =>
+    api('DELETE', `/admin/objects/${key}`, token),
+  );
+  console.log('✔ Deleted.');
 }
 
 // ---------- shared ----------
@@ -370,6 +429,15 @@ function run(cmd, cmdArgs, env, { quiet = false } = {}) {
     stdio: quiet ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'inherit'],
     maxBuffer: 64 * 1024 * 1024,
   });
+}
+
+/** macOS (Spotlight, Finder) can hold files for a moment; retry, and never fail a publish over it. */
+function removeDir(dir) {
+  try {
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {
+    // Left behind: the next publish clears it, and git ignores dist-ota/.
+  }
 }
 
 function git(gitArgs) {

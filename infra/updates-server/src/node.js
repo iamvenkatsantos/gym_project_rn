@@ -3,9 +3,9 @@
 // Put it behind a reverse proxy (Caddy, nginx) for HTTPS on updates.vinven.net.
 // Moving off R2: copy the bucket into UPDATES_DATA_DIR (rclone copy r2:corefit-updates <dir>).
 import { createReadStream } from 'node:fs';
-import { mkdir, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { dirname, resolve, sep } from 'node:path';
+import { dirname, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 
 import { handleRequest } from './server.js';
@@ -34,12 +34,19 @@ export function folderStore(root) {
       // Write then rename would be safer for big files; these are small and written once.
       await writeFile(file, new Uint8Array(body));
     },
+    async delete(key) {
+      await rm(pathFor(key), { force: true });
+    },
     async list(prefix) {
-      // Only whole folders are listed ("assets/"), which is all the server asks for.
+      // Every file under the folder, as store keys ("updates/1.0.0/android/<id>.json").
       const folder = prefix.replace(/\/$/, '');
       try {
-        const names = await readdir(pathFor(folder));
-        return names.map((name) => `${folder}/${name}`);
+        const names = await readdir(pathFor(folder), { recursive: true, withFileTypes: true });
+        return names
+          .filter((entry) => entry.isFile())
+          .map((entry) =>
+            relative(base, `${entry.parentPath}${sep}${entry.name}`).split(sep).join('/'),
+          );
       } catch {
         return [];
       }

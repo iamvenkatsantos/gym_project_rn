@@ -68,7 +68,13 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "format": "prettier --write .",
-    "ota": "node scripts/ota.mjs"
+    "ota": "node scripts/ota.mjs",
+    "ota:dev": "node scripts/ota.mjs publish --channel develop",
+    "ota:prod": "node scripts/ota.mjs publish --channel main",
+    "ota:list:prod": "node scripts/ota.mjs list --channel main",
+    "ota:rollback:prod": "node scripts/ota.mjs rollback --channel main",
+    "build:preview": "npx eas-cli@latest build --profile preview --platform android --local",
+    "build:prod": "npx eas-cli@latest build --profile production --platform all"
   },
   "private": true,
   "jest": {

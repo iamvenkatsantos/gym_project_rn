@@ -317,7 +317,8 @@ the script exports with that profile's `eas.json` env, uploads content-addressed
 each manifest with `keys/private-key.pem` (git-ignored, on Venkat's Mac only; the app ships
 `certs/certificate.pem` and rejects unsigned updates). `npm run ota -- rollback` republishes the
 previous update under a new id (phones only take newer ones) or, with `--embedded`, sends phones
-back to the build's own code. Phones download on launch (and on return to the front, hourly, via
+back to the build's own code. `npm run ota -- prune --yes` frees storage (keeps the last 5
+updates per channel and the files they use; never delete R2 files by hand). Phones download on launch (and on return to the front, hourly, via
 `useOtaUpdates`) and apply on the next launch; Account shows the running update's short id. Setup
 and test steps: `infra/updates-server/README.md`.
 
@@ -368,8 +369,8 @@ Say in the PR which of these it needs:
   (`send-push`, `razorpay-webhook` and `join` need `--no-verify-jwt`).
 - **A new EAS build** when a native module or `app.json` native config changes (`npx eas-cli@latest
 build --profile preview` for the APK), with `expo.version` bumped. JS-only changes need none:
-  ship them with **`npm run ota -- publish --channel develop`** (from `develop`) or `--channel main`
-  (from `main`, after the release merge).
+  ship them with **`npm run ota:dev`** (from `develop`) or **`npm run ota:prod`** (from `main`,
+  after the release merge); add `-- -m "what changed"`. Store builds: `npm run build:prod`.
 - **`cd infra/updates-server && npx wrangler deploy`** when `infra/updates-server/` changes.
 - **Nothing** for `web/` changes: the dashboard redeploys itself on merge; run `cd web && npm run build` first.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.
