@@ -12,6 +12,6 @@
     // /privacy serves privacy.html (public pages in web/public).
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/"],
+    "run_worker_first": ["/", "/googled391fd8ca44bf63d.html"],
   },
 }
