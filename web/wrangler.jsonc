@@ -1,12 +1,17 @@
-// Cloudflare Workers static site for dashboard.vinven.net. Workers Builds runs
-// `npm install && npm run build`, then `npx wrangler deploy`, with web/ as the path.
+// Cloudflare Worker for dashboard.vinven.net and the public site on vinven.net.
+// Workers Builds runs `npm install && npm run build`, then `npx wrangler deploy`,
+// with web/ as the path.
 {
   "name": "corefit-dashboard",
   "compatibility_date": "2026-10-01",
+  // Only picks the front page per domain (see worker/index.js).
+  "main": "./worker/index.js",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     // /privacy serves privacy.html (public pages in web/public).
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "single-page-application",
+    "run_worker_first": ["/"],
   },
 }

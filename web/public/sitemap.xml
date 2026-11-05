@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://dashboard.vinven.net/about</loc></url>
-  <url><loc>https://dashboard.vinven.net/support</loc></url>
-  <url><loc>https://dashboard.vinven.net/privacy</loc></url>
-  <url><loc>https://dashboard.vinven.net/terms</loc></url>
-  <url><loc>https://dashboard.vinven.net/delete-account</loc></url>
+  <url><loc>https://vinven.net/</loc></url>
+  <url><loc>https://vinven.net/support</loc></url>
+  <url><loc>https://vinven.net/privacy</loc></url>
+  <url><loc>https://vinven.net/terms</loc></url>
+  <url><loc>https://vinven.net/delete-account</loc></url>
 </urlset>
