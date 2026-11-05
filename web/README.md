@@ -18,15 +18,23 @@ Owners of more than one gym pick the gym in the sidebar.
 `web/public/` also holds plain HTML pages anyone can open without signing in, built to read well
 for search engines and store reviewers (no JavaScript):
 
-| URL               | Page                                           |
-| ----------------- | ---------------------------------------------- |
-| `/about`          | What CoreFit does and pricing                  |
-| `/privacy`        | Privacy policy (App Store and Play)            |
-| `/terms`          | Terms of service                               |
-| `/support`        | Contact and common questions                   |
-| `/delete-account` | How to delete an account (Play's deletion URL) |
+| URL               | Page                                              |
+| ----------------- | ------------------------------------------------- |
+| `/about`          | Home page: features with app screenshots, pricing |
+| `/privacy`        | Privacy policy (App Store and Play)               |
+| `/terms`          | Terms of service                                  |
+| `/support`        | Contact and common questions                      |
+| `/delete-account` | How to delete an account (Play's deletion URL)    |
 
-They share `site.css`. Cloudflare serves `privacy.html` at `/privacy`; in `npm run dev` open
+The home page is also the front page of **https://vinven.net**: `worker/index.js` runs only for
+`/` (`run_worker_first` in `wrangler.jsonc`), serves `about.html` on `vinven.net`, redirects
+`www.vinven.net` there, and leaves `/` as the dashboard on `dashboard.vinven.net` (which is
+`noindex`). To set it up: Cloudflare → Workers & Pages → `gym-project-rn` (the Worker that has `dashboard.vinven.net`) → Settings → Domains &
+Routes → add custom domains `vinven.net` and `www.vinven.net`. Then add `vinven.net` in Google
+Search Console and submit `https://vinven.net/sitemap.xml`. App screenshots live in
+`public/img/` (WebP, taken from demo mode at 390×844).
+
+They share `site.css`; the home page adds `home.css`. Cloudflare serves `privacy.html` at `/privacy`; in `npm run dev` open
 `/privacy.html`. Add new pages to `sitemap.xml`.
 
 ## Why a separate Vite app

@@ -20,8 +20,11 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   `web/README.md`). Live at `https://dashboard.vinven.net` (Cloudflare Workers Builds, deploys on
   push to `main`). Never import React Native code into it. No QR on the web.
 - **Public pages:** plain HTML in `web/public/` served by the same worker, no sign-in:
-  `/about` (features and pricing, for search), `/privacy`, `/terms`, `/support` and
-  `/delete-account` (Play's deletion URL). The app links them from `src/constants/legal.ts`;
+  the home page `about.html` (features with app screenshots in `img/`, pricing; it is the front
+  page of `https://vinven.net` via `web/worker/index.js`, which runs only for `/`; `www` redirects
+  to it; on `dashboard.vinven.net` `/` stays the dashboard, marked `noindex`), `/privacy`, `/terms`,
+  `/support` and `/delete-account` (Play's deletion URL). Canonical URLs and `sitemap.xml` use
+  `vinven.net`. The app links them from `src/constants/legal.ts`;
   support email is `support@vinven.net` (Cloudflare Email Routing). Update them when pricing,
   data collected, service providers or the delete flow change.
 
