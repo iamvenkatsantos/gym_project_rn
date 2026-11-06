@@ -79,7 +79,9 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
   branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
   (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free:
-  **Make this branch free** on the admin branch screen or when adding one). Members use their home branch only.
+  **Make this branch free** on the admin branch screen or when adding one). Members use their home
+  branch, except that an **All branches** plan lets them check in at any branch of the brand (see
+  Attendance).
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
@@ -177,10 +179,19 @@ member needs a membership covering today (`has_current_membership()`, the gym's 
 (button or QR), start a workout, book a class or book a trainer; `require_membership()` raises "No
 active membership…" in `check_in`, `scan_check_in` (checking out still works),
 `start_workout_attendance`, `book_class` and `book_trainer_session`. Staff never need one. The app
-mirrors it with `useHasMembership` and `NoMembershipNotice`. New members are blocked until their
+mirrors it with `useHasMembership` and `NoMembershipNotice`. A paused day doesn't count (see
+Membership pause below). New members are blocked until their
 first membership is recorded. Each branch has a QR
 (`corefit://check-in?gym=…&code=…`): a rotating live code on the owner's `check-in-display` and a
 fixed poster code the admin shares as an image. `scan_check_in` toggles in/out;
+**All-branch plans** (Venkat, 2026-11-06): owners with 2+ branches set a plan's **Works at** to All
+branches (`membership_plans.all_branches`). Its members stay members of their home branch (they pay
+there, so the money goes to that branch's Razorpay account) but can scan the QR at any branch of
+the brand (`branch_pass_home()`; `has_current_membership()` counts it). The visit is an
+`attendance` row at that branch; Home shows it with the branch name (`my_attendance_today`),
+Check out and Start workout work from home, the workout counts on the visit, and checking in
+anywhere closes an open visit elsewhere in the brand. That branch's attendance lists them with
+"From <home branch>" (`gym_attendance.home_branch`). Classes and trainer bookings stay at home.
 `gyms.qr_check_in_only` blocks the button check-in; `auto_check_out()` closes stale visits.
 **Opening hours:** owners set each branch's `gyms.opens_at`/`closes_at` (`set_gym_hours()`, both null =
 open 24 hours, closing before opening = after midnight) on Attendance → **Check-in QR and settings**,
@@ -254,6 +265,12 @@ and read-only for them. **After every workout** members answer a self-check on `
 workout" push to their trainers carries. Swaps from **Replace** (same-muscle pick) are logged in
 `workout_logs.swaps`. A coach or manager replies once (`reply_to_workout()`, inbox kind
 `workout`); a trigger stops members writing the reply.
+**Weekly goal ring** (Venkat, 2026-11-06): members' Plans tab shows days trained this week
+against a goal, with a streak (`WeeklyGoalCard`, `src/features/progress/goal.ts`, app-only). The
+goal is the distinct weekdays of the member's assigned plans (own plans count while self workouts
+are on, so it's the days they picked), or 3 when none have days; a day counts once; the streak is
+weeks in a row that met today's goal, and this week adds only once met. The ring is plain views
+(`ProgressRing`, no SVG), so it ships over the air.
 **Live workout** (Venkat, 2026-11-03): `workout-session` opens on **Live** (`LiveWorkout`,
 `src/features/progress/live.ts`): one exercise at a time with its demo, how-to steps and set dots;
 reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
@@ -278,7 +295,33 @@ never stays with CoreFit. By default the owner pays all fees and the members see
 CoreFit takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
 shows no CoreFit fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
-refunds in the app.
+refunds in the app. **Test keys block payments** (`testModeBlock` in `_shared/razorpay.ts`): while
+`RAZORPAY_KEY_ID` is `rzp_test_…`, `create-payment` and `create-subscription-payment` refuse everyone
+but platform admins ("opens soon"), because a test payment still records a membership or a paid
+year. Live keys lift it with no build or deploy; `RAZORPAY_TEST_PAYMENTS=open` lifts it for staging.
+
+**Member rules** (Venkat, 2026-11-06; owner only, Payments → **Member rules**, `set_member_rules()`,
+columns on `gyms`). **Membership pause:** off until the owner sets `pause_max_days` (0 = off, up
+to 90 days per membership in total; app suggests 15). The member pauses on Profile, or owners and
+supervisors on the person screen (`pause-membership`, `pause_membership()`): one pause at a time,
+starting today or within 30 days, on the membership covering its first day. The membership (and any
+early renewal after it) ends that many days later; class bookings and trainer sessions inside the
+pause are cancelled; `has_current_membership()` is false on paused days (`is_paused()`), so no
+check-in, workouts or bookings. **Resume now** / **Cancel pause** (`end_pause()`) gives back the
+unused days. Pauses live in `membership_pauses`; app rules in `src/features/memberships/pause.ts`.
+**Class waitlist:** a full class takes a waitlist (`bookings.status = 'waitlisted'`, queued by
+`waitlisted_at`; `book_class()` decides). When a booked spot frees up (cancel, pause, capacity
+raised) `fill_from_waitlist()` books the next person with a current membership and pushes "You're
+in". Members see their place (`my_waitlist_positions()`); cancelling a class clears its waitlist.
+**Booking cap:** `class_booking_cap` (null = no limit) caps upcoming classes a member holds,
+waitlists included. **Referrals:** members tap Profile → **Refer a friend** (`refer_friend()`):
+the friend becomes an enquiry (source referral, `enquiries.referred_by`, assigned to an owner,
+else a supervisor; owners and supervisors get a push) and the member can WhatsApp them. Already at
+the gym or already an open enquiry (matched on the last 10 digits of the mobile) is refused; 10 a
+day max. When the friend's first paid (not complimentary) membership is recorded, matched by linked
+enquiry or mobile and only if they joined after the referral, `reward_referral()` gives the referrer
+`referral_reward_days` free days (0 = none, off by default) on their running membership, or on their
+next one (`referral_rewards.applied_at`). Members see their referrals via `my_referrals()`.
 
 **Offers and discounts** (owner only to set). A plan can carry a time-limited offer
 (`membership_plans.offer_*`: 1–90% or a flat amount below the price, optional label, end date; set
@@ -314,6 +357,15 @@ older ones drop off from the next day (`inInbox`, phone's day; read today = kept
 saves tokens with `register_push_token` in `use-push-notifications.ts`. Only call it when the
 device token actually changed: re-registering from the token listener caused a loop of ~400k API
 calls a day. Push needs a dev/preview build (not Expo Go on Android).
+**Automatic pushes** (besides reminders, bookings, birthdays and announcements; Venkat, 2026-11-06,
+`20261106050000_extra_notifications.sql`, all on existing kinds so older apps show them): a coach
+assigns a plan → member "New workout plan" (not own plans); a membership with money paid →
+"Payment received" with the amount (`rupees()`; free ones stay "Membership active"); a member drops
+a future class → its trainer; a joined invite → the inviter "New member joined" (trainer invites
+skip it, the mapping's "New member" covers them). `send_member_nudges` (from 10 am gym time, once
+each by `dedupe_key`): **We miss you** when the last check-in was 7–13 days ago and they still have
+a membership (mapped trainers get "Member missing"), and **Time to measure** at most monthly when
+an onboarded member has logged no measurement at that gym for 30 days.
 
 **Over-the-air updates** (self-hosted, not EAS Update; Venkat 2026-11-04). `expo-updates` talks
 to our own server at `updates.vinven.net/manifest` (`infra/updates-server/`, the Expo Updates
@@ -335,6 +387,7 @@ and test steps: `infra/updates-server/README.md`.
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
 `corefit-auto-check-out` (10 min), `corefit-birthdays` (hourly, managers' 9 am birthday push),
+`corefit-nudges` (hourly, `send_member_nudges`),
 `corefit-purge-logs` (daily, trims cron and pg_net history).
 
 ## Conventions and gotchas

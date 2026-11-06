@@ -218,7 +218,7 @@ How a payment works:
 2. Razorpay calls `razorpay-webhook` (`payment_link.paid`), signed with the webhook secret.
    `complete_online_payment()` then records the membership with method `online`, starting the day
    after the current one ends, so it shows in Payments, Insights and exports. The member gets the
-   usual "Membership active" push and owners and supervisors get "Online payment received".
+   usual "Payment received" push and owners and supervisors get "Online payment received".
 3. The browser comes back through `razorpay-webhook` (GET, signed with the key secret), which sends
    it to `corefit://payment-return`; the app shows the payment's status and then its receipt.
 4. If the branch has the owner's Route linked account (`acc_...`), the gym's share is transferred
@@ -290,6 +290,7 @@ psql -d corefit_test -f supabase/tests/workout-days.sql
 psql -d corefit_test -f supabase/tests/self-workouts.sql
 psql -d corefit_test -f supabase/tests/online-payments.sql
 psql -d corefit_test -f supabase/tests/qr-check-in.sql
+psql -d corefit_test -f supabase/tests/all-branch-memberships.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/admission-details.sql
@@ -299,8 +300,10 @@ psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
+psql -d corefit_test -f supabase/tests/pause-waitlist-referrals.sql
 psql -d corefit_test -f supabase/tests/trainer-hours.sql
 psql -d corefit_test -f supabase/tests/trainer-late-streaks.sql
+psql -d corefit_test -f supabase/tests/extra-notifications.sql
 psql -d corefit_test -f supabase/tests/trainer-evening-shift.sql
 psql -d corefit_test -f supabase/tests/membership-offers.sql
 psql -d corefit_test -f supabase/tests/birthdays.sql

@@ -12,7 +12,9 @@ import { Spacing } from '@/constants/theme';
 import { AppearancePicker } from '@/features/appearance/components/appearance-picker';
 import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { useMemberRules } from '@/features/member-rules/hooks';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
+import { PauseCard } from '@/features/memberships/components/pause-card';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { useCurrentMembership, useMemberPrice, usePlans } from '@/features/memberships/hooks';
 import { membershipStatus } from '@/features/memberships/rules';
@@ -30,6 +32,7 @@ export default function MemberProfileScreen() {
   const online = useOnlinePaymentsEnabled(gym.gymId).data === true;
   const pay = usePayOnline(gym.gymId);
   const priceOf = useMemberPrice(gym.gymId, profile.id);
+  const reward = useMemberRules(gym.gymId).data?.referralRewardDays ?? 0;
   // A plan bought while one is running starts the day after it ends.
   const running = !!membership.data && membershipStatus(membership.data) !== 'expired';
 
@@ -61,6 +64,7 @@ export default function MemberProfileScreen() {
         emptyText="You don't have a membership yet.">
         {(m) => m && <MembershipCard membership={m} />}
       </QueryState>
+      <PauseCard gymId={gym.gymId} memberId={profile.id} />
 
       <SectionHeader
         title="Plans"
@@ -117,6 +121,15 @@ export default function MemberProfileScreen() {
           detail="Photo, name, mobile and birthday"
           icon="person-circle-outline"
           onPress={() => router.push('/edit-profile')}
+        />
+        <ListRow
+          divider
+          label="Refer a friend"
+          detail={
+            reward > 0 ? `Get ${reward} free days when they join` : 'Bring a friend to the gym'
+          }
+          icon="gift-outline"
+          onPress={() => router.push('/refer-friend')}
         />
         <ListRow
           divider

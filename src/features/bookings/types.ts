@@ -7,6 +7,8 @@ export type GymClass = {
   durationMinutes: number;
   capacity: number;
   bookedCount: number;
+  /** People waiting for a spot. */
+  waitlistCount: number;
   /** Shared by the classes of one weekly repeat; null for a one-off class. */
   seriesId: string | null;
 };
@@ -20,7 +22,7 @@ export type ClassInput = {
   capacity: number;
 };
 
-export type BookingStatus = 'booked' | 'cancelled' | 'attended';
+export type BookingStatus = 'booked' | 'waitlisted' | 'cancelled' | 'attended';
 
 export type Booking = {
   id: string;
@@ -28,4 +30,6 @@ export type Booking = {
   memberId: string;
   status: BookingStatus;
   gymClass: GymClass;
+  /** Place on the waitlist, 1 = next in; only while waitlisted. */
+  waitlistPosition?: number;
 };

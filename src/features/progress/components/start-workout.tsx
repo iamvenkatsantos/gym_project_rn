@@ -11,7 +11,9 @@ import { useAnnounceWorkoutStart, useMyAttendance } from '@/features/attendance/
 import { canStartWorkout } from '@/features/attendance/rules';
 import { NoMembershipNotice } from '@/features/memberships/components/no-membership-notice';
 import { useHasMembership } from '@/features/memberships/hooks';
+import { WeeklyGoalCard } from '@/features/progress/components/weekly-goal-card';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
+import { weeklyGoalSummary } from '@/features/progress/goal';
 import { useWorkoutLogs } from '@/features/progress/hooks';
 import { SelfWorkoutsCard } from '@/features/self-workouts/components/self-workouts-card';
 import { useSelfWorkoutsOn } from '@/features/self-workouts/hooks';
@@ -50,6 +52,16 @@ export function StartWorkout({ gymId }: { gymId: string }) {
   // Members' own plans only count while a trainer has self workouts on.
   const self = useSelfWorkoutsOn(gymId, profile.id);
   const selfOn = isMember && self.on === true;
+  const goal =
+    isMember && workouts.data && logs.data
+      ? weeklyGoalSummary(
+          workouts.data.filter(
+            (w) => (!w.isSelf || selfOn) && w.assignedMemberIds.includes(profile.id),
+          ),
+          logs.data,
+          profile.id,
+        )
+      : null;
 
   const begin = (workout: Workout) => {
     start(gymId, workout);
@@ -120,6 +132,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
           />
         </Card>
       ) : null}
+      {goal && !draft ? <WeeklyGoalCard summary={goal} /> : null}
       {selfOn && !draft ? (
         <SelfWorkoutsCard
           hasPlans={(workouts.data ?? []).some((w) => w.isSelf && w.trainerId === profile.id)}

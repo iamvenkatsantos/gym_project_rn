@@ -4,20 +4,32 @@ export function spotsLeft(gymClass: GymClass) {
   return Math.max(gymClass.capacity - gymClass.bookedCount, 0);
 }
 
+/** waitlist: the class is full, so booking joins its waitlist. */
 export type BookingEligibility =
-  { ok: true } | { ok: false; reason: 'started' | 'full' | 'alreadyBooked' };
+  { ok: true; waitlist: boolean } | { ok: false; reason: 'started' | 'alreadyBooked' | 'limit' };
 
+/** Booked or waiting: what counts against the gym's booking limit. */
+export function isHeld(booking: Pick<Booking, 'status'>) {
+  return booking.status === 'booked' || booking.status === 'waitlisted';
+}
+
+/**
+ * Whether the member can book a class, or join its waitlist when it's full. `cap` is the
+ * gym's limit on upcoming classes held at once (null = none). The server checks too.
+ */
 export function canBook(
   gymClass: GymClass,
   myBookings: Booking[],
   now: Date = new Date(),
+  cap: number | null = null,
 ): BookingEligibility {
   if (new Date(gymClass.startsAt) <= now) return { ok: false, reason: 'started' };
-  if (myBookings.some((b) => b.classId === gymClass.id && b.status === 'booked')) {
+  if (myBookings.some((b) => b.classId === gymClass.id && isHeld(b))) {
     return { ok: false, reason: 'alreadyBooked' };
   }
-  if (spotsLeft(gymClass) === 0) return { ok: false, reason: 'full' };
-  return { ok: true };
+  const held = myBookings.filter((b) => isHeld(b) && new Date(b.gymClass.startsAt) > now).length;
+  if (cap !== null && held >= cap) return { ok: false, reason: 'limit' };
+  return { ok: true, waitlist: spotsLeft(gymClass) === 0 };
 }
 
 export function fillRate(gymClass: GymClass) {

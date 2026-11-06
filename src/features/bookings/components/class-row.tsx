@@ -61,6 +61,7 @@ export function ClassRow({ gymClass, showDay, highlighted, badge, action }: Clas
           )}
           <ThemedText type="small" themeColor="textSecondary">
             {gymClass.bookedCount}/{gymClass.capacity} booked
+            {gymClass.waitlistCount ? ` · ${gymClass.waitlistCount} waiting` : ''}
           </ThemedText>
         </View>
       </View>

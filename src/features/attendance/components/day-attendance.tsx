@@ -21,6 +21,7 @@ function detail(entry: AttendanceEntry) {
   const parts = [attendanceTimes(entry)];
   if (entry.checkedInAt) parts.push(formatMinutes(minutesAtGym(entry)));
   if (entry.workouts) parts.push(`${entry.workouts} workout${entry.workouts > 1 ? 's' : ''}`);
+  if (entry.homeBranch) parts.push(`From ${entry.homeBranch}`);
   return parts.join(' · ');
 }
 

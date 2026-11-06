@@ -7,7 +7,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { memberPrice } from '../_shared/fees.ts';
-import { adminClient, feeRates, isLiveMode, razorpay } from '../_shared/razorpay.ts';
+import { adminClient, feeRates, isLiveMode, razorpay, testModeBlock } from '../_shared/razorpay.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -59,6 +59,9 @@ Deno.serve(async (req) => {
   const caller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: authorization } },
   });
+
+  const blocked = await testModeBlock(caller);
+  if (blocked) return json({ error: blocked }, 400);
 
   if (preview === true) {
     // Read as the member, so they only see plans at their own gym, at their price

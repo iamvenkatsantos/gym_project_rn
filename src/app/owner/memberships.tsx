@@ -54,6 +54,15 @@ export default function OwnerMembershipsScreen() {
             onPress={() => router.push('/loyalty-offer')}
           />
         ) : null}
+        {isOwner ? (
+          <ListRow
+            divider
+            label="Member rules"
+            detail="Pause, referral reward, class bookings"
+            icon="options-outline"
+            onPress={() => router.push('/member-rules')}
+          />
+        ) : null}
       </ListGroup>
 
       {isOwner && !noPlans ? (

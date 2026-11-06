@@ -24,6 +24,20 @@ export function isLiveMode() {
   return keyId().startsWith('rzp_live_');
 }
 
+/**
+ * Test keys take no real money, yet a test payment still records a membership or a
+ * paid year. So while the keys are test keys, only platform admins can pay (to try
+ * the flow); everyone else is told to wait. Live keys lift this with no deploy.
+ * RAZORPAY_TEST_PAYMENTS=open lets everyone pay in test mode (staging only).
+ */
+export async function testModeBlock(caller: SupabaseClient): Promise<string | null> {
+  if (isLiveMode() || Deno.env.get('RAZORPAY_TEST_PAYMENTS') === 'open') return null;
+  const { data: isAdmin } = await caller.rpc('is_platform_admin');
+  return isAdmin === true
+    ? null
+    : 'Online payments open soon. Please pay at the front desk for now.';
+}
+
 function envNumber(name: string, fallback: number) {
   const value = Number(Deno.env.get(name));
   return Deno.env.get(name) && Number.isFinite(value) && value >= 0 ? value : fallback;

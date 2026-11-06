@@ -1,3 +1,4 @@
+import { isPausedOn } from '@/features/memberships/pause';
 import type { Membership } from '@/features/memberships/types';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -33,13 +34,19 @@ export function membershipStatus(
   return 'active';
 }
 
-/** Whether the membership covers today, which members need to check in, train and book. */
+/**
+ * Whether the membership covers today, which members need to check in, train and book.
+ * A paused day doesn't count.
+ */
 export function coversToday(
-  membership: Pick<Membership, 'startsOn' | 'endsOn'>,
+  membership: Pick<Membership, 'startsOn' | 'endsOn' | 'pauses'>,
   today: Date = new Date(),
 ) {
   const status = membershipStatus(membership, today);
-  return status === 'active' || status === 'expiringSoon';
+  return (
+    (status === 'active' || status === 'expiringSoon') &&
+    !isPausedOn(membership.pauses, toIsoDate(today))
+  );
 }
 
 /** Share of the membership period still remaining, from 1 at the start to 0 at the end. */
