@@ -185,6 +185,17 @@ function RootNavigator() {
           name="request-trainer"
           options={{ presentation: 'modal', headerShown: true, title: 'Ask for a trainer' }}
         />
+        <Stack.Screen
+          name="refer-friend"
+          options={{ headerShown: true, title: 'Refer a friend' }}
+        />
+      </Stack.Protected>
+      {/* Members pause their own membership; owners and supervisors anyone's. */}
+      <Stack.Protected guard={role === 'member' || (!!role && canManageGym(role))}>
+        <Stack.Screen
+          name="pause-membership"
+          options={{ presentation: 'modal', headerShown: true, title: 'Pause membership' }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={role === 'trainer'}>
         <Stack.Screen name="trainer" options={{ title: 'Home' }} />
@@ -200,6 +211,7 @@ function RootNavigator() {
           name="loyalty-offer"
           options={{ headerShown: true, title: 'Loyalty offer' }}
         />
+        <Stack.Screen name="member-rules" options={{ headerShown: true, title: 'Member rules' }} />
         {/* Only owners take reports out of the app; the server enforces it too. */}
         <Stack.Screen name="reports" options={{ headerShown: true, title: 'Export reports' }} />
         <Stack.Screen name="insights" options={{ headerShown: true, title: 'Insights' }} />

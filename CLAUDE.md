@@ -179,7 +179,8 @@ member needs a membership covering today (`has_current_membership()`, the gym's 
 (button or QR), start a workout, book a class or book a trainer; `require_membership()` raises "No
 active membership…" in `check_in`, `scan_check_in` (checking out still works),
 `start_workout_attendance`, `book_class` and `book_trainer_session`. Staff never need one. The app
-mirrors it with `useHasMembership` and `NoMembershipNotice`. New members are blocked until their
+mirrors it with `useHasMembership` and `NoMembershipNotice`. A paused day doesn't count (see
+Membership pause below). New members are blocked until their
 first membership is recorded. Each branch has a QR
 (`corefit://check-in?gym=…&code=…`): a rotating live code on the owner's `check-in-display` and a
 fixed poster code the admin shares as an image. `scan_check_in` toggles in/out;
@@ -298,6 +299,29 @@ refunds in the app. **Test keys block payments** (`testModeBlock` in `_shared/ra
 `RAZORPAY_KEY_ID` is `rzp_test_…`, `create-payment` and `create-subscription-payment` refuse everyone
 but platform admins ("opens soon"), because a test payment still records a membership or a paid
 year. Live keys lift it with no build or deploy; `RAZORPAY_TEST_PAYMENTS=open` lifts it for staging.
+
+**Member rules** (Venkat, 2026-11-06; owner only, Payments → **Member rules**, `set_member_rules()`,
+columns on `gyms`). **Membership pause:** off until the owner sets `pause_max_days` (0 = off, up
+to 90 days per membership in total; app suggests 15). The member pauses on Profile, or owners and
+supervisors on the person screen (`pause-membership`, `pause_membership()`): one pause at a time,
+starting today or within 30 days, on the membership covering its first day. The membership (and any
+early renewal after it) ends that many days later; class bookings and trainer sessions inside the
+pause are cancelled; `has_current_membership()` is false on paused days (`is_paused()`), so no
+check-in, workouts or bookings. **Resume now** / **Cancel pause** (`end_pause()`) gives back the
+unused days. Pauses live in `membership_pauses`; app rules in `src/features/memberships/pause.ts`.
+**Class waitlist:** a full class takes a waitlist (`bookings.status = 'waitlisted'`, queued by
+`waitlisted_at`; `book_class()` decides). When a booked spot frees up (cancel, pause, capacity
+raised) `fill_from_waitlist()` books the next person with a current membership and pushes "You're
+in". Members see their place (`my_waitlist_positions()`); cancelling a class clears its waitlist.
+**Booking cap:** `class_booking_cap` (null = no limit) caps upcoming classes a member holds,
+waitlists included. **Referrals:** members tap Profile → **Refer a friend** (`refer_friend()`):
+the friend becomes an enquiry (source referral, `enquiries.referred_by`, assigned to an owner,
+else a supervisor; owners and supervisors get a push) and the member can WhatsApp them. Already at
+the gym or already an open enquiry (matched on the last 10 digits of the mobile) is refused; 10 a
+day max. When the friend's first paid (not complimentary) membership is recorded, matched by linked
+enquiry or mobile and only if they joined after the referral, `reward_referral()` gives the referrer
+`referral_reward_days` free days (0 = none, off by default) on their running membership, or on their
+next one (`referral_rewards.applied_at`). Members see their referrals via `my_referrals()`.
 
 **Offers and discounts** (owner only to set). A plan can carry a time-limited offer
 (`membership_plans.offer_*`: 1–90% or a flat amount below the price, optional label, end date; set

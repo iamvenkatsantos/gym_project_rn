@@ -300,6 +300,7 @@ psql -d corefit_test -f supabase/tests/import-members.sql
 psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
+psql -d corefit_test -f supabase/tests/pause-waitlist-referrals.sql
 psql -d corefit_test -f supabase/tests/trainer-hours.sql
 psql -d corefit_test -f supabase/tests/trainer-late-streaks.sql
 psql -d corefit_test -f supabase/tests/extra-notifications.sql

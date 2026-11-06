@@ -3,11 +3,14 @@ import { useCallback } from 'react';
 
 import {
   archivePlan,
+  endPause,
   fetchLoyaltyOffer,
   getCurrentMembership,
   hasCurrentMembership,
+  listMemberMemberships,
   listMemberships,
   listPlans,
+  pauseMembership,
   recordMembership,
   remindRenewal,
   saveLoyaltyOffer,
@@ -32,6 +35,8 @@ export const membershipKeys = {
     [...membershipKeys.all, gymId, 'covered', memberId] as const,
   list: (gymId: string) => [...membershipKeys.all, gymId, 'list'] as const,
   loyalty: (gymId: string) => [...membershipKeys.all, gymId, 'loyalty'] as const,
+  member: (gymId: string, memberId: string) =>
+    [...membershipKeys.all, gymId, 'member', memberId] as const,
 };
 
 export function usePlans(gymId: string) {
@@ -90,6 +95,39 @@ export function useRecordMembership(gymId: string) {
     mutationFn: (input: MembershipInput) => recordMembership(gymId, input),
     onSettled: invalidate,
   });
+}
+
+/** One member's memberships with their pauses, newest first. */
+export function useMemberMemberships(gymId: string, memberId: string) {
+  return useQuery({
+    queryKey: membershipKeys.member(gymId, memberId),
+    queryFn: () => listMemberMemberships(gymId, memberId),
+  });
+}
+
+/** Pausing cancels bookings inside the pause, so those refresh too. */
+function useInvalidateAfterPause() {
+  const queryClient = useQueryClient();
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: membershipKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ['bookings'] }),
+      queryClient.invalidateQueries({ queryKey: ['trainers'] }),
+    ]);
+}
+
+export function usePauseMembership(gymId: string) {
+  const invalidate = useInvalidateAfterPause();
+  return useMutation({
+    mutationFn: (input: { memberId: string; startsOn: string; days: number }) =>
+      pauseMembership(gymId, input.memberId, input.startsOn, input.days),
+    onSettled: invalidate,
+  });
+}
+
+export function useEndPause() {
+  const invalidate = useInvalidateAfterPause();
+  return useMutation({ mutationFn: endPause, onSettled: invalidate });
 }
 
 export function useRemindRenewal(gymId: string) {

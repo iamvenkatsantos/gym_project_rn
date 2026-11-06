@@ -5,10 +5,12 @@ import type { BodyMeasurement, ProgressPhoto } from '@/features/body/types';
 import type { Booking, GymClass } from '@/features/bookings/types';
 import type { TrainerLink, TrainerRequest } from '@/features/coaching/types';
 import type { MealPlan } from '@/features/diet/types';
+import type { MemberRules } from '@/features/member-rules/types';
 import type { GymInvite, GymPerson } from '@/features/members/types';
 import type { LoyaltyOffer, Membership, MembershipPlan } from '@/features/memberships/types';
 import type { AppNotification } from '@/features/notifications/types';
 import type { WorkoutLog } from '@/features/progress/types';
+import type { Referral } from '@/features/referrals/types';
 import type { SelfPrefs } from '@/features/self-workouts/types';
 import type { TrainerHourRules, WorkPermission } from '@/features/trainer-hours/types';
 import type { TrainerSession, TrainerWithAvailability } from '@/features/trainers/types';
@@ -416,6 +418,7 @@ export const mockClasses: GymClass[] = Array.from({ length: 7 }, (_, day) =>
     durationMinutes: template.durationMinutes,
     capacity: template.capacity,
     bookedCount: Math.min(template.capacity, (day * 3 + i * 5) % (template.capacity + 3)),
+    waitlistCount: (day * 3 + i * 5) % (template.capacity + 3) > template.capacity ? 2 : 0,
     seriesId: `series-${i}`,
   })),
 ).flat();
@@ -454,6 +457,33 @@ export const mockPlans: MembershipPlan[] = [
 
 /** The demo gym's loyalty offer: 10% off after 2 months without a break. */
 export const mockLoyalty: { value: LoyaltyOffer | null } = { value: { months: 2, percent: 10 } };
+
+/** The demo gym's member rules: pausing, referral rewards and a class booking limit all on. */
+export const mockMemberRules: { value: MemberRules } = {
+  value: { pauseMaxDays: 15, referralRewardDays: 15, classBookingCap: 3 },
+};
+
+/** Nandini's referrals: one friend joined, one the front desk is still calling. */
+export const mockReferrals: (Referral & { referrerId: string })[] = [
+  {
+    id: 'ref-1',
+    referrerId: 'u-member',
+    fullName: 'Divya S',
+    status: 'pending',
+    rewardDays: null,
+    rewardApplied: false,
+    createdAt: new Date(Date.now() - 2 * DAY).toISOString(),
+  },
+  {
+    id: 'ref-2',
+    referrerId: 'u-member',
+    fullName: 'Ganesh M',
+    status: 'joined',
+    rewardDays: 15,
+    rewardApplied: true,
+    createdAt: new Date(Date.now() - 40 * DAY).toISOString(),
+  },
+];
 
 export const mockMemberships: Membership[] = [
   // Nandini renewed without a break, so her next renewal gets the loyalty offer.

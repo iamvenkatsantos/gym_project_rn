@@ -7,11 +7,13 @@ import { ProgressBar } from '@/components/progress-bar';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import {
+  toIsoDate,
   daysRemaining,
   membershipStatus,
   remainingFraction,
   type MembershipStatus,
 } from '@/features/memberships/rules';
+import { isPausedOn } from '@/features/memberships/pause';
 import type { Membership } from '@/features/memberships/types';
 import { formatDate } from '@/lib/format';
 
@@ -22,11 +24,20 @@ const statusPill: Record<MembershipStatus, { label: string; tone: PillTone }> = 
   upcoming: { label: 'Starts soon', tone: 'accent' },
 };
 
+const pausedPill = { label: 'Paused', tone: 'warning' as PillTone };
+
+/** The status pill, or Paused on a paused day. */
+function pillFor(membership: Membership) {
+  return isPausedOn(membership.pauses, toIsoDate(new Date()))
+    ? pausedPill
+    : statusPill[membershipStatus(membership)];
+}
+
 /** Hero card for a member's own membership: days left front and centre. */
 export function MembershipCard({ membership }: { membership: Membership }) {
   const status = membershipStatus(membership);
   const left = daysRemaining(membership);
-  const pill = statusPill[status];
+  const pill = pillFor(membership);
 
   return (
     <Card>
@@ -76,7 +87,7 @@ export function MembershipRow({
   noteTone?: 'textSecondary' | 'danger';
 }) {
   const status = membershipStatus(membership);
-  const pill = statusPill[status];
+  const pill = pillFor(membership);
 
   return (
     <Card style={styles.row}>
