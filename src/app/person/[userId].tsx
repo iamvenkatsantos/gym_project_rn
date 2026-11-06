@@ -26,6 +26,7 @@ import {
 import { isLastActiveOwner, isSignedUp, resetCodeMessage } from '@/features/members/rules';
 import { TrainerAvatar } from '@/features/trainers/components/trainer-avatar';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
+import { PauseCard } from '@/features/memberships/components/pause-card';
 import { useMemberships } from '@/features/memberships/hooks';
 import { latestByMember } from '@/features/memberships/rules';
 import { formatDate } from '@/lib/format';
@@ -368,6 +369,7 @@ function MemberMembership({ gymId, memberId }: { gymId: string; memberId: string
           {memberships.isPending ? 'Loading…' : 'No membership yet.'}
         </ThemedText>
       )}
+      <PauseCard gymId={gymId} memberId={memberId} />
       <Button
         label={current ? 'Renew or record a payment' : 'Record a payment'}
         icon="receipt-outline"

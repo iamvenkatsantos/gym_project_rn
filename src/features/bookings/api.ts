@@ -1,6 +1,14 @@
 import { weeklyStarts } from '@/features/bookings/rules';
 import type { Booking, ClassInput, GymClass } from '@/features/bookings/types';
-import { delay, forGym, mockBookings, mockClasses, mockId, mockPeople } from '@/lib/mock-db';
+import {
+  delay,
+  forGym,
+  mockBookings,
+  mockClasses,
+  mockId,
+  mockMemberRules,
+  mockPeople,
+} from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type ClassRow = {
@@ -12,6 +20,7 @@ type ClassRow = {
   duration_minutes: number;
   capacity: number;
   booked_count: number;
+  waitlist_count: number;
   series_id: string | null;
 };
 
@@ -24,7 +33,7 @@ type BookingRow = {
 };
 
 const CLASS_COLUMNS =
-  'id, trainer_id, trainer_name, title, starts_at, duration_minutes, capacity, booked_count, series_id';
+  'id, trainer_id, trainer_name, title, starts_at, duration_minutes, capacity, booked_count, waitlist_count, series_id';
 
 function toGymClass(row: ClassRow): GymClass {
   return {
@@ -36,6 +45,7 @@ function toGymClass(row: ClassRow): GymClass {
     durationMinutes: row.duration_minutes,
     capacity: row.capacity,
     bookedCount: row.booked_count,
+    waitlistCount: row.waitlist_count ?? 0,
     seriesId: row.series_id,
   };
 }
@@ -69,33 +79,88 @@ export async function listUpcomingClasses(gymId: string, filter: { trainerId?: s
   return unwrap(await query).map(toGymClass);
 }
 
+/** The member's upcoming classes: booked, or waiting with their place in line. */
 export async function listMyBookings(gymId: string, memberId: string): Promise<Booking[]> {
   if (!supabase) {
     return delay(
-      forGym(gymId, mockBookings).filter((b) => b.memberId === memberId && b.status === 'booked'),
+      forGym(gymId, mockBookings)
+        .filter((b) => b.memberId === memberId && isActive(b.status))
+        .map((b) => ({
+          ...b,
+          waitlistPosition: b.status === 'waitlisted' ? mockWaitlistPosition(b) : undefined,
+        })),
     );
   }
-  const rows = unwrap(
-    await supabase
+  const [bookings, positions] = await Promise.all([
+    supabase
       .from('bookings')
       .select(`id, class_id, member_id, status, class:class_schedule!inner(${CLASS_COLUMNS})`)
       .eq('member_id', memberId)
-      .eq('status', 'booked')
+      .in('status', ['booked', 'waitlisted'])
       .eq('class.gym_id', gymId),
-  ) as unknown as BookingRow[];
-  return rows.map(toBooking).sort((a, b) => a.gymClass.startsAt.localeCompare(b.gymClass.startsAt));
+    supabase.rpc('my_waitlist_positions', { p_gym_id: gymId }),
+  ]);
+  const rows = unwrap(bookings) as unknown as BookingRow[];
+  const places = new Map(
+    (unwrap(positions) as { class_id: string; waitlist_position: number }[]).map((p) => [
+      p.class_id,
+      p.waitlist_position,
+    ]),
+  );
+  return rows
+    .map((row) => ({ ...toBooking(row), waitlistPosition: places.get(row.class_id) }))
+    .sort((a, b) => a.gymClass.startsAt.localeCompare(b.gymClass.startsAt));
+}
+
+function isActive(status: Booking['status']) {
+  return status === 'booked' || status === 'waitlisted';
+}
+
+function mockWaitlistPosition(booking: Booking) {
+  const waiting = mockBookings.filter(
+    (b) => b.classId === booking.classId && b.status === 'waitlisted',
+  );
+  // Demo classes start with other people already waiting.
+  return booking.gymClass.waitlistCount - waiting.length + waiting.indexOf(booking) + 1;
+}
+
+/** Moves the earliest waiting demo booking in when a spot opens. */
+function mockFillFromWaitlist(gymClass: GymClass) {
+  const next = mockBookings.find((b) => b.classId === gymClass.id && b.status === 'waitlisted');
+  if (next && gymClass.bookedCount < gymClass.capacity) {
+    next.status = 'booked';
+    gymClass.bookedCount += 1;
+    gymClass.waitlistCount -= 1;
+  }
 }
 
 export async function bookClass(classId: string, memberId: string) {
   if (!supabase) {
     const gymClass = mockClasses.find((c) => c.id === classId);
     if (!gymClass) throw new Error('Class not found');
-    if (gymClass.bookedCount >= gymClass.capacity) throw new Error('Class is full');
-    gymClass.bookedCount += 1;
-    mockBookings.push({ id: mockId('b'), classId, memberId, status: 'booked', gymClass });
+    const cap = mockMemberRules.value.classBookingCap;
+    const held = mockBookings.filter(
+      (b) =>
+        b.memberId === memberId &&
+        isActive(b.status) &&
+        b.gymClass.startsAt > new Date().toISOString(),
+    ).length;
+    if (cap !== null && held >= cap) {
+      throw new Error(`You can hold ${cap} classes at a time. Cancel one to book this.`);
+    }
+    const full = gymClass.bookedCount >= gymClass.capacity;
+    if (full) gymClass.waitlistCount += 1;
+    else gymClass.bookedCount += 1;
+    mockBookings.push({
+      id: mockId('b'),
+      classId,
+      memberId,
+      status: full ? 'waitlisted' : 'booked',
+      gymClass,
+    });
     return delay(undefined);
   }
-  // The RPC checks capacity and inserts in one transaction.
+  // The RPC checks capacity and the booking limit, and books or waitlists, in one transaction.
   const { error } = await supabase.rpc('book_class', { p_class_id: classId });
   if (error) throw error;
 }
@@ -103,12 +168,17 @@ export async function bookClass(classId: string, memberId: string) {
 export async function cancelBooking(bookingId: string) {
   if (!supabase) {
     const booking = mockBookings.find((b) => b.id === bookingId);
-    if (booking && booking.status === 'booked') {
+    if (booking?.status === 'waitlisted') {
+      booking.status = 'cancelled';
+      booking.gymClass.waitlistCount -= 1;
+    } else if (booking?.status === 'booked') {
       booking.status = 'cancelled';
       booking.gymClass.bookedCount -= 1;
+      mockFillFromWaitlist(booking.gymClass);
     }
     return delay(undefined);
   }
+  // A trigger moves the next person off the waitlist when a booked spot frees up.
   const { error } = await supabase
     .from('bookings')
     .update({ status: 'cancelled' })
@@ -134,6 +204,7 @@ export async function scheduleClasses(gymId: string, input: ClassInput, weeks: n
         durationMinutes: input.durationMinutes,
         capacity: input.capacity,
         bookedCount: 0,
+        waitlistCount: 0,
         seriesId,
       });
     }

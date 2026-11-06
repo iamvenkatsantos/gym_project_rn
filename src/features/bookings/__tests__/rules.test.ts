@@ -22,6 +22,7 @@ const gymClass: GymClass = {
   durationMinutes: 30,
   capacity: 10,
   bookedCount: 4,
+  waitlistCount: 0,
   seriesId: null,
 };
 
@@ -34,7 +35,7 @@ describe('spotsLeft', () => {
 
 describe('canBook', () => {
   it('allows booking an open future class', () => {
-    expect(canBook(gymClass, [], now)).toEqual({ ok: true });
+    expect(canBook(gymClass, [], now)).toEqual({ ok: true, waitlist: false });
   });
 
   it('rejects classes that have started', () => {
@@ -44,11 +45,29 @@ describe('canBook', () => {
     });
   });
 
-  it('rejects full classes', () => {
+  it('offers the waitlist for full classes', () => {
     expect(canBook({ ...gymClass, bookedCount: 10 }, [], now)).toEqual({
-      ok: false,
-      reason: 'full',
+      ok: true,
+      waitlist: true,
     });
+  });
+
+  it('stops at the booking limit, counting waitlists but not past classes', () => {
+    const held = (id: string, startsAt: string, status: Booking['status']): Booking => ({
+      id,
+      classId: id,
+      memberId: 'm-1',
+      status,
+      gymClass: { ...gymClass, id, startsAt },
+    });
+    const two = [
+      held('a', '2026-10-25T07:00:00Z', 'booked'),
+      held('b', '2026-10-26T07:00:00Z', 'waitlisted'),
+    ];
+    expect(canBook(gymClass, two, now, 2)).toEqual({ ok: false, reason: 'limit' });
+    expect(canBook(gymClass, two, now, 3)).toEqual({ ok: true, waitlist: false });
+    const past = [held('a', '2026-10-23T07:00:00Z', 'booked'), two[1]];
+    expect(canBook(gymClass, past, now, 2)).toEqual({ ok: true, waitlist: false });
   });
 
   it('rejects a class the member already booked, but not a cancelled one', () => {
@@ -60,7 +79,14 @@ describe('canBook', () => {
       gymClass,
     };
     expect(canBook(gymClass, [booking], now)).toEqual({ ok: false, reason: 'alreadyBooked' });
-    expect(canBook(gymClass, [{ ...booking, status: 'cancelled' }], now)).toEqual({ ok: true });
+    expect(canBook(gymClass, [{ ...booking, status: 'waitlisted' }], now)).toEqual({
+      ok: false,
+      reason: 'alreadyBooked',
+    });
+    expect(canBook(gymClass, [{ ...booking, status: 'cancelled' }], now)).toEqual({
+      ok: true,
+      waitlist: false,
+    });
   });
 });
 

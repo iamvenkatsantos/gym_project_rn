@@ -40,6 +40,15 @@ export type Membership = {
   paymentMethod: PaymentMethod | null;
   /** When the payment was recorded. Demo data leaves it out. */
   recordedAt?: string;
+  /** Days off the member took; each one pushed the end date back. */
+  pauses?: MembershipPause[];
+};
+
+/** Days a member paused their membership, last day included. */
+export type MembershipPause = {
+  id: string;
+  startsOn: string;
+  endsOn: string;
 };
 
 export type PlanInput = Pick<MembershipPlan, 'name' | 'priceCents' | 'durationDays'> & {

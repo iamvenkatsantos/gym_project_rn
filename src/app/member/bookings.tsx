@@ -17,6 +17,7 @@ import {
   useUpcomingClasses,
 } from '@/features/bookings/hooks';
 import { canBook, classesOnDay, upcomingDays } from '@/features/bookings/rules';
+import { useMemberRules } from '@/features/member-rules/hooks';
 import { NoMembershipNotice } from '@/features/memberships/components/no-membership-notice';
 import { useHasMembership } from '@/features/memberships/hooks';
 import { SessionRow } from '@/features/trainers/components/session-row';
@@ -25,7 +26,11 @@ import { useSessions, useTrainers, useUpdateSession } from '@/features/trainers/
 
 type Tab = 'trainers' | 'classes';
 
-const blockedLabel = { started: 'Started', full: 'Class full', alreadyBooked: 'Booked' } as const;
+const blockedLabel = {
+  started: 'Started',
+  alreadyBooked: 'Booked',
+  limit: 'Booking limit reached',
+} as const;
 
 export default function MemberBookingsScreen() {
   const [tab, setTab] = useState<Tab>('trainers');
@@ -98,6 +103,7 @@ function ClassesTab() {
   const book = useBookClass(profile.id);
   const hasMembership = useHasMembership(gym.gymId, profile.id, gym.role);
   const cancel = useCancelBooking();
+  const cap = useMemberRules(gym.gymId).data?.classBookingCap ?? null;
 
   return (
     <>
@@ -110,16 +116,31 @@ function ClassesTab() {
           classesOnDay(list, selectedDay).map((gymClass) => {
             const booking = myBookings.data?.find((b) => b.classId === gymClass.id);
             if (booking) {
+              const waiting = booking.status === 'waitlisted';
               return (
                 <ClassRow
                   key={gymClass.id}
                   gymClass={gymClass}
                   highlighted
-                  badge={<Pill label="You're booked" tone="accent" icon="checkmark-circle" />}
+                  badge={
+                    waiting ? (
+                      <Pill
+                        label={
+                          booking.waitlistPosition
+                            ? `Waitlist #${booking.waitlistPosition}`
+                            : 'On the waitlist'
+                        }
+                        tone="warning"
+                        icon="time-outline"
+                      />
+                    ) : (
+                      <Pill label="You're booked" tone="accent" icon="checkmark-circle" />
+                    )
+                  }
                   action={
                     <Button
-                      label="Cancel booking"
-                      variant="danger"
+                      label={waiting ? 'Leave waitlist' : 'Cancel booking'}
+                      variant={waiting ? 'secondary' : 'danger'}
                       size="compact"
                       loading={cancel.isPending && cancel.variables === booking.id}
                       onPress={() => cancel.mutate(booking.id)}
@@ -128,14 +149,21 @@ function ClassesTab() {
                 />
               );
             }
-            const eligibility = canBook(gymClass, myBookings.data ?? []);
+            const eligibility = canBook(gymClass, myBookings.data ?? [], new Date(), cap);
             return (
               <ClassRow
                 key={gymClass.id}
                 gymClass={gymClass}
                 action={
                   <Button
-                    label={eligibility.ok ? 'Book class' : blockedLabel[eligibility.reason]}
+                    label={
+                      !eligibility.ok
+                        ? blockedLabel[eligibility.reason]
+                        : eligibility.waitlist
+                          ? 'Join waitlist'
+                          : 'Book class'
+                    }
+                    variant={eligibility.ok && eligibility.waitlist ? 'secondary' : 'primary'}
                     size="compact"
                     disabled={!eligibility.ok || hasMembership === false}
                     loading={book.isPending && book.variables === gymClass.id}
