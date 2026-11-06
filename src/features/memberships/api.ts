@@ -28,6 +28,7 @@ type PlanRow = {
   offer_label: string | null;
   offer_starts_on: string | null;
   offer_ends_on: string | null;
+  all_branches: boolean;
 };
 
 type MembershipRow = {
@@ -43,7 +44,7 @@ type MembershipRow = {
 };
 
 const PLAN_COLUMNS =
-  'id, name, price_cents, currency, duration_days, offer_type, offer_value, offer_label, offer_starts_on, offer_ends_on';
+  'id, name, price_cents, currency, duration_days, offer_type, offer_value, offer_label, offer_starts_on, offer_ends_on, all_branches';
 // The inner join lets queries filter memberships by the plan's gym.
 const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, created_at, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS})`;
 
@@ -64,6 +65,7 @@ function toPlan(row: PlanRow): MembershipPlan {
             endsOn: row.offer_ends_on,
           }
         : null,
+    allBranches: row.all_branches,
   };
 }
 
@@ -168,6 +170,7 @@ export async function savePlan(gymId: string, planId: string | null, input: Plan
     offer_label: offer ? offer.label.trim() || null : null,
     offer_starts_on: offer?.startsOn ?? null,
     offer_ends_on: offer?.endsOn ?? null,
+    all_branches: fields.allBranches,
   };
   const { error } = planId
     ? await supabase.from('membership_plans').update(row).eq('id', planId)

@@ -76,7 +76,7 @@ set role authenticated;
 select pg_temp.as_user('e0000000-0000-0000-0000-00000000000e');
 select * from public.scan_check_in('e1000000-0000-0000-0000-000000000001', :'live_now');
 
-\echo 'Q8 Manoj scanning the Adyar branch is sent home (expect This QR is for QR Gym Adyar. Check in at QR Gym Velachery.)'
+\echo 'Q8 Manoj scanning the Adyar branch is sent home (expect This QR is for QR Gym Adyar. Your plan works at QR Gym Velachery only.)'
 select pg_temp.as_user('e0000000-0000-0000-0000-00000000000b');
 select * from public.scan_check_in('e1000000-0000-0000-0000-000000000002', :'live_now');
 

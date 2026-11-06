@@ -12,6 +12,9 @@ export type AttendanceDay = {
   workouts: number;
   /** Checked out by the branch's auto check-out rather than by them. */
   autoCheckedOut?: boolean;
+  /** Where: the home branch, or another branch a member visited on an all-branches plan. */
+  gymId?: string;
+  gymName?: string;
 };
 
 /** One person on a day's attendance list; absent people have no check-in. */
@@ -24,6 +27,8 @@ export type AttendanceEntry = {
   checkedOutAt: string | null;
   workouts: number;
   autoCheckedOut?: boolean;
+  /** A member visiting from another branch of the brand: their home branch's name. */
+  homeBranch?: string | null;
 };
 
 /** One person's line in the attendance report over a period. */
