@@ -6,7 +6,7 @@
 //   npx supabase functions deploy create-subscription-payment
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-import { adminClient, razorpay } from '../_shared/razorpay.ts';
+import { adminClient, razorpay, testModeBlock } from '../_shared/razorpay.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +36,14 @@ Deno.serve(async (req) => {
   const caller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: authorization } },
   });
+
+  const blocked = await testModeBlock(caller);
+  if (blocked) {
+    return json(
+      { error: 'Online payment opens soon. Email support@vinven.net to pay for now.' },
+      400,
+    );
+  }
 
   // Checks the caller owns the branch, there's something to pay and it's due.
   const { data: paymentId, error } = await caller.rpc('start_subscription_payment', {

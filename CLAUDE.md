@@ -278,7 +278,10 @@ never stays with CoreFit. By default the owner pays all fees and the members see
 CoreFit takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
 shows no CoreFit fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
-refunds in the app.
+refunds in the app. **Test keys block payments** (`testModeBlock` in `_shared/razorpay.ts`): while
+`RAZORPAY_KEY_ID` is `rzp_test_…`, `create-payment` and `create-subscription-payment` refuse everyone
+but platform admins ("opens soon"), because a test payment still records a membership or a paid
+year. Live keys lift it with no build or deploy; `RAZORPAY_TEST_PAYMENTS=open` lifts it for staging.
 
 **Offers and discounts** (owner only to set). A plan can carry a time-limited offer
 (`membership_plans.offer_*`: 1–90% or a flat amount below the price, optional label, end date; set
