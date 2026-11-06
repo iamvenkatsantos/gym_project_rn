@@ -308,7 +308,9 @@ everyone at the branch, where the owner can pay. The lock is in the app only; th
 answers other calls.
 
 **Push and inbox.** Anything inserted into `notifications` (use `notify()`) shows in the inbox, and
-a statement trigger posts it through `pg_net` to `send-push`, which sends via Expo push. The app
+a statement trigger posts it through `pg_net` to `send-push`, which sends via Expo push. The inbox
+shows **Today** plus **Earlier** unread ones (Venkat, 2026-11-06): opening it marks all read, and
+older ones drop off from the next day (`inInbox`, phone's day; read today = kept until midnight). The app
 saves tokens with `register_push_token` in `use-push-notifications.ts`. Only call it when the
 device token actually changed: re-registering from the token listener caused a loop of ~400k API
 calls a day. Push needs a dev/preview build (not Expo Go on Android).
@@ -344,6 +346,9 @@ and test steps: `infra/updates-server/README.md`.
 - **Network failures** (no signal, a mobile network resetting the connection) reach screens as
   "Can't reach the server…" via `friendlyFetch` in `src/lib/network.ts`, the Supabase client's
   fetch. Show `error.message` as is; don't special-case raw fetch errors.
+- **CSV and the byte order mark:** `toCsv` starts with a UTF-8 BOM so desktop Excel (the web
+  dashboard's downloads) reads Tamil names and ₹. The app's `shareCsv` strips it, because Google
+  Sheets on Android shows it as "ï»¿" before the first header.
 - **The app's Supabase URL is `https://api.vinven.net`,** a Cloudflare Worker (`infra/api-proxy/`)
   that forwards everything to the supabase.co project, because some Indian mobile networks reset
   connections to `*.supabase.co`. Keep `authStorageKey` (the old `sb-<ref>-auth-token`) so a URL

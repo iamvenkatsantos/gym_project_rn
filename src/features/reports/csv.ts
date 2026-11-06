@@ -16,7 +16,8 @@ function cell(value: CsvCell) {
 
 /**
  * A CSV file as Excel and Google Sheets expect it: a header row, CRLF line
- * ends, and a byte order mark so names in Tamil or Hindi and ₹ open correctly.
+ * ends, and a byte order mark so names in Tamil or Hindi and ₹ open correctly
+ * in desktop Excel. The app's share sheet drops the mark (see `shareCsv`).
  */
 export function toCsv(header: string[], rows: CsvCell[][]) {
   return '﻿' + [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n') + '\r\n';
