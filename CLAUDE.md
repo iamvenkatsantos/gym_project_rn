@@ -344,6 +344,9 @@ and test steps: `infra/updates-server/README.md`.
 - **Network failures** (no signal, a mobile network resetting the connection) reach screens as
   "Can't reach the server…" via `friendlyFetch` in `src/lib/network.ts`, the Supabase client's
   fetch. Show `error.message` as is; don't special-case raw fetch errors.
+- **CSV and the byte order mark:** `toCsv` starts with a UTF-8 BOM so desktop Excel (the web
+  dashboard's downloads) reads Tamil names and ₹. The app's `shareCsv` strips it, because Google
+  Sheets on Android shows it as "ï»¿" before the first header.
 - **The app's Supabase URL is `https://api.vinven.net`,** a Cloudflare Worker (`infra/api-proxy/`)
   that forwards everything to the supabase.co project, because some Indian mobile networks reset
   connections to `*.supabase.co`. Keep `authStorageKey` (the old `sb-<ref>-auth-token`) so a URL
