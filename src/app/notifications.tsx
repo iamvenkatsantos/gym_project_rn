@@ -5,12 +5,13 @@ import { Card } from '@/components/card';
 import { Icon, type IconName } from '@/components/icon';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
+import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useMarkAllRead, useNotifications } from '@/features/notifications/hooks';
-import { timeAgo, unreadCount } from '@/features/notifications/rules';
-import type { NotificationKind } from '@/features/notifications/types';
+import { inboxSections, timeAgo, unreadCount } from '@/features/notifications/rules';
+import type { AppNotification, NotificationKind } from '@/features/notifications/types';
 import { useTheme } from '@/hooks/use-theme';
 
 const kindIcon: Record<NotificationKind, IconName> = {
@@ -27,14 +28,14 @@ const kindIcon: Record<NotificationKind, IconName> = {
 };
 
 export default function NotificationsScreen() {
-  const theme = useTheme();
   const profile = useProfile();
   const gym = useActiveGym();
   const notifications = useNotifications(gym.gymId, profile.id);
   const markRead = useMarkAllRead(gym.gymId, profile.id);
   const marked = useRef(false);
 
-  // Opening the inbox reads everything in it; the dots show what was new this time.
+  // Opening the inbox reads everything in it; the dots show what was new this time. Older
+  // notifications drop off from tomorrow (`inInbox`), today's stay all day.
   useEffect(() => {
     if (!marked.current && notifications.data && unreadCount(notifications.data) > 0) {
       marked.current = true;
@@ -47,39 +48,52 @@ export default function NotificationsScreen() {
       <QueryState
         query={notifications}
         isEmpty={(list) => list.length === 0}
-        emptyText="Nothing here yet. Messages from your gym show up here.">
-        {(list) =>
-          list.map((n) => (
-            <Card key={n.id} highlighted={!n.readAt}>
-              <View style={styles.row}>
-                <Icon
-                  name={kindIcon[n.kind]}
-                  size={22}
-                  color={n.readAt ? 'textSecondary' : 'accent'}
-                />
-                <View style={styles.flex}>
-                  <ThemedText type="smallBold">{n.title}</ThemedText>
-                  {n.body ? (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {n.body}
-                    </ThemedText>
-                  ) : null}
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {[n.senderName, timeAgo(n.createdAt)].filter(Boolean).join(' · ')}
-                  </ThemedText>
-                </View>
-                {!n.readAt ? (
-                  <View
-                    accessibilityLabel="Unread"
-                    style={[styles.dot, { backgroundColor: theme.primary }]}
-                  />
-                ) : null}
-              </View>
-            </Card>
-          ))
-        }
+        emptyText="You're all caught up.">
+        {(list) => {
+          const { today, earlier } = inboxSections(list);
+          return (
+            <>
+              {today.length > 0 ? <SectionHeader title="Today" /> : null}
+              {today.map((n) => (
+                <NotificationCard key={n.id} n={n} />
+              ))}
+              {earlier.length > 0 ? <SectionHeader title="Earlier" /> : null}
+              {earlier.map((n) => (
+                <NotificationCard key={n.id} n={n} />
+              ))}
+            </>
+          );
+        }}
       </QueryState>
     </Screen>
+  );
+}
+
+function NotificationCard({ n }: { n: AppNotification }) {
+  const theme = useTheme();
+  return (
+    <Card highlighted={!n.readAt}>
+      <View style={styles.row}>
+        <Icon name={kindIcon[n.kind]} size={22} color={n.readAt ? 'textSecondary' : 'accent'} />
+        <View style={styles.flex}>
+          <ThemedText type="smallBold">{n.title}</ThemedText>
+          {n.body ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {n.body}
+            </ThemedText>
+          ) : null}
+          <ThemedText type="small" themeColor="textSecondary">
+            {[n.senderName, timeAgo(n.createdAt)].filter(Boolean).join(' · ')}
+          </ThemedText>
+        </View>
+        {!n.readAt ? (
+          <View
+            accessibilityLabel="Unread"
+            style={[styles.dot, { backgroundColor: theme.primary }]}
+          />
+        ) : null}
+      </View>
+    </Card>
   );
 }
 
