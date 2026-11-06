@@ -323,6 +323,15 @@ older ones drop off from the next day (`inInbox`, phone's day; read today = kept
 saves tokens with `register_push_token` in `use-push-notifications.ts`. Only call it when the
 device token actually changed: re-registering from the token listener caused a loop of ~400k API
 calls a day. Push needs a dev/preview build (not Expo Go on Android).
+**Automatic pushes** (besides reminders, bookings, birthdays and announcements; Venkat, 2026-11-06,
+`20261106050000_extra_notifications.sql`, all on existing kinds so older apps show them): a coach
+assigns a plan → member "New workout plan" (not own plans); a membership with money paid →
+"Payment received" with the amount (`rupees()`; free ones stay "Membership active"); a member drops
+a future class → its trainer; a joined invite → the inviter "New member joined" (trainer invites
+skip it, the mapping's "New member" covers them). `send_member_nudges` (from 10 am gym time, once
+each by `dedupe_key`): **We miss you** when the last check-in was 7–13 days ago and they still have
+a membership (mapped trainers get "Member missing"), and **Time to measure** at most monthly when
+an onboarded member has logged no measurement at that gym for 30 days.
 
 **Over-the-air updates** (self-hosted, not EAS Update; Venkat 2026-11-04). `expo-updates` talks
 to our own server at `updates.vinven.net/manifest` (`infra/updates-server/`, the Expo Updates
@@ -344,6 +353,7 @@ and test steps: `infra/updates-server/README.md`.
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
 `corefit-auto-check-out` (10 min), `corefit-birthdays` (hourly, managers' 9 am birthday push),
+`corefit-nudges` (hourly, `send_member_nudges`),
 `corefit-purge-logs` (daily, trims cron and pg_net history).
 
 ## Conventions and gotchas
