@@ -21,6 +21,30 @@ export function unreadCount(notifications: AppNotification[]) {
   return notifications.filter((n) => !n.readAt).length;
 }
 
+/** Midnight at the start of today on this phone, as an ISO time. */
+export function startOfToday(now = new Date()) {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+}
+
+/**
+ * The inbox keeps today's notifications plus anything still unread. Older ones read today stay
+ * until midnight, so they don't vanish while the screen that read them is open.
+ */
+export function inInbox(n: AppNotification, now = new Date()) {
+  const since = Date.parse(startOfToday(now));
+  return !n.readAt || Date.parse(n.createdAt) >= since || Date.parse(n.readAt) >= since;
+}
+
+/** Splits the inbox into today's notifications and older ones, both newest first. */
+export function inboxSections(list: AppNotification[], now = new Date()) {
+  const since = Date.parse(startOfToday(now));
+  const isToday = (n: AppNotification) => Date.parse(n.createdAt) >= since;
+  return {
+    today: list.filter(isToday),
+    earlier: list.filter((n) => !isToday(n)),
+  };
+}
+
 export function messageProblem(input: Pick<TrainerMessageInput, 'trainerId' | 'title' | 'body'>) {
   if (!input.trainerId) return 'Pick a trainer.';
   if (!input.title.trim()) return 'Add a subject.';

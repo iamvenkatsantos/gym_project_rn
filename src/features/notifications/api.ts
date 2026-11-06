@@ -1,4 +1,5 @@
 import type { AppNotification, TrainerMessageInput } from '@/features/notifications/types';
+import { inInbox, startOfToday } from '@/features/notifications/rules';
 import { delay, forGym, mockId, mockNotifications, mockProfiles } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -14,14 +15,17 @@ type NotificationRow = {
   sender: { full_name: string } | null;
 };
 
-/** The signed-in person's inbox at this gym, newest first. */
+/** The signed-in person's inbox at this gym: today's plus anything unread (`inInbox`), newest first. */
 export async function listNotifications(
   gymId: string,
   recipientId: string,
 ): Promise<AppNotification[]> {
   if (!supabase) {
-    return delay(forGym(gymId, mockNotifications).filter((n) => n.recipientId === recipientId));
+    return delay(
+      forGym(gymId, mockNotifications).filter((n) => n.recipientId === recipientId && inInbox(n)),
+    );
   }
+  const since = startOfToday();
   const rows = unwrap(
     await supabase
       .from('notifications')
@@ -30,8 +34,9 @@ export async function listNotifications(
       )
       .eq('gym_id', gymId)
       .eq('recipient_id', recipientId)
+      .or(`read_at.is.null,created_at.gte.${since},read_at.gte.${since}`)
       .order('created_at', { ascending: false })
-      .limit(50),
+      .limit(100),
   ) as unknown as NotificationRow[];
   return rows.map((r) => ({
     id: r.id,
