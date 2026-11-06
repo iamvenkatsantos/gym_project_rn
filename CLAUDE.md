@@ -254,6 +254,12 @@ and read-only for them. **After every workout** members answer a self-check on `
 workout" push to their trainers carries. Swaps from **Replace** (same-muscle pick) are logged in
 `workout_logs.swaps`. A coach or manager replies once (`reply_to_workout()`, inbox kind
 `workout`); a trigger stops members writing the reply.
+**Weekly goal ring** (Venkat, 2026-11-06): members' Plans tab shows days trained this week
+against a goal, with a streak (`WeeklyGoalCard`, `src/features/progress/goal.ts`, app-only). The
+goal is the distinct weekdays of the member's assigned plans (own plans count while self workouts
+are on, so it's the days they picked), or 3 when none have days; a day counts once; the streak is
+weeks in a row that met today's goal, and this week adds only once met. The ring is plain views
+(`ProgressRing`, no SVG), so it ships over the air.
 **Live workout** (Venkat, 2026-11-03): `workout-session` opens on **Live** (`LiveWorkout`,
 `src/features/progress/live.ts`): one exercise at a time with its demo, how-to steps and set dots;
 reps, kg (2.5 kg steps, 0 = bodyweight) and **Done** pinned at the bottom; a full rest screen with
