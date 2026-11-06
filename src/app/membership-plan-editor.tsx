@@ -12,7 +12,8 @@ import { Stepper } from '@/components/stepper';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useActiveGym } from '@/features/auth/use-profile';
+import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { ownedBranches } from '@/features/branches/rules';
 import { useArchivePlan, usePlans, useSavePlan } from '@/features/memberships/hooks';
 import { PlanCard } from '@/features/memberships/components/plan-card';
 import { offerActive, offerAnnouncement, offerProblem } from '@/features/memberships/offers';
@@ -34,6 +35,11 @@ function daysUntil(isoDate: string, today: string) {
   return Math.round(ms / 86400000);
 }
 
+const reach: { value: 'one' | 'all'; label: string }[] = [
+  { value: 'one', label: 'This branch' },
+  { value: 'all', label: 'All branches' },
+];
+
 const durations = [
   { days: 30, label: '1 month' },
   { days: 90, label: '3 months' },
@@ -44,7 +50,9 @@ const durations = [
 export default function MembershipPlanEditorScreen() {
   const { planId } = useLocalSearchParams<{ planId?: string }>();
   const gym = useActiveGym();
+  const profile = useProfile();
   const plans = usePlans(gym.gymId);
+  const multiBranch = ownedBranches(profile.gyms, gym).length > 1;
   const plan = plans.data?.find((p) => p.id === planId);
 
   if (planId && !plan) {
@@ -56,17 +64,28 @@ export default function MembershipPlanEditorScreen() {
       </Screen>
     );
   }
-  return <PlanForm key={plan?.id ?? 'new'} gymId={gym.gymId} gymName={gym.gymName} plan={plan} />;
+  return (
+    <PlanForm
+      key={plan?.id ?? 'new'}
+      gymId={gym.gymId}
+      gymName={gym.gymName}
+      plan={plan}
+      multiBranch={multiBranch}
+    />
+  );
 }
 
 function PlanForm({
   gymId,
   gymName,
   plan,
+  multiBranch,
 }: {
   gymId: string;
   gymName: string;
   plan?: MembershipPlan;
+  /** The owner's brand has 2+ branches, so a plan can cover all of them. */
+  multiBranch: boolean;
 }) {
   const today = toIsoDate(new Date());
   const saved = plan?.offer ?? null;
@@ -75,6 +94,7 @@ function PlanForm({
   const [name, setName] = useState(plan?.name ?? '');
   const [price, setPrice] = useState(plan ? String(plan.priceCents / 100) : '');
   const [durationDays, setDurationDays] = useState(plan?.durationDays ?? 30);
+  const [allBranches, setAllBranches] = useState(plan?.allBranches ?? false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [offerKind, setOfferKind] = useState<OfferKind>(savedLive?.type ?? 'none');
   const [offerText, setOfferText] = useState(
@@ -111,6 +131,7 @@ function PlanForm({
           currency: plan?.currency ?? 'INR',
           durationDays,
           offer: offer && !offerError ? offer : null,
+          allBranches,
         }
       : null;
   const announce = plan && saved && offerActive(plan) ? offerAnnouncement(plan, gymName) : null;
@@ -161,6 +182,24 @@ function PlanForm({
           onChange={setDurationDays}
         />
       </View>
+
+      {multiBranch || allBranches ? (
+        <View style={styles.field}>
+          <ThemedText type="label" themeColor="textSecondary">
+            Works at
+          </ThemedText>
+          <SegmentedControl
+            options={reach}
+            value={allBranches ? 'all' : 'one'}
+            onChange={(v) => setAllBranches(v === 'all')}
+          />
+          <ThemedText type="small" themeColor="textSecondary">
+            {allBranches
+              ? 'Members can scan in at every branch.'
+              : `Members check in at ${gymName} only.`}
+          </ThemedText>
+        </View>
+      ) : null}
 
       <SectionHeader title="Offer" />
       <SegmentedControl options={offerKinds} value={offerKind} onChange={setOfferKind} />
@@ -214,7 +253,7 @@ function PlanForm({
           save.mutate(
             {
               planId: plan?.id ?? null,
-              input: { name, priceCents: priceCents ?? 0, durationDays, offer },
+              input: { name, priceCents: priceCents ?? 0, durationDays, offer, allBranches },
             },
             { onSuccess: () => router.back() },
           )

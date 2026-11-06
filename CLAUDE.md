@@ -79,7 +79,9 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
   branches get a branch switcher and an All branches view. Billing is per branch and **yearly**
   (`gyms.fee_cents`, null means the `platform_settings` default of ₹4,999; 0 makes the branch free:
-  **Make this branch free** on the admin branch screen or when adding one). Members use their home branch only.
+  **Make this branch free** on the admin branch screen or when adding one). Members use their home
+  branch, except that an **All branches** plan lets them check in at any branch of the brand (see
+  Attendance).
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
@@ -181,6 +183,14 @@ mirrors it with `useHasMembership` and `NoMembershipNotice`. New members are blo
 first membership is recorded. Each branch has a QR
 (`corefit://check-in?gym=…&code=…`): a rotating live code on the owner's `check-in-display` and a
 fixed poster code the admin shares as an image. `scan_check_in` toggles in/out;
+**All-branch plans** (Venkat, 2026-11-06): owners with 2+ branches set a plan's **Works at** to All
+branches (`membership_plans.all_branches`). Its members stay members of their home branch (they pay
+there, so the money goes to that branch's Razorpay account) but can scan the QR at any branch of
+the brand (`branch_pass_home()`; `has_current_membership()` counts it). The visit is an
+`attendance` row at that branch; Home shows it with the branch name (`my_attendance_today`),
+Check out and Start workout work from home, the workout counts on the visit, and checking in
+anywhere closes an open visit elsewhere in the brand. That branch's attendance lists them with
+"From <home branch>" (`gym_attendance.home_branch`). Classes and trainer bookings stay at home.
 `gyms.qr_check_in_only` blocks the button check-in; `auto_check_out()` closes stale visits.
 **Opening hours:** owners set each branch's `gyms.opens_at`/`closes_at` (`set_gym_hours()`, both null =
 open 24 hours, closing before opening = after midnight) on Attendance → **Check-in QR and settings**,

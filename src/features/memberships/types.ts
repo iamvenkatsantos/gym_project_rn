@@ -6,6 +6,8 @@ export type MembershipPlan = {
   durationDays: number;
   /** A time-limited discount the owner put on the plan. */
   offer?: PlanOffer | null;
+  /** Members on it can check in at every branch of the brand, not just this one. */
+  allBranches?: boolean;
 };
 
 /** A discount on a plan for a while: a percentage or a flat amount off. */
@@ -44,6 +46,7 @@ export type Membership = {
 
 export type PlanInput = Pick<MembershipPlan, 'name' | 'priceCents' | 'durationDays'> & {
   offer: PlanOffer | null;
+  allBranches: boolean;
 };
 
 /** What the front desk records when someone pays for a membership in person. */

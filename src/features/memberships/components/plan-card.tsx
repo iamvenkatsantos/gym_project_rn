@@ -34,7 +34,8 @@ export function PlanCard({
         <View style={styles.body}>
           <ThemedText type="heading">{plan.name}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {plan.durationDays} days{current ? ' · your plan' : ''}
+            {plan.durationDays} days{plan.allBranches ? ' · all branches' : ''}
+            {current ? ' · your plan' : ''}
           </ThemedText>
         </View>
         <View style={styles.prices}>

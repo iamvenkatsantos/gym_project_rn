@@ -8,6 +8,8 @@ import { delay, forGym, mockAttendance, mockDay, mockPeople } from '@/lib/mock-d
 import { supabase, unwrap } from '@/lib/supabase';
 
 type DayRow = {
+  gym_id?: string;
+  gym_name?: string;
   day: string;
   role: AttendeeRole;
   checked_in_at: string;
@@ -24,6 +26,8 @@ function toDay(row: DayRow): AttendanceDay {
     checkedOutAt: row.checked_out_at,
     workouts: row.workouts,
     autoCheckedOut: row.auto_checked_out,
+    gymId: row.gym_id,
+    gymName: row.gym_name,
   };
 }
 
@@ -34,7 +38,10 @@ function mockAttendees(gymId: string) {
   );
 }
 
-/** The signed-in person's attendance today at the gym, or null before they check in. */
+/**
+ * The signed-in person's attendance today at the gym, or null before they check in. For a
+ * member on an all-branches plan it can be a visit to another branch of the brand.
+ */
 export async function getMyAttendance(
   gymId: string,
   userId: string,
@@ -45,7 +52,7 @@ export async function getMyAttendance(
     );
     return delay(today ?? null);
   }
-  const rows = unwrap(await supabase.rpc('my_attendance', { p_gym_id: gymId })) as DayRow[];
+  const rows = unwrap(await supabase.rpc('my_attendance_today', { p_gym_id: gymId })) as DayRow[];
   return rows[0] ? toDay(rows[0]) : null;
 }
 
@@ -106,9 +113,13 @@ type EntryRow = {
   checked_out_at: string | null;
   workouts: number;
   auto_checked_out: boolean;
+  home_branch?: string | null;
 };
 
-/** Everyone who should be counted on a day, present or not. Owners and supervisors only. */
+/**
+ * Everyone who should be counted on a day, present or not, plus members visiting from another
+ * branch. Owners and supervisors only.
+ */
 export async function listDayAttendance(
   gymId: string,
   daysAgo: number,
@@ -142,6 +153,7 @@ export async function listDayAttendance(
     checkedOutAt: r.checked_out_at,
     workouts: r.workouts,
     autoCheckedOut: r.auto_checked_out,
+    homeBranch: r.home_branch ?? null,
   }));
 }
 

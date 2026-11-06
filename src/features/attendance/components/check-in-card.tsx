@@ -39,6 +39,9 @@ export function CheckInCard({
   const status = attendanceStatus(today.data);
   const qrOnly = rules.data?.qrOnly ?? false;
   const hours = gymHours(rules.data);
+  // A member on an all-branches plan may be in at another branch of the brand.
+  const elsewhere =
+    today.data?.gymId && today.data.gymId !== gymId ? (today.data.gymName ?? null) : null;
   // Members need a membership covering today to check in; checking out always works.
   const hasMembership = useHasMembership(gymId, userId, role);
 
@@ -59,7 +62,11 @@ export function CheckInCard({
                 : 'Not checked in'}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {today.isPending ? 'Loading…' : today.data ? attendanceTimes(today.data) : hint[role]}
+            {today.isPending
+              ? 'Loading…'
+              : today.data
+                ? [elsewhere, attendanceTimes(today.data)].filter(Boolean).join(' · ')
+                : hint[role]}
           </ThemedText>
         </View>
         {status === 'inGym' ? <Pill label="In gym" tone="success" /> : null}

@@ -290,6 +290,7 @@ psql -d corefit_test -f supabase/tests/workout-days.sql
 psql -d corefit_test -f supabase/tests/self-workouts.sql
 psql -d corefit_test -f supabase/tests/online-payments.sql
 psql -d corefit_test -f supabase/tests/qr-check-in.sql
+psql -d corefit_test -f supabase/tests/all-branch-memberships.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/admission-details.sql
