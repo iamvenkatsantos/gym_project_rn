@@ -1,4 +1,4 @@
-import type { Referral } from '@/features/referrals/types';
+import type { Referral, ReferralStatus } from '@/features/referrals/types';
 
 /** The short status line under a referral. */
 export function referralLabel(referral: Referral) {
@@ -8,6 +8,11 @@ export function referralLabel(referral: Referral) {
   return referral.rewardApplied
     ? `Joined · +${referral.rewardDays} days`
     : `Joined · +${referral.rewardDays} days on your next plan`;
+}
+
+/** The status pill on the staff Referrals list. */
+export function staffReferralLabel(status: ReferralStatus) {
+  return status === 'pending' ? 'To call' : status === 'joined' ? 'Joined' : "Didn't join";
 }
 
 /** The WhatsApp message a member sends the friend they referred. */

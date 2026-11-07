@@ -223,3 +223,26 @@ set role authenticated;
 select pg_temp.as_user('c7000000-0000-0000-0000-00000000000f');
 select count(*) from public.referral_rewards;
 reset role;
+
+\echo '--- Referral alerts ---'
+\echo 'A1 Tom trains Wendy; her referral reaches the owner, the supervisor and Tom with the number (expect 3 rows, each 9840033333)'
+insert into public.member_trainers (gym_id, member_id, trainer_id) values
+ ('c7100000-0000-0000-0000-000000000001','c7000000-0000-0000-0000-00000000000f','c7000000-0000-0000-0000-00000000000e');
+set role authenticated;
+select pg_temp.as_user('c7000000-0000-0000-0000-00000000000f');
+select public.refer_friend('c7100000-0000-0000-0000-000000000001', 'Mala', '98400 33333') is not null;
+reset role;
+select p.full_name, n.phone from public.notifications n join public.profiles p on p.id = n.recipient_id
+where n.title = 'New referral' and n.phone = '9840033333' order by 1;
+
+\echo 'A2 Tom sees Wendy''s referral only; the owner sees all three (expect Mala, then 3)'
+set role authenticated;
+select pg_temp.as_user('c7000000-0000-0000-0000-00000000000e');
+select full_name, referred_by_name, status from public.gym_referrals('c7100000-0000-0000-0000-000000000001');
+select pg_temp.as_user('c7000000-0000-0000-0000-00000000000a');
+select count(*) from public.gym_referrals('c7100000-0000-0000-0000-000000000001');
+
+\echo 'A3 Members can''t list the gym''s referrals (expect Only staff see referrals)'
+select pg_temp.as_user('c7000000-0000-0000-0000-00000000000b');
+select count(*) from public.gym_referrals('c7100000-0000-0000-0000-000000000001');
+reset role;

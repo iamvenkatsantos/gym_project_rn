@@ -23,6 +23,8 @@ export type AppNotification = {
   title: string;
   body: string;
   classId: string | null;
+  /** A number to call from the inbox, e.g. a friend a member referred. */
+  phone?: string | null;
   createdAt: string;
   readAt: string | null;
 };
