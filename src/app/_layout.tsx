@@ -370,6 +370,10 @@ function RootNavigator() {
         />
         <Stack.Screen name="payment-return" options={{ title: 'Payment' }} />
         <Stack.Screen
+          name="receipt/[membershipId]"
+          options={{ headerShown: true, title: 'Receipt' }}
+        />
+        <Stack.Screen
           name="payment-history/index"
           options={{ headerShown: true, title: 'Payment history' }}
         />

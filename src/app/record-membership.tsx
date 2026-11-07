@@ -32,6 +32,7 @@ import {
   toIsoDate,
 } from '@/features/memberships/rules';
 import type { MembershipPlan, PaymentMethod } from '@/features/memberships/types';
+import { hasReceipt } from '@/features/payments/receipt';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseAmount, validateAmount, validateOptionalText } from '@/lib/validation';
 
@@ -257,7 +258,16 @@ export default function RecordMembershipScreen() {
               paymentMethod: method,
               note,
             },
-            { onSuccess: () => router.back() },
+            {
+              // Paid: straight to the receipt, ready to share. Else back where they came from.
+              onSuccess: (membershipId) =>
+                hasReceipt({ amountPaidCents: amountCents, paymentMethod: method })
+                  ? router.replace({
+                      pathname: '/receipt/[membershipId]',
+                      params: { membershipId },
+                    })
+                  : router.back(),
+            },
           )
         }
       />

@@ -8,9 +8,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { PaymentRow } from '@/features/payments/components/payment-row';
 import { methodLabel, type HistoryEntry } from '@/features/payments/history';
+import { hasReceipt } from '@/features/payments/receipt';
 import { formatAmount, formatDate } from '@/lib/format';
 
-/** A member's payments, newest first. In-app ones open their receipt. */
+/** A member's payments, newest first. Paid ones open their receipt. */
 export function PaymentHistoryList({ entries }: { entries: HistoryEntry[] }) {
   return entries.map((entry) =>
     entry.kind === 'pending' ? (
@@ -22,7 +23,8 @@ export function PaymentHistoryList({ entries }: { entries: HistoryEntry[] }) {
 }
 
 function RecordedPayment({ entry }: { entry: Extract<HistoryEntry, { kind: 'recorded' }> }) {
-  const { membership, onlinePaymentId } = entry;
+  const { membership } = entry;
+  const receipt = hasReceipt(membership);
   const amount =
     membership.amountPaidCents === null
       ? null
@@ -37,7 +39,7 @@ function RecordedPayment({ entry }: { entry: Extract<HistoryEntry, { kind: 'reco
           {membership.plan.name}
         </ThemedText>
         {amount ? <ThemedText type="smallBold">{amount}</ThemedText> : null}
-        {onlinePaymentId ? <Icon name="chevron-forward" size={16} /> : null}
+        {receipt ? <Icon name="chevron-forward" size={16} /> : null}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
         {formatDate(membership.startsOn)} – {formatDate(membership.endsOn)}
@@ -57,13 +59,16 @@ function RecordedPayment({ entry }: { entry: Extract<HistoryEntry, { kind: 'reco
     </Card>
   );
 
-  if (!onlinePaymentId) return body;
+  if (!receipt) return body;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${membership.plan.name}, ${amount ?? ''}, paid ${paid}. Open receipt`}
       onPress={() =>
-        router.push({ pathname: '/payment/[paymentId]', params: { paymentId: onlinePaymentId } })
+        router.push({
+          pathname: '/receipt/[membershipId]',
+          params: { membershipId: membership.id },
+        })
       }>
       {body}
     </Pressable>

@@ -151,6 +151,19 @@ function PaymentDetails({ payment }: { payment: OnlinePayment }) {
       ) : null}
       {state === 'paid' ? (
         <View style={styles.done}>
+          {payment.membershipId ? (
+            <Button
+              label="View receipt"
+              icon="receipt-outline"
+              variant="secondary"
+              onPress={() =>
+                router.push({
+                  pathname: '/receipt/[membershipId]',
+                  params: { membershipId: payment.membershipId! },
+                })
+              }
+            />
+          ) : null}
           <Button
             label="Done"
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}

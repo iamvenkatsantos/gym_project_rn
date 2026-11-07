@@ -1,7 +1,9 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 
+import { fetchGymDetails } from '@/features/gyms/api';
+import { hasReceipt, toReceipt, type Receipt, type ReceiptRow } from '@/features/payments/receipt';
 import type { OnlinePayment, PaymentQuote, StartedPayment } from '@/features/payments/types';
-import { delay } from '@/lib/mock-db';
+import { delay, MOCK_GYM_ID, mockMemberships } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
 type OnlinePaymentRow = {
@@ -124,4 +126,43 @@ export async function listOnlinePayments(
     await query.order('created_at', { ascending: false }).limit(limit),
   ) as unknown as OnlinePaymentRow[];
   return rows.map(toPayment);
+}
+
+/**
+ * A membership payment's receipt, for the member who paid or the branch's owners and
+ * supervisors. Null when there's nothing to show (unpaid, or not theirs).
+ */
+export async function fetchReceipt(membershipId: string): Promise<Receipt | null> {
+  if (!supabase) {
+    const paid = mockMemberships.filter(hasReceipt);
+    const index = paid.findIndex((m) => m.id === membershipId);
+    if (index < 0) return delay(null);
+    const m = paid[index];
+    const gym = await fetchGymDetails(MOCK_GYM_ID);
+    return delay({
+      membershipId: m.id,
+      receiptNo: index + 1,
+      gymName: gym.name,
+      brandName: gym.name,
+      address: gym.address,
+      city: gym.city,
+      phone: gym.phone,
+      email: gym.email,
+      memberName: m.memberName,
+      memberPhone: '9876543210',
+      planName: m.plan.name,
+      startsOn: m.startsOn,
+      endsOn: m.endsOn,
+      amountCents: m.amountPaidCents ?? 0,
+      currency: m.plan.currency,
+      paymentMethod: m.paymentMethod ?? 'cash',
+      paidAt: m.recordedAt ?? `${m.startsOn}T10:00:00`,
+      reference: m.paymentMethod === 'online' ? 'pay_DemoRazorpay01' : null,
+      receivedBy: m.paymentMethod === 'online' ? null : 'Arjun Owner',
+    });
+  }
+  const row = unwrap(
+    await supabase.rpc('membership_receipt', { p_membership_id: membershipId }),
+  ) as ReceiptRow | null;
+  return row ? toReceipt(row) : null;
 }
