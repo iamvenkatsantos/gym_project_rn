@@ -1,5 +1,10 @@
 import { normalizePhone } from '@/features/enquiries/rules';
-import type { Referral, ReferralStatus } from '@/features/referrals/types';
+import {
+  STAFF_REFERRAL_DAYS,
+  type Referral,
+  type ReferralStatus,
+  type StaffReferral,
+} from '@/features/referrals/types';
 import { delay, forGym, mockId, mockReferrals } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -17,7 +22,7 @@ export async function listMyReferrals(gymId: string, memberId: string): Promise<
     return delay(
       forGym(gymId, mockReferrals)
         .filter((r) => r.referrerId === memberId)
-        .map(({ referrerId: _, ...r }) => r),
+        .map(({ referrerId: _, referrerName: __, phone: ___, ...r }) => r),
     );
   }
   const rows = unwrap(
@@ -29,6 +34,46 @@ export async function listMyReferrals(gymId: string, memberId: string): Promise<
     status: r.status,
     rewardDays: r.reward_days,
     rewardApplied: r.reward_applied,
+    createdAt: r.created_at,
+  }));
+}
+
+/**
+ * Referrals from the last two weeks at this branch. Owners and supervisors see all; trainers
+ * only those from members they train (the server decides).
+ */
+export async function listGymReferrals(gymId: string): Promise<StaffReferral[]> {
+  if (!supabase) {
+    const since = new Date(Date.now() - STAFF_REFERRAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    return delay(
+      forGym(gymId, mockReferrals)
+        .filter((r) => r.createdAt > since)
+        .map((r) => ({
+          id: r.id,
+          fullName: r.fullName,
+          phone: r.phone,
+          referredByName: r.referrerName,
+          status: r.status,
+          createdAt: r.createdAt,
+        })),
+    );
+  }
+  const rows = unwrap(
+    await supabase.rpc('gym_referrals', { p_gym_id: gymId, p_days: STAFF_REFERRAL_DAYS }),
+  ) as unknown as {
+    id: string;
+    full_name: string;
+    phone: string;
+    referred_by_name: string;
+    status: ReferralStatus;
+    created_at: string;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    fullName: r.full_name,
+    phone: r.phone,
+    referredByName: r.referred_by_name,
+    status: r.status,
     createdAt: r.created_at,
   }));
 }
@@ -52,6 +97,8 @@ export async function referFriend(
       rewardDays: null,
       rewardApplied: false,
       createdAt: new Date().toISOString(),
+      referrerName: 'You',
+      phone,
     });
     return delay(undefined);
   }

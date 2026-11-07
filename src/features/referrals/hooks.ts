@@ -1,10 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { listMyReferrals, referFriend } from '@/features/referrals/api';
+import { listGymReferrals, listMyReferrals, referFriend } from '@/features/referrals/api';
 
 export const referralKeys = {
   mine: (gymId: string, memberId: string) => ['referrals', gymId, memberId] as const,
+  gym: (gymId: string) => ['referrals', gymId, 'gym'] as const,
 };
+
+/** Recent referrals for owners, supervisors and trainers. */
+export function useGymReferrals(gymId: string) {
+  return useQuery({
+    queryKey: referralKeys.gym(gymId),
+    queryFn: () => listGymReferrals(gymId),
+  });
+}
 
 export function useMyReferrals(gymId: string, memberId: string) {
   return useQuery({

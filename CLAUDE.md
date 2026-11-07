@@ -324,7 +324,11 @@ in". Members see their place (`my_waitlist_positions()`); cancelling a class cle
 **Booking cap:** `class_booking_cap` (null = no limit) caps upcoming classes a member holds,
 waitlists included. **Referrals:** members tap Profile → **Refer a friend** (`refer_friend()`):
 the friend becomes an enquiry (source referral, `enquiries.referred_by`, assigned to an owner,
-else a supervisor; owners and supervisors get a push) and the member can WhatsApp them. Already at
+else a supervisor) and the member can WhatsApp them. The branch's owners and supervisors and the
+member's own trainers get a "New referral" push whose inbox card has **Call** and **WhatsApp**
+(`notifications.phone`; Venkat, 2026-11-07). They also see the last 14 days on **Referrals**
+(dashboard shortcut for managers, trainer Home; `gym_referrals()`: managers see all, trainers only
+their own members' referrals). Already at
 the gym or already an open enquiry (matched on the last 10 digits of the mobile) is refused; 10 a
 day max. When the friend's first paid (not complimentary) membership is recorded, matched by linked
 enquiry or mobile and only if they joined after the referral, `reward_referral()` gives the referrer

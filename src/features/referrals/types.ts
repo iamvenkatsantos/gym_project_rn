@@ -12,3 +12,16 @@ export type Referral = {
   rewardApplied: boolean;
   createdAt: string;
 };
+
+/** A referral as owners, supervisors and trainers see it on the Referrals list. */
+export type StaffReferral = {
+  id: string;
+  fullName: string;
+  phone: string;
+  referredByName: string;
+  status: ReferralStatus;
+  createdAt: string;
+};
+
+/** Days of referrals the staff list shows. */
+export const STAFF_REFERRAL_DAYS = 14;

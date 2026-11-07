@@ -5,6 +5,7 @@ import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
+import { useGymReferrals } from '@/features/referrals/hooks';
 import { ShortcutGrid, type Shortcut } from '@/components/shortcut-grid';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
@@ -52,6 +53,7 @@ export default function OwnerDashboardScreen() {
   const present = attendance.data ? countByRole(attendance.data) : undefined;
 
   const latest = memberships.data ? [...latestByMember(memberships.data).values()] : undefined;
+  const referrals = useGymReferrals(gym.gymId);
   const statuses = latest?.map((m) => membershipStatus(m));
   const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;
   const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
@@ -62,6 +64,8 @@ export default function OwnerDashboardScreen() {
     : undefined;
   const noTrainer =
     people.data && links.data ? unmappedMembers(people.data, links.data).length : undefined;
+
+  const referralsToCall = referrals.data?.filter((r) => r.status === 'pending').length;
 
   const shortcuts: Shortcut[] = [
     {
@@ -85,6 +89,12 @@ export default function OwnerDashboardScreen() {
       icon: 'gift-outline',
       badge: birthdaysToday,
       onPress: () => router.push('/birthdays'),
+    },
+    {
+      label: 'Referrals',
+      icon: 'person-add-outline',
+      badge: referralsToCall,
+      onPress: () => router.push('/referrals'),
     },
   ];
   if (gym.role === 'owner') {
