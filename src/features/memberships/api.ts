@@ -324,13 +324,15 @@ export async function archivePlan(planId: string) {
 }
 
 /** Records a membership paid at the front desk. */
-export async function recordMembership(gymId: string, input: MembershipInput) {
+/** Records a membership; returns its id, so the front desk can share the receipt. */
+export async function recordMembership(gymId: string, input: MembershipInput): Promise<string> {
   if (!supabase) {
     const plan = forGym(gymId, mockPlans).find((p) => p.id === input.planId);
     const member = mockPeople.find((p) => p.id === input.memberId);
     if (!plan || !member) throw new Error('Pick a member and a plan');
+    const id = mockId('m');
     mockMemberships.push({
-      id: mockId('m'),
+      id,
       memberId: member.id,
       memberName: member.fullName,
       plan,
@@ -338,19 +340,26 @@ export async function recordMembership(gymId: string, input: MembershipInput) {
       endsOn: input.endsOn,
       amountPaidCents: input.amountPaidCents,
       paymentMethod: input.paymentMethod,
+      recordedAt: new Date().toISOString(),
     });
-    return delay(undefined);
+    return delay(id);
   }
-  const { error } = await supabase.from('memberships').insert({
-    member_id: input.memberId,
-    plan_id: input.planId,
-    starts_on: input.startsOn,
-    ends_on: input.endsOn,
-    amount_paid_cents: input.amountPaidCents,
-    payment_method: input.paymentMethod,
-    note: input.note.trim(),
-  });
-  if (error) throw error;
+  const row = unwrap(
+    await supabase
+      .from('memberships')
+      .insert({
+        member_id: input.memberId,
+        plan_id: input.planId,
+        starts_on: input.startsOn,
+        ends_on: input.endsOn,
+        amount_paid_cents: input.amountPaidCents,
+        payment_method: input.paymentMethod,
+        note: input.note.trim(),
+      })
+      .select('id')
+      .single(),
+  ) as { id: string };
+  return row.id;
 }
 
 /**

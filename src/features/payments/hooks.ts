@@ -8,6 +8,7 @@ import { membershipKeys } from '@/features/memberships/hooks';
 import {
   fetchOnlinePayment,
   fetchOnlinePaymentsEnabled,
+  fetchReceipt,
   listOnlinePayments,
   quoteOnlinePayment,
   startOnlinePayment,
@@ -25,6 +26,7 @@ export const paymentKeys = {
   list: (gymId: string, memberId?: string) =>
     [...paymentKeys.all, gymId, 'list', memberId ?? 'all'] as const,
   one: (paymentId: string) => [...paymentKeys.all, 'one', paymentId] as const,
+  receipt: (membershipId: string) => ['receipts', membershipId] as const,
 };
 
 export function useOnlinePaymentsEnabled(gymId: string) {
@@ -63,6 +65,14 @@ export function useOnlinePayments(gymId: string, memberId?: string) {
   return useQuery({
     queryKey: paymentKeys.list(gymId, memberId),
     queryFn: () => listOnlinePayments(gymId, memberId),
+  });
+}
+
+/** A membership payment's receipt. */
+export function useReceipt(membershipId: string) {
+  return useQuery({
+    queryKey: paymentKeys.receipt(membershipId),
+    queryFn: () => fetchReceipt(membershipId),
   });
 }
 
