@@ -36,7 +36,8 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405);
 
   const body = await req.json().catch(() => ({}));
-  const code = typeof body.code === 'string' ? body.code : '';
+  // Codes are 8 letters and digits; anything far longer isn't one, so skip the lookup.
+  const code = typeof body.code === 'string' && body.code.length <= 20 ? body.code : '';
   const password = typeof body.password === 'string' ? body.password : '';
   if (!code) return json({ error: 'Enter your reset code.' }, 400);
   if (badPassword(password)) {
@@ -50,13 +51,19 @@ Deno.serve(async (req) => {
   const { data, error } = await admin.rpc('reset_code_account', { p_code: code });
   if (error) return json({ error: error.message }, 500);
   const account = (data as { user_id: string; email: string }[])[0];
-  if (!account) return json({ error: 'Code not found or expired. Ask your gym for a new one.' }, 404);
+  if (!account)
+    return json({ error: 'Code not found or expired. Ask your gym for a new one.' }, 404);
 
   const { error: updateError } = await admin.auth.admin.updateUserById(account.user_id, {
     password,
   });
   if (updateError) return json({ error: updateError.message }, 400);
   await admin.from('password_reset_codes').delete().eq('user_id', account.user_id);
+  // Sign them out everywhere else (a lost or shared phone); the app signs in fresh next.
+  const { error: sessionsError } = await admin.rpc('end_user_sessions', {
+    p_user_id: account.user_id,
+  });
+  if (sessionsError) console.error('end_user_sessions failed', sessionsError.message);
 
   return json({ email: account.email });
 });
