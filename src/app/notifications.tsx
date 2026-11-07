@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon, type IconName } from '@/components/icon';
 import { QueryState } from '@/components/query-state';
@@ -9,6 +10,7 @@ import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { callUrl, whatsappUrl } from '@/features/enquiries/rules';
 import { useMarkAllRead, useNotifications } from '@/features/notifications/hooks';
 import { inboxSections, timeAgo, unreadCount } from '@/features/notifications/rules';
 import type { AppNotification, NotificationKind } from '@/features/notifications/types';
@@ -93,11 +95,42 @@ function NotificationCard({ n }: { n: AppNotification }) {
           />
         ) : null}
       </View>
+      {n.phone ? <CallButtons phone={n.phone} /> : null}
     </Card>
   );
 }
 
+/** Call or WhatsApp the number a notification carries, e.g. a referred friend. */
+function CallButtons({ phone }: { phone: string }) {
+  return (
+    <View style={styles.actions}>
+      <View style={styles.flex}>
+        <Button
+          label="Call"
+          icon="call"
+          size="compact"
+          onPress={() => Linking.openURL(callUrl(phone)).catch(() => {})}
+        />
+      </View>
+      <View style={styles.flex}>
+        <Button
+          label="WhatsApp"
+          icon="logo-whatsapp"
+          variant="secondary"
+          size="compact"
+          onPress={() => Linking.openURL(whatsappUrl(phone)).catch(() => {})}
+        />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',

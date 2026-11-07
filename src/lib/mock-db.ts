@@ -267,6 +267,18 @@ export const mockNotifications: AppNotification[] = [
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     readAt: null,
   })),
+  ...['u-supervisor', 'u-owner', 'u-trainer'].map((recipientId) => ({
+    id: `n-ref-${recipientId}`,
+    recipientId,
+    senderName: 'Nandini Ravi',
+    kind: 'message' as const,
+    title: 'New referral',
+    body: 'Nandini Ravi referred Divya S. Call 9840055555.',
+    classId: null,
+    phone: '9840055555',
+    createdAt: new Date(Date.now() - 2 * DAY).toISOString(),
+    readAt: null,
+  })),
 ];
 
 const prescribe = (
@@ -464,10 +476,16 @@ export const mockMemberRules: { value: MemberRules } = {
 };
 
 /** Nandini's referrals: one friend joined, one the front desk is still calling. */
-export const mockReferrals: (Referral & { referrerId: string })[] = [
+export const mockReferrals: (Referral & {
+  referrerId: string;
+  referrerName: string;
+  phone: string;
+})[] = [
   {
     id: 'ref-1',
     referrerId: 'u-member',
+    referrerName: 'Nandini Ravi',
+    phone: '9840055555',
     fullName: 'Divya S',
     status: 'pending',
     rewardDays: null,
@@ -477,6 +495,8 @@ export const mockReferrals: (Referral & { referrerId: string })[] = [
   {
     id: 'ref-2',
     referrerId: 'u-member',
+    referrerName: 'Nandini Ravi',
+    phone: '9840066666',
     fullName: 'Ganesh M',
     status: 'joined',
     rewardDays: 15,

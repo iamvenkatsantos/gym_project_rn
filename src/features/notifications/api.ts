@@ -10,6 +10,7 @@ type NotificationRow = {
   title: string;
   body: string;
   class_id: string | null;
+  phone: string | null;
   created_at: string;
   read_at: string | null;
   sender: { full_name: string } | null;
@@ -30,7 +31,7 @@ export async function listNotifications(
     await supabase
       .from('notifications')
       .select(
-        'id, recipient_id, kind, title, body, class_id, created_at, read_at, sender:profiles!notifications_sender_id_fkey(full_name)',
+        'id, recipient_id, kind, title, body, class_id, phone, created_at, read_at, sender:profiles!notifications_sender_id_fkey(full_name)',
       )
       .eq('gym_id', gymId)
       .eq('recipient_id', recipientId)
@@ -46,6 +47,7 @@ export async function listNotifications(
     title: r.title,
     body: r.body,
     classId: r.class_id,
+    phone: r.phone,
     createdAt: r.created_at,
     readAt: r.read_at,
   }));
