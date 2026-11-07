@@ -295,7 +295,15 @@ never stays with CoreFit. By default the owner pays all fees and the members see
 CoreFit takes no cut (`platform_settings.online_cut_bps` 0, Venkat 2026-10-30) and the app
 shows no CoreFit fee; the setting and math stay in case it returns. Fee math lives only in
 `supabase/functions/_shared/fees.ts` (tests in `src/features/payments/__tests__/fees.test.ts`). No
-refunds in the app. **Test keys block payments** (`testModeBlock` in `_shared/razorpay.ts`): while
+refunds in the app. **Receipts** (Venkat, 2026-11-07): every membership with money paid (not
+complimentary, `is_paid_membership()`) gets a receipt number counted per branch from 1
+(`memberships.receipt_no`, set once by the `memberships_number_receipt` trigger from
+`gyms.last_receipt_no`, which apps can't read). `membership_receipt()` returns it with the branch's
+name, address and phone (Gym details) for the member or the branch's owners and supervisors. The
+`receipt` screen previews it on its A5 PDF page (print colours) and shares it as a PDF or an image
+(`share-receipt.ts`: view-shot JPEG wrapped by `imagePdf()` in `src/lib/image-pdf.ts`, plain JS so
+no print module or new build; text if that fails); payment history rows, the online payment screen and `record-membership` (after
+a paid entry) open it. It says "not a tax invoice": no GST or GSTIN. **Test keys block payments** (`testModeBlock` in `_shared/razorpay.ts`): while
 `RAZORPAY_KEY_ID` is `rzp_test_…`, `create-payment` and `create-subscription-payment` refuse everyone
 but platform admins ("opens soon"), because a test payment still records a membership or a paid
 year. Live keys lift it with no build or deploy; `RAZORPAY_TEST_PAYMENTS=open` lifts it for staging.
