@@ -62,10 +62,10 @@ describe('receipt formatting', () => {
   });
 
   it('makes a safe file name', () => {
-    expect(receiptFileName({ receiptNo: 42, memberName: 'Ravi/Kumar' })).toBe(
-      'Receipt 0042 RaviKumar.png',
+    expect(receiptFileName({ receiptNo: 42, memberName: 'Ravi/Kumar' }, 'pdf')).toBe(
+      'Receipt 0042 RaviKumar.pdf',
     );
-    expect(receiptFileName({ receiptNo: 3, memberName: '' })).toBe('Receipt 0003.png');
+    expect(receiptFileName({ receiptNo: 3, memberName: '' }, 'png')).toBe('Receipt 0003.png');
   });
 
   it('shares as text with the gym, number and amount, and says it is not a tax invoice', () => {

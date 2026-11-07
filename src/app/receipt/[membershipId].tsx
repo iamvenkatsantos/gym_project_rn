@@ -8,12 +8,12 @@ import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { useActiveGym } from '@/features/auth/use-profile';
-import { ReceiptCard } from '@/features/payments/components/receipt-card';
+import { ReceiptCard, ReceiptPage } from '@/features/payments/components/receipt-card';
 import { useReceipt } from '@/features/payments/hooks';
 import { receiptAddress, type Receipt } from '@/features/payments/receipt';
 import { shareReceipt } from '@/features/payments/share-receipt';
 
-/** A membership payment's receipt, shared as an image on WhatsApp or anywhere else. */
+/** A membership payment's receipt on its PDF page, shared as a PDF or an image. */
 export default function ReceiptScreen() {
   const { membershipId } = useLocalSearchParams<{ membershipId: string }>();
   const receipt = useReceipt(membershipId);
@@ -35,12 +35,23 @@ function ReceiptView({ receipt }: { receipt: Receipt }) {
 
   return (
     <>
-      <ReceiptCard ref={card} receipt={receipt} />
+      <ReceiptPage>
+        <ReceiptCard ref={card} receipt={receipt} />
+      </ReceiptPage>
       <Button
-        label="Share receipt"
-        icon="share-outline"
-        loading={share.isPending}
-        onPress={() => share.mutate({ card, receipt })}
+        label="Share PDF"
+        icon="document-outline"
+        loading={share.isPending && share.variables?.format === 'pdf'}
+        disabled={share.isPending}
+        onPress={() => share.mutate({ card, receipt, format: 'pdf' })}
+      />
+      <Button
+        label="Share image"
+        icon="image-outline"
+        variant="secondary"
+        loading={share.isPending && share.variables?.format === 'image'}
+        disabled={share.isPending}
+        onPress={() => share.mutate({ card, receipt, format: 'image' })}
       />
       {share.error ? (
         <ThemedText type="small" themeColor="danger">

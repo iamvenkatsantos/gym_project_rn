@@ -52,10 +52,13 @@ export function receiptMethod(method: PaymentMethod) {
   return method === 'online' ? 'Online (Razorpay)' : methodLabel[method];
 }
 
-/** A file name WhatsApp shows, e.g. "Receipt 0042 Ravi Kumar.png". */
-export function receiptFileName(r: Pick<Receipt, 'receiptNo' | 'memberName'>) {
+/** A file name WhatsApp shows, e.g. "Receipt 0042 Ravi Kumar.pdf". */
+export function receiptFileName(
+  r: Pick<Receipt, 'receiptNo' | 'memberName'>,
+  extension: 'pdf' | 'png',
+) {
   const name = r.memberName.replace(/[^\p{L}\p{N} _-]+/gu, '').trim();
-  return `Receipt ${receiptNumber(r.receiptNo)}${name ? ` ${name}` : ''}.png`;
+  return `Receipt ${receiptNumber(r.receiptNo)}${name ? ` ${name}` : ''}.${extension}`;
 }
 
 /** The receipt as plain text, for sharing where an image can't be made. */
