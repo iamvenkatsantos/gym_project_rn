@@ -43,7 +43,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `supabase/functions/`        | `invite-member`, `accept-invite`, `reset-password`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
 | `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                                              |
 | `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                                           |
-| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand                                                                            |
+| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                    |
 | `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
 | `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
 
@@ -114,7 +114,8 @@ that address (`src/lib/mobile-login.ts`; show it with `loginLabel()`, never raw)
 reset** (Venkat, 2026-11-04, both ways): owners and supervisors tap **Send password reset code** on
 the person screen (`create_password_reset_code()`, mobile logins only so nobody takes over an email
 account, 1 day, works once) and send it on WhatsApp; the person taps Forgot password? with their
-mobile → **I have a reset code** → `reset-password` screen and edge fn. Or they add an email on
+mobile → **I have a reset code** → `reset-password` screen and edge fn, which also signs them out
+on every other device (`end_user_sessions()`, service role only). Or they add an email on
 Edit profile (`AddEmail`, `updateUser` + `verifyOtp` type `email_change`; needs Supabase "Secure
 email change" off) and sign in with it from then on.
 **Invite by email**: the `invite-member` edge fn calls
@@ -419,6 +420,22 @@ and test steps: `infra/updates-server/README.md`.
   connections to `*.supabase.co`. Keep `authStorageKey` (the old `sb-<ref>-auth-token`) so a URL
   change never signs people out. Server-side URLs (Vault `project_url`, Razorpay webhook) stay on
   supabase.co.
+- **Sessions:** supabase-js keeps the session (access JWT, 1 hour, plus a refresh token) under
+  `authStorageKey` and refreshes it only while the app is in the foreground. On phones it is
+  AES-GCM sealed in AsyncStorage with a per-device key in SecureStore (`secure-session-storage.ts`,
+  this device only, so a copied or restored file reads as signed out); plain sessions from older
+  builds are sealed on first read. `android.allowBackup` is false.
+  `signOut()` is global (revokes the refresh tokens on every device). Removing or suspending
+  someone takes effect on their next request, because RLS checks `gym_members.status`.
+- **Views run as the caller:** create every view `with (security_invoker = on)` so RLS applies
+  (the advisor flags definer views as critical). Counts the caller's RLS hides go through a small
+  `security definer` function, like `class_booking_count()`. Revoke execute from `public, anon`
+  on every `security definer` function and grant only what the app calls; trigger functions get no
+  grants at all.
+- **The API proxy forwards only** `/auth/v1/`, `/rest/v1/`, `/storage/v1/`, `/functions/v1/` and
+  `/realtime/v1/`; sign-in and code entry are rate limited by a Cloudflare WAF rule
+  (`infra/api-proxy/README.md`). Edge functions without a JWT check (`join`, `send-push`,
+  `razorpay-webhook`, `accept-invite`, `reset-password`) must validate and cap every input.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
