@@ -1,6 +1,6 @@
 // Runs only for the paths in assets.run_worker_first ("/", /app, /join and the Apple and
-// Google files); every other path is served straight from dist. On vinven.net the home page (about.html) is the front
-// page; on dashboard.vinven.net "/" stays the owner dashboard.
+// Google files); every other path is served straight from dist. On vinven.net the home
+// page (about.html) is the front page; on dashboard.vinven.net "/" stays the owner dashboard.
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
 // Set to the App Store link (https://apps.apple.com/app/id…) once the iOS app is live.
