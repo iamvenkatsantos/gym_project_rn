@@ -153,7 +153,7 @@ describe('joinMessage', () => {
   it('names the gym and tells members to sign up with the email they gave', () => {
     const text = joinMessage('Iron Den Velachery');
     expect(text).toContain('Iron Den Velachery is now on the CoreFit app');
-    expect(text).toContain('id=com.corefit.gym');
+    expect(text).toContain('https://vinven.net/app');
     expect(text).toContain('use the email you gave the gym');
   });
 });

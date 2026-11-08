@@ -46,7 +46,10 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 
 **Accounts**
 
-- [ ] Apple Developer Program membership and an App Store Connect app record.
+- [ ] Apple Developer Program membership (Individual, Venkat's name) and an App Store Connect app
+      record. Then `npx eas-cli@latest credentials` for the certificate, profile and APNs push key,
+      add `submit.production.ios.ascAppId` to eas.json, and set `APP_STORE_URL` in
+      `web/worker/index.js` once the listing is live.
 - [ ] Google Play Console account, app created, and a service account key for `eas submit`.
 - [ ] New Play personal accounts must run a closed test with testers for 14 days before production
       access; plan for it.
@@ -56,7 +59,14 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 - [x] In-app account deletion (Account screen → Delete account), required by App Store guideline
       5.1.1(v) and Google Play. Deploy the function: `npx supabase functions deploy delete-account`.
 - [x] Privacy policy and terms links in the app (Account screen).
-- [x] `ITSAppUsesNonExemptEncryption: false`, so builds skip the export compliance question.
+- [x] `ITSAppUsesNonExemptEncryption: false`, so builds skip the export compliance question. The
+      session is sealed with AES-GCM through `expo-crypto`, which on iOS uses Apple's CryptoKit
+      (exempt), so this stays false.
+- [x] iOS privacy manifest (`ios.privacyManifests` in app.json): no tracking, plus the
+      required-reason APIs React Native and AsyncStorage use. Libraries ship their own too; check
+      Xcode's privacy report on the first archive.
+- [x] Owners can't pay the CoreFit plan in the iOS app (guideline 3.1.1); members pay their gym
+      through Razorpay, allowed under 3.1.3(e).
 - [x] No demo or placeholder content in production builds.
 - [x] Exercise demonstration photos are from Free Exercise DB
       (github.com/yuhonas/free-exercise-db), public domain under the Unlicense, bundled in

@@ -1,7 +1,6 @@
 import { canCoach, type Role } from '@/features/auth/types';
 import { isMobileLogin, loginLabel } from '@/lib/mobile-login';
 import type { GymPerson, InviteResult, InviteRole, PeopleFilter } from '@/features/members/types';
-import { env } from '@/lib/env';
 import { normalizeEmail, validateEmail } from '@/lib/validation';
 
 export { normalizeEmail };
@@ -74,8 +73,13 @@ export function isLastActiveOwner(people: GymPerson[], userId: string) {
   return owners.length === 1 && owners[0].id === userId;
 }
 
-/** CoreFit on Google Play. It opens once the app is listed there. */
-export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefit.gym';
+/**
+ * The install link in messages. vinven.net/app (web/worker) sends Android to Google Play and
+ * iPhones to the App Store (the home page until the iOS app is live).
+ */
+export const INSTALL_URL = 'https://vinven.net/app';
+
+const JOIN_PAGE_URL = 'https://vinven.net/join';
 
 const inviteAs: Record<InviteRole, string> = {
   member: 'a member',
@@ -102,14 +106,14 @@ export function inviteMessage(
     return [
       `Hi! You've been added to ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `Open CoreFit and sign in with ${signInWith}. Don't have the app? ${PLAY_STORE_URL}`,
+      `Open CoreFit and sign in with ${signInWith}. Don't have the app? ${INSTALL_URL}`,
     ].join('\n');
   }
   if (code) {
     return [
       `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
       '',
-      `1. Install CoreFit: ${PLAY_STORE_URL}`,
+      `1. Install CoreFit: ${INSTALL_URL}`,
       `2. Tap this link: ${joinLink(code)}`,
       `   Or tap "I have an invite code" and enter ${formatInviteCode(code)}`,
       '3. Add your name and a password.',
@@ -120,7 +124,7 @@ export function inviteMessage(
   return [
     `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
     '',
-    `1. Install CoreFit: ${PLAY_STORE_URL}`,
+    `1. Install CoreFit: ${INSTALL_URL}`,
     `2. Tap Create account and use this email: ${email}`,
     '3. Enter the 6-digit code from the email.',
     '',
@@ -155,11 +159,11 @@ export function isInviteCode(text: string) {
 }
 
 /**
- * The tappable link in a WhatsApp invite. WhatsApp only links https, so it goes
- * through the join function, which opens corefit://join?code=… or the Play Store.
+ * The tappable link in a WhatsApp invite (WhatsApp only links https). On iPhone it opens the app
+ * as a universal link; otherwise vinven.net/join (web/worker) opens corefit://join?code=… or the store.
  */
 export function joinLink(code: string) {
-  return `${env.supabaseUrl}/functions/v1/join?code=${normalizeInviteCode(code)}`;
+  return `${JOIN_PAGE_URL}?code=${normalizeInviteCode(code)}`;
 }
 
 /** Imported members and people mid-invite have no confirmed account yet. */
