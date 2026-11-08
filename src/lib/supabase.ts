@@ -4,11 +4,13 @@ import { AppState, Platform } from 'react-native';
 
 import { env, isDemoMode } from '@/lib/env';
 import { friendlyFetch } from '@/lib/network';
+import { secureSessionStorage } from '@/lib/secure-session-storage';
 
 export const supabase: SupabaseClient | null = !isDemoMode
   ? createClient(env.supabaseUrl, env.supabaseAnonKey, {
       auth: {
-        storage: AsyncStorage,
+        // Phones keep the session encrypted (key in the Keystore/Keychain); web has no SecureStore.
+        storage: Platform.OS === 'web' ? AsyncStorage : secureSessionStorage,
         storageKey: env.authStorageKey,
         autoRefreshToken: true,
         persistSession: true,

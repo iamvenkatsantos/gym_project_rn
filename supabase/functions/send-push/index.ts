@@ -21,6 +21,14 @@ type Notification = {
 
 type Ticket = { status: 'ok' | 'error'; message?: string; details?: { error?: string } };
 
+// Compares without leaking how much of the secret matched through timing.
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -30,7 +38,7 @@ function json(body: unknown, status = 200) {
 
 Deno.serve(async (req) => {
   const secret = Deno.env.get('PUSH_WEBHOOK_SECRET');
-  if (!secret || req.headers.get('x-push-secret') !== secret) {
+  if (!secret || !safeEqual(req.headers.get('x-push-secret') ?? '', secret)) {
     return json({ error: 'Unauthorized' }, 401);
   }
 

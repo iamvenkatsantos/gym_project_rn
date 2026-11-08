@@ -8,6 +8,10 @@ describe('push in Expo Go on Android', () => {
       Platform.OS = 'android';
       jest.doMock('expo', () => ({ isRunningInExpoGo: () => true }));
       jest.doMock('expo-device', () => ({ isDevice: true }));
+      // The session store loads native crypto through the 'expo' module mocked above.
+      jest.doMock('@/lib/secure-session-storage', () => ({
+        secureSessionStorage: require('@react-native-async-storage/async-storage').default,
+      }));
       jest.doMock('expo-notifications', () => {
         throw new Error("Cannot find native module 'ExpoTopicSubscriptionModule'");
       });

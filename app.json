@@ -2,7 +2,7 @@
   "expo": {
     "name": "CoreFit",
     "slug": "corefit",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "corefit",
@@ -22,7 +22,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.corefit.gym",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "allowBackup": false
     },
     "web": {
       "output": "single",
@@ -48,6 +49,12 @@
       ],
       "expo-sharing",
       "expo-updates",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       [
         "expo-camera",
         {

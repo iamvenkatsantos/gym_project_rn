@@ -39,7 +39,8 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405);
 
   const body = await req.json().catch(() => ({}));
-  const code = typeof body.code === 'string' ? body.code : '';
+  // Codes are 8 letters and digits; anything far longer isn't one, so skip the lookup.
+  const code = typeof body.code === 'string' && body.code.length <= 20 ? body.code : '';
   const fullName =
     typeof body.fullName === 'string' ? body.fullName.trim().replace(/\s+/g, ' ') : '';
   const password = typeof body.password === 'string' ? body.password : '';
