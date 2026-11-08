@@ -8,11 +8,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
 import { usePaySubscription, useSubscriptionPayment } from '@/features/subscription/hooks';
+import { canPayPlanInApp } from '@/features/subscription/platform';
 import { canPay, isPending, nextPeriod, subscriptionStatus } from '@/features/subscription/rules';
 import type { Subscription, SubscriptionPayment } from '@/features/subscription/types';
 import { formatAmount, formatDate } from '@/lib/format';
 
-/** The branch's plan with a Pay button while it's due, and the payment's status once made. */
+/**
+ * The branch's plan with a Pay button while it's due, and the payment's status once made.
+ * iOS shows the plan only (see `canPayPlanInApp`).
+ */
 export function PlanAndPay({
   gymId,
   gymName,
@@ -33,11 +37,13 @@ export function PlanAndPay({
       <SubscriptionCard sub={sub} title={`CoreFit · ${gymName}`} />
       {status === 'unpaid' || status === 'expired' ? (
         <ThemedText type="small" themeColor="danger">
-          Invites and member imports are off until you pay.
+          {canPayPlanInApp
+            ? 'Invites and member imports are off until you pay.'
+            : 'Invites and member imports are off until the plan is renewed.'}
         </ThemedText>
       ) : null}
       {started.data ? <PaymentStatus payment={started.data} /> : null}
-      {canPay(sub) && started.data?.status !== 'paid' ? (
+      {canPayPlanInApp && canPay(sub) && started.data?.status !== 'paid' ? (
         <View style={styles.pay}>
           <Button
             label={`Pay ${formatAmount(sub.amountCents, sub.currency)}`}

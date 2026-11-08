@@ -137,7 +137,7 @@ describe('invite codes', () => {
   });
 
   it('links through the join function', () => {
-    expect(joinLink('k7p2-qx4m')).toMatch(/\/functions\/v1\/join\?code=K7P2QX4M$/);
+    expect(joinLink('k7p2-qx4m')).toBe('https://vinven.net/join?code=K7P2QX4M');
   });
 
   it('puts the link and code in the WhatsApp message', () => {

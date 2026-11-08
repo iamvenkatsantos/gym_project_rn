@@ -10,7 +10,7 @@ code layout, imported below) and `README.md` (setup, push and Razorpay details).
 CoreFit (product of VinVen Technologies) is one Expo app for gym members, trainers, supervisors
 and owners, plus a platform admin who runs CoreFit itself. Bundle id `com.corefit.gym`, URL
 scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from CoreFit Gym on
-2026-11-03); some older server messages in migrations still say "CoreFit Gym". Android ships first; iOS push (APNs) is not set up yet.
+2026-11-03); some older server messages in migrations still say "CoreFit Gym". Android ships first; iOS is planned (no Apple account or APNs key yet; plan doc in the iOS release thread).
 
 - **App:** Expo SDK 58, Expo Router (`src/app/`), TypeScript strict, TanStack Query for server
   state, Zustand for the auth session and offline drafts.
@@ -21,9 +21,15 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   push to `main`). Never import React Native code into it. No QR on the web.
 - **Public pages:** plain HTML in `web/public/` served by the same worker, no sign-in:
   the home page `about.html` (features with app screenshots in `img/`, pricing; it is the front
-  page of `https://vinven.net` via `web/worker/index.js`, which runs only for `/`; `www` redirects
-  to it; on `dashboard.vinven.net` `/` stays the dashboard, marked `noindex`), `/privacy`, `/terms`,
-  `/support` and `/delete-account` (Play's deletion URL). Canonical URLs and `sitemap.xml` use
+  page of `https://vinven.net` via `web/worker/index.js`, which runs only for `/` and the paths below;
+  `www` redirects to it; on `dashboard.vinven.net` `/` stays the dashboard, marked `noindex`),
+  `/privacy`, `/terms`, `/support` and `/delete-account` (Play's deletion URL). The worker also
+  answers `/app`, the install link in every invite and join message (`INSTALL_URL`: Play on
+  Android, the App Store on iPhone once `APP_STORE_URL` is set in the worker, else the home page),
+  `/join?code=…`, the join link in WhatsApp invites (`joinLink()`; Android → intent link, iPhone
+  → universal link via `ios.associatedDomains` and the worker's `apple-app-site-association`,
+  live once `APPLE_TEAM_ID` is set; otherwise a page that tries `corefit://join` and offers the
+  store), and `/.well-known/apple-app-site-association`. Canonical URLs and `sitemap.xml` use
   `vinven.net`. The app links them from `src/constants/legal.ts`;
   support email is `support@vinven.net` (Cloudflare Email Routing). Update them when pricing,
   data collected, service providers or the delete flow change.
@@ -43,7 +49,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `supabase/functions/`        | `invite-member`, `accept-invite`, `reset-password`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
 | `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                                              |
 | `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                                           |
-| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                    |
+| `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                   |
 | `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
 | `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
 
@@ -92,7 +98,10 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 WhatsApp or by email. **Invite on WhatsApp** saves the invite with a one-time 8-character code
 (`whatsapp_invite()` RPC, 7 days, no email; new gym owners get no code) and opens WhatsApp with
 `inviteMessage()`, which carries the code and a join link. The link goes through the `join` edge fn
-(WhatsApp only makes https tappable), which redirects to `corefit://join?code=…` or the Play Store.
+(WhatsApp only makes https tappable) at `vinven.net/join?code=…` (`web/worker`): Android gets an
+intent link (the app, else the Play Store), iPhones open the app as a universal link, and without
+the app a page offers the store and the code. Older messages use the `join` edge fn, which sends
+Android the same intent link and everyone else to `vinven.net/join`.
 On `join` (or Sign in → I have an invite code) the person enters name and password; the
 `accept-invite` edge fn makes the account already confirmed (or takes over an imported one), which
 claims the invite, so each code works once. Signing up with the invited email still works too.
@@ -355,7 +364,12 @@ offer** opens it filled in.
 (Dashboard → CoreFit plan, from 30 days before the end): `create-subscription-payment` makes a
 Razorpay Payment Link into CoreFit's own account (no Route), and `razorpay-webhook` calls
 `complete_subscription_payment()`, which adds a year from the day after `paid_until` (or today if
-lapsed). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
+lapsed). **Not on iOS** (Venkat, 2026-11-08): the plan is a digital service, so App Store
+guideline 3.1.1 would need In-App Purchase. `canPayPlanInApp` (`src/features/subscription/platform.ts`)
+hides the Pay button, and the banner and `plan-locked` show only the status. Never put a pay
+link, UPI ID or "pay on the website" in the iOS app; iOS owners pay from Android or the admin
+records it. Later, for both platforms: status-only apps, a web pay page and reminders outside the
+app (Play Billing has the same rule). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
 free months (`admin_give_free_months`).
 Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
 `gym_invites` and `gym_members`, so every invite and import path is covered); every role sees

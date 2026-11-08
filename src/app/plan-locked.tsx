@@ -12,10 +12,12 @@ import { BranchSwitcher } from '@/features/branches/components/branch-switcher';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { PlanAndPay } from '@/features/subscription/components/plan-and-pay';
 import { useSubscription } from '@/features/subscription/hooks';
+import { canPayPlanInApp } from '@/features/subscription/platform';
 
 /**
  * The whole app at a branch whose CoreFit plan ran out more than 5 days ago. The owner
- * pays here; everyone else waits for them. Paying unlocks it for everyone.
+ * pays here (not on iOS, see `canPayPlanInApp`); everyone else waits for them. Paying unlocks
+ * it for everyone.
  */
 export default function PlanLockedScreen() {
   const gym = useActiveGym();
@@ -31,9 +33,11 @@ export default function PlanLockedScreen() {
           {gym.gymName} is paused
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-          {isOwner
-            ? 'Your CoreFit plan isn’t paid. Pay to open the app for everyone.'
-            : 'Your gym’s CoreFit plan isn’t paid. Ask the owner to renew.'}
+          {!isOwner
+            ? 'Your gym’s CoreFit plan isn’t paid. Ask the owner to renew.'
+            : canPayPlanInApp
+              ? 'Your CoreFit plan isn’t paid. Pay to open the app for everyone.'
+              : 'Your CoreFit plan has ended. It opens for everyone once renewed.'}
         </ThemedText>
       </Card>
       {isOwner ? <OwnerPay gymId={gym.gymId} gymName={gym.gymName} /> : null}

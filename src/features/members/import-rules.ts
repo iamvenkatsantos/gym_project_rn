@@ -1,4 +1,4 @@
-import { PLAY_STORE_URL } from '@/features/members/rules';
+import { INSTALL_URL } from '@/features/members/rules';
 import { toCsv } from '@/features/reports/csv';
 import { endDateFor, parseRupees, toIsoDate } from '@/features/memberships/rules';
 import type { MembershipPlan, PaymentMethod } from '@/features/memberships/types';
@@ -323,7 +323,7 @@ export function joinMessage(gymName: string) {
   return [
     `Hi! ${gymName} is now on the CoreFit app, and your membership is already in it.`,
     '',
-    `1. Install CoreFit: ${PLAY_STORE_URL}`,
+    `1. Install CoreFit: ${INSTALL_URL}`,
     '2. Tap Create account and use the email you gave the gym.',
     '3. Enter the 6-digit code from the email and choose a password.',
     '',
