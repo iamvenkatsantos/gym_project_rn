@@ -420,8 +420,11 @@ and test steps: `infra/updates-server/README.md`.
   connections to `*.supabase.co`. Keep `authStorageKey` (the old `sb-<ref>-auth-token`) so a URL
   change never signs people out. Server-side URLs (Vault `project_url`, Razorpay webhook) stay on
   supabase.co.
-- **Sessions:** supabase-js keeps the session (access JWT, 1 hour, plus a refresh token) in
-  AsyncStorage under `authStorageKey` and refreshes it only while the app is in the foreground.
+- **Sessions:** supabase-js keeps the session (access JWT, 1 hour, plus a refresh token) under
+  `authStorageKey` and refreshes it only while the app is in the foreground. On phones it is
+  AES-GCM sealed in AsyncStorage with a per-device key in SecureStore (`secure-session-storage.ts`,
+  this device only, so a copied or restored file reads as signed out); plain sessions from older
+  builds are sealed on first read. `android.allowBackup` is false.
   `signOut()` is global (revokes the refresh tokens on every device). Removing or suspending
   someone takes effect on their next request, because RLS checks `gym_members.status`.
 - **Views run as the caller:** create every view `with (security_invoker = on)` so RLS applies
