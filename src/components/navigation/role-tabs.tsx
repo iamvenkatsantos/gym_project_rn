@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs, useNavigation } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type IconName } from '@/components/icon';
 import { Spacing } from '@/constants/theme';
@@ -20,6 +21,7 @@ export type RoleTab = {
  */
 export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: boolean }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   // The tabs live in one screen of the root stack. Naming that screen after the open tab means
   // screens pushed on top say "< People" or "< Home" on iOS, rather than the route ("< owner").
   const stackScreen = useNavigation();
@@ -35,8 +37,14 @@ export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: bool
       screenOptions={{
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: { backgroundColor: theme.backgroundElement, borderTopColor: theme.border },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: 600 },
+        // The default 49dp bar leaves the label 10dp, which clips 11dp text (descenders and the
+        // bottom of the line), so give it room above the system inset.
+        tabBarStyle: {
+          backgroundColor: theme.backgroundElement,
+          borderTopColor: theme.border,
+          height: TAB_BAR_HEIGHT + insets.bottom,
+        },
+        tabBarLabelStyle: { fontSize: 11, lineHeight: 14, fontWeight: 600 },
         // Five labels across a 360dp phone only fit at the set size, not at a large phone font.
         tabBarAllowFontScaling: false,
         headerStyle: { backgroundColor: theme.background },
@@ -66,6 +74,8 @@ export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: bool
     </Tabs>
   );
 }
+
+const TAB_BAR_HEIGHT = 58;
 
 const styles = StyleSheet.create({
   actions: {
