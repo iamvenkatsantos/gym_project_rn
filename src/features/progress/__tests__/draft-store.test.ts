@@ -110,4 +110,18 @@ describe('workout draft', () => {
     store().setSelfCheck({ effort: 8, pain: 'Knee', note: null });
     expect(draftToLog(store().draft!).selfCheck).toEqual({ effort: 8, pain: 'Knee', note: null });
   });
+
+  it('keeps a draft for the person who started it and drops it for anyone else', () => {
+    store().start('gym-1', workout, 'member-a');
+    store().keepFor('member-a');
+    expect(store().draft?.userId).toBe('member-a');
+    store().keepFor('member-b');
+    expect(store().draft).toBeNull();
+  });
+
+  it('gives an older draft without an owner to whoever is signed in', () => {
+    store().start('gym-1', workout);
+    store().keepFor('member-a');
+    expect(store().draft?.userId).toBe('member-a');
+  });
 });

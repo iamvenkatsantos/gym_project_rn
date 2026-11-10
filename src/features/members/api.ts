@@ -525,16 +525,19 @@ export async function findInviteByCode(code: string): Promise<InviteByCode | nul
 }
 
 /**
- * Makes the invited person's account from their code, name and password, already confirmed,
- * and returns the email to sign in with. Each code works once.
+ * Makes the invited person's account from their code, name and password, and returns the
+ * email to sign in with. Mobile sign-ins come back ready (`emailCode` false); a real email
+ * comes back with `emailCode` true, and the sign-up code sent to that inbox confirms it
+ * (see `confirmInviteEmail`). Each code works once.
  */
 export async function acceptInvite(code: string, fullName: string, password: string) {
   if (!supabase) throw new Error('Demo mode can’t make accounts. Pick a demo role instead.');
-  const { data, error } = await supabase.functions.invoke<{ email: string }>('accept-invite', {
-    body: { code: normalizeInviteCode(code), fullName, password },
-  });
+  const { data, error } = await supabase.functions.invoke<{ email: string; emailCode?: boolean }>(
+    'accept-invite',
+    { body: { code: normalizeInviteCode(code), fullName, password } },
+  );
   if (error || !data) throw new Error(await functionErrorMessage(error));
-  return data.email;
+  return { email: data.email, emailCode: data.emailCode === true };
 }
 
 export async function withdrawInvite(inviteId: string) {

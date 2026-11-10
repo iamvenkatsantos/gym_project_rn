@@ -177,6 +177,20 @@ export async function setPassword(password: string, fullName?: string): Promise<
   return fetchProfile(data.user.id);
 }
 
+/**
+ * Finishes joining with a WhatsApp invite code for a real email: the sign-up code from
+ * that inbox proves the email is theirs, then the password and name they typed are saved.
+ */
+export async function confirmInviteEmail(
+  email: string,
+  code: string,
+  password: string,
+  fullName: string,
+): Promise<Profile> {
+  await verifyEmailCode(email, code, ['signup']);
+  return setPassword(password, fullName);
+}
+
 /** Emails a link that opens the app to choose a new password. */
 export async function sendPasswordReset(email: string) {
   if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
