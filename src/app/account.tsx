@@ -24,6 +24,7 @@ import { useSignOut } from '@/features/auth/use-sign-out';
 import { branchLabel } from '@/features/branches/rules';
 import { useCanSetUpGym, useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
+import { useWorkoutDraft } from '@/features/progress/draft-store';
 import { versionLabel } from '@/features/updates/rules';
 import { queryClient } from '@/lib/query-client';
 
@@ -44,6 +45,7 @@ export default function AccountScreen() {
     mutationFn: deleteAccount,
     onSuccess: () => {
       queryClient.clear();
+      useWorkoutDraft.getState().discard();
       setProfile(null);
     },
   });

@@ -64,7 +64,7 @@ export function StartWorkout({ gymId }: { gymId: string }) {
       : null;
 
   const begin = (workout: Workout) => {
-    start(gymId, workout);
+    start(gymId, workout, profile.id);
     if (!isMember) {
       router.push('/workout-session');
       return;
