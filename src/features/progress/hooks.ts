@@ -1,19 +1,35 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Role } from '@/features/auth/types';
-import { listGymLogs, listLogs, replyToWorkout, saveLog } from '@/features/progress/api';
+import {
+  listGymLogs,
+  listHistory,
+  listLogs,
+  replyToWorkout,
+  saveLog,
+} from '@/features/progress/api';
 import { draftToLog, useWorkoutDraft } from '@/features/progress/draft-store';
 
 export const progressKeys = {
   all: ['progress'] as const,
   logs: (gymId: string, memberId: string) => [...progressKeys.all, gymId, memberId] as const,
   gym: (gymId: string, viewerId: string) => [...progressKeys.all, gymId, 'gym', viewerId] as const,
+  history: (gymId: string, memberId: string) =>
+    [...progressKeys.all, gymId, memberId, 'history'] as const,
 };
 
 export function useWorkoutLogs(gymId: string, memberId: string) {
   return useQuery({
     queryKey: progressKeys.logs(gymId, memberId),
     queryFn: () => listLogs(gymId, memberId),
+  });
+}
+
+/** Someone's workouts from every gym the viewer may see; other gyms' logs are labelled. */
+export function useWorkoutHistory(gymId: string, memberId: string) {
+  return useQuery({
+    queryKey: progressKeys.history(gymId, memberId),
+    queryFn: () => listHistory(gymId, memberId),
   });
 }
 

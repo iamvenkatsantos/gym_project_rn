@@ -462,17 +462,9 @@ async function mockInvite(
 ): Promise<InviteResult> {
   const normalized = normalizeEmail(email);
   if (mockPeople.some((p) => p.email === normalized)) return delay('already_member');
+  // Someone with an account accepts the invite in the app, so they get no code.
   const account = mockAccounts.find((a) => a.email === normalized);
-  if (account) {
-    mockPeople.push({
-      ...account,
-      role,
-      status: 'active',
-      joinedAt: new Date().toISOString(),
-    });
-    return delay('added');
-  }
-  const code = phone ? mockInviteCode() : null;
+  const code = phone && !account ? mockInviteCode() : null;
   const codeExpiresAt = code ? new Date(Date.now() + 7 * 86_400_000).toISOString() : null;
   const existing = mockInvites.find((i) => i.email === normalized);
   if (existing) Object.assign(existing, { role }, code ? { code, phone, codeExpiresAt } : {});
@@ -487,7 +479,7 @@ async function mockInvite(
       codeExpiresAt,
     });
   }
-  return delay('invited');
+  return delay(account ? 'invited_in_app' : 'invited');
 }
 
 function mockInviteCode() {

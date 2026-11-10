@@ -9,6 +9,7 @@ import {
   pushUnavailableReason,
   registerForPush,
 } from '@/features/notifications/push';
+import { gymInviteKeys } from '@/features/gym-invites/hooks';
 import { gymForPush, parsePushData, pushRoute } from '@/features/notifications/rules';
 import { queryClient } from '@/lib/query-client';
 
@@ -52,6 +53,12 @@ export function usePushNotifications() {
     Notifications.clearLastNotificationResponse();
     const push = parsePushData(lastResponse.notification.request.content.data);
     const { profile, setActiveGym } = useAuthStore.getState();
+    // An invite comes from a gym they aren't at yet: its card sits on top of the inbox.
+    if (push?.kind === 'invite' && profile) {
+      queryClient.invalidateQueries({ queryKey: gymInviteKeys.all });
+      router.push('/notifications');
+      return;
+    }
     const gymId = push && profile ? gymForPush(push, profile.gyms) : null;
     if (!gymId || !push || !profile) return;
     setActiveGym(gymId);

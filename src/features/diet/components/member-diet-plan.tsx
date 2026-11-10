@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
@@ -8,7 +9,7 @@ import { StatTile } from '@/components/stat-tile';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, withAlpha } from '@/constants/theme';
 import { FoodTypePill } from '@/features/diet/components/meal-plan-card';
-import { useMemberMealPlan } from '@/features/diet/hooks';
+import { useMemberMealPlan, useOtherGymMealPlans } from '@/features/diet/hooks';
 import { macroCalories, mealsCalories } from '@/features/diet/plan-draft';
 import type { MealPlan } from '@/features/diet/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -16,11 +17,47 @@ import { useTheme } from '@/hooks/use-theme';
 /** The diet plan a member's coach gave them, meal by meal. */
 export function MemberDietPlan({ gymId, memberId }: { gymId: string; memberId: string }) {
   const plan = useMemberMealPlan(gymId, memberId);
+  const earlier = useOtherGymMealPlans(gymId, memberId).data ?? [];
 
   return (
-    <QueryState query={plan}>
-      {(data) => (data ? <DietPlanDetails plan={data} /> : <NoDietPlan />)}
-    </QueryState>
+    <>
+      <QueryState query={plan}>
+        {(data) => (data ? <DietPlanDetails plan={data} /> : <NoDietPlan />)}
+      </QueryState>
+      {earlier.length > 0 ? (
+        <>
+          <SectionHeader title="From other gyms" />
+          {earlier.map((p) => (
+            <EarlierPlan key={p.id} plan={p} />
+          ))}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/** A plan from another gym: its name, tap to see it in full. */
+function EarlierPlan({ plan }: { plan: MealPlan }) {
+  const [open, setOpen] = useState(false);
+  if (open) {
+    return (
+      <>
+        <DietPlanDetails plan={plan} />
+        <Pressable accessibilityRole="button" onPress={() => setOpen(false)}>
+          <ThemedText type="linkPrimary">Hide</ThemedText>
+        </Pressable>
+      </>
+    );
+  }
+  return (
+    <Pressable accessibilityRole="button" onPress={() => setOpen(true)}>
+      <Card>
+        <ThemedText type="heading">{plan.title}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          From {plan.coachName} · tap to see it
+        </ThemedText>
+      </Card>
+    </Pressable>
   );
 }
 

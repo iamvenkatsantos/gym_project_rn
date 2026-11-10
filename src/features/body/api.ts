@@ -52,8 +52,8 @@ function toMeasurement(row: MeasurementRow): BodyMeasurement {
 }
 
 /**
- * A member's measurements at this gym, newest first. The member, and whoever may see their
- * workouts (can_view_workout_logs), can read them.
+ * A member's measurements from every gym the viewer may see, newest first: all of them for
+ * the member, and for coaches at a gym they share their history with (can_view_workout_logs).
  */
 export async function listMeasurements(
   gymId: string,
@@ -70,7 +70,6 @@ export async function listMeasurements(
     await supabase
       .from('body_measurements')
       .select(MEASUREMENT_COLUMNS)
-      .eq('gym_id', gymId)
       .eq('member_id', memberId)
       .order('measured_on', { ascending: false })
       .limit(366),
@@ -120,7 +119,10 @@ export async function deleteMeasurement(memberId: string, id: string) {
 
 type PhotoRow = { id: string; pose: ProgressPhoto['pose']; taken_on: string; storage_path: string };
 
-/** A member's progress photos, newest first, with signed links to the private files. */
+/**
+ * A member's progress photos from every gym the viewer may see (as with measurements), newest
+ * first, with signed links to the private files.
+ */
 export async function listPhotos(gymId: string, memberId: string): Promise<ProgressPhoto[]> {
   if (!supabase) {
     return delay(
@@ -131,7 +133,6 @@ export async function listPhotos(gymId: string, memberId: string): Promise<Progr
     await supabase
       .from('progress_photos')
       .select('id, pose, taken_on, storage_path')
-      .eq('gym_id', gymId)
       .eq('member_id', memberId)
       .order('taken_on', { ascending: false })
       .order('created_at', { ascending: false })

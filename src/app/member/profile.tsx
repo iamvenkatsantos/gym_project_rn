@@ -12,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 import { AppearancePicker } from '@/features/appearance/components/appearance-picker';
 import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
+import { HistorySharing } from '@/features/gym-invites/components/history-sharing';
 import { useMemberRules } from '@/features/member-rules/hooks';
 import { MembershipCard } from '@/features/memberships/components/membership-card';
 import { PauseCard } from '@/features/memberships/components/pause-card';
@@ -110,6 +111,9 @@ export default function MemberProfileScreen() {
           {pay.error.message}
         </ThemedText>
       ) : null}
+
+      <SectionHeader title="Privacy" />
+      <HistorySharing gymId={gym.gymId} userId={profile.id} />
 
       <SectionHeader title="Appearance" />
       <AppearancePicker />

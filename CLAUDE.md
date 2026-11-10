@@ -94,6 +94,13 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
+- **History follows the person** (#116, Venkat 2026-11-10): workouts, measurements and progress
+  photos stay under the person. They always see their own from every gym (`useWorkoutHistory`,
+  body lists without a gym filter, diet plans "From other gyms"; `history_gyms()` names the gym).
+  Another gym's coaches see it only while the person shares it with that gym
+  (`gym_members.history_shared`, chosen on Join, changed on member Profile → Privacy via
+  `set_history_sharing()`), under the usual rules there (`can_view_workout_logs()` =
+  `can_view_logs_at()` at the gym, or at a gym they share with).
 
 ## Core flows
 
@@ -116,8 +123,8 @@ claims the invite, so each code works once. Signing up with the invited email st
 **Admission details, both places:** on a member invite the inviter picks **They fill in** (default)
 or **Fill in now** (name, mobile, date of birth, weight, height; all required). The app then calls
 `save_admission_details()`, which keeps them on the `gym_invites` row (trainers only on invites they
-sent) or, for someone added straight away with an account, applies them now. On joining,
-`claim_gym_invites` applies them via `apply_admission_details()` (never overwrites a name, mobile or
+sent) or, for someone a platform admin added straight away, applies them now. On joining,
+`claim_gym_invites` (or `accept_gym_invite()`) applies them via `apply_admission_details()` (never overwrites a name, mobile or
 DOB they already have; weight/height become the first measurement) and sets `onboarded_at`, so the
 member skips `onboarding` and lands on Home. Fill in now also takes the front, side and back
 photos (`StartingPhotos`, required in the app): the inviter uploads them to
@@ -142,7 +149,13 @@ email with the service role. Supervisors invite members and trainers; trainers i
 and those members are auto-mapped to them. Every member invite records an admission
 (`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a 6-digit code
 (`enter-code`, `verifyOtp`) because links can't open the app from a computer. `claim_gym_invites`
-attaches pending invites when the user confirms. Pending invites list as **Invited** on People, and
+attaches pending invites when the user confirms. **Existing accounts accept** (#116, Venkat
+2026-11-10): inviting an email or mobile that already has a confirmed account no longer adds them;
+`invite_to_gym()` saves the invite, sends an `invite` inbox/push to them and returns
+`invited_in_app` (no WhatsApp code; the message says to tap Join). `GymInvitesCard` (top of the
+inbox, Account and `no-gym`; `my_gym_invites()`) offers **Join** / **Decline**
+(`accept_gym_invite()`, `decline_gym_invite()`) and a **Share my history** switch. Only platform
+admins still add an existing account straight away (`added`). Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
 **No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
 pickers. Login is email + password, or mobile + password for WhatsApp invites without an email (no phone OTP); Google or other

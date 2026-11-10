@@ -22,6 +22,7 @@ import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/au
 import { ProfileHeader } from '@/features/auth/components/profile-header';
 import { useSignOut } from '@/features/auth/use-sign-out';
 import { branchLabel } from '@/features/branches/rules';
+import { GymInvitesCard } from '@/features/gym-invites/components/gym-invites-card';
 import { useCanSetUpGym, useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
@@ -55,6 +56,7 @@ export default function AccountScreen() {
   return (
     <Screen>
       <ProfileHeader profile={profile} gym={activeGym} />
+      <GymInvitesCard />
 
       {profile.gyms.length > (isAdmin ? 0 : 1) ? (
         <>

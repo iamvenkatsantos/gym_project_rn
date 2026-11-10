@@ -439,6 +439,8 @@ function describeInvite({ result, emailSent, emailError }: InviteOutcome, email:
   switch (result) {
     case 'added':
       return 'They already had a CoreFit account, so they are a member now. Record their payment to start the membership.';
+    case 'invited_in_app':
+      return 'They already use CoreFit, so they accept the invite in the app. Record their payment once they join.';
     case 'already_member':
       return 'They are already at this gym. Find them under People.';
     case 'invited':

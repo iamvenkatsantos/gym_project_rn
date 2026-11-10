@@ -28,9 +28,15 @@ insert into public.gym_invites (gym_id, email, role, invited_by) values
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 set role authenticated;
 
-\echo 'X1 Gym A''s supervisor adds Gym B''s co-owner by mobile, then can''t reset them (expect They''re at another gym too)'
+\echo 'X1 Gym A''s supervisor invites Gym B''s co-owner by mobile: only an invite, so no reset (expect invited_in_app, They aren''t at this gym)'
 select pg_temp.as_user('e7000000-0000-0000-0000-00000000000d');
 select result from public.whatsapp_invite('e7300000-0000-0000-0000-00000000000a', '', 'member', '9840077777');
+select public.create_password_reset_code('e7300000-0000-0000-0000-00000000000a', 'e7000000-0000-0000-0000-000000000011');
+
+\echo 'X1b Even once they accept, Gym A can''t reset a Gym B owner (expect They''re at another gym too)'
+select pg_temp.as_user('e7000000-0000-0000-0000-000000000011');
+select public.accept_gym_invite((select id from public.my_gym_invites() limit 1), false) is not null;
+select pg_temp.as_user('e7000000-0000-0000-0000-00000000000d');
 select public.create_password_reset_code('e7300000-0000-0000-0000-00000000000a', 'e7000000-0000-0000-0000-000000000011');
 
 \echo 'X2 A member only at Gym A still gets a code (expect t)'
