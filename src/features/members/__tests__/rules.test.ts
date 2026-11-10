@@ -100,6 +100,13 @@ describe('coaches', () => {
 });
 
 describe('inviteMessage', () => {
+  it('asks someone who already uses CoreFit to accept in the app', () => {
+    const text = inviteMessage('Iron Den', '9840012345@m.vinven.net', 'member', 'invited_in_app');
+    expect(text).toContain("You're invited to join Iron Den on CoreFit as a member.");
+    expect(text).toContain('sign in with your mobile number');
+    expect(text).toContain('tap Join on the invite');
+  });
+
   it('tells someone new which email to sign up with', () => {
     const text = inviteMessage('Iron Den', 'kavi@mail.com', 'trainer', 'invited');
     expect(text).toContain("You're invited to join Iron Den on CoreFit as a trainer.");

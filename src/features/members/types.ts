@@ -48,7 +48,12 @@ export type GymInvite = {
 /** A role at this gym, or 'gym_owner': the owner of a new gym of their own. */
 export type InviteRole = Role | 'gym_owner';
 
-export type InviteResult = 'added' | 'invited' | 'already_member';
+/**
+ * What inviting did: 'invited' saved an invite for someone without an account yet;
+ * 'invited_in_app' did the same for someone who has one, who accepts it in the app;
+ * 'added' (platform admins only) added an existing account straight away.
+ */
+export type InviteResult = 'added' | 'invited' | 'invited_in_app' | 'already_member';
 
 /** How an invite reaches someone: our email, or a WhatsApp message staff send themselves. */
 export type InviteChannel = 'email' | 'whatsapp';

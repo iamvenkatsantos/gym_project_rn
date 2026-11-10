@@ -10,7 +10,7 @@ import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { BodyProgress } from '@/features/body/components/body-progress';
 import { useCoachedMembers } from '@/features/members/hooks';
 import { ProgressOverview } from '@/features/progress/components/progress-overview';
-import { useWorkoutLogs } from '@/features/progress/hooks';
+import { useWorkoutHistory } from '@/features/progress/hooks';
 import { CoachSelfWorkouts } from '@/features/self-workouts/components/coach-self-workouts';
 
 type Tab = 'workouts' | 'self' | 'body';
@@ -27,7 +27,8 @@ export default function MemberProgressScreen() {
   const gym = useActiveGym();
   // Only trainers have coached members; for managers this comes back empty.
   const coached = useCoachedMembers(gym.gymId, profile.id);
-  const logs = useWorkoutLogs(gym.gymId, memberId);
+  // Includes other gyms' logs when the member shares their history with this gym.
+  const logs = useWorkoutHistory(gym.gymId, memberId);
   const member = coached.data?.find((m) => m.id === memberId);
   const [tab, setTab] = useState<Tab>('workouts');
 

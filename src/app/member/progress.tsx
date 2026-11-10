@@ -6,14 +6,15 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { BodyProgress } from '@/features/body/components/body-progress';
 import { ProgressOverview } from '@/features/progress/components/progress-overview';
-import { useWorkoutLogs } from '@/features/progress/hooks';
+import { useWorkoutHistory } from '@/features/progress/hooks';
 
 type View = 'workouts' | 'body';
 
 export default function MemberProgressScreen() {
   const profile = useProfile();
   const gym = useActiveGym();
-  const logs = useWorkoutLogs(gym.gymId, profile.id);
+  // Every gym they've trained at, so their history follows them when they move.
+  const logs = useWorkoutHistory(gym.gymId, profile.id);
   const [view, setView] = useState<View>('workouts');
 
   return (

@@ -9,7 +9,10 @@ import { ThemedText } from '@/components/themed-text';
 import { restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { useSignOut } from '@/features/auth/use-sign-out';
+import { GymInvitesCard } from '@/features/gym-invites/components/gym-invites-card';
+import { gymInviteKeys } from '@/features/gym-invites/hooks';
 import { useCanSetUpGym } from '@/features/gyms/hooks';
+import { queryClient } from '@/lib/query-client';
 
 /** Signed in but not (yet) part of any gym. New gym owners set up their gym from here. */
 export default function NoGymScreen() {
@@ -19,13 +22,14 @@ export default function NoGymScreen() {
   const [checking, setChecking] = useState(false);
   const [checked, setChecked] = useState(false);
 
-  // An invite to an existing account adds them at once, so a fresh profile is all it takes.
+  // An invite to an existing account waits for them to tap Join, so look for new ones too.
   const checkAgain = async () => {
     setChecking(true);
     try {
       const profile = await restoreProfile();
       if (profile) setProfile(profile);
       await canSetUp.refetch();
+      await queryClient.invalidateQueries({ queryKey: gymInviteKeys.all });
     } catch {
       // Offline or a hiccup; they can try again.
     } finally {
@@ -57,6 +61,7 @@ export default function NoGymScreen() {
 
   return (
     <Screen title="Join your gym">
+      <GymInvitesCard />
       <Card>
         <Icon name="mail-unread-outline" size={28} color="accent" />
         <ThemedText type="heading">Waiting for an invite</ThemedText>

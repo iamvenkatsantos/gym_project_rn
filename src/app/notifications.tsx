@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { callUrl, whatsappUrl } from '@/features/enquiries/rules';
+import { GymInvitesCard } from '@/features/gym-invites/components/gym-invites-card';
 import { useMarkAllRead, useNotifications } from '@/features/notifications/hooks';
 import { inboxSections, timeAgo, unreadCount } from '@/features/notifications/rules';
 import type { AppNotification, NotificationKind } from '@/features/notifications/types';
@@ -27,6 +28,7 @@ const kindIcon: Record<NotificationKind, IconName> = {
   announcement: 'megaphone-outline',
   birthday: 'gift-outline',
   workout: 'fitness-outline',
+  invite: 'mail-unread-outline',
 };
 
 export default function NotificationsScreen() {
@@ -47,6 +49,8 @@ export default function NotificationsScreen() {
 
   return (
     <Screen>
+      {/* Invites from other gyms land here too, whichever gym is open. */}
+      <GymInvitesCard />
       <QueryState
         query={notifications}
         isEmpty={(list) => list.length === 0}

@@ -85,6 +85,23 @@ export async function getMemberMealPlan(gymId: string, memberId: string): Promis
   return row?.plan ? toMealPlan(row.plan) : null;
 }
 
+/**
+ * Diet plans the member was given at their other gyms, newest first, so what they followed
+ * there stays with them when they move (#116).
+ */
+export async function listOtherGymMealPlans(gymId: string, memberId: string): Promise<MealPlan[]> {
+  if (!supabase) return delay([]);
+  const { data, error } = await supabase
+    .from('meal_plan_assignments')
+    .select(`plan:meal_plans(${PLAN_COLUMNS})`)
+    .eq('member_id', memberId)
+    .neq('gym_id', gymId);
+  if (error) throw error;
+  return ((data ?? []) as unknown as { plan: MealPlanRow | null }[])
+    .flatMap((row) => (row.plan ? [toMealPlan(row.plan)] : []))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 /** Creates a plan (planId null) or replaces an existing one. Returns the plan's id. */
 export async function saveMealPlan({
   gymId,

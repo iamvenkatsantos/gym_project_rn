@@ -6,6 +6,7 @@ import {
   deleteMealPlan,
   getMemberMealPlan,
   listMealPlans,
+  listOtherGymMealPlans,
   saveMealPlan,
   setMealPlanAssignment,
 } from '@/features/diet/api';
@@ -22,6 +23,14 @@ export function useMealPlans(gymId: string, coachId: string) {
 export function useMealPlan(gymId: string, coachId: string, planId: string | undefined) {
   const query = useMealPlans(gymId, coachId);
   return { ...query, plan: query.data?.find((p) => p.id === planId) };
+}
+
+/** Diet plans the member was given at their other gyms. */
+export function useOtherGymMealPlans(gymId: string, memberId: string) {
+  return useQuery({
+    queryKey: [...dietKeys.member(gymId, memberId), 'other-gyms'],
+    queryFn: () => listOtherGymMealPlans(gymId, memberId),
+  });
 }
 
 /** The diet plan the member is on, or null. */

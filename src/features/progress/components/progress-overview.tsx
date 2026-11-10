@@ -62,6 +62,11 @@ export function ProgressOverview({ logs }: { logs: WorkoutLog[] }) {
               {durationMinutes(log)} min · {log.sets.length} sets
               {volume ? ` · ${Math.round(volume).toLocaleString()} kg lifted` : ''}
             </ThemedText>
+            {log.gymName ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                At {log.gymName}
+              </ThemedText>
+            ) : null}
             <SelfCheckLines log={log} />
           </Card>
         );

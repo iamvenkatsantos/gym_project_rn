@@ -109,6 +109,13 @@ export function inviteMessage(
       `Open CoreFit and sign in with ${signInWith}. Don't have the app? ${INSTALL_URL}`,
     ].join('\n');
   }
+  if (result === 'invited_in_app') {
+    return [
+      `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,
+      '',
+      `Open CoreFit, sign in with ${signInWith} and tap Join on the invite.`,
+    ].join('\n');
+  }
   if (code) {
     return [
       `Hi! You're invited to join ${gymName} on CoreFit as ${inviteAs[role]}.`,

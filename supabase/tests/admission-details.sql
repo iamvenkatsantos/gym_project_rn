@@ -54,11 +54,14 @@ join public.member_trainers mt on mt.member_id = p.id
 join public.profiles t on t.id = mt.trainer_id
 where p.id = 'fb000000-0000-0000-0000-000000000011';
 
-\echo 'A8 The owner adds someone with an account and fills in details (expect added, then a blank result)'
+\echo 'A8 The owner invites someone with an account and fills in details; she accepts (expect invited_in_app, a blank result, the gym id)'
 set role authenticated;
 select pg_temp.as_user('fb000000-0000-0000-0000-00000000000a');
 select public.invite_to_gym('fd000000-0000-0000-0000-000000000001', 'has.account@ad.test', 'member');
 select public.save_admission_details('fd000000-0000-0000-0000-000000000001', 'has.account@ad.test', 'Someone Else', '9876500000', '1990-01-01', 80, 175);
+select pg_temp.as_user('fb000000-0000-0000-0000-00000000000e');
+select public.accept_gym_invite((select id from public.my_gym_invites() limit 1), false);
+select pg_temp.as_user('fb000000-0000-0000-0000-00000000000a');
 
 \echo 'A9 Her own name stays, the rest is saved, she skips the form (expect Esha Existing, 9876500000, 1990-01-01, 80.00, t)'
 select p.full_name, cd.phone, cd.date_of_birth, bm.weight_kg, gm.onboarded_at is not null
@@ -71,8 +74,10 @@ where p.id = 'fb000000-0000-0000-0000-00000000000e';
 \echo 'A10 Not again once onboarded (expect No new member invite for this email)'
 select public.save_admission_details('fd000000-0000-0000-0000-000000000001', 'has.account@ad.test', 'Esha E', '9876500000', '1990-01-01', 81, 175);
 
-\echo 'A11 Without details the member still fills in the form (expect added, f)'
+\echo 'A11 Without details the member still fills in the form (expect invited_in_app, the gym id, f)'
 select public.invite_to_gym('fd000000-0000-0000-0000-000000000001', 'plain@ad.test', 'member');
+select pg_temp.as_user('fb000000-0000-0000-0000-00000000000f');
+select public.accept_gym_invite((select id from public.my_gym_invites() limit 1), false);
 select onboarded_at is not null from public.gym_members where user_id = 'fb000000-0000-0000-0000-00000000000f';
 
 \echo 'A12 Members can''t call it (expect Only owners, supervisors and trainers can admit members)'

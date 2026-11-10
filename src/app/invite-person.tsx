@@ -59,6 +59,9 @@ function describe(
       detail: 'They already have an account. It shows next time they open the app.',
     };
   }
+  if (result === 'invited_in_app') {
+    return { title: 'Invite sent', detail: 'They already use CoreFit. They accept it in the app.' };
+  }
   if (channel === 'whatsapp') {
     return code
       ? {
