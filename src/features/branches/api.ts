@@ -245,6 +245,20 @@ export async function setBranchFee(feeCents: number) {
 }
 
 /** Admins only. Null puts the branch back on the default fee. */
+/**
+ * Admins only: deletes a gym nobody has joined (set up by mistake or twice), with its
+ * pending invites and its brand when that was the brand's only branch.
+ */
+export async function deleteGym(gymId: string) {
+  if (!supabase) {
+    const index = mockBranches.findIndex((b) => b.gymId === gymId);
+    if (index >= 0) mockBranches.splice(index, 1);
+    return delay(undefined);
+  }
+  const { error } = await supabase.rpc('admin_delete_gym', { p_gym_id: gymId });
+  if (error) throw error;
+}
+
 export async function setGymFee(gymId: string, feeCents: number | null) {
   if (!supabase) {
     const branch = mockBranches.find((b) => b.gymId === gymId);

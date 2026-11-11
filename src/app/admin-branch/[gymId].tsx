@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
@@ -12,8 +12,14 @@ import { Spacing } from '@/constants/theme';
 import { Button } from '@/components/button';
 import { FeeEditor } from '@/features/branches/components/fee-editor';
 import { BranchQrCard } from '@/features/check-in/components/branch-qr-card';
+import { PendingInvites } from '@/features/members/components/pending-invites';
 import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
-import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
+import {
+  useAdminBranches,
+  useBillingSettings,
+  useDeleteGym,
+  useSetGymFee,
+} from '@/features/branches/hooks';
 import { branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
@@ -54,6 +60,8 @@ export default function AdminBranchScreen() {
                     <StatTile label="Members" value={b.members} icon="people" accent compact />
                     <StatTile label="Staff" value={b.staff} icon="barbell-outline" compact />
                   </View>
+
+                  <PendingInvites gymId={b.gymId} gymName={b.gymName} canWithdraw={() => false} />
 
                   <SectionHeader title="CoreFit plan" detail="Owner pays in the app" />
                   <BranchPlan gymId={b.gymId} />
@@ -116,6 +124,9 @@ export default function AdminBranchScreen() {
                       </ThemedText>
                     </Card>
                   )}
+                  {b.owners.length === 0 && b.members === 0 && b.staff === 0 ? (
+                    <DeleteGym gymId={b.gymId} gymName={b.gymName} />
+                  ) : null}
                 </>
               );
             }}
@@ -123,6 +134,40 @@ export default function AdminBranchScreen() {
         )}
       </QueryState>
     </Screen>
+  );
+}
+
+/** A gym nobody joined (set up by mistake or twice) can be deleted, invites and all. */
+function DeleteGym({ gymId, gymName }: { gymId: string; gymName: string }) {
+  const remove = useDeleteGym();
+  const confirm = () =>
+    Alert.alert(`Delete ${gymName}?`, 'Nobody has joined it. This can’t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          remove.mutate(gymId, {
+            onSuccess: () => {
+              Alert.alert('Deleted', `${gymName} is gone.`);
+              router.back();
+            },
+            onError: (error) => Alert.alert('Not deleted', error.message),
+          }),
+      },
+    ]);
+  return (
+    <View style={styles.fee}>
+      <SectionHeader title="Set up by mistake?" />
+      <Button
+        label="Delete this gym"
+        icon="trash-outline"
+        variant="secondary"
+        size="compact"
+        loading={remove.isPending}
+        onPress={confirm}
+      />
+    </View>
   );
 }
 
@@ -142,6 +187,12 @@ function BranchPlan({ gymId }: { gymId: string }) {
   const record = useRecordSubscription(gymId);
   const free = useGiveFreeMonths(gymId);
 
+  // A clear answer after OK: the new last paid day, or why it failed.
+  const feedback = {
+    onSuccess: (paidUntil: string) =>
+      Alert.alert('Saved', `This branch is paid until ${formatDate(paidUntil)}.`),
+    onError: (error: Error) => Alert.alert('Not saved', error.message),
+  };
   const confirmPaid = (amountCents: number, currency: string) =>
     Alert.alert(
       'Record a year paid?',
@@ -150,16 +201,27 @@ function BranchPlan({ gymId }: { gymId: string }) {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Add a year',
-          onPress: () => record.mutate({ amountCents, note: 'Cash or bank transfer' }),
+          onPress: () => {
+            free.reset();
+            record.mutate({ amountCents, note: 'Cash or bank transfer' }, feedback);
+          },
         },
       ],
     );
   const confirmFree = (months: number, label: string) =>
     Alert.alert(`Give ${label} free?`, 'Adds it at no charge.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Give free', onPress: () => free.mutate(months) },
+      {
+        text: 'Give free',
+        onPress: () => {
+          record.reset();
+          free.mutate(months, feedback);
+        },
+      },
     ]);
   const error = record.error ?? free.error;
+  // The new last paid day, so the admin sees it worked (the card refreshes too).
+  const done = record.data ?? free.data;
 
   return (
     <QueryState query={subscription}>
@@ -193,6 +255,11 @@ function BranchPlan({ gymId }: { gymId: string }) {
             ))}
           </View>
           {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
+          {done && !error ? (
+            <ThemedText type="smallBold" themeColor="accent">
+              Saved. Paid until {formatDate(done)}.
+            </ThemedText>
+          ) : null}
         </View>
       )}
     </QueryState>

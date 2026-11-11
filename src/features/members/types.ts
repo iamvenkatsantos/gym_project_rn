@@ -41,6 +41,9 @@ export type GymInvite = {
   code?: string | null;
   phone?: string | null;
   codeExpiresAt?: string | null;
+  /** When the invite email was last tried, and why it failed (null = it went). */
+  emailTriedAt?: string | null;
+  emailError?: string | null;
   /** The name the inviter gave, when they filled in the member's details. */
   fullName?: string | null;
 };
@@ -70,6 +73,17 @@ export type InviteOutcome = {
   email?: string;
   /** Why the member details the inviter filled in weren't saved. */
   detailsError?: string | null;
+};
+
+/** Where Resend sends a pending invite: its email again, or its join code on WhatsApp. */
+export type ResendChannel = 'email' | 'whatsapp';
+
+/** What resending did; `code` is the WhatsApp join code (renewed if it had expired). */
+export type ResendOutcome = {
+  result: InviteResult;
+  emailSent: boolean;
+  emailError: string | null;
+  code: string | null;
 };
 
 /** What the join screen shows for an invite code. */

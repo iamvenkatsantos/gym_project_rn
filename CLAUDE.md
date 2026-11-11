@@ -82,7 +82,12 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   and `admin_create_owner_gym()` makes the brand, its first branch and the owner invite in one
   transaction (WhatsApp gets a join code; email goes through `invite-member` with role
   `gym_owner` and the `gymId`). Owners never create a gym; they edit its details on Gym details.
-  Works with zero gyms. The admin never joins the gym or invites their own email. The older
+  Works with zero gyms. The admin never joins the gym or invites their own email. An email (or
+mobile) with a pending owner invite at a gym that has no owner yet can't get a second gym ("Already
+invited to …"): the admin resends it from that branch instead (2026-11-11, after a lost first email
+made a duplicate). A gym nobody has joined and with no online payments can be deleted from the admin
+branch screen (**Delete this gym**, `admin_delete_gym()`; everything of it cascades, and its brand
+goes too if it was the only branch). The older
   `invite_gym_owner()` → `set-up-gym` path stays only for invites sent before this; in-gym
   Invite → Owner adds a co-owner.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
@@ -167,6 +172,20 @@ another gym can only be invited (and accept) with that same role (`role_elsewher
 admins are exempt. Only platform
 admins still add an existing account straight away (`added`). Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
+**Resend** (Venkat, 2026-11-11): every pending invite on the Invited list (`PendingInvites`: People,
+trainer Members, and the admin branch screen for a new gym's owner invite) has a resend button, so a
+lost, bounced or expired first invite never leaves someone stuck. `resend_gym_invite(id, channel)`
+keeps the invite as it is (who invited them, so a trainer's member stays theirs, and any admission
+details); who may resend matches who may withdraw (owners any but owner invites, supervisors member
+and trainer invites, trainers their own member invites, admins any). Email invites go through
+`invite-member` with `{ inviteId }`: a fresh email with a new 6-digit code, after updating the
+unconfirmed account's details (`invite_account_id()`), since Supabase keeps the old ones on a re-invite.
+WhatsApp invites (and mobile logins, which have no inbox) get their code back, renewed for 7 days once
+expired. If they made an account since, the inbox invite goes again (`invited_in_app`); if they're
+already at the gym, the leftover invite is deleted. Every invite email, first or resent, is capped at
+one a minute and 5 a day per invite (`invite_email_wait()`) and recorded (`record_invite_email()`:
+`gym_invites.email_tried_at`, `email_error`, `email_sends`), so the list says "email failed, tap
+resend" with a plain reason (Supabase's rate limits included).
 **No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
 pickers. Login is email + password, or mobile + password for WhatsApp invites without an email (no phone OTP); Google or other
 OAuth may come later.
@@ -404,7 +423,8 @@ hides the Pay button, and the banner and `plan-locked` show only the status. Nev
 link, UPI ID or "pay on the website" in the iOS app; iOS owners pay from Android or the admin
 records it. Later, for both platforms: status-only apps, a web pay page and reminders outside the
 app (Play Billing has the same rule). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
-free months (`admin_give_free_months`).
+free months (`admin_give_free_months`); the branch screen then shows the new paid-until day, and
+owners' apps recheck the plan on return to the front after a minute (`useBranchAccess`) and on any push.
 Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
 `gym_invites` and `gym_members`, so every invite and import path is covered); every role sees
 `PlanBanner` (only once unpaid, no advance warning); 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for
