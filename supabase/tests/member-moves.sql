@@ -18,6 +18,8 @@ insert into public.gym_members (gym_id, user_id, role) values
  ('e9300000-0000-0000-0000-00000000000a','e9000000-0000-0000-0000-00000000000c','trainer'),
  ('e9300000-0000-0000-0000-00000000000a','e9000000-0000-0000-0000-000000000011','member'),
  ('e9300000-0000-0000-0000-00000000000b','e9000000-0000-0000-0000-00000000000b','owner');
+update public.gym_members set onboarded_at = now()
+where user_id = 'e9000000-0000-0000-0000-000000000011';
 insert into public.member_trainers (gym_id, member_id, trainer_id) values
  ('e9300000-0000-0000-0000-00000000000a','e9000000-0000-0000-0000-000000000011','e9000000-0000-0000-0000-00000000000c');
 insert into public.membership_plans (id, gym_id, name, price_cents, duration_days) values
@@ -41,6 +43,12 @@ select gym_name, leaving_gyms, days_left from public.my_gym_invites();
 
 \echo 'M4 She joins Gym B (expect Gym B''s id)'
 select public.accept_gym_invite((select id from public.my_gym_invites() limit 1), false);
+
+\echo 'M4b She skips the first-sign-in form at Gym B, as she filled it in at Gym A (expect t)'
+reset role;
+select onboarded_at is not null from public.gym_members
+where gym_id = 'e9300000-0000-0000-0000-00000000000b' and user_id = 'e9000000-0000-0000-0000-000000000011';
+set role authenticated;
 
 \echo 'M5 Gym A: moved, 20 days left, membership ended yesterday, no trainer link, no current membership (expect moved | 20 | t | 0 | f)'
 reset role;

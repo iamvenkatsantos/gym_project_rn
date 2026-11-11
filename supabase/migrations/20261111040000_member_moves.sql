@@ -311,17 +311,24 @@ begin
 
   -- Coming back to a gym they moved out of reopens their old row.
   perform set_config('corefit.moving', 'on', true);
+  -- A member who filled in the first-sign-in form at another gym skips it here: their name,
+  -- mobile, birthday, measurements and photos already follow them.
   insert into public.gym_members (
-    gym_id, user_id, role, admitted_by, admitted_at, history_shared
+    gym_id, user_id, role, admitted_by, admitted_at, history_shared, onboarded_at
   ) values (
     v_invite.gym_id, v_user, v_invite.role,
     case when v_invite.role = 'member' then v_invite.invited_by end,
     case when v_invite.role = 'member' then v_invite.created_at end,
-    coalesce(p_share_history, false)
+    coalesce(p_share_history, false),
+    case when exists (
+      select 1 from public.gym_members o
+      where o.user_id = v_user and o.gym_id <> v_invite.gym_id and o.onboarded_at is not null
+    ) then now() end
   )
   on conflict (gym_id, user_id) do update
     set status = 'active', moved_at = null, moved_days_left = null, joined_at = now(),
-        history_shared = excluded.history_shared
+        history_shared = excluded.history_shared,
+        onboarded_at = coalesce(public.gym_members.onboarded_at, excluded.onboarded_at)
     where public.gym_members.status = 'moved';
   perform set_config('corefit.moving', '', true);
 
