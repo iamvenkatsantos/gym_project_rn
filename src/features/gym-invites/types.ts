@@ -9,4 +9,17 @@ export type GymInvite = {
   role: Role;
   invitedByName: string | null;
   createdAt: string;
+  /** Gyms joining this one moves them out of (comma-separated), or null. */
+  leavingGyms: string | null;
+  /** Membership days they'd give up at those gyms. */
+  daysLeft: number;
+};
+
+/** Someone who moved out of a gym by joining another. */
+export type MovedMember = {
+  userId: string;
+  fullName: string;
+  phone: string | null;
+  movedAt: string | null;
+  daysLeft: number;
 };
