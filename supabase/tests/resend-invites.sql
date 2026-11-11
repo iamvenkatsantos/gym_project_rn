@@ -107,4 +107,30 @@ select public.invite_account_id('pending@ri.test');
 reset role;
 \echo 'R12 The unconfirmed account is found for the email update (expect t)'
 select public.invite_account_id('PENDING@ri.test') = 'e9000000-0000-0000-0000-000000000011';
+
+\echo 'R13 Inviting the same owner again makes no second gym (expect Already invited to RI New...)'
+set role authenticated;
+select pg_temp.as_user('e9000000-0000-0000-0000-00000000000e');
+select gym_id from public.admin_create_owner_gym('RI New again', '', 'NewOwner@ri.test');
+
+\echo 'R14 Only the admin deletes a gym, and only one nobody joined (expect error, error, then 0 | 0)'
+select pg_temp.as_user('e9000000-0000-0000-0000-00000000000a');
+select public.admin_delete_gym('e9300000-0000-0000-0000-00000000000b');
+select pg_temp.as_user('e9000000-0000-0000-0000-00000000000e');
+select public.admin_delete_gym('e9300000-0000-0000-0000-00000000000a');
+reset role;
+insert into public.brands (id, name) values ('e9200000-0000-0000-0000-000000000002','RI Solo');
+insert into public.gyms (id, name, brand_id) values ('e9300000-0000-0000-0000-00000000000c','RI Solo','e9200000-0000-0000-0000-000000000002');
+set role authenticated;
+select public.admin_delete_gym('e9300000-0000-0000-0000-00000000000c');
+reset role;
+select count(*) from public.gyms where id = 'e9300000-0000-0000-0000-00000000000c';
+select count(*) from public.brands where id = 'e9200000-0000-0000-0000-000000000002';
+
+\echo 'R15 Deleting a branch keeps its brand while another branch remains; its invite goes too (expect 1 | 0)'
+set role authenticated;
+select public.admin_delete_gym('e9300000-0000-0000-0000-00000000000b');
+reset role;
+select count(*) from public.brands where id = 'e9200000-0000-0000-0000-000000000001';
+select count(*) from public.gym_invites where id = 'e9400000-0000-0000-0000-000000000003';
 rollback;

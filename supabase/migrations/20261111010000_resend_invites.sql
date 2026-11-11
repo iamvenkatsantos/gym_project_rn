@@ -151,3 +151,105 @@ language sql stable security definer set search_path = '' as $$
   limit 1
 $$;
 revoke execute on function public.invite_account_id(text) from public, anon, authenticated;
+
+-- Admin: one gym per owner invite ------------------------------------------------------
+--
+-- When the first owner invite didn't arrive, inviting the owner again made a second gym
+-- (2026-11-11: "Venkat GYM" and "Venkat GYm"). Now that the invite can be resent from the
+-- branch, a second gym for an email whose owner invite is still pending is refused.
+create or replace function public.admin_create_owner_gym(
+  p_name text, p_city text, p_email text, p_phone text default null
+) returns table (gym_id uuid, result text, code text)
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_name text := trim(coalesce(p_name, ''));
+  v_email text := lower(trim(coalesce(p_email, '')));
+  v_pending text;
+  v_brand_id uuid;
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Only CoreFit Gym admins can set up a gym';
+  end if;
+  if length(v_name) < 2 or length(v_name) > 80 then
+    raise exception 'Enter the gym''s name';
+  end if;
+  if v_email not like '%_@_%' then
+    raise exception 'Enter a valid email address';
+  end if;
+  if v_email = (select lower(email) from auth.users where id = auth.uid()) then
+    raise exception 'Invite the gym owner''s email, not yours';
+  end if;
+  -- The same owner, by email or by the mobile login of a WhatsApp invite.
+  select g.name into v_pending
+  from public.gym_invites i
+  join public.gyms g on g.id = i.gym_id
+  where i.role = 'owner'
+    and (
+      i.email = v_email
+      or (p_phone is not null and i.phone = regexp_replace(
+        regexp_replace(p_phone, '[\s()-]', '', 'g'), '^(\+91|0)([6-9][0-9]{9})$', '\2'
+      ))
+    )
+    and not exists (
+      select 1 from public.gym_members gm
+      where gm.gym_id = i.gym_id and gm.role = 'owner' and gm.status = 'active'
+    )
+  limit 1;
+  if v_pending is not null then
+    raise exception 'Already invited to %. Resend it from that branch.', v_pending;
+  end if;
+
+  insert into public.brands (name) values (v_name) returning id into v_brand_id;
+  insert into public.gyms (name, city, created_by, brand_id)
+  values (v_name, trim(coalesce(p_city, '')), auth.uid(), v_brand_id)
+  returning id into gym_id;
+
+  if p_phone is null then
+    result := public.invite_to_gym(gym_id, v_email, 'owner');
+    code := null;
+  else
+    select w.result, w.code into result, code from public.whatsapp_invite(gym_id, v_email, 'owner', p_phone) w;
+  end if;
+
+  -- Their gym is ready, so an older "set up your gym" invite has nothing left to do.
+  delete from public.gym_setup_invites where email = v_email;
+  return next;
+end;
+$$;
+
+-- Admin: delete a gym nobody joined ------------------------------------------------------
+--
+-- For a gym set up by mistake or twice. Only while nobody is at it (no owner, staff or
+-- member has joined) and no money came in online; everything of the gym goes with it
+-- (all its tables cascade), and its brand too when that was its only branch.
+create function public.admin_delete_gym(p_gym_id uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_brand_id uuid;
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Only CoreFit admins can delete a gym';
+  end if;
+  select g.brand_id into v_brand_id from public.gyms g where g.id = p_gym_id for update;
+  if not found then
+    raise exception 'That gym doesn''t exist';
+  end if;
+  if exists (select 1 from public.gym_members gm where gm.gym_id = p_gym_id) then
+    raise exception 'People have joined this gym, so it can''t be deleted';
+  end if;
+  if exists (
+    select 1 from public.online_payments op where op.gym_id = p_gym_id and op.status = 'paid'
+  ) or exists (
+    select 1 from public.subscription_payments sp
+    where sp.gym_id = p_gym_id and sp.method = 'online' and sp.status = 'paid'
+  ) then
+    raise exception 'This gym has online payments, so it can''t be deleted';
+  end if;
+
+  delete from public.gyms g where g.id = p_gym_id;
+  delete from public.brands b
+    where b.id = v_brand_id and not exists (select 1 from public.gyms g where g.brand_id = b.id);
+end;
+$$;
+revoke execute on function public.admin_delete_gym(uuid) from public, anon;
+grant execute on function public.admin_delete_gym(uuid) to authenticated;

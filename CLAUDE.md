@@ -82,7 +82,12 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   and `admin_create_owner_gym()` makes the brand, its first branch and the owner invite in one
   transaction (WhatsApp gets a join code; email goes through `invite-member` with role
   `gym_owner` and the `gymId`). Owners never create a gym; they edit its details on Gym details.
-  Works with zero gyms. The admin never joins the gym or invites their own email. The older
+  Works with zero gyms. The admin never joins the gym or invites their own email. An email (or
+mobile) with a pending owner invite at a gym that has no owner yet can't get a second gym ("Already
+invited to …"): the admin resends it from that branch instead (2026-11-11, after a lost first email
+made a duplicate). A gym nobody has joined and with no online payments can be deleted from the admin
+branch screen (**Delete this gym**, `admin_delete_gym()`; everything of it cascades, and its brand
+goes too if it was the only branch). The older
   `invite_gym_owner()` → `set-up-gym` path stays only for invites sent before this; in-gym
   Invite → Owner adds a co-owner.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+

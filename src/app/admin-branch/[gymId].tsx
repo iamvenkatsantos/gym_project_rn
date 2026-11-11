@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
@@ -14,7 +14,12 @@ import { FeeEditor } from '@/features/branches/components/fee-editor';
 import { BranchQrCard } from '@/features/check-in/components/branch-qr-card';
 import { PendingInvites } from '@/features/members/components/pending-invites';
 import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
-import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
+import {
+  useAdminBranches,
+  useBillingSettings,
+  useDeleteGym,
+  useSetGymFee,
+} from '@/features/branches/hooks';
 import { branchFee, ownerNames } from '@/features/branches/rules';
 import type { AdminBranch, BillingSettings } from '@/features/branches/types';
 import { SubscriptionCard } from '@/features/subscription/components/subscription-card';
@@ -119,6 +124,9 @@ export default function AdminBranchScreen() {
                       </ThemedText>
                     </Card>
                   )}
+                  {b.owners.length === 0 && b.members === 0 && b.staff === 0 ? (
+                    <DeleteGym gymId={b.gymId} gymName={b.gymName} />
+                  ) : null}
                 </>
               );
             }}
@@ -126,6 +134,40 @@ export default function AdminBranchScreen() {
         )}
       </QueryState>
     </Screen>
+  );
+}
+
+/** A gym nobody joined (set up by mistake or twice) can be deleted, invites and all. */
+function DeleteGym({ gymId, gymName }: { gymId: string; gymName: string }) {
+  const remove = useDeleteGym();
+  const confirm = () =>
+    Alert.alert(`Delete ${gymName}?`, 'Nobody has joined it. This can’t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          remove.mutate(gymId, {
+            onSuccess: () => {
+              Alert.alert('Deleted', `${gymName} is gone.`);
+              router.back();
+            },
+            onError: (error) => Alert.alert('Not deleted', error.message),
+          }),
+      },
+    ]);
+  return (
+    <View style={styles.fee}>
+      <SectionHeader title="Set up by mistake?" />
+      <Button
+        label="Delete this gym"
+        icon="trash-outline"
+        variant="secondary"
+        size="compact"
+        loading={remove.isPending}
+        onPress={confirm}
+      />
+    </View>
   );
 }
 
