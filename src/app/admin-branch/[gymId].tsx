@@ -12,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 import { Button } from '@/components/button';
 import { FeeEditor } from '@/features/branches/components/fee-editor';
 import { BranchQrCard } from '@/features/check-in/components/branch-qr-card';
+import { PendingInvites } from '@/features/members/components/pending-invites';
 import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
 import { useAdminBranches, useBillingSettings, useSetGymFee } from '@/features/branches/hooks';
 import { branchFee, ownerNames } from '@/features/branches/rules';
@@ -54,6 +55,8 @@ export default function AdminBranchScreen() {
                     <StatTile label="Members" value={b.members} icon="people" accent compact />
                     <StatTile label="Staff" value={b.staff} icon="barbell-outline" compact />
                   </View>
+
+                  <PendingInvites gymId={b.gymId} gymName={b.gymName} canWithdraw={() => false} />
 
                   <SectionHeader title="CoreFit plan" detail="Owner pays in the app" />
                   <BranchPlan gymId={b.gymId} />

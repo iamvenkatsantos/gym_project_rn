@@ -157,6 +157,20 @@ inbox, Account and `no-gym`; `my_gym_invites()`) offers **Join** / **Decline**
 (`accept_gym_invite()`, `decline_gym_invite()`) and a **Share my history** switch. Only platform
 admins still add an existing account straight away (`added`). Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
+**Resend** (Venkat, 2026-11-11): every pending invite on the Invited list (`PendingInvites`: People,
+trainer Members, and the admin branch screen for a new gym's owner invite) has a resend button, so a
+lost, bounced or expired first invite never leaves someone stuck. `resend_gym_invite(id, channel)`
+keeps the invite as it is (who invited them, so a trainer's member stays theirs, and any admission
+details); who may resend matches who may withdraw (owners any but owner invites, supervisors member
+and trainer invites, trainers their own member invites, admins any). Email invites go through
+`invite-member` with `{ inviteId }`: a fresh email with a new 6-digit code, after updating the
+unconfirmed account's details (`invite_account_id()`), since Supabase keeps the old ones on a re-invite.
+WhatsApp invites (and mobile logins, which have no inbox) get their code back, renewed for 7 days once
+expired. If they made an account since, the inbox invite goes again (`invited_in_app`); if they're
+already at the gym, the leftover invite is deleted. Every invite email, first or resent, is capped at
+one a minute and 5 a day per invite (`invite_email_wait()`) and recorded (`record_invite_email()`:
+`gym_invites.email_tried_at`, `email_error`, `email_sends`), so the list says "email failed, tap
+resend" with a plain reason (Supabase's rate limits included).
 **No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
 pickers. Login is email + password, or mobile + password for WhatsApp invites without an email (no phone OTP); Google or other
 OAuth may come later.
