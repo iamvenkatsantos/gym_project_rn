@@ -15,7 +15,7 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import type { PhotoPose } from '@/features/body/types';
 import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
 import { useIsPlatformAdmin } from '@/features/gyms/hooks';
-import { useInvitePerson, usePeople } from '@/features/members/hooks';
+import { useInviteHasAccount, useInvitePerson, usePeople } from '@/features/members/hooks';
 import { whatsappUrl } from '@/features/enquiries/rules';
 import { parseMobile } from '@/features/members/import-rules';
 import { formatInviteCode, inviteMessage, normalizeEmail } from '@/features/members/rules';
@@ -120,8 +120,19 @@ export default function InvitePersonScreen() {
   const whatsappNumber = parseMobile(mobile);
   const mobileError =
     channel === 'whatsapp' && !whatsappNumber ? 'Enter a 10-digit mobile number.' : null;
+  // Someone already on CoreFit gets the invite in their app and brings their own details,
+  // so there's no member form to fill in for them.
+  const hasAccount = useInviteHasAccount(
+    gym.gymId,
+    email.trim() && !emailError
+      ? { email: normalizeEmail(email), mobile: null }
+      : channel === 'whatsapp' && !email.trim() && whatsappNumber
+        ? { email: '', mobile: whatsappNumber }
+        : null,
+  );
+  const existingAccount = hasAccount.data === true;
   // The inviter can fill in what the member's first-sign-in form asks; then the member skips it.
-  const fillDetails = role === 'member' && detailsBy === 'inviter';
+  const fillDetails = role === 'member' && detailsBy === 'inviter' && !existingAccount;
   const detailErrors = validateAdmission(
     { ...details, phone: mobile },
     new Set(Object.keys(photos) as PhotoPose[]),
@@ -279,7 +290,11 @@ export default function InvitePersonScreen() {
             ) : null}
           </View>
 
-          {role === 'member' ? (
+          {role === 'member' && existingAccount ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Already on CoreFit: they join from the app with their own details.
+            </ThemedText>
+          ) : role === 'member' ? (
             <View style={styles.field}>
               <ThemedText type="label" themeColor="textSecondary">
                 Member details

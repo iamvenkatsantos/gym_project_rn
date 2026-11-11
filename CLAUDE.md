@@ -159,7 +159,19 @@ attaches pending invites when the user confirms. **Existing accounts accept** (#
 `invite_to_gym()` saves the invite, sends an `invite` inbox/push to them and returns
 `invited_in_app` (no WhatsApp code; the message says to tap Join). `GymInvitesCard` (top of the
 inbox, Account and `no-gym`; `my_gym_invites()`) offers **Join** / **Decline**
-(`accept_gym_invite()`, `decline_gym_invite()`) and a **Share my history** switch. Only platform
+(`accept_gym_invite()`, `decline_gym_invite()`) and a **Share my history** switch. **Moving gyms** (Venkat, 2026-11-11): joining from an invite moves the person out of
+every other gym where they aren't an owner (`move_out()`): that `gym_members` row becomes
+`moved` (no access; only `accept_gym_invite()` changes it, owners can't reactivate it), member
+memberships there end the day before (note says so; no new ones while moved), and trainer
+links, upcoming bookings, sessions and trainer requests there go. The card first warns with the
+days given up (`my_gym_invites.leaving_gyms/days_left`, `leaveWarning`, **Join anyway**), and the
+app opens the new gym (no first-sign-in form if they filled it in at another gym; their
+details and history follow them, so `invite-person` hides They fill in / Fill in now once
+`invite_has_account()` finds the email or mobile login). Coming back needs a new invite (same role) and a new membership. The old
+gym's People lists them under **Moved out** (`gym_moved_members()`, not where they went);
+`gym_people` leaves them out. **One role per person:** an existing account holding a role at
+another gym can only be invited (and accept) with that same role (`role_elsewhere()`); platform
+admins are exempt. Only platform
 admins still add an existing account straight away (`added`). Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
 **Resend** (Venkat, 2026-11-11): every pending invite on the Invited list (`PendingInvites`: People,

@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { ShareHistorySwitch } from '@/features/gym-invites/components/share-history-switch';
 import { useAnswerGymInvite, useMyGymInvites } from '@/features/gym-invites/hooks';
-import { inviteLine } from '@/features/gym-invites/rules';
+import { inviteLine, leaveWarning } from '@/features/gym-invites/rules';
 import type { GymInvite } from '@/features/gym-invites/types';
 
 /**
@@ -28,8 +28,12 @@ export function GymInvitesCard() {
 
 function InviteCard({ invite }: { invite: GymInvite }) {
   const [share, setShare] = useState(false);
+  // Joining moves them out of their other gyms, so that asks once more first.
+  const [confirming, setConfirming] = useState(false);
   const answer = useAnswerGymInvite();
   const busy = answer.isPending;
+  const warning = leaveWarning(invite);
+  const join = () => answer.mutate({ inviteId: invite.id, join: true, shareHistory: share });
   return (
     <Card highlighted>
       <ThemedText type="heading">{invite.gymName}</ThemedText>
@@ -37,24 +41,33 @@ function InviteCard({ invite }: { invite: GymInvite }) {
         {inviteLine(invite)}
       </ThemedText>
       <ShareHistorySwitch value={share} onChange={setShare} disabled={busy} />
+      {confirming && warning ? (
+        <ThemedText type="smallBold" themeColor="danger">
+          {warning} Join anyway?
+        </ThemedText>
+      ) : null}
       {answer.error ? <ThemedText themeColor="danger">{answer.error.message}</ThemedText> : null}
       <View style={styles.buttons}>
         <View style={styles.flex}>
           <Button
-            label="Decline"
+            label={confirming ? 'Cancel' : 'Decline'}
             variant="secondary"
             disabled={busy}
             loading={busy && answer.variables?.join === false}
-            onPress={() => answer.mutate({ inviteId: invite.id, join: false })}
+            onPress={() =>
+              confirming
+                ? setConfirming(false)
+                : answer.mutate({ inviteId: invite.id, join: false })
+            }
           />
         </View>
         <View style={styles.flex}>
           <Button
-            label="Join"
+            label={confirming ? 'Join anyway' : 'Join'}
             icon="checkmark"
             disabled={busy}
             loading={busy && answer.variables?.join === true}
-            onPress={() => answer.mutate({ inviteId: invite.id, join: true, shareHistory: share })}
+            onPress={() => (warning && !confirming ? setConfirming(true) : join())}
           />
         </View>
       </View>

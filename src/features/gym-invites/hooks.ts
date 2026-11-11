@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 
 import { restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
@@ -6,6 +7,7 @@ import {
   acceptGymInvite,
   declineGymInvite,
   getHistorySharing,
+  listMovedMembers,
   listMyGymInvites,
   setHistorySharing,
 } from '@/features/gym-invites/api';
@@ -16,13 +18,24 @@ export const gymInviteKeys = {
   mine: () => [...gymInviteKeys.all, 'mine'] as const,
   sharing: (gymId: string, userId: string) =>
     [...gymInviteKeys.all, 'sharing', gymId, userId] as const,
+  moved: (gymId: string) => [...gymInviteKeys.all, 'moved', gymId] as const,
 };
+
+export function useMovedMembers(gymId: string) {
+  return useQuery({
+    queryKey: gymInviteKeys.moved(gymId),
+    queryFn: () => listMovedMembers(gymId),
+  });
+}
 
 export function useMyGymInvites() {
   return useQuery({ queryKey: gymInviteKeys.mine(), queryFn: listMyGymInvites });
 }
 
-/** Joins or declines; joining reloads the profile so the new gym shows up. */
+/**
+ * Joins or declines. Joining moves them out of their other gyms (owners stay), reloads the
+ * profile and opens the new gym.
+ */
 export function useAnswerGymInvite() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -36,11 +49,17 @@ export function useAnswerGymInvite() {
       shareHistory?: boolean;
     }) => {
       if (!join) return declineGymInvite(inviteId);
-      await acceptGymInvite(inviteId, shareHistory);
+      const gymId = await acceptGymInvite(inviteId, shareHistory);
+      const { setProfile, setActiveGym } = useAuthStore.getState();
       const profile = await restoreProfile();
-      if (profile) useAuthStore.getState().setProfile(profile);
+      if (profile) setProfile(profile);
+      if (profile?.gyms.some((g) => g.gymId === gymId)) {
+        setActiveGym(gymId);
+        router.dismissTo('/');
+      }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: gymInviteKeys.all }),
+    // Every gym's data changes when someone moves, so refetch everything.
+    onSettled: () => queryClient.invalidateQueries(),
   });
 }
 

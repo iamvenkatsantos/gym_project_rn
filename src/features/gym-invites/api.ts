@@ -1,4 +1,4 @@
-import type { GymInvite } from '@/features/gym-invites/types';
+import type { GymInvite, MovedMember } from '@/features/gym-invites/types';
 import { delay } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -10,6 +10,8 @@ type InviteRow = {
   role: GymInvite['role'];
   invited_by_name: string | null;
   created_at: string;
+  leaving_gyms?: string | null;
+  days_left?: number | null;
 };
 
 /** Gyms that invited the signed-in person's account and that they haven't joined yet. */
@@ -24,17 +26,41 @@ export async function listMyGymInvites(): Promise<GymInvite[]> {
     role: r.role,
     invitedByName: r.invited_by_name,
     createdAt: r.created_at,
+    leavingGyms: r.leaving_gyms ?? null,
+    daysLeft: r.days_left ?? 0,
+  }));
+}
+
+type MovedRow = {
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+  moved_at: string | null;
+  days_left: number;
+};
+
+/** People who moved out of this gym by joining another, newest first. */
+export async function listMovedMembers(gymId: string): Promise<MovedMember[]> {
+  if (!supabase) return delay([]);
+  const rows = unwrap(await supabase.rpc('gym_moved_members', { p_gym_id: gymId })) as MovedRow[];
+  return rows.map((r) => ({
+    userId: r.user_id,
+    fullName: r.full_name || 'Unnamed',
+    phone: r.phone,
+    movedAt: r.moved_at,
+    daysLeft: r.days_left,
   }));
 }
 
 /** Joins the gym. With `shareHistory` its coaches see what they logged at other gyms. */
-export async function acceptGymInvite(inviteId: string, shareHistory: boolean) {
-  if (!supabase) return delay(undefined);
-  const { error } = await supabase.rpc('accept_gym_invite', {
-    p_invite_id: inviteId,
-    p_share_history: shareHistory,
-  });
-  if (error) throw error;
+export async function acceptGymInvite(inviteId: string, shareHistory: boolean): Promise<string> {
+  if (!supabase) return delay(inviteId);
+  return unwrap(
+    await supabase.rpc('accept_gym_invite', {
+      p_invite_id: inviteId,
+      p_share_history: shareHistory,
+    }),
+  ) as string;
 }
 
 export async function declineGymInvite(inviteId: string) {

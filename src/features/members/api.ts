@@ -108,6 +108,28 @@ export async function listGymMembers(
 }
 
 /** Everyone at the gym with their email. Owners and supervisors only. */
+/**
+ * Whether this email (or, without one, the mobile login) already has a CoreFit account. Such
+ * people get the invite in their app and bring their own details, so no admission form.
+ */
+export async function inviteHasAccount(
+  gymId: string,
+  email: string,
+  mobile: string | null,
+): Promise<boolean> {
+  if (!supabase) {
+    const normalized = normalizeEmail(email || mobileLoginEmail(mobile ?? ''));
+    return delay(mockAccounts.some((a) => a.email === normalized));
+  }
+  return unwrap(
+    await supabase.rpc('invite_has_account', {
+      p_gym_id: gymId,
+      p_email: email,
+      p_phone: mobile ?? '',
+    }),
+  ) as boolean;
+}
+
 export async function listPeople(gymId: string): Promise<GymPerson[]> {
   if (!supabase) {
     return delay(
