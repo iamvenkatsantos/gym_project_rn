@@ -304,6 +304,7 @@ psql -d corefit_test -f supabase/tests/pause-waitlist-referrals.sql
 psql -d corefit_test -f supabase/tests/security-hardening.sql
 psql -d corefit_test -f supabase/tests/cross-gym-hardening.sql
 psql -d corefit_test -f supabase/tests/accept-invites-shared-history.sql
+psql -d corefit_test -f supabase/tests/resend-invites.sql
 psql -d corefit_test -f supabase/tests/payment-receipts.sql
 psql -d corefit_test -f supabase/tests/trainer-hours.sql
 psql -d corefit_test -f supabase/tests/trainer-late-streaks.sql

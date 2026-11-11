@@ -10,6 +10,7 @@ import {
   registerForPush,
 } from '@/features/notifications/push';
 import { gymInviteKeys } from '@/features/gym-invites/hooks';
+import { subscriptionKeys } from '@/features/subscription/hooks';
 import { gymForPush, parsePushData, pushRoute } from '@/features/notifications/rules';
 import { queryClient } from '@/lib/query-client';
 
@@ -39,6 +40,8 @@ export function usePushNotifications() {
     });
     const received = Notifications.addNotificationReceivedListener(() => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      // "CoreFit plan" pushes come when the admin records a year or gives free months.
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
     });
     return () => {
       tokens.remove();

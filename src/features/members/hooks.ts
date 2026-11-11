@@ -11,6 +11,7 @@ import {
   listPeople,
   promoteToTrainer,
   removePerson,
+  resendInvite,
   saveAdmissionDetails,
   updatePerson,
   withdrawInvite,
@@ -18,7 +19,14 @@ import {
 import { branchKeys } from '@/features/branches/hooks';
 import type { ImportRow } from '@/features/members/import-rules';
 import type { MemberKind } from '@/features/members/rules';
-import type { GymPerson, InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
+import type {
+  GymInvite,
+  GymPerson,
+  InviteChannel,
+  InviteOutcome,
+  InviteRole,
+  ResendChannel,
+} from '@/features/members/types';
 import { uploadAdmissionPhotos } from '@/features/body/api';
 import type { PhotoPose } from '@/features/body/types';
 import type { AdmissionDetails, PickedPhoto } from '@/features/onboarding/types';
@@ -99,6 +107,16 @@ export function useInvitePerson(gymId: string) {
         };
       }
     },
+    onSettled: invalidate,
+  });
+}
+
+/** Sends a pending invite again by email, or gets its (renewed) code for WhatsApp. */
+export function useResendInvite(gymId: string) {
+  const invalidate = useInvalidateMembers();
+  return useMutation({
+    mutationFn: ({ invite, channel }: { invite: GymInvite; channel: ResendChannel }) =>
+      resendInvite(gymId, invite, channel),
     onSettled: invalidate,
   });
 }

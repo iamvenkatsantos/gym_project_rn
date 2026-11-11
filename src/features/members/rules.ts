@@ -1,6 +1,14 @@
 import { canCoach, type Role } from '@/features/auth/types';
 import { isMobileLogin, loginLabel } from '@/lib/mobile-login';
-import type { GymPerson, InviteResult, InviteRole, PeopleFilter } from '@/features/members/types';
+import type {
+  GymInvite,
+  GymPerson,
+  InviteResult,
+  InviteRole,
+  PeopleFilter,
+  ResendChannel,
+  ResendOutcome,
+} from '@/features/members/types';
 import { normalizeEmail, validateEmail } from '@/lib/validation';
 
 export { normalizeEmail };
@@ -174,6 +182,56 @@ export function joinLink(code: string) {
 }
 
 /** Imported members and people mid-invite have no confirmed account yet. */
+/** Whether a WhatsApp invite's join code has run out. */
+export function isCodeExpired(invite: Pick<GymInvite, 'codeExpiresAt'>, now = new Date()) {
+  return !!invite.codeExpiresAt && new Date(invite.codeExpiresAt) < now;
+}
+
+/**
+ * How a pending invite resends: WhatsApp invites (they have a code) send the code again,
+ * the rest email again. A mobile login has no inbox, so it always goes on WhatsApp.
+ */
+export function resendChannel(invite: Pick<GymInvite, 'code' | 'email'>): ResendChannel {
+  return invite.code || isMobileLogin(invite.email) ? 'whatsapp' : 'email';
+}
+
+/** The second line of a pending invite: its role, then where its invite stands. */
+export function inviteStatus(
+  invite: Pick<
+    GymInvite,
+    'role' | 'code' | 'codeExpiresAt' | 'emailTriedAt' | 'emailError' | 'email' | 'createdAt'
+  >,
+  now = new Date(),
+) {
+  const role = invite.role[0].toUpperCase() + invite.role.slice(1);
+  if (resendChannel(invite) === 'whatsapp') {
+    if (!invite.code) return `${role} · no code yet, tap resend`;
+    if (isCodeExpired(invite, now)) return `${role} · code expired, tap resend`;
+    return `${role} · code ${formatInviteCode(invite.code)}`;
+  }
+  if (invite.emailError) return `${role} · email failed, tap resend`;
+  if (invite.emailTriedAt) {
+    const day = new Date(invite.emailTriedAt);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return day >= today ? `${role} · emailed today` : `${role} · emailed ${shortDate(day)}`;
+  }
+  return `${role} · invited ${shortDate(new Date(invite.createdAt))}`;
+}
+
+function shortDate(date: Date) {
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+/** What to tell the inviter after Resend. */
+export function resendNotice(outcome: ResendOutcome, channel: ResendChannel) {
+  if (outcome.result === 'already_member') return 'They’ve already joined.';
+  if (outcome.result === 'invited_in_app')
+    return 'They have an account. Sent to their CoreFit inbox.';
+  if (channel === 'whatsapp') return null;
+  if (outcome.emailSent) return 'Email sent with a new code.';
+  return outcome.emailError ?? 'The email didn’t go. Try again later.';
+}
+
 export function isSignedUp(person: Pick<GymPerson, 'signedUp'>) {
   return person.signedUp !== false;
 }

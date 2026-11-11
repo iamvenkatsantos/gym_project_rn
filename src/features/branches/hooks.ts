@@ -4,6 +4,7 @@ import { restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import {
   addBranch,
+  deleteGym,
   fetchAdminBranches,
   fetchBillingSettings,
   fetchBrandOverview,
@@ -76,6 +77,15 @@ export function useSetBranchFee() {
   return useMutation({
     mutationFn: setBranchFee,
     onSettled: () => refreshBilling(queryClient),
+  });
+}
+
+/** Admins only: deletes a gym nobody joined, then refreshes the admin lists. */
+export function useDeleteGym() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteGym,
+    onSuccess: () => refreshBilling(queryClient),
   });
 }
 
