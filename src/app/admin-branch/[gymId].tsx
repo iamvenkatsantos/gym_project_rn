@@ -145,6 +145,12 @@ function BranchPlan({ gymId }: { gymId: string }) {
   const record = useRecordSubscription(gymId);
   const free = useGiveFreeMonths(gymId);
 
+  // A clear answer after OK: the new last paid day, or why it failed.
+  const feedback = {
+    onSuccess: (paidUntil: string) =>
+      Alert.alert('Saved', `This branch is paid until ${formatDate(paidUntil)}.`),
+    onError: (error: Error) => Alert.alert('Not saved', error.message),
+  };
   const confirmPaid = (amountCents: number, currency: string) =>
     Alert.alert(
       'Record a year paid?',
@@ -155,7 +161,7 @@ function BranchPlan({ gymId }: { gymId: string }) {
           text: 'Add a year',
           onPress: () => {
             free.reset();
-            record.mutate({ amountCents, note: 'Cash or bank transfer' });
+            record.mutate({ amountCents, note: 'Cash or bank transfer' }, feedback);
           },
         },
       ],
@@ -167,7 +173,7 @@ function BranchPlan({ gymId }: { gymId: string }) {
         text: 'Give free',
         onPress: () => {
           record.reset();
-          free.mutate(months);
+          free.mutate(months, feedback);
         },
       },
     ]);
