@@ -120,4 +120,16 @@ where gym_id = 'e9300000-0000-0000-0000-00000000000a' and user_id = 'e9000000-00
 set role authenticated;
 select public.move_out('e9000000-0000-0000-0000-000000000011', 'e9300000-0000-0000-0000-00000000000b');
 reset role;
+
+\echo 'M16 The invite screen knows who already has an account (expect t, f, f)'
+set role authenticated;
+select pg_temp.as_user('e9000000-0000-0000-0000-00000000000b');
+select public.invite_has_account('e9300000-0000-0000-0000-00000000000b', ' Mover@MV.test ', null);
+select public.invite_has_account('e9300000-0000-0000-0000-00000000000b', '', '9840000001');
+select public.invite_has_account('e9300000-0000-0000-0000-00000000000b', 'nobody@mv.test', null);
+
+\echo 'M17 Not for someone who can''t invite there (expect Only owners, supervisors and trainers can invite people)'
+select pg_temp.as_user('e9000000-0000-0000-0000-000000000011');
+select public.invite_has_account('e9300000-0000-0000-0000-00000000000b', 'ownera@mv.test', null);
+reset role;
 rollback;

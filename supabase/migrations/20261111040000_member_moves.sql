@@ -393,3 +393,34 @@ $$;
 
 revoke execute on function public.gym_moved_members(uuid) from public, anon;
 grant execute on function public.gym_moved_members(uuid) to authenticated;
+
+-- Invite screen: whether the email (or, without one, the mobile login) already has a CoreFit
+-- account. Then the invite goes to their app and the "Fill in now" details aren't asked:
+-- their own details follow them. Only for people who can invite at the gym.
+create function public.invite_has_account(p_gym_id uuid, p_email text, p_phone text)
+returns boolean
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_email text := lower(trim(coalesce(p_email, '')));
+  v_phone text := regexp_replace(
+    regexp_replace(coalesce(p_phone, ''), '[\s()-]', '', 'g'), '^(\+91|0)([6-9][0-9]{9})$', '\2'
+  );
+begin
+  if not public.can_manage_gym(p_gym_id) and not public.has_gym_role(p_gym_id, array['trainer'])
+     and not public.is_platform_admin() then
+    raise exception 'Only owners, supervisors and trainers can invite people';
+  end if;
+  if v_email = '' then
+    if v_phone !~ '^[6-9][0-9]{9}$' then
+      return false;
+    end if;
+    v_email := public.mobile_login_email(v_phone);
+  end if;
+  return exists (
+    select 1 from auth.users where lower(email) = v_email and email_confirmed_at is not null
+  );
+end;
+$$;
+
+revoke execute on function public.invite_has_account(uuid, text, text) from public, anon;
+grant execute on function public.invite_has_account(uuid, text, text) to authenticated;

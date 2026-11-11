@@ -166,7 +166,8 @@ memberships there end the day before (note says so; no new ones while moved), an
 links, upcoming bookings, sessions and trainer requests there go. The card first warns with the
 days given up (`my_gym_invites.leaving_gyms/days_left`, `leaveWarning`, **Join anyway**), and the
 app opens the new gym (no first-sign-in form if they filled it in at another gym; their
-details and history follow them). Coming back needs a new invite (same role) and a new membership. The old
+details and history follow them, so `invite-person` hides They fill in / Fill in now once
+`invite_has_account()` finds the email or mobile login). Coming back needs a new invite (same role) and a new membership. The old
 gym's People lists them under **Moved out** (`gym_moved_members()`, not where they went);
 `gym_people` leaves them out. **One role per person:** an existing account holding a role at
 another gym can only be invited (and accept) with that same role (`role_elsewhere()`); platform

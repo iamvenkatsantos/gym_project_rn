@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 import {
   importMembers,
   inviteGymOwner,
   invitePerson,
+  inviteHasAccount,
   sendImportInvites,
   listCoachedMembers,
   listGymMembers,
@@ -39,6 +41,29 @@ export const memberKeys = {
   coached: (gymId: string, trainerId: string) =>
     [...memberKeys.all, gymId, 'coached', trainerId] as const,
 };
+
+/**
+ * Whether the invite's email (or mobile login) already has an account, checked once typing
+ * pauses. `lookup` is null until there's a valid email or mobile to check.
+ */
+export function useInviteHasAccount(
+  gymId: string,
+  lookup: { email: string; mobile: string | null } | null,
+) {
+  const key = lookup ? `${lookup.email}|${lookup.mobile ?? ''}` : null;
+  const [settled, setSettled] = useState(key);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(key), 400);
+    return () => clearTimeout(timer);
+  }, [key]);
+  const ready = lookup !== null && settled === key;
+  return useQuery({
+    queryKey: [...memberKeys.all, gymId, 'has-account', key],
+    queryFn: () => inviteHasAccount(gymId, lookup!.email, lookup!.mobile),
+    enabled: ready,
+    staleTime: 60_000,
+  });
+}
 
 export function useGymMembers(gymId: string, kind: MemberKind = 'member') {
   return useQuery({
