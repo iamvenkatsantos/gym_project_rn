@@ -408,7 +408,8 @@ hides the Pay button, and the banner and `plan-locked` show only the status. Nev
 link, UPI ID or "pay on the website" in the iOS app; iOS owners pay from Android or the admin
 records it. Later, for both platforms: status-only apps, a web pay page and reminders outside the
 app (Play Billing has the same rule). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
-free months (`admin_give_free_months`).
+free months (`admin_give_free_months`); the branch screen then shows the new paid-until day, and
+owners' apps recheck the plan on return to the front after a minute (`useBranchAccess`) and on any push.
 Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
 `gym_invites` and `gym_members`, so every invite and import path is covered); every role sees
 `PlanBanner` (only once unpaid, no advance warning); 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for

@@ -153,16 +153,27 @@ function BranchPlan({ gymId }: { gymId: string }) {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Add a year',
-          onPress: () => record.mutate({ amountCents, note: 'Cash or bank transfer' }),
+          onPress: () => {
+            free.reset();
+            record.mutate({ amountCents, note: 'Cash or bank transfer' });
+          },
         },
       ],
     );
   const confirmFree = (months: number, label: string) =>
     Alert.alert(`Give ${label} free?`, 'Adds it at no charge.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Give free', onPress: () => free.mutate(months) },
+      {
+        text: 'Give free',
+        onPress: () => {
+          record.reset();
+          free.mutate(months);
+        },
+      },
     ]);
   const error = record.error ?? free.error;
+  // The new last paid day, so the admin sees it worked (the card refreshes too).
+  const done = record.data ?? free.data;
 
   return (
     <QueryState query={subscription}>
@@ -196,6 +207,11 @@ function BranchPlan({ gymId }: { gymId: string }) {
             ))}
           </View>
           {error ? <ThemedText themeColor="danger">{error.message}</ThemedText> : null}
+          {done && !error ? (
+            <ThemedText type="smallBold" themeColor="accent">
+              Saved. Paid until {formatDate(done)}.
+            </ThemedText>
+          ) : null}
         </View>
       )}
     </QueryState>
