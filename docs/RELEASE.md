@@ -46,8 +46,8 @@ npx eas-cli@latest submit --profile production --platform android   # goes to th
 
 **Accounts**
 
-- [ ] Apple Developer Program membership (Individual, Venkat's name) and an App Store Connect app
-      record. Then `npx eas-cli@latest credentials` for the certificate, profile and APNs push key,
+- [x] Apple Developer Program membership (Individual, Vinitha Nagarajan, Team ID `7YL46TJ7B3`).
+- [ ] App Store Connect app record. Then `npx eas-cli@latest credentials` for the certificate, profile and APNs push key,
       add `submit.production.ios.ascAppId` to eas.json, and set `APP_STORE_URL` in
       `web/worker/index.js` once the listing is live.
 - [ ] Google Play Console account, app created, and a service account key for `eas submit`.
