@@ -5,6 +5,10 @@ import {
   filterPeople,
   isLastActiveOwner,
   formatInviteCode,
+  inviteStatus,
+  isCodeExpired,
+  resendChannel,
+  resendNotice,
   inviteMessage,
   isInviteCode,
   isSignedUp,
@@ -100,6 +104,13 @@ describe('coaches', () => {
 });
 
 describe('inviteMessage', () => {
+  it('asks someone who already uses CoreFit to accept in the app', () => {
+    const text = inviteMessage('Iron Den', '9840012345@m.vinven.net', 'member', 'invited_in_app');
+    expect(text).toContain("You're invited to join Iron Den on CoreFit as a member.");
+    expect(text).toContain('sign in with your mobile number');
+    expect(text).toContain('tap Join on the invite');
+  });
+
   it('tells someone new which email to sign up with', () => {
     const text = inviteMessage('Iron Den', 'kavi@mail.com', 'trainer', 'invited');
     expect(text).toContain("You're invited to join Iron Den on CoreFit as a trainer.");
@@ -159,5 +170,57 @@ describe('resetCodeMessage', () => {
     const message = resetCodeMessage('Pulse Fitness', 'K7P2QX4M');
     expect(message).toContain('K7P2-QX4M');
     expect(message).toContain('I have a reset code');
+  });
+});
+
+describe('pending invite resend', () => {
+  const now = new Date('2026-11-11T10:00:00');
+  const base = {
+    role: 'member' as const,
+    email: 'asha@example.com',
+    createdAt: '2026-11-09T09:00:00',
+    code: null,
+    codeExpiresAt: null,
+    emailTriedAt: null,
+    emailError: null,
+  };
+
+  it('emails again unless it has a code or is a mobile login', () => {
+    expect(resendChannel(base)).toBe('email');
+    expect(resendChannel({ ...base, code: 'K7P2QX4M' })).toBe('whatsapp');
+    expect(resendChannel({ ...base, email: '9840012345@m.vinven.net' })).toBe('whatsapp');
+  });
+
+  it('says where the invite stands', () => {
+    expect(inviteStatus({ ...base, emailError: 'Too many emails' }, now)).toBe(
+      'Member · email failed, tap resend',
+    );
+    expect(inviteStatus({ ...base, emailTriedAt: '2026-11-11T08:00:00' }, now)).toBe(
+      'Member · emailed today',
+    );
+    expect(inviteStatus({ ...base, emailTriedAt: '2026-11-09T08:00:00' }, now)).toMatch(
+      /^Member · emailed /,
+    );
+    expect(inviteStatus(base, now)).toMatch(/^Member · invited /);
+    expect(
+      inviteStatus({ ...base, code: 'K7P2QX4M', codeExpiresAt: '2026-11-10T00:00:00' }, now),
+    ).toBe('Member · code expired, tap resend');
+    expect(
+      inviteStatus({ ...base, code: 'K7P2QX4M', codeExpiresAt: '2026-11-15T00:00:00' }, now),
+    ).toBe('Member · code K7P2-QX4M');
+    expect(isCodeExpired({ codeExpiresAt: null }, now)).toBe(false);
+  });
+
+  it('tells the inviter what resend did', () => {
+    const sent = { result: 'invited' as const, emailSent: true, emailError: null, code: null };
+    expect(resendNotice(sent, 'email')).toBe('Email sent with a new code.');
+    expect(resendNotice({ ...sent, emailSent: false, emailError: 'Wait a minute' }, 'email')).toBe(
+      'Wait a minute',
+    );
+    expect(resendNotice({ ...sent, result: 'already_member' }, 'email')).toBe(
+      'They’ve already joined.',
+    );
+    expect(resendNotice({ ...sent, result: 'invited_in_app' }, 'whatsapp')).toMatch(/inbox/);
+    expect(resendNotice({ ...sent, code: 'K7P2QX4M' }, 'whatsapp')).toBeNull();
   });
 });

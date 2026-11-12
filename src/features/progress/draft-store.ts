@@ -21,6 +21,8 @@ export type DraftExercise = {
 
 export type WorkoutDraft = {
   clientId: string;
+  /** Who started it, so the next person to sign in on this phone never inherits it. Missing on older drafts. */
+  userId?: string;
   gymId: string;
   workoutId: string | null;
   title: string;
@@ -36,7 +38,7 @@ type DraftState = {
   draft: WorkoutDraft | null;
   /** When the current rest period ends (epoch ms), or null when not resting. */
   restUntil: number | null;
-  start: (gymId: string, workout: Workout) => void;
+  start: (gymId: string, workout: Workout, userId?: string) => void;
   updateSet: (exercise: number, set: number, patch: Partial<Omit<DraftSet, 'done'>>) => void;
   toggleSet: (exercise: number, set: number) => void;
   addSet: (exercise: number) => void;
@@ -47,6 +49,8 @@ type DraftState = {
   /** Adds seconds to the rest in progress. */
   extendRest: (seconds: number) => void;
   discard: () => void;
+  /** Drops a draft someone else started; an older draft without an owner goes to this user. */
+  keepFor: (userId: string) => void;
 };
 
 function mapSet(
@@ -72,11 +76,12 @@ export const useWorkoutDraft = create<DraftState>()(
     (set, get) => ({
       draft: null,
       restUntil: null,
-      start: (gymId, workout) =>
+      start: (gymId, workout, userId) =>
         set({
           restUntil: null,
           draft: {
             clientId: randomUUID(),
+            userId,
             gymId,
             workoutId: workout.id,
             title: workout.title,
@@ -154,6 +159,12 @@ export const useWorkoutDraft = create<DraftState>()(
           set({ restUntil: Math.max(restUntil, Date.now()) + seconds * 1000 });
       },
       discard: () => set({ draft: null, restUntil: null }),
+      keepFor: (userId) => {
+        const { draft } = get();
+        if (!draft || draft.userId === userId) return;
+        if (draft.userId) set({ draft: null, restUntil: null });
+        else set({ draft: { ...draft, userId } });
+      },
     }),
     { name: 'corefit-workout-draft', storage: createJSONStorage(() => AsyncStorage) },
   ),

@@ -177,6 +177,31 @@ export async function setPassword(password: string, fullName?: string): Promise<
   return fetchProfile(data.user.id);
 }
 
+/**
+ * Finishes joining with a WhatsApp invite code for a real email: the sign-up code from
+ * that inbox proves the email is theirs, then the password and name they typed are saved.
+ */
+export async function confirmInviteEmail(
+  email: string,
+  code: string,
+  password: string,
+  fullName: string,
+): Promise<Profile> {
+  await verifyEmailCode(email, code, ['signup']);
+  return setPassword(password, fullName);
+}
+
+/** Sends the sign-up code again, for someone who made an account but lost the email. */
+export async function resendSignupCode(email: string) {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: Linking.createURL('/') },
+  });
+  if (error) throw error;
+}
+
 /** Emails a link that opens the app to choose a new password. */
 export async function sendPasswordReset(email: string) {
   if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
@@ -267,6 +292,13 @@ export async function resetPasswordWithCode(code: string, password: string): Pro
 export async function requestEmailChange(email: string) {
   if (!supabase) throw new Error('Demo mode can’t change emails.');
   const { error } = await supabase.auth.updateUser({ email });
+  if (error) throw error;
+}
+
+/** Sends the email-change code to the new address again. */
+export async function resendEmailChange(email: string) {
+  if (!supabase) throw new Error('Demo mode can’t change emails.');
+  const { error } = await supabase.auth.resend({ type: 'email_change', email });
   if (error) throw error;
 }
 

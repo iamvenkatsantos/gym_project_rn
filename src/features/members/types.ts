@@ -41,6 +41,9 @@ export type GymInvite = {
   code?: string | null;
   phone?: string | null;
   codeExpiresAt?: string | null;
+  /** When the invite email was last tried, and why it failed (null = it went). */
+  emailTriedAt?: string | null;
+  emailError?: string | null;
   /** The name the inviter gave, when they filled in the member's details. */
   fullName?: string | null;
 };
@@ -48,7 +51,12 @@ export type GymInvite = {
 /** A role at this gym, or 'gym_owner': the owner of a new gym of their own. */
 export type InviteRole = Role | 'gym_owner';
 
-export type InviteResult = 'added' | 'invited' | 'already_member';
+/**
+ * What inviting did: 'invited' saved an invite for someone without an account yet;
+ * 'invited_in_app' did the same for someone who has one, who accepts it in the app;
+ * 'added' (platform admins only) added an existing account straight away.
+ */
+export type InviteResult = 'added' | 'invited' | 'invited_in_app' | 'already_member';
 
 /** How an invite reaches someone: our email, or a WhatsApp message staff send themselves. */
 export type InviteChannel = 'email' | 'whatsapp';
@@ -65,6 +73,17 @@ export type InviteOutcome = {
   email?: string;
   /** Why the member details the inviter filled in weren't saved. */
   detailsError?: string | null;
+};
+
+/** Where Resend sends a pending invite: its email again, or its join code on WhatsApp. */
+export type ResendChannel = 'email' | 'whatsapp';
+
+/** What resending did; `code` is the WhatsApp join code (renewed if it had expired). */
+export type ResendOutcome = {
+  result: InviteResult;
+  emailSent: boolean;
+  emailError: string | null;
+  code: string | null;
 };
 
 /** What the join screen shows for an invite code. */

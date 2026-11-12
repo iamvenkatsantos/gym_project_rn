@@ -9,7 +9,9 @@ export type NotificationKind =
   | 'announcement'
   | 'birthday'
   /** Self workouts switched on, a trainer edited a member's own plan or replied to a workout. */
-  | 'workout';
+  | 'workout'
+  /** A gym invited someone who already has an account (they accept it in the app). */
+  | 'invite';
 
 /**
  * An in-app message: a nudge from the gym, news about trainer matching or bookings, or a

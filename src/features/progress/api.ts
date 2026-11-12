@@ -22,7 +22,8 @@ type LogRow = {
     set_number: number;
     reps: number;
     weight_kg: number | null;
-    exercise: { name: string };
+    /** Null when the exercise was a gym's own and that gym can't be read any more. */
+    exercise: { name: string } | null;
   }[];
 };
 
@@ -39,7 +40,7 @@ function toLog(row: LogRow): WorkoutLog {
     sets: row.sets
       .map((s) => ({
         exerciseId: s.exercise_id,
-        exerciseName: s.exercise.name,
+        exerciseName: s.exercise?.name ?? 'Exercise',
         setNumber: s.set_number,
         reps: s.reps,
         weightKg: s.weight_kg === null ? null : Number(s.weight_kg),
@@ -76,6 +77,42 @@ export async function listLogs(gymId: string, memberId: string): Promise<Workout
       .limit(100),
   ) as unknown as LogRow[];
   return rows.map(toLog);
+}
+
+type HistoryRow = LogRow & { gym_id: string };
+
+/**
+ * The person's workouts from every gym the viewer may see, newest first: all of them for the
+ * person, and for coaches at a gym they share their history with, those too (see
+ * can_view_workout_logs). Logs from other gyms carry that gym's name.
+ */
+export async function listHistory(gymId: string, memberId: string): Promise<WorkoutLog[]> {
+  if (!supabase) return listLogs(gymId, memberId);
+  const [rows, gyms] = await Promise.all([
+    supabase
+      .from('workout_logs')
+      .select(`gym_id, ${LOG_COLUMNS}`)
+      .eq('member_id', memberId)
+      .order('completed_at', { ascending: false })
+      .limit(200)
+      .then((res) => unwrap(res) as unknown as HistoryRow[]),
+    historyGymNames(memberId),
+  ]);
+  return rows.map((row) => ({
+    ...toLog(row),
+    gymName: row.gym_id === gymId ? null : (gyms.get(row.gym_id) ?? 'Another gym'),
+  }));
+}
+
+/** Names of the gyms behind someone's history that the viewer may see. */
+export async function historyGymNames(memberId: string): Promise<Map<string, string>> {
+  if (!supabase) return new Map();
+  const { data, error } = await supabase.rpc('history_gyms', { p_member_id: memberId });
+  // Older databases don't have it yet; the history still shows, just without names.
+  if (error) return new Map();
+  return new Map(
+    ((data ?? []) as { gym_id: string; gym_name: string }[]).map((g) => [g.gym_id, g.gym_name]),
+  );
 }
 
 type GymLogRow = LogRow & { member_id: string; person: { full_name: string } };

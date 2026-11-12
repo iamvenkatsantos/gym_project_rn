@@ -37,6 +37,8 @@ export type WorkoutLog = {
   /** Exercises swapped mid-workout, e.g. "Lat pulldown → Dumbbell row". */
   swaps?: string[];
   reply?: CoachReply | null;
+  /** Set when it was logged at another gym, in history that follows the person (#116). */
+  gymName?: string | null;
 };
 
 /** Someone else's workout, as their trainer, supervisor or owner sees it in the history feed. */

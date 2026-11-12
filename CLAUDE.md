@@ -70,6 +70,9 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   member a trainer (person screen → **Make trainer**, `promote_to_trainer()`, the only path the
   trigger lets through). It removes their trainer links, workout and diet plan assignments and
   pending trainer requests; history and memberships stay. It can't be undone in the app.
+- **Nobody writes `gym_members` directly** (#117): people join only through the invite RPCs and
+  claim trigger (security definer). The app may only update `status` (owners suspend/reactivate)
+  and `role` (refused by the lock trigger except for admins), and owners may delete (Remove).
 - **Platform admin** (`platform_admins` + `is_platform_admin()`, rows added in the SQL editor only)
   is separate from gym roles. Only the admin invites owners, adds branches, sets branch fees and
   switches on online payments. Never give gym owners power over gyms or owners. The admin area
@@ -79,7 +82,12 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   and `admin_create_owner_gym()` makes the brand, its first branch and the owner invite in one
   transaction (WhatsApp gets a join code; email goes through `invite-member` with role
   `gym_owner` and the `gymId`). Owners never create a gym; they edit its details on Gym details.
-  Works with zero gyms. The admin never joins the gym or invites their own email. The older
+  Works with zero gyms. The admin never joins the gym or invites their own email. An email (or
+mobile) with a pending owner invite at a gym that has no owner yet can't get a second gym ("Already
+invited to …"): the admin resends it from that branch instead (2026-11-11, after a lost first email
+made a duplicate). A gym nobody has joined and with no online payments can be deleted from the admin
+branch screen (**Delete this gym**, `admin_delete_gym()`; everything of it cascades, and its brand
+goes too if it was the only branch). The older
   `invite_gym_owner()` → `set-up-gym` path stays only for invites sent before this; in-gym
   Invite → Owner adds a co-owner.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+
@@ -91,6 +99,13 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 - **Workout and diet plans are private:** members see plans from their own trainers
   (`member_trainers`) plus plans assigned to them; trainers see their own; owners and supervisors
   see all, read-only for other coaches' plans. New plan-like features follow the same rule.
+- **History follows the person** (#116, Venkat 2026-11-10): workouts, measurements and progress
+  photos stay under the person. They always see their own from every gym (`useWorkoutHistory`,
+  body lists without a gym filter, diet plans "From other gyms"; `history_gyms()` names the gym).
+  Another gym's coaches see it only while the person shares it with that gym
+  (`gym_members.history_shared`, chosen on Join, changed on member Profile → Privacy via
+  `set_history_sharing()`), under the usual rules there (`can_view_workout_logs()` =
+  `can_view_logs_at()` at the gym, or at a gym they share with).
 
 ## Core flows
 
@@ -103,13 +118,18 @@ intent link (the app, else the Play Store), iPhones open the app as a universal 
 the app a page offers the store and the code. Older messages use the `join` edge fn, which sends
 Android the same intent link and everyone else to `vinven.net/join`.
 On `join` (or Sign in → I have an invite code) the person enters name and password; the
-`accept-invite` edge fn makes the account already confirmed (or takes over an imported one), which
+`accept-invite` edge fn makes the account. A code only proves the message reached the phone the
+inviter typed (#114), so: a **mobile login** is made already confirmed (or takes over an imported
+one), unless the number is tied to another gym (an invite or account there,
+`invite_code_conflict()`), which is refused; a **real email** is never confirmed or given a
+password by the function: it gets the sign-up code in its inbox (`auth.resend` type `signup`) and
+the join screen confirms it (`confirmInviteEmail`) and then saves the password. Confirming
 claims the invite, so each code works once. Signing up with the invited email still works too.
 **Admission details, both places:** on a member invite the inviter picks **They fill in** (default)
 or **Fill in now** (name, mobile, date of birth, weight, height; all required). The app then calls
 `save_admission_details()`, which keeps them on the `gym_invites` row (trainers only on invites they
-sent) or, for someone added straight away with an account, applies them now. On joining,
-`claim_gym_invites` applies them via `apply_admission_details()` (never overwrites a name, mobile or
+sent) or, for someone a platform admin added straight away, applies them now. On joining,
+`claim_gym_invites` (or `accept_gym_invite()`) applies them via `apply_admission_details()` (never overwrites a name, mobile or
 DOB they already have; weight/height become the first measurement) and sets `onboarded_at`, so the
 member skips `onboarding` and lands on Home. Fill in now also takes the front, side and back
 photos (`StartingPhotos`, required in the app): the inviter uploads them to
@@ -122,7 +142,8 @@ signs in with their mobile number: Sign in takes "Email or mobile" and `signInEm
 that address (`src/lib/mobile-login.ts`; show it with `loginLabel()`, never raw). **Their password
 reset** (Venkat, 2026-11-04, both ways): owners and supervisors tap **Send password reset code** on
 the person screen (`create_password_reset_code()`, mobile logins only so nobody takes over an email
-account, 1 day, works once) and send it on WhatsApp; the person taps Forgot password? with their
+account; refused if they're at a gym the caller doesn't manage, or own a gym the caller doesn't
+own (#115), so a manager can't reach another gym's accounts; 1 day, works once) and send it on WhatsApp; the person taps Forgot password? with their
 mobile → **I have a reset code** → `reset-password` screen and edge fn, which also signs them out
 on every other device (`end_user_sessions()`, service role only). Or they add an email on
 Edit profile (`AddEmail`, `updateUser` + `verifyOtp` type `email_change`; needs Supabase "Secure
@@ -133,8 +154,40 @@ email with the service role. Supervisors invite members and trainers; trainers i
 and those members are auto-mapped to them. Every member invite records an admission
 (`gym_members.admitted_by` / `admitted_at`, frozen by trigger). Emails carry a 6-digit code
 (`enter-code`, `verifyOtp`) because links can't open the app from a computer. `claim_gym_invites`
-attaches pending invites when the user confirms. Pending invites list as **Invited** on People, and
+attaches pending invites when the user confirms. **Existing accounts accept** (#116, Venkat
+2026-11-10): inviting an email or mobile that already has a confirmed account no longer adds them;
+`invite_to_gym()` saves the invite, sends an `invite` inbox/push to them and returns
+`invited_in_app` (no WhatsApp code; the message says to tap Join). `GymInvitesCard` (top of the
+inbox, Account and `no-gym`; `my_gym_invites()`) offers **Join** / **Decline**
+(`accept_gym_invite()`, `decline_gym_invite()`) and a **Share my history** switch. **Moving gyms** (Venkat, 2026-11-11): joining from an invite moves the person out of
+every other gym where they aren't an owner (`move_out()`): that `gym_members` row becomes
+`moved` (no access; only `accept_gym_invite()` changes it, owners can't reactivate it), member
+memberships there end the day before (note says so; no new ones while moved), and trainer
+links, upcoming bookings, sessions and trainer requests there go. The card first warns with the
+days given up (`my_gym_invites.leaving_gyms/days_left`, `leaveWarning`, **Join anyway**), and the
+app opens the new gym (no first-sign-in form if they filled it in at another gym; their
+details and history follow them, so `invite-person` hides They fill in / Fill in now once
+`invite_has_account()` finds the email or mobile login). Coming back needs a new invite (same role) and a new membership. The old
+gym's People lists them under **Moved out** (`gym_moved_members()`, not where they went);
+`gym_people` leaves them out. **One role per person:** an existing account holding a role at
+another gym can only be invited (and accept) with that same role (`role_elsewhere()`); platform
+admins are exempt. Only platform
+admins still add an existing account straight away (`added`). Pending invites list as **Invited** on People, and
 members who haven't confirmed an account (imported) show an Invited tag (`gym_people.signed_up`).
+**Resend** (Venkat, 2026-11-11): every pending invite on the Invited list (`PendingInvites`: People,
+trainer Members, and the admin branch screen for a new gym's owner invite) has a resend button, so a
+lost, bounced or expired first invite never leaves someone stuck. `resend_gym_invite(id, channel)`
+keeps the invite as it is (who invited them, so a trainer's member stays theirs, and any admission
+details); who may resend matches who may withdraw (owners any but owner invites, supervisors member
+and trainer invites, trainers their own member invites, admins any). Email invites go through
+`invite-member` with `{ inviteId }`: a fresh email with a new 6-digit code, after updating the
+unconfirmed account's details (`invite_account_id()`), since Supabase keeps the old ones on a re-invite.
+WhatsApp invites (and mobile logins, which have no inbox) get their code back, renewed for 7 days once
+expired. If they made an account since, the inbox invite goes again (`invited_in_app`); if they're
+already at the gym, the leftover invite is deleted. Every invite email, first or resent, is capped at
+one a minute and 5 a day per invite (`invite_email_wait()`) and recorded (`record_invite_email()`:
+`gym_invites.email_tried_at`, `email_error`, `email_sends`), so the list says "email failed, tap
+resend" with a plain reason (Supabase's rate limits included).
 **No trainer or plan before they join:** `member_trainers_signed_up` trigger, `isSignedUp()` in the
 pickers. Login is email + password, or mobile + password for WhatsApp invites without an email (no phone OTP); Google or other
 OAuth may come later.
@@ -242,7 +295,9 @@ by owners and supervisors from `match-trainers` (members without a trainer first
 **Save** (`SaveBar`, `changeTrainerLinks`); unmapping deletes that trainer's plan assignments (DB
 trigger), so the bar warns first. Members can ask for a trainer (`trainer_requests`). Members log sessions in
 `workout-session` with an offline draft (`src/features/progress/draft-store.ts`, Zustand persist)
-uploaded idempotently by `workout_logs.client_id`. Diet plans and body progress (measurements,
+uploaded idempotently by `workout_logs.client_id`. The draft carries who started it
+(`userId`): signing out or deleting the account discards it, and `keepFor()` drops another user's
+draft when someone else signs in on the phone (#118). Diet plans and body progress (measurements,
 private progress photos) follow the same coach/member pattern.
 **Weekday plans:** on `assign-plan` the coach picks each member's days
 (`workout_assignments.days`, ISO 1 = Mon … 7 = Sun; empty = any day). Members see **Today**
@@ -370,7 +425,8 @@ hides the Pay button, and the banner and `plan-locked` show only the status. Nev
 link, UPI ID or "pay on the website" in the iOS app; iOS owners pay from Android or the admin
 records it. Later, for both platforms: status-only apps, a web pay page and reminders outside the
 app (Play Billing has the same rule). The admin records cash on the branch screen (`admin_record_subscription`) or gives 1, 3, 6 or 12
-free months (`admin_give_free_months`).
+free months (`admin_give_free_months`); the branch screen then shows the new paid-until day, and
+owners' apps recheck the plan on return to the front after a minute (`useBranchAccess`) and on any push.
 Unpaid (not free) branches: adding people stops on day one (`require_paid_branch` triggers on
 `gym_invites` and `gym_members`, so every invite and import path is covered); every role sees
 `PlanBanner` (only once unpaid, no advance warning); 5 days later (`branch_access()`, `GRACE_DAYS`) the app shows only `plan-locked` for
@@ -450,6 +506,11 @@ and test steps: `infra/updates-server/README.md`.
   `/realtime/v1/`; sign-in and code entry are rate limited by a Cloudflare WAF rule
   (`infra/api-proxy/README.md`). Edge functions without a JWT check (`join`, `send-push`,
   `razorpay-webhook`, `accept-invite`, `reset-password`) must validate and cap every input.
+- **Every emailed code has a resend** (Venkat, 2026-11-12): sign-up (Sign in and `enter-code`),
+  password reset (Sign in, `enter-code`, web dashboard), the WhatsApp-invite email code on `join`
+  and Add email (`email_change`) use `ResendCodeButton` (`src/features/auth/components/`), and
+  invites use the Invited list's resend. One per email a minute (`resend.ts`, Supabase's own limit);
+  a new screen that waits on an emailed code must offer it too.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).

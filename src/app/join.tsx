@@ -10,9 +10,12 @@ import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { signInWithPassword } from '@/features/auth/api';
+import { confirmInviteEmail, resendSignupCode, signInWithPassword } from '@/features/auth/api';
+import { ResendCodeButton } from '@/features/auth/components/resend-code-button';
+import { markCodeSent } from '@/features/auth/resend';
 import { loginLabel } from '@/lib/mobile-login';
 import { useAuthStore } from '@/features/auth/auth-store';
+import type { Profile } from '@/features/auth/types';
 import { acceptInvite, findInviteByCode } from '@/features/members/api';
 import { formatInviteCode, isInviteCode, normalizeInviteCode } from '@/features/members/rules';
 import {
@@ -20,13 +23,15 @@ import {
   MAX_PASSWORD,
   validateName,
   validateNewPassword,
+  validateCode,
   validatePasswordMatch,
 } from '@/lib/validation';
 
 /**
  * Joins a gym with the code from a WhatsApp invite: the link in the message opens
- * this screen with the code filled in. The account is made already confirmed, so
- * there's no email code; the usual first-sign-in details come next.
+ * this screen with the code filled in. A mobile sign-in is made already confirmed; a
+ * real email gets a 6-digit sign-up code to prove it's theirs. The usual first-sign-in
+ * details come next.
  */
 export default function JoinScreen() {
   const params = useLocalSearchParams<{ code?: string }>();
@@ -45,16 +50,32 @@ export default function JoinScreen() {
     retry: false,
   });
   const fullName = typedName ?? invite.data?.fullName ?? '';
+  // Set once a real email has been sent its sign-up code.
+  const [codeSentTo, setCodeSentTo] = useState<string | null>(null);
+  const [emailCode, setEmailCode] = useState('');
+  const signedIn = (profile: Profile) => {
+    useAuthStore.getState().setProfile(profile);
+    router.replace('/');
+  };
   const join = useMutation({
     mutationFn: async () => {
-      const email = await acceptInvite(clean, fullName.trim(), password);
-      return signInWithPassword(email, password);
+      const result = await acceptInvite(clean, fullName.trim(), password);
+      if (result.emailCode) return result.email;
+      return signInWithPassword(result.email, password);
     },
-    onSuccess: (profile) => {
-      useAuthStore.getState().setProfile(profile);
-      router.replace('/');
+    onSuccess: (result) => {
+      if (typeof result === 'string') {
+        markCodeSent(result);
+        setCodeSentTo(result);
+      } else signedIn(result);
     },
   });
+  const confirmEmail = useMutation({
+    mutationFn: () =>
+      confirmInviteEmail(codeSentTo ?? '', emailCode.trim(), password, fullName.trim()),
+    onSuccess: signedIn,
+  });
+  const emailCodeError = validateCode(emailCode.trim());
 
   const found = invite.data;
   const nameError = validateName(fullName);
@@ -74,6 +95,7 @@ export default function JoinScreen() {
         onChangeText={(text) => {
           setCode(text.toUpperCase());
           join.reset();
+          setCodeSentTo(null);
         }}
         error={
           code && !complete
@@ -142,13 +164,41 @@ export default function JoinScreen() {
             error={confirm ? confirmError : null}
           />
           {join.error ? <ThemedText themeColor="danger">{join.error.message}</ThemedText> : null}
-          <Button
-            label="Join"
-            icon="arrow-forward"
-            disabled={!!firstError(nameError, passwordError, confirmError)}
-            loading={join.isPending}
-            onPress={() => join.mutate()}
-          />
+          {codeSentTo ? (
+            <>
+              <TextField
+                label={`Code sent to ${codeSentTo}`}
+                icon="mail-outline"
+                placeholder="6-digit code"
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+                maxLength={6}
+                value={emailCode}
+                onChangeText={setEmailCode}
+                error={emailCode ? emailCodeError : null}
+              />
+              {confirmEmail.error ? (
+                <ThemedText themeColor="danger">{confirmEmail.error.message}</ThemedText>
+              ) : null}
+              <Button
+                label="Confirm and join"
+                icon="arrow-forward"
+                disabled={!!emailCodeError}
+                loading={confirmEmail.isPending}
+                onPress={() => confirmEmail.mutate()}
+              />
+              <ResendCodeButton email={codeSentTo} send={resendSignupCode} />
+            </>
+          ) : (
+            <Button
+              label="Join"
+              icon="arrow-forward"
+              disabled={!!firstError(nameError, passwordError, confirmError)}
+              loading={join.isPending}
+              onPress={() => join.mutate()}
+            />
+          )}
         </>
       ) : null}
     </Screen>

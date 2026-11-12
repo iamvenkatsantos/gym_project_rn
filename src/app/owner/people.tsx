@@ -16,6 +16,7 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import { useTrainerLinks } from '@/features/coaching/hooks';
 import { membersOf, trainersOf } from '@/features/coaching/rules';
 import type { TrainerLink } from '@/features/coaching/types';
+import { MovedMembers } from '@/features/gym-invites/components/moved-members';
 import { PendingInvites } from '@/features/members/components/pending-invites';
 import { PersonRow } from '@/features/members/components/person-row';
 import { usePeople } from '@/features/members/hooks';
@@ -115,6 +116,8 @@ export default function OwnerPeopleScreen() {
           );
         }}
       </QueryState>
+
+      <MovedMembers gymId={gym.gymId} />
     </Screen>
   );
 }

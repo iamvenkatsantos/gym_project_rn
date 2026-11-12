@@ -12,6 +12,8 @@ import type {
   InviteByCode,
   InviteResult,
   InviteRole,
+  ResendChannel,
+  ResendOutcome,
 } from '@/features/members/types';
 import type { Role } from '@/features/auth/types';
 import type { ImportRow } from '@/features/members/import-rules';
@@ -68,6 +70,8 @@ type InviteRow = {
   code?: string | null;
   phone?: string | null;
   code_expires_at?: string | null;
+  email_tried_at?: string | null;
+  email_error?: string | null;
 };
 
 type CoachedRow = { member_id: string; workout: { title: string } };
@@ -104,6 +108,28 @@ export async function listGymMembers(
 }
 
 /** Everyone at the gym with their email. Owners and supervisors only. */
+/**
+ * Whether this email (or, without one, the mobile login) already has a CoreFit account. Such
+ * people get the invite in their app and bring their own details, so no admission form.
+ */
+export async function inviteHasAccount(
+  gymId: string,
+  email: string,
+  mobile: string | null,
+): Promise<boolean> {
+  if (!supabase) {
+    const normalized = normalizeEmail(email || mobileLoginEmail(mobile ?? ''));
+    return delay(mockAccounts.some((a) => a.email === normalized));
+  }
+  return unwrap(
+    await supabase.rpc('invite_has_account', {
+      p_gym_id: gymId,
+      p_email: email,
+      p_phone: mobile ?? '',
+    }),
+  ) as boolean;
+}
+
 export async function listPeople(gymId: string): Promise<GymPerson[]> {
   if (!supabase) {
     return delay(
@@ -136,8 +162,14 @@ export async function listInvites(gymId: string): Promise<GymInvite[]> {
       .select(columns)
       .eq('gym_id', gymId)
       .order('created_at', { ascending: false });
-  let result = await select('id, email, role, created_at, code, phone, code_expires_at');
-  // Before the invite codes migration there are no code columns.
+  let result = await select(
+    'id, email, role, created_at, code, phone, code_expires_at, email_tried_at, email_error',
+  );
+  // Before the resend migration there are no email columns, and before the invite codes
+  // migration no code columns.
+  if (result.error?.code === '42703') {
+    result = await select('id, email, role, created_at, code, phone, code_expires_at');
+  }
   if (result.error?.code === '42703') result = await select('id, email, role, created_at');
   const rows = unwrap(result) as unknown as InviteRow[];
   return rows.map((r) => ({
@@ -148,7 +180,69 @@ export async function listInvites(gymId: string): Promise<GymInvite[]> {
     code: r.code ?? null,
     phone: r.phone ?? null,
     codeExpiresAt: r.code_expires_at ?? null,
+    emailTriedAt: r.email_tried_at ?? null,
+    emailError: r.email_error ?? null,
   }));
+}
+
+const INVITE_CODE_DAYS = 7;
+
+/**
+ * Sends a pending invite again, keeping who invited them and any details filled in. By
+ * email, invite-member sends a fresh email (new 6-digit code). On WhatsApp it returns the
+ * join code to send, renewed for 7 days if it had expired.
+ */
+export async function resendInvite(
+  gymId: string,
+  invite: GymInvite,
+  channel: ResendChannel,
+): Promise<ResendOutcome> {
+  if (!supabase) {
+    const found = mockInvites.find((i) => i.id === invite.id);
+    if (!found) throw new Error('This invite was withdrawn or already used');
+    if (channel === 'email') {
+      Object.assign(found, { emailTriedAt: new Date().toISOString(), emailError: null });
+      return delay({ result: 'invited', emailSent: true, emailError: null, code: null });
+    }
+    if (!found.code || (found.codeExpiresAt && new Date(found.codeExpiresAt) < new Date())) {
+      found.code = mockInviteCode();
+      found.codeExpiresAt = new Date(Date.now() + INVITE_CODE_DAYS * 86_400_000).toISOString();
+    }
+    return delay({ result: 'invited', emailSent: false, emailError: null, code: found.code });
+  }
+
+  if (channel === 'whatsapp') {
+    const { data, error } = await supabase.rpc('resend_gym_invite', {
+      p_invite_id: invite.id,
+      p_channel: 'whatsapp',
+    });
+    // Before the resend migration, a code still in date can go again as it is.
+    if (error?.code === 'PGRST202' && invite.code) {
+      const expired = invite.codeExpiresAt && new Date(invite.codeExpiresAt) < new Date();
+      if (expired) throw new Error('This code has expired. Invite them again.');
+      return { result: 'invited', emailSent: false, emailError: null, code: invite.code };
+    }
+    const [row] = unwrap({ data, error }) as { result: InviteResult; code: string | null }[];
+    return { result: row.result, emailSent: false, emailError: null, code: row.code };
+  }
+
+  // gymId, email and role let an older invite-member (no resend yet) invite them again.
+  const { data, error } = await supabase.functions.invoke<InviteOutcome>('invite-member', {
+    body: {
+      inviteId: invite.id,
+      gymId,
+      email: invite.email,
+      role: invite.role,
+      redirectTo: setPasswordUrl(),
+    },
+  });
+  if (error || !data) throw new Error(await functionErrorMessage(error));
+  return {
+    result: data.result,
+    emailSent: data.emailSent,
+    emailError: data.emailError,
+    code: null,
+  };
 }
 
 /**
@@ -462,17 +556,9 @@ async function mockInvite(
 ): Promise<InviteResult> {
   const normalized = normalizeEmail(email);
   if (mockPeople.some((p) => p.email === normalized)) return delay('already_member');
+  // Someone with an account accepts the invite in the app, so they get no code.
   const account = mockAccounts.find((a) => a.email === normalized);
-  if (account) {
-    mockPeople.push({
-      ...account,
-      role,
-      status: 'active',
-      joinedAt: new Date().toISOString(),
-    });
-    return delay('added');
-  }
-  const code = phone ? mockInviteCode() : null;
+  const code = phone && !account ? mockInviteCode() : null;
   const codeExpiresAt = code ? new Date(Date.now() + 7 * 86_400_000).toISOString() : null;
   const existing = mockInvites.find((i) => i.email === normalized);
   if (existing) Object.assign(existing, { role }, code ? { code, phone, codeExpiresAt } : {});
@@ -487,7 +573,7 @@ async function mockInvite(
       codeExpiresAt,
     });
   }
-  return delay('invited');
+  return delay(account ? 'invited_in_app' : 'invited');
 }
 
 function mockInviteCode() {
@@ -525,16 +611,19 @@ export async function findInviteByCode(code: string): Promise<InviteByCode | nul
 }
 
 /**
- * Makes the invited person's account from their code, name and password, already confirmed,
- * and returns the email to sign in with. Each code works once.
+ * Makes the invited person's account from their code, name and password, and returns the
+ * email to sign in with. Mobile sign-ins come back ready (`emailCode` false); a real email
+ * comes back with `emailCode` true, and the sign-up code sent to that inbox confirms it
+ * (see `confirmInviteEmail`). Each code works once.
  */
 export async function acceptInvite(code: string, fullName: string, password: string) {
   if (!supabase) throw new Error('Demo mode can’t make accounts. Pick a demo role instead.');
-  const { data, error } = await supabase.functions.invoke<{ email: string }>('accept-invite', {
-    body: { code: normalizeInviteCode(code), fullName, password },
-  });
+  const { data, error } = await supabase.functions.invoke<{ email: string; emailCode?: boolean }>(
+    'accept-invite',
+    { body: { code: normalizeInviteCode(code), fullName, password } },
+  );
   if (error || !data) throw new Error(await functionErrorMessage(error));
-  return data.email;
+  return { email: data.email, emailCode: data.emailCode === true };
 }
 
 export async function withdrawInvite(inviteId: string) {

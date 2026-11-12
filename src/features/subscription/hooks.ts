@@ -28,8 +28,9 @@ export function useBranchAccess(gymId: string | undefined) {
     queryKey: subscriptionKeys.access(gymId ?? ''),
     queryFn: () => fetchBranchAccess(gymId!),
     enabled: !!gymId,
-    // Checked again now and then, so a lock or an unlock shows without a restart.
-    staleTime: 5 * 60 * 1000,
+    // Checked again when the app comes back to the front after a minute, so a year the
+    // admin records or free months they give show without a pull or a restart.
+    staleTime: 60 * 1000,
   });
 }
 

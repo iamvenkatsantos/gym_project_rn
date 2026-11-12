@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 import { fetchProfile, restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile } from '@/features/auth/types';
+import { useWorkoutDraft } from '@/features/progress/draft-store';
 import { queryClient } from '@/lib/query-client';
 import { supabase } from '@/lib/supabase';
 
@@ -41,9 +42,23 @@ export function useAuthBootstrap() {
         .then((profile) => profile && setProfile(profile))
         .catch(() => {});
     });
+    // A workout in progress belongs to whoever started it: drop it when someone else signs in.
+    const keepDraft = (profile: Profile | null) => {
+      if (profile) useWorkoutDraft.getState().keepFor(profile.id);
+    };
+    keepDraft(useAuthStore.getState().profile);
+    // The saved draft loads from storage after launch; check it again once it has.
+    const unsubscribeHydration = useWorkoutDraft.persist.onFinishHydration(() =>
+      keepDraft(useAuthStore.getState().profile),
+    );
+    const unsubscribeDraft = useAuthStore.subscribe((state, previous) => {
+      if (state.profile?.id !== previous.profile?.id) keepDraft(state.profile);
+    });
     return () => {
       data.subscription.unsubscribe();
       appState.remove();
+      unsubscribeDraft();
+      unsubscribeHydration();
     };
   }, [setProfile]);
 }

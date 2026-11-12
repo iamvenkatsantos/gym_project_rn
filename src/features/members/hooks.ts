@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 import {
   importMembers,
   inviteGymOwner,
   invitePerson,
+  inviteHasAccount,
   sendImportInvites,
   listCoachedMembers,
   listGymMembers,
@@ -11,6 +13,7 @@ import {
   listPeople,
   promoteToTrainer,
   removePerson,
+  resendInvite,
   saveAdmissionDetails,
   updatePerson,
   withdrawInvite,
@@ -18,7 +21,14 @@ import {
 import { branchKeys } from '@/features/branches/hooks';
 import type { ImportRow } from '@/features/members/import-rules';
 import type { MemberKind } from '@/features/members/rules';
-import type { GymPerson, InviteChannel, InviteOutcome, InviteRole } from '@/features/members/types';
+import type {
+  GymInvite,
+  GymPerson,
+  InviteChannel,
+  InviteOutcome,
+  InviteRole,
+  ResendChannel,
+} from '@/features/members/types';
 import { uploadAdmissionPhotos } from '@/features/body/api';
 import type { PhotoPose } from '@/features/body/types';
 import type { AdmissionDetails, PickedPhoto } from '@/features/onboarding/types';
@@ -31,6 +41,29 @@ export const memberKeys = {
   coached: (gymId: string, trainerId: string) =>
     [...memberKeys.all, gymId, 'coached', trainerId] as const,
 };
+
+/**
+ * Whether the invite's email (or mobile login) already has an account, checked once typing
+ * pauses. `lookup` is null until there's a valid email or mobile to check.
+ */
+export function useInviteHasAccount(
+  gymId: string,
+  lookup: { email: string; mobile: string | null } | null,
+) {
+  const key = lookup ? `${lookup.email}|${lookup.mobile ?? ''}` : null;
+  const [settled, setSettled] = useState(key);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(key), 400);
+    return () => clearTimeout(timer);
+  }, [key]);
+  const ready = lookup !== null && settled === key;
+  return useQuery({
+    queryKey: [...memberKeys.all, gymId, 'has-account', key],
+    queryFn: () => inviteHasAccount(gymId, lookup!.email, lookup!.mobile),
+    enabled: ready,
+    staleTime: 60_000,
+  });
+}
 
 export function useGymMembers(gymId: string, kind: MemberKind = 'member') {
   return useQuery({
@@ -99,6 +132,16 @@ export function useInvitePerson(gymId: string) {
         };
       }
     },
+    onSettled: invalidate,
+  });
+}
+
+/** Sends a pending invite again by email, or gets its (renewed) code for WhatsApp. */
+export function useResendInvite(gymId: string) {
+  const invalidate = useInvalidateMembers();
+  return useMutation({
+    mutationFn: ({ invite, channel }: { invite: GymInvite; channel: ResendChannel }) =>
+      resendInvite(gymId, invite, channel),
     onSettled: invalidate,
   });
 }
