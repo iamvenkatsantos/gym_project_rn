@@ -12,8 +12,16 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
-import { sendPasswordReset, signInAsDemo, signInWithPassword, signUp } from '@/features/auth/api';
+import {
+  resendSignupCode,
+  sendPasswordReset,
+  signInAsDemo,
+  signInWithPassword,
+  signUp,
+} from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
+import { ResendCodeButton } from '@/features/auth/components/resend-code-button';
+import { markCodeSent } from '@/features/auth/resend';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
 import { isDemoMode } from '@/lib/env';
@@ -70,9 +78,12 @@ export default function SignInScreen() {
   });
   const createAccount = useMutation({
     mutationFn: () => signUp(fullName.trim(), email.trim(), password),
-    onSuccess: (profile) => profile && onSignedIn(profile),
+    onSuccess: (profile) => (profile ? onSignedIn(profile) : markCodeSent(email)),
   });
-  const resetPassword = useMutation({ mutationFn: () => sendPasswordReset(email.trim()) });
+  const resetPassword = useMutation({
+    mutationFn: () => sendPasswordReset(email.trim()),
+    onSuccess: () => markCodeSent(email),
+  });
   const demoSignIn = useMutation({ mutationFn: signInAsDemo, onSuccess: onSignedIn });
 
   const error =
@@ -198,6 +209,7 @@ export default function SignInScreen() {
                   icon="keypad-outline"
                   onPress={() => enterCode('signup')}
                 />
+                <ResendCodeButton email={email} send={resendSignupCode} />
               </View>
             ) : (
               <>
@@ -306,6 +318,7 @@ export default function SignInScreen() {
                       size="compact"
                       onPress={() => enterCode('recovery')}
                     />
+                    <ResendCodeButton email={email} send={sendPasswordReset} />
                   </View>
                 ) : null}
 

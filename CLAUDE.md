@@ -506,6 +506,11 @@ and test steps: `infra/updates-server/README.md`.
   `/realtime/v1/`; sign-in and code entry are rate limited by a Cloudflare WAF rule
   (`infra/api-proxy/README.md`). Edge functions without a JWT check (`join`, `send-push`,
   `razorpay-webhook`, `accept-invite`, `reset-password`) must validate and cap every input.
+- **Every emailed code has a resend** (Venkat, 2026-11-12): sign-up (Sign in and `enter-code`),
+  password reset (Sign in, `enter-code`, web dashboard), the WhatsApp-invite email code on `join`
+  and Add email (`email_change`) use `ResendCodeButton` (`src/features/auth/components/`), and
+  invites use the Invited list's resend. One per email a minute (`resend.ts`, Supabase's own limit);
+  a new screen that waits on an emailed code must offer it too.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).

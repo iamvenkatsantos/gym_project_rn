@@ -5,7 +5,9 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
-import { confirmEmailChange, requestEmailChange } from '@/features/auth/api';
+import { confirmEmailChange, requestEmailChange, resendEmailChange } from '@/features/auth/api';
+import { ResendCodeButton } from '@/features/auth/components/resend-code-button';
+import { markCodeSent } from '@/features/auth/resend';
 import { useAccountEmail } from '@/features/auth/use-profile';
 import { isMobileLogin } from '@/lib/mobile-login';
 import { normalizeEmail, validateCode, validateEmail } from '@/lib/validation';
@@ -20,7 +22,10 @@ export function AddEmail() {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const send = useMutation({ mutationFn: () => requestEmailChange(normalizeEmail(email)) });
+  const send = useMutation({
+    mutationFn: () => requestEmailChange(normalizeEmail(email)),
+    onSuccess: () => markCodeSent(normalizeEmail(email)),
+  });
   const confirm = useMutation({
     mutationFn: () => confirmEmailChange(normalizeEmail(email), code.trim()),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['account-email'] }),
@@ -83,6 +88,7 @@ export function AddEmail() {
             loading={confirm.isPending}
             onPress={() => confirm.mutate()}
           />
+          <ResendCodeButton email={normalizeEmail(email)} send={resendEmailChange} />
         </>
       ) : (
         <Button

@@ -191,6 +191,17 @@ export async function confirmInviteEmail(
   return setPassword(password, fullName);
 }
 
+/** Sends the sign-up code again, for someone who made an account but lost the email. */
+export async function resendSignupCode(email: string) {
+  if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: Linking.createURL('/') },
+  });
+  if (error) throw error;
+}
+
 /** Emails a link that opens the app to choose a new password. */
 export async function sendPasswordReset(email: string) {
   if (!supabase) throw new Error('Supabase is not configured. Use a demo role instead.');
@@ -281,6 +292,13 @@ export async function resetPasswordWithCode(code: string, password: string): Pro
 export async function requestEmailChange(email: string) {
   if (!supabase) throw new Error('Demo mode can’t change emails.');
   const { error } = await supabase.auth.updateUser({ email });
+  if (error) throw error;
+}
+
+/** Sends the email-change code to the new address again. */
+export async function resendEmailChange(email: string) {
+  if (!supabase) throw new Error('Demo mode can’t change emails.');
+  const { error } = await supabase.auth.resend({ type: 'email_change', email });
   if (error) throw error;
 }
 
