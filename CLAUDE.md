@@ -10,7 +10,7 @@ code layout, imported below) and `README.md` (setup, push and Razorpay details).
 CoreFit (product of VinVen Technologies) is one Expo app for gym members, trainers, supervisors
 and owners, plus a platform admin who runs CoreFit itself. Bundle id `com.corefit.gym`, URL
 scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from CoreFit Gym on
-2026-11-03); some older server messages in migrations still say "CoreFit Gym". Android ships first; iOS is planned (no Apple account or APNs key yet; plan doc in the iOS release thread).
+2026-11-03); some older server messages in migrations still say "CoreFit Gym". Android ships first; iOS is in progress (Apple Developer account, Individual in Vinitha's name, Team ID `7YL46TJ7B3`, verified 2026-11-12; APNs key via `eas credentials`).
 
 - **App:** Expo SDK 58, Expo Router (`src/app/`), TypeScript strict, TanStack Query for server
   state, Zustand for the auth session and offline drafts.
@@ -28,7 +28,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   Android, the App Store on iPhone once `APP_STORE_URL` is set in the worker, else the home page),
   `/join?code=…`, the join link in WhatsApp invites (`joinLink()`; Android → intent link, iPhone
   → universal link via `ios.associatedDomains` and the worker's `apple-app-site-association`,
-  live once `APPLE_TEAM_ID` is set; otherwise a page that tries `corefit://join` and offers the
+  Team ID `7YL46TJ7B3` in `APPLE_TEAM_ID`; otherwise a page that tries `corefit://join` and offers the
   store), and `/.well-known/apple-app-site-association`. Canonical URLs and `sitemap.xml` use
   `vinven.net`. The app links them from `src/constants/legal.ts`;
   support email is `support@vinven.net` (Cloudflare Email Routing). Update them when pricing,
@@ -83,11 +83,11 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
   transaction (WhatsApp gets a join code; email goes through `invite-member` with role
   `gym_owner` and the `gymId`). Owners never create a gym; they edit its details on Gym details.
   Works with zero gyms. The admin never joins the gym or invites their own email. An email (or
-mobile) with a pending owner invite at a gym that has no owner yet can't get a second gym ("Already
-invited to …"): the admin resends it from that branch instead (2026-11-11, after a lost first email
-made a duplicate). A gym nobody has joined and with no online payments can be deleted from the admin
-branch screen (**Delete this gym**, `admin_delete_gym()`; everything of it cascades, and its brand
-goes too if it was the only branch). The older
+  mobile) with a pending owner invite at a gym that has no owner yet can't get a second gym ("Already
+  invited to …"): the admin resends it from that branch instead (2026-11-11, after a lost first email
+  made a duplicate). A gym nobody has joined and with no online payments can be deleted from the admin
+  branch screen (**Delete this gym**, `admin_delete_gym()`; everything of it cascades, and its brand
+  goes too if it was the only branch). The older
   `invite_gym_owner()` → `set-up-gym` path stays only for invites sent before this; in-gym
   Invite → Owner adds a co-owner.
 - **Brands and branches:** every gym is a branch of a brand (`gyms.brand_id`). Owners with 2+

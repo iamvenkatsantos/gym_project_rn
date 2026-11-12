@@ -8,8 +8,8 @@ const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.corefi
 const APP_STORE_URL = null;
 const HOME_URL = 'https://vinven.net/';
 // Apple Team ID (developer.apple.com → Membership details), for iPhone universal links on
-// vinven.net/join (app.json ios.associatedDomains). Until it's set, iPhones use the join page.
-const APPLE_TEAM_ID = null;
+// vinven.net/join (app.json ios.associatedDomains). Set to null to turn them off.
+const APPLE_TEAM_ID = '7YL46TJ7B3';
 
 const isAndroid = (ua) => /android/i.test(ua);
 const isApple = (ua) => /iphone|ipad|ipod/i.test(ua);
