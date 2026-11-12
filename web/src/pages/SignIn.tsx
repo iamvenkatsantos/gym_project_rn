@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
+import { markCodeSent, resendLabel, resendWaitSeconds } from '@/features/auth/resend';
 import { MIN_PASSWORD } from '@/lib/validation';
 
 import { errorMessage } from '../components/ui';
@@ -19,6 +20,15 @@ export function SignIn() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  // Re-render each second while the resend wait counts down.
+  const [, tick] = useState(0);
+  const wait = mode === 'reset' ? resendWaitSeconds(email) : 0;
+  const waiting = wait > 0;
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(timer);
+  }, [waiting]);
 
   const run = async (e: FormEvent, action: () => Promise<void>) => {
     e.preventDefault();
@@ -44,6 +54,7 @@ export function SignIn() {
     run(e, async () => {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
+      markCodeSent(email);
       setPassword('');
       setMode('reset');
       setInfo(`We emailed a 6-digit code to ${email.trim()}.`);
@@ -62,6 +73,15 @@ export function SignIn() {
       if (verified.error) throw verified.error;
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+    });
+
+  const resendCode = (e: FormEvent) =>
+    run(e, async () => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
+      markCodeSent(email);
+      setCode('');
+      setInfo(`New code sent to ${email.trim()}. Check spam too.`);
     });
 
   const onSubmit = mode === 'signIn' ? signIn : mode === 'forgot' ? sendCode : reset;
@@ -142,6 +162,15 @@ export function SignIn() {
                 ? 'Email me a code'
                 : 'Set password and sign in'}
         </button>
+        {mode === 'reset' ? (
+          <button
+            className="button link"
+            type="button"
+            disabled={busy || waiting}
+            onClick={resendCode}>
+            {resendLabel(wait)}
+          </button>
+        ) : null}
         <button
           className="button link"
           type="button"

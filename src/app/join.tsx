@@ -10,7 +10,9 @@ import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { confirmInviteEmail, signInWithPassword } from '@/features/auth/api';
+import { confirmInviteEmail, resendSignupCode, signInWithPassword } from '@/features/auth/api';
+import { ResendCodeButton } from '@/features/auth/components/resend-code-button';
+import { markCodeSent } from '@/features/auth/resend';
 import { loginLabel } from '@/lib/mobile-login';
 import { useAuthStore } from '@/features/auth/auth-store';
 import type { Profile } from '@/features/auth/types';
@@ -62,8 +64,10 @@ export default function JoinScreen() {
       return signInWithPassword(result.email, password);
     },
     onSuccess: (result) => {
-      if (typeof result === 'string') setCodeSentTo(result);
-      else signedIn(result);
+      if (typeof result === 'string') {
+        markCodeSent(result);
+        setCodeSentTo(result);
+      } else signedIn(result);
     },
   });
   const confirmEmail = useMutation({
@@ -184,6 +188,7 @@ export default function JoinScreen() {
                 loading={confirmEmail.isPending}
                 onPress={() => confirmEmail.mutate()}
               />
+              <ResendCodeButton email={codeSentTo} send={resendSignupCode} />
             </>
           ) : (
             <Button

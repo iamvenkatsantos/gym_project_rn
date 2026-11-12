@@ -6,9 +6,15 @@ import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
-import { fetchProfile, verifyEmailCode } from '@/features/auth/api';
+import {
+  fetchProfile,
+  resendSignupCode,
+  sendPasswordReset,
+  verifyEmailCode,
+} from '@/features/auth/api';
 import type { LinkSession } from '@/features/auth/auth-link';
 import { useAuthStore } from '@/features/auth/auth-store';
+import { ResendCodeButton } from '@/features/auth/components/resend-code-button';
 import { firstError, validateCode, validateEmail } from '@/lib/validation';
 
 type Kind = LinkSession['type'];
@@ -40,6 +46,8 @@ export default function EnterCodeScreen() {
       router.replace('/');
     },
   });
+  // Resets and sign-ups can ask for a new code here; invite codes come from the gym (Resend).
+  const resendKind = params.kind === 'recovery' || params.kind === 'signup' ? params.kind : null;
 
   return (
     <Screen refreshable={false}>
@@ -74,7 +82,7 @@ export default function EnterCodeScreen() {
       />
       {verify.error ? (
         <ThemedText themeColor="danger">
-          {verify.error.message}. Check the code, or ask for a new email.
+          {verify.error.message}. Check the code, or resend it.
         </ThemedText>
       ) : null}
       <Button
@@ -84,6 +92,14 @@ export default function EnterCodeScreen() {
         loading={verify.isPending}
         onPress={() => verify.mutate()}
       />
+      {resendKind ? (
+        <ResendCodeButton
+          email={email}
+          send={resendKind === 'signup' ? resendSignupCode : sendPasswordReset}
+          disabled={!!emailError}
+          onSent={() => setCode('')}
+        />
+      ) : null}
     </Screen>
   );
 }
