@@ -541,6 +541,12 @@ Say in the PR which of these it needs:
 build --profile preview` for the APK), with `expo.version` bumped. JS-only changes need none:
   ship them with **`npm run ota:dev`** (from `develop`) or **`npm run ota:prod`** (from `main`,
   after the release merge); add `-- -m "what changed"`. Store builds: `npm run build:prod`.
+- **Play release AAB, built locally** (Venkat, 2026-11-13): in the main repo folder (not a worktree),
+  on a clean `main` at `origin/main`, run `npx eas-cli@latest build -p android --profile production
+  --local --non-interactive --output ./build/corefit-<expo.version>.aab` (`build/` is git-ignored;
+  the version is `app.json`'s, not `package.json`'s). It auto-increments
+  `versionCode` on EAS and signs with the Play upload keystore in EAS credentials; upload the AAB to
+  Play by hand. Don't submit, build iOS or publish OTA as part of it.
 - **Keep Expo packages in step:** after adding or updating any `expo-*` package, run
   `EXPO_OFFLINE=1 npx expo install --check` (fix with `--fix`). iOS links some Expo modules as
   precompiled frameworks built against a set `expo-modules-core`; a mismatch crashes the iOS app
