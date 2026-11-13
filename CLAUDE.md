@@ -541,6 +541,10 @@ Say in the PR which of these it needs:
 build --profile preview` for the APK), with `expo.version` bumped. JS-only changes need none:
   ship them with **`npm run ota:dev`** (from `develop`) or **`npm run ota:prod`** (from `main`,
   after the release merge); add `-- -m "what changed"`. Store builds: `npm run build:prod`.
+- **Keep Expo packages in step:** after adding or updating any `expo-*` package, run
+  `EXPO_OFFLINE=1 npx expo install --check` (fix with `--fix`). iOS links some Expo modules as
+  precompiled frameworks built against a set `expo-modules-core`; a mismatch crashes the iOS app
+  on launch (2026-11-13: `expo-camera` 58.0.13 against core 58.0.26, "Symbol not found").
 - **`cd infra/updates-server && npx wrangler deploy`** when `infra/updates-server/` changes.
 - **Nothing** for `web/` changes: the dashboard redeploys itself on merge; run `cd web && npm run build` first.
 - Email template edits must be pasted into Supabase → Authentication → Emails by hand.
