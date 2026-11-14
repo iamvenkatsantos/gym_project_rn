@@ -18,6 +18,7 @@ import { canCoach, canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
+import { AnimatedSplash } from '@/features/splash/components/animated-splash';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
 import { useOtaUpdates } from '@/features/updates/use-ota-updates';
 import { useColorSchemeName } from '@/hooks/use-theme';
@@ -44,6 +45,7 @@ function navigationTheme(scheme: ColorScheme): Theme {
 
 export default function RootLayout() {
   const scheme = useColorSchemeName();
+  const authLoaded = useAuthStore((s) => s.status !== 'loading');
 
   // The window behind the app shows during transitions and the keyboard; keep it on theme.
   useEffect(() => {
@@ -56,6 +58,8 @@ export default function RootLayout() {
         <ThemeProvider value={navigationTheme(scheme)}>
           <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <RootNavigator />
+          {/* Takes over from the native splash and fades away once sign-in has loaded. */}
+          <AnimatedSplash ready={authLoaded} />
         </ThemeProvider>
       </KeyboardProvider>
     </QueryClientProvider>
@@ -88,10 +92,6 @@ function RootNavigator() {
   const role = locked ? undefined : gymRole;
   // Platform admins get their own area with no gym in it, until they switch to a gym.
   const inAdmin = useAuthStore((s) => !settingPassword && selectInAdmin(s));
-
-  useEffect(() => {
-    if (status !== 'loading') SplashScreen.hideAsync();
-  }, [status]);
 
   if (status === 'loading') return null;
 
