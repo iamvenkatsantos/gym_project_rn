@@ -30,4 +30,9 @@ describe('Timeline', () => {
     expect(Timeline.slideAt + Timeline.slideMs).toBeLessThan(Timeline.minShowMs);
     expect(Timeline.taglineAt + Timeline.taglineMs).toBeLessThan(Timeline.minShowMs);
   });
+
+  it('keeps moving from the first frame, with no still pause before the slide', () => {
+    expect(Timeline.liftAt).toBe(0);
+    expect(Timeline.slideAt).toBeLessThanOrEqual(Timeline.liftAt + Timeline.liftMs);
+  });
 });
