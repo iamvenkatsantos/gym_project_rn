@@ -50,34 +50,30 @@ export function AnimatedSplash({ ready }: AnimatedSplashProps) {
   const onFirstLayout = () => {
     if (started.current) return;
     started.current = true;
-    SplashScreen.hideAsync()
-      .catch(() => {})
-      .finally(() => {
-        if (reduceMotion) {
-          slide.value = 1;
-          tagline.value = 1;
-        } else {
-          lift.value = withDelay(
-            Timeline.liftAt,
-            withSequence(
-              withTiming(1, { duration: Timeline.liftMs / 2, easing: EASE_OUT }),
-              withTiming(0, { duration: Timeline.liftMs / 2, easing: EASE_IN_OUT }),
-            ),
-          );
-          slide.value = withDelay(
-            Timeline.slideAt,
-            withTiming(1, { duration: Timeline.slideMs, easing: EASE_IN_OUT }),
-          );
-          tagline.value = withDelay(
-            Timeline.taglineAt,
-            withTiming(1, { duration: Timeline.taglineMs, easing: EASE_OUT }),
-          );
-        }
-        setTimeout(
-          () => setIntroDone(true),
-          reduceMotion ? Timeline.stillShowMs : Timeline.minShowMs,
-        );
-      });
+    // Start moving at once and hide the native splash alongside, not before: the person has
+    // already waited for the app to load, so no extra beat on the still logo.
+    SplashScreen.hideAsync().catch(() => {});
+    if (reduceMotion) {
+      slide.value = 1;
+      tagline.value = 1;
+    } else {
+      lift.value = withDelay(
+        Timeline.liftAt,
+        withSequence(
+          withTiming(1, { duration: Timeline.liftMs / 2, easing: EASE_OUT }),
+          withTiming(0, { duration: Timeline.liftMs / 2, easing: EASE_IN_OUT }),
+        ),
+      );
+      slide.value = withDelay(
+        Timeline.slideAt,
+        withTiming(1, { duration: Timeline.slideMs, easing: EASE_IN_OUT }),
+      );
+      tagline.value = withDelay(
+        Timeline.taglineAt,
+        withTiming(1, { duration: Timeline.taglineMs, easing: EASE_OUT }),
+      );
+    }
+    setTimeout(() => setIntroDone(true), reduceMotion ? Timeline.stillShowMs : Timeline.minShowMs);
   };
 
   const leaving = introDone && ready;
