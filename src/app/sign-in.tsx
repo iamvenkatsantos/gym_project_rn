@@ -20,8 +20,8 @@ import {
   signUp,
 } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
-import { ResendCodeButton } from '@/features/auth/components/resend-code-button';
-import { markCodeSent } from '@/features/auth/resend';
+import { ResendCodeButton, useResendWait } from '@/features/auth/components/resend-code-button';
+import { markCodeSent, resendLabel } from '@/features/auth/resend';
 import type { Profile, Role } from '@/features/auth/types';
 import { useTheme } from '@/hooks/use-theme';
 import { isDemoMode } from '@/lib/env';
@@ -84,6 +84,8 @@ export default function SignInScreen() {
     mutationFn: () => sendPasswordReset(email.trim()),
     onSuccess: () => markCodeSent(email),
   });
+  // After a reset email, the Forgot password link itself turns into Resend code.
+  const resetWait = useResendWait(email);
   const demoSignIn = useMutation({ mutationFn: signInAsDemo, onSuccess: onSignedIn });
 
   const error =
@@ -272,7 +274,7 @@ export default function SignInScreen() {
                 {mode === 'signIn' ? (
                   <Pressable
                     accessibilityRole="button"
-                    disabled={resetPassword.isPending || resetPassword.isSuccess}
+                    disabled={resetPassword.isPending || resetWait > 0}
                     hitSlop={8}
                     onPress={() =>
                       emailError || mobileTyped ? setResetHint(true) : resetPassword.mutate()
@@ -282,7 +284,7 @@ export default function SignInScreen() {
                       {resetPassword.isPending
                         ? 'Sending…'
                         : resetPassword.isSuccess
-                          ? 'Reset email sent'
+                          ? resendLabel(resetWait)
                           : 'Forgot password?'}
                     </ThemedText>
                   </Pressable>
@@ -318,7 +320,6 @@ export default function SignInScreen() {
                       size="compact"
                       onPress={() => enterCode('recovery')}
                     />
-                    <ResendCodeButton email={email} send={sendPasswordReset} />
                   </View>
                 ) : null}
 
