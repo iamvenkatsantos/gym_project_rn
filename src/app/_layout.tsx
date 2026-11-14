@@ -25,6 +25,9 @@ import { useColorSchemeName } from '@/hooks/use-theme';
 import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
+// The intro's first frame is an exact copy of the native splash, so swap instantly: the default
+// 400 ms fade showed both logos at once and held the intro back.
+SplashScreen.setOptions({ fade: false, duration: 0 });
 
 function navigationTheme(scheme: ColorScheme): Theme {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
