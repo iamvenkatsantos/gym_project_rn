@@ -47,6 +47,12 @@ const light: typeof dark = {
 
 export const Colors = { light, dark } as const;
 
+/**
+ * The launch screen's background, in both themes. Must match `expo-splash-screen`'s
+ * `backgroundColor` in app.json so the animated intro takes over without a flash.
+ */
+export const SplashBackground = '#0B0B0F';
+
 export type ColorScheme = keyof typeof Colors;
 export type Palette = typeof dark;
 export type ThemeColor = keyof Palette;
