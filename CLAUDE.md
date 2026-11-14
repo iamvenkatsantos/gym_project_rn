@@ -210,7 +210,7 @@ provider's hourly limit.
 **Launch intro** (Venkat, 2026-11-14): the native splash (logo on `#0B0B0F`, `SplashBackground`)
 hands over to `AnimatedSplash` (`src/features/splash/`), drawn over the root layout as an exact copy;
 it hides the native splash, lifts the logo, slides it left as the "CoreFit" wordmark and tagline come
-in, and fades out once sign-in has loaded (at least ~1.9 s; still lockup with reduce motion). JS only,
+in, and fades out once sign-in has loaded (starts the moment JS loads, at least ~1.5 s; still lockup with reduce motion). JS only,
 so it ships over the air; keep app.json's splash `backgroundColor` and `imageWidth` in step with it.
 
 **Sign-in gates** (in order, all in `src/app/_layout.tsx`): signed out → `sign-in`/`enter-code`;

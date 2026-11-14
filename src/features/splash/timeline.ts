@@ -1,7 +1,8 @@
 /**
  * The launch intro's timing and layout. The native splash shows the logo alone; the intro takes
  * over with the same picture, gives the logo a lift, then slides it left as the wordmark arrives,
- * and fades out once sign-in has loaded.
+ * and fades out once sign-in has loaded. It starts the moment the app's code has loaded, with no
+ * pause on the still logo, because the native splash already covered the load.
  */
 
 /** The logo's width on the native splash (`imageWidth` of `expo-splash-screen` in app.json). */
@@ -13,16 +14,16 @@ export const LOCKUP_GAP = 2;
 
 export const Timeline = {
   /** The logo grows a little, then settles. */
-  liftAt: 120,
-  liftMs: 520,
+  liftAt: 0,
+  liftMs: 400,
   /** The logo shrinks and moves left while the wordmark slides in. */
-  slideAt: 640,
-  slideMs: 560,
+  slideAt: 300,
+  slideMs: 520,
   /** The tagline fades in under the wordmark. */
-  taglineAt: 1050,
-  taglineMs: 380,
+  taglineAt: 680,
+  taglineMs: 360,
   /** Earliest the intro may leave, even if sign-in loaded sooner. */
-  minShowMs: 1900,
+  minShowMs: 1500,
   /** With reduce motion on, the lockup shows still for this long. */
   stillShowMs: 700,
   fadeOutMs: 380,
