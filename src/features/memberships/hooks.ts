@@ -25,6 +25,7 @@ import type {
   MembershipPlan,
   PlanInput,
 } from '@/features/memberships/types';
+import { STATIC_STALE_TIME } from '@/lib/query-client';
 
 export const membershipKeys = {
   all: ['memberships'] as const,
@@ -40,7 +41,11 @@ export const membershipKeys = {
 };
 
 export function usePlans(gymId: string) {
-  return useQuery({ queryKey: membershipKeys.plans(gymId), queryFn: () => listPlans(gymId) });
+  return useQuery({
+    queryKey: membershipKeys.plans(gymId),
+    queryFn: () => listPlans(gymId),
+    staleTime: STATIC_STALE_TIME,
+  });
 }
 
 export function useCurrentMembership(gymId: string, memberId: string) {

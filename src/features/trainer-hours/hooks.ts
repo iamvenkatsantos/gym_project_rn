@@ -16,6 +16,7 @@ import type {
   TrainerHourRulesInput,
   TrainerShift,
 } from '@/features/trainer-hours/types';
+import { STATIC_STALE_TIME } from '@/lib/query-client';
 
 export const trainerHourKeys = {
   all: ['trainer-hours'] as const,
@@ -31,6 +32,7 @@ export function useTrainerHourRules(gymId: string, enabled = true) {
   return useQuery({
     queryKey: trainerHourKeys.rules(gymId),
     queryFn: () => getTrainerHourRules(gymId),
+    staleTime: STATIC_STALE_TIME,
     enabled,
   });
 }
@@ -90,6 +92,7 @@ export function useTrainerShifts(gymId: string) {
   return useQuery({
     queryKey: trainerHourKeys.shifts(gymId),
     queryFn: () => getTrainerShifts(gymId),
+    staleTime: STATIC_STALE_TIME,
   });
 }
 

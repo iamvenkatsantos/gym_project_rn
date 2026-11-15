@@ -12,6 +12,7 @@ import {
   type WeeklyHours,
 } from '@/features/trainers/api';
 import type { TrainerSession } from '@/features/trainers/types';
+import { STATIC_STALE_TIME } from '@/lib/query-client';
 
 export const trainerKeys = {
   all: ['trainers'] as const,
@@ -26,7 +27,11 @@ export const trainerKeys = {
 };
 
 export function useTrainers(gymId: string) {
-  return useQuery({ queryKey: trainerKeys.list(gymId), queryFn: () => listTrainers(gymId) });
+  return useQuery({
+    queryKey: trainerKeys.list(gymId),
+    queryFn: () => listTrainers(gymId),
+    staleTime: STATIC_STALE_TIME,
+  });
 }
 
 export function useTrainer(gymId: string, trainerId: string) {
