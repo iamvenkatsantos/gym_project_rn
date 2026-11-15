@@ -22,6 +22,7 @@ PERF_API_URL=https://<develop-ref>.supabase.co PERF_ANON_KEY=... PERF_OWNER_EMAI
   node scripts/perf/api-bench.mjs --env develop --edge
 
 # production: read-only, off-peak only (23:00-05:00 IST), through api.vinven.net
+# (the owner can add --allow-peak to skip just the time check; run BEFORE and AFTER at the same time of day)
 PERF_API_URL=https://api.vinven.net PERF_ANON_KEY=... PERF_OWNER_EMAIL=perf-owner@... \
   node scripts/perf/api-bench.mjs --env production --confirm-off-peak
 ```

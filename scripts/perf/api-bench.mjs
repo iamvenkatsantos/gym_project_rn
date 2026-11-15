@@ -53,7 +53,8 @@ if (prod) {
   if (flag('edge')) fail('edge functions have side effects: develop only');
   if (!flag('dry-run')) {
     if (!flag('confirm-off-peak')) fail('production needs --confirm-off-peak');
-    if (!offPeak(istHour())) fail('production runs only 23:00-05:00 IST');
+    if (!flag('allow-peak') && !offPeak(istHour()))
+      fail('production runs only 23:00-05:00 IST (the owner can pass --allow-peak)');
   }
 }
 
@@ -233,6 +234,18 @@ mkdirSync(outDir, { recursive: true });
 const file = join(outDir, `bench-${env}-${started.toISOString().slice(0, 10)}.json`);
 writeFileSync(
   file,
-  JSON.stringify({ env, startedAt: started.toISOString(), runs, warmups, gapMs, results }, null, 2),
+  JSON.stringify(
+    {
+      env,
+      startedAt: started.toISOString(),
+      runs,
+      warmups,
+      gapMs,
+      peakAllowed: flag('allow-peak'),
+      results,
+    },
+    null,
+    2,
+  ),
 );
 console.log(`\n${results.length} rows -> ${file}`);

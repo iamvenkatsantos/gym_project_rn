@@ -1,0 +1,9 @@
+{
+  "env": "production",
+  "startedAt": "2026-11-15T03:06:44.770Z",
+  "runs": 20,
+  "warmups": 2,
+  "gapMs": 250,
+  "peakAllowed": true,
+  "results": []
+}
