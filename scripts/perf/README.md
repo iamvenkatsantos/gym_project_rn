@@ -27,7 +27,7 @@ PERF_API_URL=https://api.vinven.net PERF_ANON_KEY=... PERF_OWNER_EMAIL=perf-owne
 ```
 
 Production guards in code: GET table reads and an allow-list of read-only RPCs only; one request
-at a time, 250 ms gap (never below 200); 20 runs; only the `api.vinven.net` URL; only emails with
-"perf" in them; aborts on any HTTP error or p95 over 5 s. Results (`docs/perf/raw/bench-*.json`)
+at a time, 250 ms gap (never below 200); 20 runs; only the `api.vinven.net` URL; only accounts that belong solely to the
+"CoreFit Perf Test" gym (checked after sign-in), no admin role without `--allow-admin`; aborts on any HTTP error or p95 over 5 s. Results (`docs/perf/raw/bench-*.json`)
 hold API names and timings only. A new read RPC must be added to `READ_RPCS` after checking its
 body has no writes.

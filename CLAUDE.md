@@ -477,7 +477,7 @@ and test steps: `infra/updates-server/README.md`.
 **Performance audit** (Venkat, 2026-11-15; `scripts/perf/`, reports in `docs/perf/`): no behaviour
 change allowed. `api-bench.mjs` times read APIs per role; on production it is read-only in code (GET
 reads and the `READ_RPCS` allow-list in `manifest.mjs`, one request at a time, 200 ms+ gap, 20 runs,
-23:00-05:00 IST only, "perf" test accounts in a separate CoreFit Perf Test gym, through
+23:00-05:00 IST only, test accounts that belong only to the CoreFit Perf Test gym (checked after sign-in; the admin role needs `--allow-admin`), through
 `api.vinven.net` with the anon key, aborts on any error or p95 over 5 s). Writes and edge functions
 are measured on develop only. Add a new read RPC to `READ_RPCS` only after checking its body writes
 nothing. Credentials come from `PERF_*` env vars; never commit them, ids or tokens. Measurement code
