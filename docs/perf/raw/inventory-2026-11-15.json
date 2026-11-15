@@ -1,0 +1,2894 @@
+[
+  {
+    "kind": "table",
+    "target": "announcements",
+    "fn": "listAnnouncements",
+    "file": "src/features/announcements/api.ts",
+    "line": 28,
+    "write": false,
+    "hooks": [
+      "useAnnouncements"
+    ],
+    "screens": [
+      "announcements.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "send_announcement",
+    "fn": "sendAnnouncement",
+    "file": "src/features/announcements/api.ts",
+    "line": 59,
+    "write": false,
+    "hooks": [
+      "useSendAnnouncement"
+    ],
+    "screens": [
+      "new-announcement.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "announcements",
+    "fn": "deleteAnnouncement",
+    "file": "src/features/announcements/api.ts",
+    "line": 75,
+    "write": true,
+    "hooks": [
+      "useDeleteAnnouncement"
+    ],
+    "screens": [
+      "announcements.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "saved_offers",
+    "fn": "listSavedOffers",
+    "file": "src/features/announcements/api.ts",
+    "line": 84,
+    "write": false,
+    "hooks": [
+      "useSavedOffers"
+    ],
+    "screens": [
+      "new-announcement.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "saved_offers",
+    "fn": "saveOffer",
+    "file": "src/features/announcements/api.ts",
+    "line": 99,
+    "write": true,
+    "hooks": [
+      "useSaveOffer"
+    ],
+    "screens": [
+      "new-announcement.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "saved_offers",
+    "fn": "deleteSavedOffer",
+    "file": "src/features/announcements/api.ts",
+    "line": 110,
+    "write": true,
+    "hooks": [
+      "useDeleteSavedOffer"
+    ],
+    "screens": [
+      "new-announcement.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "my_attendance_today",
+    "fn": "getMyAttendance",
+    "file": "src/features/attendance/api.ts",
+    "line": 55,
+    "write": false,
+    "hooks": [
+      "useMyAttendance"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "check_in",
+    "fn": "checkIn",
+    "file": "src/features/attendance/api.ts",
+    "line": 75,
+    "write": false,
+    "hooks": [
+      "useCheckIn"
+    ],
+    "screens": [
+      "check-in.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "check_out",
+    "fn": "checkOut",
+    "file": "src/features/attendance/api.ts",
+    "line": 86,
+    "write": false,
+    "hooks": [
+      "useCheckIn"
+    ],
+    "screens": [
+      "check-in.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "start_workout_attendance",
+    "fn": "announceWorkoutStart",
+    "file": "src/features/attendance/api.ts",
+    "line": 99,
+    "write": false,
+    "hooks": [
+      "useAnnounceWorkoutStart"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "gym_attendance",
+    "fn": "listDayAttendance",
+    "file": "src/features/attendance/api.ts",
+    "line": 145,
+    "write": false,
+    "hooks": [
+      "useDayAttendance"
+    ],
+    "screens": [
+      "attendance.tsx",
+      "owner/index.tsx",
+      "web:Attendance.tsx",
+      "web:Overview.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "attendance_report",
+    "fn": "getAttendanceReport",
+    "file": "src/features/attendance/api.ts",
+    "line": 207,
+    "write": false,
+    "hooks": [
+      "useAttendanceReport"
+    ],
+    "screens": [
+      "attendance.tsx",
+      "web:Attendance.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "profiles",
+    "fn": "fetchProfile",
+    "file": "src/features/auth/api.ts",
+    "line": 49,
+    "write": false,
+    "hooks": [
+      "useAuthBootstrap",
+      "useCompleteOnboarding",
+      "useSaveProfile"
+    ],
+    "screens": [
+      "_layout.tsx",
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "contact_details",
+    "fn": "fetchProfile",
+    "file": "src/features/auth/api.ts",
+    "line": 63,
+    "write": false,
+    "hooks": [
+      "useAuthBootstrap",
+      "useCompleteOnboarding",
+      "useSaveProfile"
+    ],
+    "screens": [
+      "_layout.tsx",
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "is_platform_admin",
+    "fn": "fetchProfile",
+    "file": "src/features/auth/api.ts",
+    "line": 66,
+    "write": false,
+    "hooks": [
+      "useAuthBootstrap",
+      "useCompleteOnboarding",
+      "useSaveProfile"
+    ],
+    "screens": [
+      "_layout.tsx",
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "profiles",
+    "fn": "setPassword",
+    "file": "src/features/auth/api.ts",
+    "line": 172,
+    "write": true,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "edge",
+    "target": "delete-account",
+    "fn": "deleteAccount",
+    "file": "src/features/auth/api.ts",
+    "line": 235,
+    "write": true,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "create_password_reset_code",
+    "fn": "createPasswordResetCode",
+    "file": "src/features/auth/api.ts",
+    "line": 274,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "edge",
+    "target": "reset-password",
+    "fn": "resetPasswordWithCode",
+    "file": "src/features/auth/api.ts",
+    "line": 281,
+    "write": true,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "set_member_birthday",
+    "fn": "setMemberBirthday",
+    "file": "src/features/birthdays/api.ts",
+    "line": 13,
+    "write": false,
+    "hooks": [
+      "useSetMemberBirthday"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "send_birthday_wish",
+    "fn": "sendBirthdayWish",
+    "file": "src/features/birthdays/api.ts",
+    "line": 48,
+    "write": false,
+    "hooks": [
+      "useSendBirthdayWish"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "body_measurements",
+    "fn": "listMeasurements",
+    "file": "src/features/body/api.ts",
+    "line": 71,
+    "write": false,
+    "hooks": [
+      "useMeasurements"
+    ],
+    "screens": [
+      "log-measurements.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "body_measurements",
+    "fn": "saveMeasurement",
+    "file": "src/features/body/api.ts",
+    "line": 90,
+    "write": true,
+    "hooks": [
+      "useSaveMeasurement"
+    ],
+    "screens": [
+      "log-measurements.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "body_measurements",
+    "fn": "deleteMeasurement",
+    "file": "src/features/body/api.ts",
+    "line": 116,
+    "write": true,
+    "hooks": [
+      "useDeleteMeasurement"
+    ],
+    "screens": [
+      "log-measurements.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "progress_photos",
+    "fn": "listPhotos",
+    "file": "src/features/body/api.ts",
+    "line": 134,
+    "write": false,
+    "hooks": [
+      "useProgressPhotos"
+    ],
+    "screens": [
+      "onboarding.tsx",
+      "progress-photo/[photoId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "progress_photos",
+    "fn": "uploadPhoto",
+    "file": "src/features/body/api.ts",
+    "line": 190,
+    "write": true,
+    "hooks": [
+      "useUploadPhoto",
+      "useCompleteOnboarding"
+    ],
+    "screens": [
+      "add-progress-photo.tsx",
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "progress_photos",
+    "fn": "deletePhoto",
+    "file": "src/features/body/api.ts",
+    "line": 234,
+    "write": true,
+    "hooks": [
+      "useDeletePhoto"
+    ],
+    "screens": [
+      "progress-photo/[photoId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "class_schedule",
+    "fn": "listUpcomingClasses",
+    "file": "src/features/bookings/api.ts",
+    "line": 73,
+    "write": false,
+    "hooks": [
+      "useUpcomingClasses"
+    ],
+    "screens": [
+      "class-editor.tsx",
+      "member/bookings.tsx",
+      "message-trainer.tsx",
+      "owner/classes.tsx",
+      "owner/index.tsx",
+      "supervisor/classes.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "bookings",
+    "fn": "listMyBookings",
+    "file": "src/features/bookings/api.ts",
+    "line": 96,
+    "write": false,
+    "hooks": [
+      "useMyBookings"
+    ],
+    "screens": [
+      "member/bookings.tsx",
+      "member/index.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "my_waitlist_positions",
+    "fn": "listMyBookings",
+    "file": "src/features/bookings/api.ts",
+    "line": 101,
+    "write": false,
+    "hooks": [
+      "useMyBookings"
+    ],
+    "screens": [
+      "member/bookings.tsx",
+      "member/index.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "book_class",
+    "fn": "bookClass",
+    "file": "src/features/bookings/api.ts",
+    "line": 164,
+    "write": false,
+    "hooks": [
+      "useBookClass"
+    ],
+    "screens": [
+      "member/bookings.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "bookings",
+    "fn": "cancelBooking",
+    "file": "src/features/bookings/api.ts",
+    "line": 183,
+    "write": true,
+    "hooks": [
+      "useCancelBooking"
+    ],
+    "screens": [
+      "member/bookings.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "schedule_classes",
+    "fn": "scheduleClasses",
+    "file": "src/features/bookings/api.ts",
+    "line": 214,
+    "write": false,
+    "hooks": [
+      "useScheduleClasses"
+    ],
+    "screens": [
+      "class-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "classes",
+    "fn": "updateClass",
+    "file": "src/features/bookings/api.ts",
+    "line": 243,
+    "write": true,
+    "hooks": [
+      "useUpdateClass"
+    ],
+    "screens": [
+      "class-editor.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "cancel_class",
+    "fn": "cancelClass",
+    "file": "src/features/bookings/api.ts",
+    "line": 275,
+    "write": false,
+    "hooks": [
+      "useCancelClass"
+    ],
+    "screens": [
+      "class-editor.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_branches",
+    "fn": "fetchAdminBranches",
+    "file": "src/features/branches/api.ts",
+    "line": 159,
+    "write": false,
+    "hooks": [
+      "useAdminBranches"
+    ],
+    "screens": [
+      "admin/index.tsx",
+      "admin/owners.tsx",
+      "admin-branch/[gymId].tsx",
+      "admin-brand/[brandId].tsx",
+      "admin-owner/[ownerId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_add_branch",
+    "fn": "addBranch",
+    "file": "src/features/branches/api.ts",
+    "line": 196,
+    "write": false,
+    "hooks": [
+      "useAddBranch"
+    ],
+    "screens": [
+      "add-branch.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "platform_settings",
+    "fn": "fetchBillingSettings",
+    "file": "src/features/branches/api.ts",
+    "line": 220,
+    "write": false,
+    "hooks": [
+      "useBillingSettings"
+    ],
+    "screens": [
+      "add-branch.tsx",
+      "admin/index.tsx",
+      "admin/owners.tsx",
+      "admin-branch/[gymId].tsx",
+      "admin-brand/[brandId].tsx",
+      "admin-owner/[ownerId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_set_branch_fee",
+    "fn": "setBranchFee",
+    "file": "src/features/branches/api.ts",
+    "line": 243,
+    "write": false,
+    "hooks": [
+      "useSetBranchFee"
+    ],
+    "screens": [
+      "admin/index.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_delete_gym",
+    "fn": "deleteGym",
+    "file": "src/features/branches/api.ts",
+    "line": 258,
+    "write": false,
+    "hooks": [
+      "useDeleteGym"
+    ],
+    "screens": [
+      "admin-branch/[gymId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_set_gym_fee",
+    "fn": "setGymFee",
+    "file": "src/features/branches/api.ts",
+    "line": 268,
+    "write": false,
+    "hooks": [
+      "useSetGymFee"
+    ],
+    "screens": [
+      "admin-branch/[gymId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_set_online_payments",
+    "fn": "setOnlinePayments",
+    "file": "src/features/branches/api.ts",
+    "line": 286,
+    "write": false,
+    "hooks": [
+      "useSetOnlinePayments"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_set_online_fees_on_member",
+    "fn": "setOnlineFeesOnMember",
+    "file": "src/features/branches/api.ts",
+    "line": 301,
+    "write": false,
+    "hooks": [
+      "useSetOnlineFeesOnMember"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_rename_brand",
+    "fn": "renameBrand",
+    "file": "src/features/branches/api.ts",
+    "line": 314,
+    "write": false,
+    "hooks": [
+      "useRenameBrand"
+    ],
+    "screens": [
+      "admin-brand/[brandId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "brand_overview",
+    "fn": "fetchBrandOverview",
+    "file": "src/features/branches/api.ts",
+    "line": 354,
+    "write": false,
+    "hooks": [
+      "useBrandOverview"
+    ],
+    "screens": [
+      "branches.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "scan_check_in",
+    "fn": "scanCheckIn",
+    "file": "src/features/check-in/api.ts",
+    "line": 88,
+    "write": false,
+    "hooks": [
+      "useScanCheckIn"
+    ],
+    "screens": [
+      "check-in.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "getCheckInRules",
+    "file": "src/features/check-in/api.ts",
+    "line": 117,
+    "write": false,
+    "hooks": [
+      "useCheckInRules"
+    ],
+    "screens": [
+      "check-in-qr.tsx",
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_gym_hours",
+    "fn": "saveGymHours",
+    "file": "src/features/check-in/api.ts",
+    "line": 144,
+    "write": false,
+    "hooks": [
+      "useSaveGymHours"
+    ],
+    "screens": [
+      "check-in-qr.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "check_in_qr",
+    "fn": "getCheckInQr",
+    "file": "src/features/check-in/api.ts",
+    "line": 165,
+    "write": false,
+    "hooks": [
+      "useCheckInQr"
+    ],
+    "screens": [
+      "check-in-display.tsx",
+      "check-in-qr.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "check_in_display",
+    "fn": "getDisplayCode",
+    "file": "src/features/check-in/api.ts",
+    "line": 195,
+    "write": false,
+    "hooks": [
+      "useDisplayCode"
+    ],
+    "screens": [
+      "check-in-display.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_check_in_settings",
+    "fn": "saveCheckInSettings",
+    "file": "src/features/check-in/api.ts",
+    "line": 212,
+    "write": false,
+    "hooks": [
+      "useSaveCheckInSettings"
+    ],
+    "screens": [
+      "check-in-qr.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_check_in_qr",
+    "fn": "getAdminBranchQr",
+    "file": "src/features/check-in/api.ts",
+    "line": 233,
+    "write": false,
+    "hooks": [
+      "useAdminBranchQr"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_reset_check_in_qr",
+    "fn": "resetAdminBranchQr",
+    "file": "src/features/check-in/api.ts",
+    "line": 249,
+    "write": false,
+    "hooks": [
+      "useResetAdminBranchQr"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "member_trainers",
+    "fn": "listTrainerLinks",
+    "file": "src/features/coaching/api.ts",
+    "line": 61,
+    "write": false,
+    "hooks": [
+      "useTrainerLinks"
+    ],
+    "screens": [
+      "match-trainers.tsx",
+      "member-trainers/[memberId].tsx",
+      "owner/index.tsx",
+      "owner/people.tsx",
+      "person/[userId].tsx",
+      "request-trainer.tsx",
+      "self-plan.tsx",
+      "trainer-members/[trainerId].tsx",
+      "trainer-request/[requestId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "member_trainers",
+    "fn": "assignTrainer",
+    "file": "src/features/coaching/api.ts",
+    "line": 89,
+    "write": true,
+    "hooks": [
+      "useAssignPlan",
+      "useAssignMealPlan"
+    ],
+    "screens": [
+      "assign-meal-plan/[planId].tsx",
+      "assign-plan/[workoutId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "member_trainers",
+    "fn": "unassignTrainer",
+    "file": "src/features/coaching/api.ts",
+    "line": 107,
+    "write": true,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "member_trainers",
+    "fn": "changeTrainerLinks",
+    "file": "src/features/coaching/api.ts",
+    "line": 140,
+    "write": true,
+    "hooks": [
+      "useChangeTrainerLinks"
+    ],
+    "screens": [
+      "member-trainers/[memberId].tsx",
+      "trainer-members/[trainerId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "member_trainers",
+    "fn": "changeTrainerLinks",
+    "file": "src/features/coaching/api.ts",
+    "line": 153,
+    "write": true,
+    "hooks": [
+      "useChangeTrainerLinks"
+    ],
+    "screens": [
+      "member-trainers/[memberId].tsx",
+      "trainer-members/[trainerId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_requests",
+    "fn": "listTrainerRequests",
+    "file": "src/features/coaching/api.ts",
+    "line": 167,
+    "write": false,
+    "hooks": [
+      "useTrainerRequests"
+    ],
+    "screens": [
+      "match-trainers.tsx",
+      "owner/index.tsx",
+      "request-trainer.tsx",
+      "trainer-request/[requestId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "request_trainer",
+    "fn": "requestTrainer",
+    "file": "src/features/coaching/api.ts",
+    "line": 207,
+    "write": false,
+    "hooks": [
+      "useRequestTrainer"
+    ],
+    "screens": [
+      "request-trainer.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "withdraw_trainer_request",
+    "fn": "withdrawTrainerRequest",
+    "file": "src/features/coaching/api.ts",
+    "line": 223,
+    "write": false,
+    "hooks": [
+      "useWithdrawTrainerRequest"
+    ],
+    "screens": [
+      "request-trainer.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "resolve_trainer_request",
+    "fn": "resolveTrainerRequest",
+    "file": "src/features/coaching/api.ts",
+    "line": 261,
+    "write": false,
+    "hooks": [
+      "useResolveTrainerRequest"
+    ],
+    "screens": [
+      "trainer-request/[requestId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "meal_plans",
+    "fn": "listMealPlans",
+    "file": "src/features/diet/api.ts",
+    "line": 61,
+    "write": false,
+    "hooks": [
+      "useMealPlans",
+      "useMealPlan"
+    ],
+    "screens": [
+      "assign-meal-plan/[planId].tsx",
+      "meal-plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "meal_plan_assignments",
+    "fn": "getMemberMealPlan",
+    "file": "src/features/diet/api.ts",
+    "line": 78,
+    "write": false,
+    "hooks": [
+      "useMemberMealPlan"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "meal_plan_assignments",
+    "fn": "listOtherGymMealPlans",
+    "file": "src/features/diet/api.ts",
+    "line": 95,
+    "write": false,
+    "hooks": [
+      "useOtherGymMealPlans"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "save_meal_plan",
+    "fn": "saveMealPlan",
+    "file": "src/features/diet/api.ts",
+    "line": 130,
+    "write": false,
+    "hooks": [
+      "useSaveMealPlan"
+    ],
+    "screens": [
+      "meal-plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "meal_plans",
+    "fn": "deleteMealPlan",
+    "file": "src/features/diet/api.ts",
+    "line": 157,
+    "write": true,
+    "hooks": [
+      "useDeleteMealPlan"
+    ],
+    "screens": [
+      "meal-plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "enquiries",
+    "fn": "listEnquiries",
+    "file": "src/features/enquiries/api.ts",
+    "line": 83,
+    "write": false,
+    "hooks": [
+      "useEnquiries"
+    ],
+    "screens": [
+      "enquiries.tsx",
+      "enquiry/[enquiryId].tsx",
+      "enquiry-editor.tsx",
+      "owner/index.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "enquiry_notes",
+    "fn": "listEnquiryNotes",
+    "file": "src/features/enquiries/api.ts",
+    "line": 104,
+    "write": false,
+    "hooks": [
+      "useEnquiryNotes"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "enquiries",
+    "fn": "createEnquiry",
+    "file": "src/features/enquiries/api.ts",
+    "line": 135,
+    "write": true,
+    "hooks": [
+      "useCreateEnquiry"
+    ],
+    "screens": [
+      "enquiry-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "enquiries",
+    "fn": "updateEnquiry",
+    "file": "src/features/enquiries/api.ts",
+    "line": 175,
+    "write": true,
+    "hooks": [
+      "useUpdateEnquiry",
+      "useConvertEnquiry"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "enquiry-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "enquiries",
+    "fn": "deleteEnquiry",
+    "file": "src/features/enquiries/api.ts",
+    "line": 187,
+    "write": true,
+    "hooks": [
+      "useDeleteEnquiry"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "log_enquiry_follow_up",
+    "fn": "logFollowUp",
+    "file": "src/features/enquiries/api.ts",
+    "line": 219,
+    "write": false,
+    "hooks": [
+      "useLogFollowUp"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "exercises",
+    "fn": "listExercises",
+    "file": "src/features/exercises/api.ts",
+    "line": 40,
+    "write": false,
+    "hooks": [
+      "useExercises",
+      "useExercise"
+    ],
+    "screens": [
+      "add-exercises.tsx",
+      "exercise/[exerciseId].tsx",
+      "plan-editor.tsx",
+      "self-plan-setup.tsx",
+      "workout-session.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "my_gym_invites",
+    "fn": "listMyGymInvites",
+    "file": "src/features/gym-invites/api.ts",
+    "line": 20,
+    "write": false,
+    "hooks": [
+      "useMyGymInvites"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "gym_moved_members",
+    "fn": "listMovedMembers",
+    "file": "src/features/gym-invites/api.ts",
+    "line": 45,
+    "write": false,
+    "hooks": [
+      "useMovedMembers"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "accept_gym_invite",
+    "fn": "acceptGymInvite",
+    "file": "src/features/gym-invites/api.ts",
+    "line": 59,
+    "write": false,
+    "hooks": [
+      "useAnswerGymInvite"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "decline_gym_invite",
+    "fn": "declineGymInvite",
+    "file": "src/features/gym-invites/api.ts",
+    "line": 68,
+    "write": false,
+    "hooks": [
+      "useAnswerGymInvite"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "gym_members",
+    "fn": "getHistorySharing",
+    "file": "src/features/gym-invites/api.ts",
+    "line": 76,
+    "write": false,
+    "hooks": [
+      "useHistorySharing"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "set_history_sharing",
+    "fn": "setHistorySharing",
+    "file": "src/features/gym-invites/api.ts",
+    "line": 87,
+    "write": false,
+    "hooks": [
+      "useSetHistorySharing"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "can_set_up_gym",
+    "fn": "canSetUpGym",
+    "file": "src/features/gyms/api.ts",
+    "line": 20,
+    "write": false,
+    "hooks": [
+      "useCanSetUpGym"
+    ],
+    "screens": [
+      "account.tsx",
+      "no-gym.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "create_gym",
+    "fn": "createGym",
+    "file": "src/features/gyms/api.ts",
+    "line": 31,
+    "write": false,
+    "hooks": [
+      "useCreateGym"
+    ],
+    "screens": [
+      "set-up-gym.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "fetchGymDetails",
+    "file": "src/features/gyms/api.ts",
+    "line": 49,
+    "write": false,
+    "hooks": [
+      "useGymDetails"
+    ],
+    "screens": [
+      "gym-details.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "updateGymDetails",
+    "file": "src/features/gyms/api.ts",
+    "line": 62,
+    "write": true,
+    "hooks": [
+      "useUpdateGymDetails"
+    ],
+    "screens": [
+      "gym-details.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "revenue_by_month",
+    "fn": "getRevenueByMonth",
+    "file": "src/features/insights/api.ts",
+    "line": 43,
+    "write": false,
+    "hooks": [
+      "useRevenueByMonth"
+    ],
+    "screens": [
+      "insights.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "member_insights",
+    "fn": "getMemberInsights",
+    "file": "src/features/insights/api.ts",
+    "line": 87,
+    "write": false,
+    "hooks": [
+      "useMemberInsights"
+    ],
+    "screens": [
+      "insights.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "busiest_hours",
+    "fn": "getBusiestHours",
+    "file": "src/features/insights/api.ts",
+    "line": 117,
+    "write": false,
+    "hooks": [
+      "useBusiestHours"
+    ],
+    "screens": [
+      "insights.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "fetchMemberRules",
+    "file": "src/features/member-rules/api.ts",
+    "line": 8,
+    "write": false,
+    "hooks": [
+      "useMemberRules"
+    ],
+    "screens": [
+      "member/bookings.tsx",
+      "member/profile.tsx",
+      "member-rules.tsx",
+      "pause-membership.tsx",
+      "refer-friend.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_member_rules",
+    "fn": "saveMemberRules",
+    "file": "src/features/member-rules/api.ts",
+    "line": 27,
+    "write": false,
+    "hooks": [
+      "useSaveMemberRules"
+    ],
+    "screens": [
+      "member-rules.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gym_members",
+    "fn": "listGymMembers",
+    "file": "src/features/members/api.ts",
+    "line": 99,
+    "write": false,
+    "hooks": [
+      "useGymMembers"
+    ],
+    "screens": [
+      "request-trainer.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "invite_has_account",
+    "fn": "inviteHasAccount",
+    "file": "src/features/members/api.ts",
+    "line": 125,
+    "write": false,
+    "hooks": [
+      "useInviteHasAccount"
+    ],
+    "screens": [
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "gym_people",
+    "fn": "listPeople",
+    "file": "src/features/members/api.ts",
+    "line": 139,
+    "write": false,
+    "hooks": [
+      "usePeople"
+    ],
+    "screens": [
+      "assign-meal-plan/[planId].tsx",
+      "assign-plan/[workoutId].tsx",
+      "birthdays.tsx",
+      "class-editor.tsx",
+      "enquiry-editor.tsx",
+      "invite-person.tsx",
+      "match-trainers.tsx",
+      "member-trainers/[memberId].tsx",
+      "message-trainer.tsx",
+      "owner/index.tsx",
+      "owner/people.tsx",
+      "person/[userId].tsx",
+      "record-membership.tsx",
+      "renewals.tsx",
+      "trainer-hours.tsx",
+      "trainer-members/[trainerId].tsx",
+      "trainer-request/[requestId].tsx",
+      "web:Members.tsx",
+      "web:Overview.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gym_invites",
+    "fn": "listInvites",
+    "file": "src/features/members/api.ts",
+    "line": 161,
+    "write": false,
+    "hooks": [
+      "useInvites"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "resend_gym_invite",
+    "fn": "resendInvite",
+    "file": "src/features/members/api.ts",
+    "line": 215,
+    "write": false,
+    "hooks": [
+      "useResendInvite"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "edge",
+    "target": "invite-member",
+    "fn": "resendInvite",
+    "file": "src/features/members/api.ts",
+    "line": 230,
+    "write": true,
+    "hooks": [
+      "useResendInvite"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "whatsapp_invite",
+    "fn": "invitePerson",
+    "file": "src/features/members/api.ts",
+    "line": 276,
+    "write": false,
+    "hooks": [
+      "useConvertEnquiry",
+      "useInvitePerson"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "invite_gym_owner",
+    "fn": "invitePerson",
+    "file": "src/features/members/api.ts",
+    "line": 303,
+    "write": false,
+    "hooks": [
+      "useConvertEnquiry",
+      "useInvitePerson"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "invite_to_gym",
+    "fn": "invitePerson",
+    "file": "src/features/members/api.ts",
+    "line": 304,
+    "write": false,
+    "hooks": [
+      "useConvertEnquiry",
+      "useInvitePerson"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "edge",
+    "target": "invite-member",
+    "fn": "invitePerson",
+    "file": "src/features/members/api.ts",
+    "line": 309,
+    "write": true,
+    "hooks": [
+      "useConvertEnquiry",
+      "useInvitePerson"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "invite_gym_owner",
+    "fn": "invitePerson",
+    "file": "src/features/members/api.ts",
+    "line": 321,
+    "write": false,
+    "hooks": [
+      "useConvertEnquiry",
+      "useInvitePerson"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "invite_to_gym",
+    "fn": "invitePerson",
+    "file": "src/features/members/api.ts",
+    "line": 322,
+    "write": false,
+    "hooks": [
+      "useConvertEnquiry",
+      "useInvitePerson"
+    ],
+    "screens": [
+      "enquiry/[enquiryId].tsx",
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "save_admission_details",
+    "fn": "saveAdmissionDetails",
+    "file": "src/features/members/api.ts",
+    "line": 352,
+    "write": false,
+    "hooks": [
+      "useInvitePerson"
+    ],
+    "screens": [
+      "invite-person.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_create_owner_gym",
+    "fn": "inviteGymOwner",
+    "file": "src/features/members/api.ts",
+    "line": 385,
+    "write": false,
+    "hooks": [
+      "useInviteGymOwner"
+    ],
+    "screens": [
+      "invite-owner.tsx"
+    ]
+  },
+  {
+    "kind": "edge",
+    "target": "invite-member",
+    "fn": "inviteGymOwner",
+    "file": "src/features/members/api.ts",
+    "line": 395,
+    "write": true,
+    "hooks": [
+      "useInviteGymOwner"
+    ],
+    "screens": [
+      "invite-owner.tsx"
+    ]
+  },
+  {
+    "kind": "edge",
+    "target": "import-members",
+    "fn": "importMembers",
+    "file": "src/features/members/api.ts",
+    "line": 426,
+    "write": true,
+    "hooks": [
+      "useImportMembers"
+    ],
+    "screens": [
+      "import-members.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "invite_by_code",
+    "fn": "findInviteByCode",
+    "file": "src/features/members/api.ts",
+    "line": 600,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "edge",
+    "target": "accept-invite",
+    "fn": "acceptInvite",
+    "file": "src/features/members/api.ts",
+    "line": 621,
+    "write": true,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "gym_invites",
+    "fn": "withdrawInvite",
+    "file": "src/features/members/api.ts",
+    "line": 635,
+    "write": true,
+    "hooks": [
+      "useWithdrawInvite"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "gym_members",
+    "fn": "updatePerson",
+    "file": "src/features/members/api.ts",
+    "line": 674,
+    "write": true,
+    "hooks": [
+      "useUpdatePerson"
+    ],
+    "screens": [
+      "person/[userId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "promote_to_trainer",
+    "fn": "promoteToTrainer",
+    "file": "src/features/members/api.ts",
+    "line": 696,
+    "write": false,
+    "hooks": [
+      "usePromoteToTrainer"
+    ],
+    "screens": [
+      "person/[userId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gym_members",
+    "fn": "removePerson",
+    "file": "src/features/members/api.ts",
+    "line": 714,
+    "write": true,
+    "hooks": [
+      "useRemovePerson"
+    ],
+    "screens": [
+      "person/[userId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_assignments",
+    "fn": "listCoachedMembers",
+    "file": "src/features/members/api.ts",
+    "line": 740,
+    "write": false,
+    "hooks": [
+      "useCoachedMembers"
+    ],
+    "screens": [
+      "assign-meal-plan/[planId].tsx",
+      "assign-plan/[workoutId].tsx",
+      "member-progress/[memberId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "membership_plans",
+    "fn": "listPlans",
+    "file": "src/features/memberships/api.ts",
+    "line": 105,
+    "write": false,
+    "hooks": [
+      "usePlans"
+    ],
+    "screens": [
+      "import-members.tsx",
+      "member/profile.tsx",
+      "membership-plan-editor.tsx",
+      "owner/index.tsx",
+      "owner/memberships.tsx",
+      "record-membership.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "memberships",
+    "fn": "getCurrentMembership",
+    "file": "src/features/memberships/api.ts",
+    "line": 124,
+    "write": false,
+    "hooks": [
+      "useCurrentMembership"
+    ],
+    "screens": [
+      "member/index.tsx",
+      "member/profile.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "memberships",
+    "fn": "hasCurrentMembership",
+    "file": "src/features/memberships/api.ts",
+    "line": 144,
+    "write": false,
+    "hooks": [
+      "useHasMembership"
+    ],
+    "screens": [
+      "book-trainer/[trainerId].tsx",
+      "member/bookings.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "memberships",
+    "fn": "listMemberMemberships",
+    "file": "src/features/memberships/api.ts",
+    "line": 169,
+    "write": false,
+    "hooks": [
+      "useMemberMemberships"
+    ],
+    "screens": [
+      "pause-membership.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "pause_membership",
+    "fn": "pauseMembership",
+    "file": "src/features/memberships/api.ts",
+    "line": 210,
+    "write": false,
+    "hooks": [
+      "usePauseMembership"
+    ],
+    "screens": [
+      "pause-membership.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "end_pause",
+    "fn": "endPause",
+    "file": "src/features/memberships/api.ts",
+    "line": 240,
+    "write": false,
+    "hooks": [
+      "useEndPause"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "memberships",
+    "fn": "listMemberships",
+    "file": "src/features/memberships/api.ts",
+    "line": 248,
+    "write": false,
+    "hooks": [
+      "useMemberships"
+    ],
+    "screens": [
+      "loyalty-offer.tsx",
+      "owner/index.tsx",
+      "owner/memberships.tsx",
+      "payment-history/index.tsx",
+      "person/[userId].tsx",
+      "record-membership.tsx",
+      "renewals.tsx",
+      "web:Members.tsx",
+      "web:Overview.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "membership_plans",
+    "fn": "savePlan",
+    "file": "src/features/memberships/api.ts",
+    "line": 279,
+    "write": true,
+    "hooks": [
+      "useSavePlan"
+    ],
+    "screens": [
+      "membership-plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "membership_plans",
+    "fn": "savePlan",
+    "file": "src/features/memberships/api.ts",
+    "line": 280,
+    "write": true,
+    "hooks": [
+      "useSavePlan"
+    ],
+    "screens": [
+      "membership-plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "fetchLoyaltyOffer",
+    "file": "src/features/memberships/api.ts",
+    "line": 288,
+    "write": false,
+    "hooks": [
+      "useLoyaltyOffer"
+    ],
+    "screens": [
+      "loyalty-offer.tsx",
+      "owner/memberships.tsx",
+      "record-membership.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_loyalty_offer",
+    "fn": "saveLoyaltyOffer",
+    "file": "src/features/memberships/api.ts",
+    "line": 304,
+    "write": false,
+    "hooks": [
+      "useSaveLoyaltyOffer"
+    ],
+    "screens": [
+      "loyalty-offer.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "membership_plans",
+    "fn": "archivePlan",
+    "file": "src/features/memberships/api.ts",
+    "line": 320,
+    "write": true,
+    "hooks": [
+      "useArchivePlan"
+    ],
+    "screens": [
+      "membership-plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "memberships",
+    "fn": "recordMembership",
+    "file": "src/features/memberships/api.ts",
+    "line": 349,
+    "write": true,
+    "hooks": [
+      "useRecordMembership"
+    ],
+    "screens": [
+      "record-membership.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "remind_renewal",
+    "fn": "remindRenewal",
+    "file": "src/features/memberships/api.ts",
+    "line": 372,
+    "write": false,
+    "hooks": [
+      "useRemindRenewal"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "notifications",
+    "fn": "listNotifications",
+    "file": "src/features/notifications/api.ts",
+    "line": 32,
+    "write": false,
+    "hooks": [
+      "useNotifications"
+    ],
+    "screens": [
+      "notifications.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "notifications",
+    "fn": "markAllRead",
+    "file": "src/features/notifications/api.ts",
+    "line": 65,
+    "write": true,
+    "hooks": [
+      "useMarkAllRead"
+    ],
+    "screens": [
+      "notifications.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "message_trainer",
+    "fn": "messageTrainer",
+    "file": "src/features/notifications/api.ts",
+    "line": 89,
+    "write": false,
+    "hooks": [
+      "useMessageTrainer"
+    ],
+    "screens": [
+      "message-trainer.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "register_push_token",
+    "fn": "savePushToken",
+    "file": "src/features/notifications/api.ts",
+    "line": 102,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "unregister_push_token",
+    "fn": "removePushToken",
+    "file": "src/features/notifications/api.ts",
+    "line": 112,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "complete_member_onboarding",
+    "fn": "completeOnboarding",
+    "file": "src/features/onboarding/api.ts",
+    "line": 36,
+    "write": false,
+    "hooks": [
+      "useCompleteOnboarding"
+    ],
+    "screens": [
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "complete_member_onboarding",
+    "fn": "completeOnboarding",
+    "file": "src/features/onboarding/api.ts",
+    "line": 42,
+    "write": false,
+    "hooks": [
+      "useCompleteOnboarding"
+    ],
+    "screens": [
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "fetchOnlinePaymentsEnabled",
+    "file": "src/features/payments/api.ts",
+    "line": 67,
+    "write": false,
+    "hooks": [
+      "useOnlinePaymentsEnabled",
+      "useOnlinePayment",
+      "useOnlinePayments"
+    ],
+    "screens": [
+      "member/profile.tsx",
+      "payment/[paymentId].tsx",
+      "payment-history/index.tsx"
+    ]
+  },
+  {
+    "kind": "edge",
+    "target": "create-payment",
+    "fn": "fetchOnlinePaymentsEnabled",
+    "file": "src/features/payments/api.ts",
+    "line": 77,
+    "write": true,
+    "hooks": [
+      "useOnlinePaymentsEnabled",
+      "useOnlinePayment",
+      "useOnlinePayments"
+    ],
+    "screens": [
+      "member/profile.tsx",
+      "payment/[paymentId].tsx",
+      "payment-history/index.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "online_payments",
+    "fn": "fetchOnlinePayment",
+    "file": "src/features/payments/api.ts",
+    "line": 105,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "online_payments",
+    "fn": "listOnlinePayments",
+    "file": "src/features/payments/api.ts",
+    "line": 123,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "membership_receipt",
+    "fn": "fetchReceipt",
+    "file": "src/features/payments/api.ts",
+    "line": 165,
+    "write": false,
+    "hooks": [
+      "useReceipt"
+    ],
+    "screens": [
+      "receipt/[membershipId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "save_my_profile",
+    "fn": "saveMyProfile",
+    "file": "src/features/profile/api.ts",
+    "line": 76,
+    "write": false,
+    "hooks": [
+      "useSaveProfile"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "save_my_profile",
+    "fn": "saveMyProfile",
+    "file": "src/features/profile/api.ts",
+    "line": 77,
+    "write": false,
+    "hooks": [
+      "useSaveProfile"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "profiles",
+    "fn": "setMyAvatar",
+    "file": "src/features/profile/api.ts",
+    "line": 92,
+    "write": true,
+    "hooks": [
+      "useCompleteOnboarding"
+    ],
+    "screens": [
+      "onboarding.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_logs",
+    "fn": "listLogs",
+    "file": "src/features/progress/api.ts",
+    "line": 72,
+    "write": false,
+    "hooks": [
+      "useWorkoutLogs"
+    ],
+    "screens": [
+      "member/profile.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_logs",
+    "fn": "listHistory",
+    "file": "src/features/progress/api.ts",
+    "line": 93,
+    "write": false,
+    "hooks": [
+      "useWorkoutHistory"
+    ],
+    "screens": [
+      "member/progress.tsx",
+      "member-progress/[memberId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "history_gyms",
+    "fn": "historyGymNames",
+    "file": "src/features/progress/api.ts",
+    "line": 110,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "workout_logs",
+    "fn": "listGymLogs",
+    "file": "src/features/progress/api.ts",
+    "line": 144,
+    "write": false,
+    "hooks": [
+      "useGymWorkoutLogs"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "gym_members",
+    "fn": "listGymLogs",
+    "file": "src/features/progress/api.ts",
+    "line": 157,
+    "write": false,
+    "hooks": [
+      "useGymWorkoutLogs"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "workout_logs",
+    "fn": "saveLog",
+    "file": "src/features/progress/api.ts",
+    "line": 185,
+    "write": true,
+    "hooks": [
+      "useFinishWorkout"
+    ],
+    "screens": [
+      "workout-session.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_logs",
+    "fn": "saveLog",
+    "file": "src/features/progress/api.ts",
+    "line": 204,
+    "write": false,
+    "hooks": [
+      "useFinishWorkout"
+    ],
+    "screens": [
+      "workout-session.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_log_sets",
+    "fn": "saveLog",
+    "file": "src/features/progress/api.ts",
+    "line": 206,
+    "write": true,
+    "hooks": [
+      "useFinishWorkout"
+    ],
+    "screens": [
+      "workout-session.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "reply_to_workout",
+    "fn": "replyToWorkout",
+    "file": "src/features/progress/api.ts",
+    "line": 232,
+    "write": false,
+    "hooks": [
+      "useReplyToWorkout"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "my_referrals",
+    "fn": "listMyReferrals",
+    "file": "src/features/referrals/api.ts",
+    "line": 29,
+    "write": false,
+    "hooks": [
+      "useMyReferrals"
+    ],
+    "screens": [
+      "refer-friend.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "gym_referrals",
+    "fn": "listGymReferrals",
+    "file": "src/features/referrals/api.ts",
+    "line": 62,
+    "write": false,
+    "hooks": [
+      "useGymReferrals"
+    ],
+    "screens": [
+      "owner/index.tsx",
+      "referrals.tsx",
+      "trainer/index.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "refer_friend",
+    "fn": "referFriend",
+    "file": "src/features/referrals/api.ts",
+    "line": 105,
+    "write": false,
+    "hooks": [
+      "useReferFriend"
+    ],
+    "screens": [
+      "refer-friend.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "export_payments",
+    "fn": "exportPayments",
+    "file": "src/features/reports/api.ts",
+    "line": 49,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "export_memberships",
+    "fn": "exportMemberships",
+    "file": "src/features/reports/api.ts",
+    "line": 112,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "export_attendance",
+    "fn": "exportAttendance",
+    "file": "src/features/reports/api.ts",
+    "line": 168,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "set_self_workouts",
+    "fn": "setSelfWorkouts",
+    "file": "src/features/self-workouts/api.ts",
+    "line": 40,
+    "write": false,
+    "hooks": [
+      "useSetSelfWorkouts"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "self_workout_prefs",
+    "fn": "getSelfPrefs",
+    "file": "src/features/self-workouts/api.ts",
+    "line": 53,
+    "write": false,
+    "hooks": [
+      "useSelfPrefs"
+    ],
+    "screens": [
+      "self-plan-setup.tsx",
+      "self-plan.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "create_self_plan",
+    "fn": "createSelfPlan",
+    "file": "src/features/self-workouts/api.ts",
+    "line": 90,
+    "write": false,
+    "hooks": [
+      "useCreateSelfPlan"
+    ],
+    "screens": [
+      "self-plan-setup.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "save_self_workout",
+    "fn": "saveSelfWorkout",
+    "file": "src/features/self-workouts/api.ts",
+    "line": 145,
+    "write": false,
+    "hooks": [
+      "useSaveSelfWorkout"
+    ],
+    "screens": [
+      "plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "delete_self_workout",
+    "fn": "deleteSelfWorkout",
+    "file": "src/features/self-workouts/api.ts",
+    "line": 165,
+    "write": false,
+    "hooks": [
+      "useDeleteSelfWorkout"
+    ],
+    "screens": [
+      "plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "branch_subscription",
+    "fn": "fetchSubscription",
+    "file": "src/features/subscription/api.ts",
+    "line": 74,
+    "write": false,
+    "hooks": [
+      "useSubscription"
+    ],
+    "screens": [
+      "admin-branch/[gymId].tsx",
+      "plan-locked.tsx",
+      "subscription.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "subscription_payments",
+    "fn": "listSubscriptionPayments",
+    "file": "src/features/subscription/api.ts",
+    "line": 93,
+    "write": false,
+    "hooks": [
+      "useSubscriptionPayments",
+      "useSubscriptionPayment"
+    ],
+    "screens": [
+      "subscription.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "subscription_payments",
+    "fn": "fetchSubscriptionPayment",
+    "file": "src/features/subscription/api.ts",
+    "line": 105,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "edge",
+    "target": "create-subscription-payment",
+    "fn": "startSubscriptionPayment",
+    "file": "src/features/subscription/api.ts",
+    "line": 116,
+    "write": true,
+    "hooks": [
+      "usePaySubscription"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_record_subscription",
+    "fn": "recordSubscription",
+    "file": "src/features/subscription/api.ts",
+    "line": 163,
+    "write": false,
+    "hooks": [
+      "useRecordSubscription"
+    ],
+    "screens": [
+      "admin-branch/[gymId].tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "branch_access",
+    "fn": "fetchBranchAccess",
+    "file": "src/features/subscription/api.ts",
+    "line": 178,
+    "write": false,
+    "hooks": [
+      "useBranchAccess"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "admin_give_free_months",
+    "fn": "giveFreeMonths",
+    "file": "src/features/subscription/api.ts",
+    "line": 215,
+    "write": false,
+    "hooks": [
+      "useGiveFreeMonths"
+    ],
+    "screens": [
+      "admin-branch/[gymId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_hour_rules",
+    "fn": "getTrainerHourRules",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 43,
+    "write": false,
+    "hooks": [
+      "useTrainerHourRules"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_trainer_hour_rules",
+    "fn": "saveTrainerHourRules",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 74,
+    "write": false,
+    "hooks": [
+      "useSaveTrainerHourRules"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_trainer_late_rule",
+    "fn": "saveTrainerHourRules",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 83,
+    "write": false,
+    "hooks": [
+      "useSaveTrainerHourRules"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_evening_shift_start",
+    "fn": "saveTrainerHourRules",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 90,
+    "write": false,
+    "hooks": [
+      "useSaveTrainerHourRules"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_shifts",
+    "fn": "getTrainerShifts",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 101,
+    "write": false,
+    "hooks": [
+      "useTrainerShifts"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_trainer_shift",
+    "fn": "setTrainerShift",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 111,
+    "write": false,
+    "hooks": [
+      "useSetTrainerShift"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "work_permissions",
+    "fn": "listPermissions",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 149,
+    "write": false,
+    "hooks": [
+      "usePermissions"
+    ],
+    "screens": [
+      "owner/index.tsx",
+      "permissions.tsx",
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "request_permission",
+    "fn": "requestPermission",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 191,
+    "write": false,
+    "hooks": [
+      "useRequestPermission"
+    ],
+    "screens": [
+      "permissions.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "cancel_permission",
+    "fn": "cancelPermission",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 209,
+    "write": false,
+    "hooks": [
+      "useCancelPermission"
+    ],
+    "screens": [
+      "permissions.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "decide_permission",
+    "fn": "decidePermission",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 219,
+    "write": false,
+    "hooks": [
+      "useDecidePermission"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "trainer_hours_month",
+    "fn": "getTrainerHoursMonth",
+    "file": "src/features/trainer-hours/api.ts",
+    "line": 240,
+    "write": false,
+    "hooks": [
+      "useTrainerHoursMonth"
+    ],
+    "screens": [
+      "trainer-hours.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_profiles",
+    "fn": "listTrainers",
+    "file": "src/features/trainers/api.ts",
+    "line": 71,
+    "write": false,
+    "hooks": [
+      "useTrainers",
+      "useTrainer"
+    ],
+    "screens": [
+      "book-trainer/[trainerId].tsx",
+      "member/bookings.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_profiles",
+    "fn": "getTrainer",
+    "file": "src/features/trainers/api.ts",
+    "line": 87,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "trainer_availability",
+    "fn": "getTrainer",
+    "file": "src/features/trainers/api.ts",
+    "line": 93,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "profiles",
+    "fn": "getTrainer",
+    "file": "src/features/trainers/api.ts",
+    "line": 106,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "trainer_profiles",
+    "fn": "getWeeklyHours",
+    "file": "src/features/trainers/api.ts",
+    "line": 131,
+    "write": false,
+    "hooks": [
+      "useWeeklyHours"
+    ],
+    "screens": [
+      "weekly-hours.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_availability",
+    "fn": "getWeeklyHours",
+    "file": "src/features/trainers/api.ts",
+    "line": 137,
+    "write": false,
+    "hooks": [
+      "useWeeklyHours"
+    ],
+    "screens": [
+      "weekly-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "set_trainer_availability",
+    "fn": "saveWeeklyHours",
+    "file": "src/features/trainers/api.ts",
+    "line": 167,
+    "write": false,
+    "hooks": [
+      "useSaveWeeklyHours"
+    ],
+    "screens": [
+      "weekly-hours.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "trainer_busy_slots",
+    "fn": "listBusySlots",
+    "file": "src/features/trainers/api.ts",
+    "line": 195,
+    "write": false,
+    "hooks": [
+      "useBusySlots"
+    ],
+    "screens": [
+      "book-trainer/[trainerId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_sessions",
+    "fn": "listSessions",
+    "file": "src/features/trainers/api.ts",
+    "line": 223,
+    "write": false,
+    "hooks": [
+      "useSessions"
+    ],
+    "screens": [
+      "member/bookings.tsx",
+      "member/index.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "book_trainer_session",
+    "fn": "bookSession",
+    "file": "src/features/trainers/api.ts",
+    "line": 269,
+    "write": false,
+    "hooks": [
+      "useBookSession"
+    ],
+    "screens": [
+      "book-trainer/[trainerId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "trainer_sessions",
+    "fn": "updateSessionStatus",
+    "file": "src/features/trainers/api.ts",
+    "line": 286,
+    "write": true,
+    "hooks": [
+      "useUpdateSession"
+    ],
+    "screens": [
+      "member/bookings.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workouts",
+    "fn": "listWorkouts",
+    "file": "src/features/workouts/api.ts",
+    "line": 65,
+    "write": false,
+    "hooks": [
+      "useWorkouts",
+      "useWorkout"
+    ],
+    "screens": [
+      "assign-plan/[workoutId].tsx",
+      "plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "save_workout",
+    "fn": "saveWorkout",
+    "file": "src/features/workouts/api.ts",
+    "line": 99,
+    "write": false,
+    "hooks": [
+      "useSaveWorkout"
+    ],
+    "screens": [
+      "plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workouts",
+    "fn": "deleteWorkout",
+    "file": "src/features/workouts/api.ts",
+    "line": 124,
+    "write": true,
+    "hooks": [
+      "useDeleteWorkout"
+    ],
+    "screens": [
+      "plan-editor.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_assignments",
+    "fn": "setAssignment",
+    "file": "src/features/workouts/api.ts",
+    "line": 144,
+    "write": true,
+    "hooks": [
+      "useAssignPlan",
+      "useSetAssignment"
+    ],
+    "screens": [
+      "assign-plan/[workoutId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_assignments",
+    "fn": "setAssignment",
+    "file": "src/features/workouts/api.ts",
+    "line": 150,
+    "write": true,
+    "hooks": [
+      "useAssignPlan",
+      "useSetAssignment"
+    ],
+    "screens": [
+      "assign-plan/[workoutId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "workout_assignments",
+    "fn": "setAssignmentDays",
+    "file": "src/features/workouts/api.ts",
+    "line": 165,
+    "write": true,
+    "hooks": [
+      "useSetAssignmentDays"
+    ],
+    "screens": [
+      "assign-plan/[workoutId].tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "gyms",
+    "fn": "getCatchUpDays",
+    "file": "src/features/workouts/api.ts",
+    "line": 176,
+    "write": false,
+    "hooks": [
+      "useCatchUpDays"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "set_workout_catch_up_days",
+    "fn": "setCatchUpDays",
+    "file": "src/features/workouts/api.ts",
+    "line": 186,
+    "write": false,
+    "hooks": [
+      "useSetCatchUpDays"
+    ],
+    "screens": []
+  },
+  {
+    "kind": "table",
+    "target": "gym_members",
+    "fn": "fetchOwnedGyms",
+    "file": "web/src/data/api.ts",
+    "line": 24,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "gym_people",
+    "fn": "listPeople",
+    "file": "web/src/data/api.ts",
+    "line": 44,
+    "write": false,
+    "hooks": [
+      "usePeople"
+    ],
+    "screens": [
+      "assign-meal-plan/[planId].tsx",
+      "assign-plan/[workoutId].tsx",
+      "birthdays.tsx",
+      "class-editor.tsx",
+      "enquiry-editor.tsx",
+      "invite-person.tsx",
+      "match-trainers.tsx",
+      "member-trainers/[memberId].tsx",
+      "message-trainer.tsx",
+      "owner/index.tsx",
+      "owner/people.tsx",
+      "person/[userId].tsx",
+      "record-membership.tsx",
+      "renewals.tsx",
+      "trainer-hours.tsx",
+      "trainer-members/[trainerId].tsx",
+      "trainer-request/[requestId].tsx",
+      "web:Members.tsx",
+      "web:Overview.tsx"
+    ]
+  },
+  {
+    "kind": "table",
+    "target": "memberships",
+    "fn": "listMemberships",
+    "file": "web/src/data/api.ts",
+    "line": 81,
+    "write": false,
+    "hooks": [
+      "useMemberships"
+    ],
+    "screens": [
+      "loyalty-offer.tsx",
+      "owner/index.tsx",
+      "owner/memberships.tsx",
+      "payment-history/index.tsx",
+      "person/[userId].tsx",
+      "record-membership.tsx",
+      "renewals.tsx",
+      "web:Members.tsx",
+      "web:Overview.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "export_payments",
+    "fn": "listPayments",
+    "file": "web/src/data/api.ts",
+    "line": 121,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "export_memberships",
+    "fn": "exportMemberships",
+    "file": "web/src/data/api.ts",
+    "line": 159,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "export_attendance",
+    "fn": "exportAttendance",
+    "file": "web/src/data/api.ts",
+    "line": 192,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  },
+  {
+    "kind": "rpc",
+    "target": "gym_attendance",
+    "fn": "listDayAttendance",
+    "file": "web/src/data/api.ts",
+    "line": 222,
+    "write": false,
+    "hooks": [
+      "useDayAttendance"
+    ],
+    "screens": [
+      "attendance.tsx",
+      "owner/index.tsx",
+      "web:Attendance.tsx",
+      "web:Overview.tsx"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "target": "attendance_report",
+    "fn": "attendanceReport",
+    "file": "web/src/data/api.ts",
+    "line": 248,
+    "write": false,
+    "hooks": [],
+    "screens": []
+  }
+]

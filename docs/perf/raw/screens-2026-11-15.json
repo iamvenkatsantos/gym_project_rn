@@ -1,0 +1,949 @@
+[
+  {
+    "screen": "owner/training",
+    "queryHooks": 13,
+    "hooks": [
+      "useWorkoutLogs",
+      "useMealPlans",
+      "useCoachedMembers",
+      "useGymWorkoutLogs",
+      "useTrainerLinks",
+      "useWorkouts",
+      "useMyAttendance",
+      "useHasMembership",
+      "useCatchUpDays",
+      "useExercises",
+      "useSessions",
+      "useUpcomingClasses",
+      "useWeeklyHours"
+    ],
+    "mountedTwice": [
+      "useWorkoutLogs",
+      "useWorkouts",
+      "useCatchUpDays"
+    ]
+  },
+  {
+    "screen": "supervisor/training",
+    "queryHooks": 13,
+    "hooks": [
+      "useWorkoutLogs",
+      "useMealPlans",
+      "useCoachedMembers",
+      "useGymWorkoutLogs",
+      "useTrainerLinks",
+      "useWorkouts",
+      "useMyAttendance",
+      "useHasMembership",
+      "useCatchUpDays",
+      "useExercises",
+      "useSessions",
+      "useUpcomingClasses",
+      "useWeeklyHours"
+    ],
+    "mountedTwice": [
+      "useWorkoutLogs",
+      "useWorkouts",
+      "useCatchUpDays"
+    ]
+  },
+  {
+    "screen": "trainer/training",
+    "queryHooks": 13,
+    "hooks": [
+      "useWorkoutLogs",
+      "useMealPlans",
+      "useCoachedMembers",
+      "useGymWorkoutLogs",
+      "useTrainerLinks",
+      "useWorkouts",
+      "useMyAttendance",
+      "useHasMembership",
+      "useCatchUpDays",
+      "useExercises",
+      "useSessions",
+      "useUpcomingClasses",
+      "useWeeklyHours"
+    ],
+    "mountedTwice": [
+      "useWorkoutLogs",
+      "useWorkouts",
+      "useCatchUpDays"
+    ]
+  },
+  {
+    "screen": "member/index",
+    "queryHooks": 12,
+    "hooks": [
+      "useCurrentMembership",
+      "useMyBookings",
+      "useSessions",
+      "useAnnouncements",
+      "useMyAttendance",
+      "useCheckInRules",
+      "useHasMembership",
+      "useTrainerLinks",
+      "useTrainerRequests",
+      "useOnlinePaymentsEnabled",
+      "usePlans",
+      "useBranchAccess"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "owner/index",
+    "queryHooks": 11,
+    "hooks": [
+      "useMemberships",
+      "usePlans",
+      "useUpcomingClasses",
+      "usePeople",
+      "useTrainerLinks",
+      "useTrainerRequests",
+      "useDayAttendance",
+      "useEnquiries",
+      "usePermissions",
+      "useGymReferrals",
+      "useBranchAccess"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "supervisor/index",
+    "queryHooks": 11,
+    "hooks": [
+      "useMemberships",
+      "usePlans",
+      "useUpcomingClasses",
+      "usePeople",
+      "useTrainerLinks",
+      "useTrainerRequests",
+      "useDayAttendance",
+      "useEnquiries",
+      "usePermissions",
+      "useGymReferrals",
+      "useBranchAccess"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "trainer/index",
+    "queryHooks": 9,
+    "hooks": [
+      "useGymReferrals",
+      "useAnnouncements",
+      "useMyAttendance",
+      "useCheckInRules",
+      "useHasMembership",
+      "useSessions",
+      "useUpcomingClasses",
+      "useWeeklyHours",
+      "useBranchAccess"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "member/workouts",
+    "queryHooks": 8,
+    "hooks": [
+      "useMemberMealPlan",
+      "useOtherGymMealPlans",
+      "useExercises",
+      "useWorkouts",
+      "useMyAttendance",
+      "useHasMembership",
+      "useWorkoutLogs",
+      "useCatchUpDays"
+    ],
+    "mountedTwice": [
+      "useExercises"
+    ]
+  },
+  {
+    "screen": "member-progress/[memberId]",
+    "queryHooks": 8,
+    "hooks": [
+      "useCoachedMembers",
+      "useWorkoutHistory",
+      "useMeasurements",
+      "useProgressPhotos",
+      "useTrainerLinks",
+      "useSelfPrefs",
+      "useWorkoutLogs",
+      "useWorkouts"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "member/profile",
+    "queryHooks": 7,
+    "hooks": [
+      "useCurrentMembership",
+      "usePlans",
+      "useWorkoutLogs",
+      "useOnlinePaymentsEnabled",
+      "useMemberRules",
+      "useAccountEmail",
+      "useHistorySharing"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "member/bookings",
+    "queryHooks": 6,
+    "hooks": [
+      "useHasMembership",
+      "useSessions",
+      "useTrainers",
+      "useUpcomingClasses",
+      "useMyBookings",
+      "useMemberRules"
+    ],
+    "mountedTwice": [
+      "useHasMembership"
+    ]
+  },
+  {
+    "screen": "trainer-hours",
+    "queryHooks": 6,
+    "hooks": [
+      "useTrainerHoursMonth",
+      "usePermissions",
+      "usePeople",
+      "useTrainerShifts",
+      "useCheckInRules",
+      "useTrainerHourRules"
+    ],
+    "mountedTwice": [
+      "usePermissions"
+    ]
+  },
+  {
+    "screen": "admin-branch/[gymId]",
+    "queryHooks": 5,
+    "hooks": [
+      "useAdminBranches",
+      "useBillingSettings",
+      "useSubscription",
+      "useAdminBranchQr",
+      "useInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "owner/people",
+    "queryHooks": 4,
+    "hooks": [
+      "usePeople",
+      "useTrainerLinks",
+      "useMovedMembers",
+      "useInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "record-membership",
+    "queryHooks": 4,
+    "hooks": [
+      "usePeople",
+      "usePlans",
+      "useMemberships",
+      "useLoyaltyOffer"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "supervisor/people",
+    "queryHooks": 4,
+    "hooks": [
+      "usePeople",
+      "useTrainerLinks",
+      "useMovedMembers",
+      "useInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "account",
+    "queryHooks": 3,
+    "hooks": [
+      "useCanSetUpGym",
+      "useAccountEmail",
+      "useMyGymInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "assign-meal-plan/[planId]",
+    "queryHooks": 3,
+    "hooks": [
+      "useMealPlans",
+      "useCoachedMembers",
+      "usePeople"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "book-trainer/[trainerId]",
+    "queryHooks": 3,
+    "hooks": [
+      "useTrainer",
+      "useBusySlots",
+      "useHasMembership"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "insights",
+    "queryHooks": 3,
+    "hooks": [
+      "useRevenueByMonth",
+      "useMemberInsights",
+      "useBusiestHours"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "match-trainers",
+    "queryHooks": 3,
+    "hooks": [
+      "usePeople",
+      "useTrainerLinks",
+      "useTrainerRequests"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "member/progress",
+    "queryHooks": 3,
+    "hooks": [
+      "useWorkoutHistory",
+      "useMeasurements",
+      "useProgressPhotos"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "owner/memberships",
+    "queryHooks": 3,
+    "hooks": [
+      "useMemberships",
+      "usePlans",
+      "useLoyaltyOffer"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "person/[userId]",
+    "queryHooks": 3,
+    "hooks": [
+      "usePeople",
+      "useMemberships",
+      "useTrainerLinks"
+    ],
+    "mountedTwice": [
+      "useTrainerLinks"
+    ]
+  },
+  {
+    "screen": "request-trainer",
+    "queryHooks": 3,
+    "hooks": [
+      "useTrainerRequests",
+      "useGymMembers",
+      "useTrainerLinks"
+    ],
+    "mountedTwice": [
+      "useTrainerRequests"
+    ]
+  },
+  {
+    "screen": "self-plan",
+    "queryHooks": 3,
+    "hooks": [
+      "useSelfPrefs",
+      "useTrainerLinks",
+      "useExercises"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "subscription",
+    "queryHooks": 3,
+    "hooks": [
+      "useSubscription",
+      "useSubscriptionPayments",
+      "useSubscriptionPayment"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "supervisor/memberships",
+    "queryHooks": 3,
+    "hooks": [
+      "useMemberships",
+      "usePlans",
+      "useLoyaltyOffer"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "trainer/workouts",
+    "queryHooks": 3,
+    "hooks": [
+      "useMealPlans",
+      "useExercises",
+      "useWorkouts"
+    ],
+    "mountedTwice": [
+      "useExercises"
+    ]
+  },
+  {
+    "screen": "trainer-request/[requestId]",
+    "queryHooks": 3,
+    "hooks": [
+      "useTrainerRequests",
+      "usePeople",
+      "useTrainerLinks"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "admin/index",
+    "queryHooks": 2,
+    "hooks": [
+      "useAdminBranches",
+      "useBillingSettings"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "admin/owners",
+    "queryHooks": 2,
+    "hooks": [
+      "useAdminBranches",
+      "useBillingSettings"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "admin-brand/[brandId]",
+    "queryHooks": 2,
+    "hooks": [
+      "useAdminBranches",
+      "useBillingSettings"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "admin-owner/[ownerId]",
+    "queryHooks": 2,
+    "hooks": [
+      "useAdminBranches",
+      "useBillingSettings"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "assign-plan/[workoutId]",
+    "queryHooks": 2,
+    "hooks": [
+      "useCoachedMembers",
+      "usePeople"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "attendance",
+    "queryHooks": 2,
+    "hooks": [
+      "useDayAttendance",
+      "useAttendanceReport"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "check-in-display",
+    "queryHooks": 2,
+    "hooks": [
+      "useCheckInQr",
+      "useDisplayCode"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "check-in-qr",
+    "queryHooks": 2,
+    "hooks": [
+      "useCheckInQr",
+      "useCheckInRules"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "class-editor",
+    "queryHooks": 2,
+    "hooks": [
+      "useUpcomingClasses",
+      "usePeople"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "enquiry/[enquiryId]",
+    "queryHooks": 2,
+    "hooks": [
+      "useEnquiries",
+      "useEnquiryNotes"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "enquiry-editor",
+    "queryHooks": 2,
+    "hooks": [
+      "useEnquiries",
+      "usePeople"
+    ],
+    "mountedTwice": [
+      "useEnquiries"
+    ]
+  },
+  {
+    "screen": "invite-person",
+    "queryHooks": 2,
+    "hooks": [
+      "usePeople",
+      "useInviteHasAccount"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "loyalty-offer",
+    "queryHooks": 2,
+    "hooks": [
+      "useLoyaltyOffer",
+      "useMemberships"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "member-trainers/[memberId]",
+    "queryHooks": 2,
+    "hooks": [
+      "usePeople",
+      "useTrainerLinks"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "message-trainer",
+    "queryHooks": 2,
+    "hooks": [
+      "usePeople",
+      "useUpcomingClasses"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "no-gym",
+    "queryHooks": 2,
+    "hooks": [
+      "useCanSetUpGym",
+      "useMyGymInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "notifications",
+    "queryHooks": 2,
+    "hooks": [
+      "useNotifications",
+      "useMyGymInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "pause-membership",
+    "queryHooks": 2,
+    "hooks": [
+      "useMemberRules",
+      "useMemberMemberships"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "payment-history/[memberId]",
+    "queryHooks": 2,
+    "hooks": [
+      "useMemberships",
+      "useOnlinePayments"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "payment-history/index",
+    "queryHooks": 2,
+    "hooks": [
+      "useMemberships",
+      "useOnlinePayments"
+    ],
+    "mountedTwice": [
+      "useMemberships",
+      "useOnlinePayments"
+    ]
+  },
+  {
+    "screen": "plan-locked",
+    "queryHooks": 2,
+    "hooks": [
+      "useSubscription",
+      "useSubscriptionPayment"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "refer-friend",
+    "queryHooks": 2,
+    "hooks": [
+      "useMemberRules",
+      "useMyReferrals"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "renewals",
+    "queryHooks": 2,
+    "hooks": [
+      "useMemberships",
+      "usePeople"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "self-plan-setup",
+    "queryHooks": 2,
+    "hooks": [
+      "useSelfPrefs",
+      "useExercises"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "trainer/members",
+    "queryHooks": 2,
+    "hooks": [
+      "useCoachedMembers",
+      "useInvites"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "trainer-members/[trainerId]",
+    "queryHooks": 2,
+    "hooks": [
+      "usePeople",
+      "useTrainerLinks"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "add-branch",
+    "queryHooks": 1,
+    "hooks": [
+      "useBillingSettings"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "add-exercises",
+    "queryHooks": 1,
+    "hooks": [
+      "useExercises"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "announcements",
+    "queryHooks": 1,
+    "hooks": [
+      "useAnnouncements"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "birthdays",
+    "queryHooks": 1,
+    "hooks": [
+      "usePeople"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "branches",
+    "queryHooks": 1,
+    "hooks": [
+      "useBrandOverview"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "edit-profile",
+    "queryHooks": 1,
+    "hooks": [
+      "useAccountEmail"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "enquiries",
+    "queryHooks": 1,
+    "hooks": [
+      "useEnquiries"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "gym-details",
+    "queryHooks": 1,
+    "hooks": [
+      "useGymDetails"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "import-members",
+    "queryHooks": 1,
+    "hooks": [
+      "usePlans"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "log-measurements",
+    "queryHooks": 1,
+    "hooks": [
+      "useMeasurements"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "member-rules",
+    "queryHooks": 1,
+    "hooks": [
+      "useMemberRules"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "membership-plan-editor",
+    "queryHooks": 1,
+    "hooks": [
+      "usePlans"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "new-announcement",
+    "queryHooks": 1,
+    "hooks": [
+      "useSavedOffers"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "onboarding",
+    "queryHooks": 1,
+    "hooks": [
+      "useProgressPhotos"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "owner/classes",
+    "queryHooks": 1,
+    "hooks": [
+      "useUpcomingClasses"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "payment/[paymentId]",
+    "queryHooks": 1,
+    "hooks": [
+      "useOnlinePayment"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "permissions",
+    "queryHooks": 1,
+    "hooks": [
+      "usePermissions"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "plan-editor",
+    "queryHooks": 1,
+    "hooks": [
+      "useExercises"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "progress-photo/[photoId]",
+    "queryHooks": 1,
+    "hooks": [
+      "useProgressPhotos"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "receipt/[membershipId]",
+    "queryHooks": 1,
+    "hooks": [
+      "useReceipt"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "referrals",
+    "queryHooks": 1,
+    "hooks": [
+      "useGymReferrals"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "smart-plans",
+    "queryHooks": 1,
+    "hooks": [
+      "useExercises"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "supervisor/classes",
+    "queryHooks": 1,
+    "hooks": [
+      "useUpcomingClasses"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "weekly-hours",
+    "queryHooks": 1,
+    "hooks": [
+      "useWeeklyHours"
+    ],
+    "mountedTwice": []
+  },
+  {
+    "screen": "workout-session",
+    "queryHooks": 1,
+    "hooks": [
+      "useExercises"
+    ],
+    "mountedTwice": [
+      "useExercises"
+    ]
+  },
+  {
+    "screen": "add-progress-photo",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "check-in",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "enter-code",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "exercise/[exerciseId]",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "index",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "invite-owner",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "join",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "meal-plan-editor",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "payment-return",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "profile-setup",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "reports",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "reset-password",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "scan-check-in",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "set-password",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "set-up-gym",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  },
+  {
+    "screen": "sign-in",
+    "queryHooks": 0,
+    "hooks": [],
+    "mountedTwice": []
+  }
+]
