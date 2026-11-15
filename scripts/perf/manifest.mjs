@@ -217,15 +217,7 @@ export async function buildCalls(ctx) {
   }
   if (STAFF.includes(role)) {
     out.push(
-      rpc('revenue_by_month', { p_gym_id: gymId, p_months: 6 }),
-      rpc('member_insights', { p_gym_id: gymId }),
-      rpc('busiest_hours', { p_gym_id: gymId, p_days: 30 }),
       rpc('gym_moved_members', { p_gym_id: gymId }),
-      rpc('export_memberships', { p_gym_id: gymId }),
-      rpc('export_payments', { p_gym_id: gymId, p_from: day(-90), p_to: day() }),
-      rpc('export_attendance', { p_gym_id: gymId, p_from: day(-90), p_to: day() }),
-      rpc('trainer_hours_month', { p_gym_id: gymId, p_month: day().slice(0, 8) + '01' }),
-      rpc('branch_subscription', { p_gym_id: gymId }),
       get(
         'gym_invites (pending)',
         `gym_invites?select=id,email,role,created_at,code,phone&gym_id=eq.${gymId}&order=created_at.desc`,
@@ -234,6 +226,20 @@ export async function buildCalls(ctx) {
         'saved_offers',
         `saved_offers?select=id,audience,title,body&gym_id=eq.${gymId}&order=created_at.desc`,
       ),
+    );
+  }
+  // Owner-only in the database (insights, exports, trainer hours, billing, brand view):
+  // a supervisor gets an error from these, so they are not part of its calls.
+  if (role === 'owner') {
+    out.push(
+      rpc('revenue_by_month', { p_gym_id: gymId, p_months: 6 }),
+      rpc('member_insights', { p_gym_id: gymId }),
+      rpc('busiest_hours', { p_gym_id: gymId, p_days: 30 }),
+      rpc('export_memberships', { p_gym_id: gymId }),
+      rpc('export_payments', { p_gym_id: gymId, p_from: day(-90), p_to: day() }),
+      rpc('export_attendance', { p_gym_id: gymId, p_from: day(-90), p_to: day() }),
+      rpc('trainer_hours_month', { p_gym_id: gymId, p_month: day().slice(0, 8) + '01' }),
+      rpc('branch_subscription', { p_gym_id: gymId }),
       get('trainer_hour_rules', `trainer_hour_rules?select=*&gym_id=eq.${gymId}`),
       get(
         'work_permissions',
