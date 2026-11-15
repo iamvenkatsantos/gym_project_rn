@@ -165,10 +165,14 @@ export async function buildCalls(ctx) {
     );
   }
   if (COACH.includes(role)) {
+    // People and attendance lists are for owners and supervisors only; a trainer gets an error.
+    if (STAFF.includes(role))
+      out.push(
+        rpc('gym_people', { p_gym_id: gymId }),
+        rpc('gym_attendance', { p_gym_id: gymId, p_days_ago: 0 }),
+        rpc('attendance_report', { p_gym_id: gymId, p_days: 7 }),
+      );
     out.push(
-      rpc('gym_people', { p_gym_id: gymId }),
-      rpc('gym_attendance', { p_gym_id: gymId, p_days_ago: 0 }),
-      rpc('attendance_report', { p_gym_id: gymId, p_days: 7 }),
       get('member_trainers', `member_trainers?select=*&gym_id=eq.${gymId}`),
       get('trainer_requests', `trainer_requests?select=*&gym_id=eq.${gymId}&order=created_at.desc`),
       get('enquiries', `enquiries?select=*&gym_id=eq.${gymId}&order=created_at.desc&limit=1000`),
