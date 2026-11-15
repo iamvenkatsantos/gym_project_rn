@@ -9,8 +9,9 @@
 //   PERF_API_URL      https://api.vinven.net for production (the app's own path), the develop URL otherwise
 //   PERF_ANON_KEY     the public anon key for that project (never the service role key)
 //   PERF_<ROLE>_EMAIL / PERF_<ROLE>_PASSWORD   for ROLE in OWNER SUPERVISOR TRAINER MEMBER ADMIN
-// Test accounts must live in a separate "CoreFit Perf Test" gym; production refuses any email
-// that does not contain "perf".
+// Test accounts must live in a separate gym named "CoreFit Perf Test": on production the script
+// checks, after sign-in, that the account's gym has exactly that name and aborts otherwise.
+// The platform admin role reads every gym, so production skips it unless --allow-admin.
 //
 // Production rules enforced here: GET table reads and an allow-list of read-only RPCs only,
 // one request at a time, >= 200 ms between calls, 20 runs per API, only 23:00-05:00 IST, abort on
@@ -31,7 +32,12 @@ const runs = prod ? 20 : Number(opt('runs', 20));
 const warmups = 2;
 const gapMs = prod ? Math.max(200, Number(opt('gap', 250))) : Number(opt('gap', 50));
 const p95Limit = 5000;
-const roles = opt('roles', 'owner,supervisor,trainer,member,admin').split(',');
+const roles = opt(
+  'roles',
+  prod ? 'owner,supervisor,trainer,member' : 'owner,supervisor,trainer,member,admin',
+).split(',');
+if (prod && roles.includes('admin') && !flag('allow-admin'))
+  fail('the admin role reads every gym; production needs --allow-admin to include it');
 const outDir = opt('out', 'docs/perf/raw');
 
 function fail(msg) {
@@ -117,10 +123,23 @@ async function signIn(role) {
   const email = process.env[`PERF_${role.toUpperCase()}_EMAIL`];
   const password = process.env[`PERF_${role.toUpperCase()}_PASSWORD`];
   if (!email || !password) return null;
-  if (prod && !/perf/i.test(email)) fail(`${role}: production accepts only perf test accounts`);
   const r = await http('POST', '/auth/v1/token?grant_type=password', { body: { email, password } });
   if (r.status !== 200) fail(`${role}: sign-in failed (HTTP ${r.status})`);
-  return { token: r.json.access_token, userId: r.json.user.id };
+  const session = { token: r.json.access_token, userId: r.json.user.id };
+  if (prod && role !== 'admin') {
+    // Every gym this account belongs to must be the perf gym, or nothing real is read.
+    const g = await http(
+      'GET',
+      `/rest/v1/gym_members?select=gym:gyms(name)&user_id=eq.${session.userId}`,
+      { token: session.token },
+    );
+    const names = Array.isArray(g.json) ? g.json.map((x) => x.gym?.name) : [];
+    if (names.length === 0 || names.some((n) => n !== PERF_GYM))
+      fail(
+        `${role}: this account is not only in the "${PERF_GYM}" gym, refusing to run on production`,
+      );
+  }
+  return session;
 }
 
 function rowCount(json) {
@@ -128,6 +147,7 @@ function rowCount(json) {
   return json == null ? 0 : 1;
 }
 
+const PERF_GYM = 'CoreFit Perf Test';
 const results = [];
 const started = new Date();
 
