@@ -52,6 +52,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                   |
 | `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
 | `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
+| `scripts/perf/`              | Performance audit tools (`api-bench.mjs`, `inventory.mjs`, `db-stats.sql`; README there) and reports in `docs/perf/`                                                         |
 
 ## Roles and who sees what
 
@@ -472,6 +473,15 @@ back to the build's own code. `npm run ota -- prune --yes` frees storage (keeps 
 updates per channel and the files they use; never delete R2 files by hand). Phones download on launch (and on return to the front, hourly, via
 `useOtaUpdates`) and apply on the next launch; Account shows the running update's short id. Setup
 and test steps: `infra/updates-server/README.md`.
+
+**Performance audit** (Venkat, 2026-11-15; `scripts/perf/`, reports in `docs/perf/`): no behaviour
+change allowed. `api-bench.mjs` times read APIs per role; on production it is read-only in code (GET
+reads and the `READ_RPCS` allow-list in `manifest.mjs`, one request at a time, 200 ms+ gap, 20 runs,
+23:00-05:00 IST only, "perf" test accounts in a separate CoreFit Perf Test gym, through
+`api.vinven.net` with the anon key, aborts on any error or p95 over 5 s). Writes and edge functions
+are measured on develop only. Add a new read RPC to `READ_RPCS` only after checking its body writes
+nothing. Credentials come from `PERF_*` env vars; never commit them, ids or tokens. Measurement code
+in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data.
 
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
