@@ -548,6 +548,10 @@ in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data.
 
 ## Shipping a change
 
+**Branches** (Venkat, 2026-11-15): open every PR against `develop`; `main` is the release branch.
+Once a PR is merged into `develop`, delete its branch on GitHub (never `develop` or `main`). The
+repo keeps only `develop`, `main` and branches with open PRs or unfinished work.
+
 Say in the PR which of these it needs:
 
 - **`npx supabase db push --remote`** for any new migration (run from Venkat's machine; the CLI now targets a local database without `--remote`).
