@@ -482,7 +482,10 @@ reads and the `READ_RPCS` allow-list in `manifest.mjs`, one request at a time, 2
 `api.vinven.net` with the anon key, aborts on any error or p95 over 5 s). Writes and edge functions
 are measured on develop only. Add a new read RPC to `READ_RPCS` only after checking its body writes
 nothing. Credentials come from `PERF_*` env vars; never commit them, ids or tokens. Measurement code
-in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data.
+in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data: `src/lib/perf-log.ts` times each API
+request (route/API name, ms, KB; `perfFetch` wraps the Supabase fetch), `usePerfScreen` in `Screen` times each
+screen until its queries settle, and Account shows **Share timing log** only when the flag is on. Only the EAS
+`perf` profile sets the flag (own update channel `perf`, never `develop` or `main`), so no store or OTA build has it.
 
 **Languages** (Venkat, 2026-11-17): the app speaks English, Tamil and Hindi (`src/i18n/`), more
 Indian languages later. The person picks one on Sign in (chips at the top), Account or member

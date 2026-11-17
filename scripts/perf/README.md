@@ -32,3 +32,20 @@ at a time, 250 ms gap (never below 200); 20 runs; only the `api.vinven.net` URL;
 "CoreFit Perf Test" gym (checked after sign-in), no admin role without `--allow-admin`; aborts on any HTTP error or p95 over 5 s. Results (`docs/perf/raw/bench-*.json`)
 hold API names and timings only. A new read RPC must be added to `READ_RPCS` after checking its
 body has no writes.
+
+## Timing on a phone
+
+The app can time itself, but only in a build made with `EXPO_PUBLIC_PERF_LOG=true`. It logs API names, milliseconds
+and sizes only, never ids, query values, tokens or bodies, and sends nothing anywhere.
+
+```bash
+# a test APK with timing (its own update channel "perf", so OTA never replaces it)
+npx eas-cli@latest build --profile perf -p android --local --output ./build/corefit-perf.apk
+# or, with a development build already installed, no new build:
+EXPO_PUBLIC_PERF_LOG=true npx expo start --dev-client
+```
+
+Sign in with a "CoreFit Perf Test" account, open the home screen, Training, Members, Attendance and so on, then
+Account → **Share timing log** and send the text. It lists the time to "Sign-in loaded", each screen's time until
+its requests finished (with the request count), and each API's count, median time and largest size.
+Cold start: `adb shell am start -W com.corefit.gym/.MainActivity` on a release build (TotalTime).

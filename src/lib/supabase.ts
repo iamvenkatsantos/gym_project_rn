@@ -4,6 +4,7 @@ import { AppState, Platform } from 'react-native';
 
 import { env, isDemoMode } from '@/lib/env';
 import { friendlyFetch } from '@/lib/network';
+import { perfFetch } from '@/lib/perf-log';
 import { secureSessionStorage } from '@/lib/secure-session-storage';
 
 export const supabase: SupabaseClient | null = !isDemoMode
@@ -16,7 +17,7 @@ export const supabase: SupabaseClient | null = !isDemoMode
         persistSession: true,
         detectSessionInUrl: false,
       },
-      global: { fetch: friendlyFetch() },
+      global: { fetch: perfFetch(friendlyFetch()) },
     })
   : null;
 
