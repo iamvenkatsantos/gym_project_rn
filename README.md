@@ -301,6 +301,7 @@ psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
 psql -d corefit_test -f supabase/tests/pause-waitlist-referrals.sql
+psql -d corefit_test -f supabase/tests/people-and-payments-paging.sql
 psql -d corefit_test -f supabase/tests/security-hardening.sql
 psql -d corefit_test -f supabase/tests/cross-gym-hardening.sql
 psql -d corefit_test -f supabase/tests/accept-invites-shared-history.sql

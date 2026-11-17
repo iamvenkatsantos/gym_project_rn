@@ -9,7 +9,6 @@ import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { TextField } from '@/components/text-field';
-import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { canCoach } from '@/features/auth/types';
 import { useActiveGym } from '@/features/auth/use-profile';
@@ -19,9 +18,10 @@ import type { TrainerLink } from '@/features/coaching/types';
 import { MovedMembers } from '@/features/gym-invites/components/moved-members';
 import { PendingInvites } from '@/features/members/components/pending-invites';
 import { PersonRow } from '@/features/members/components/person-row';
-import { usePeople } from '@/features/members/hooks';
-import { countPeople, filterPeople, isSignedUp } from '@/features/members/rules';
+import { usePeopleCounts, usePeoplePages } from '@/features/members/hooks';
+import { isSignedUp } from '@/features/members/rules';
 import type { GymPerson, PeopleFilter } from '@/features/members/types';
+import { useDebounced } from '@/hooks/use-debounced';
 import { useT } from '@/i18n';
 
 const filters: { value: PeopleFilter; label: string }[] = [
@@ -33,17 +33,19 @@ const filters: { value: PeopleFilter; label: string }[] = [
   { value: 'suspended', label: 'Suspended' },
 ];
 
-/** Everyone at the gym, for owners and supervisors. */
+/** Everyone at the gym, for owners and supervisors, 30 at a time. */
 export default function OwnerPeopleScreen() {
   const t = useT();
   const gym = useActiveGym();
-  const people = usePeople(gym.gymId);
   const links = useTrainerLinks(gym.gymId);
   // Supervisors can only withdraw the invites they could have sent.
   const canWithdraw = (role: GymPerson['role']) =>
     gym.role === 'owner' || role === 'member' || role === 'trainer';
   const [filter, setFilter] = useState<PeopleFilter>('all');
   const [query, setQuery] = useState('');
+  // 30 at a time, filtered and searched on the server, so a big gym opens as fast as a small one.
+  const pages = usePeoplePages(gym.gymId, filter, useDebounced(query.trim()));
+  const counts = usePeopleCounts(gym.gymId).data;
 
   return (
     <Screen>
@@ -78,45 +80,52 @@ export default function OwnerPeopleScreen() {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <QueryState query={people} isEmpty={(list) => list.length === 0} emptyText="Nobody here yet.">
-        {(list) => {
-          const counts = countPeople(list);
-          const shown = filterPeople(list, filter, query);
-          return (
-            <>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chips}>
-                {filters.map((f) => (
-                  <Chip
-                    key={f.value}
-                    label={`${t(f.label)} ${counts[f.value]}`}
-                    selected={filter === f.value}
-                    onPress={() => setFilter(f.value)}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}>
+        {filters.map((f) => (
+          <Chip
+            key={f.value}
+            label={counts ? `${t(f.label)} ${counts[f.value]}` : t(f.label)}
+            selected={filter === f.value}
+            onPress={() => setFilter(f.value)}
+          />
+        ))}
+      </ScrollView>
+      <QueryState
+        query={pages}
+        isEmpty={(data) => data.pages[0]?.people.length === 0}
+        emptyText={counts?.all === 0 ? 'Nobody here yet.' : 'Nobody matches.'}>
+        {(data) => (
+          <>
+            <Card>
+              {data.pages
+                .flatMap((page) => page.people)
+                .map((person, i) => (
+                  <PersonRow
+                    key={person.id}
+                    person={person}
+                    divider={i > 0}
+                    detail={coachingDetail(person, links.data ?? [])}
+                    onPress={() =>
+                      router.push({ pathname: '/person/[userId]', params: { userId: person.id } })
+                    }
                   />
                 ))}
-              </ScrollView>
-              {shown.length === 0 ? (
-                <ThemedText themeColor="textSecondary">Nobody matches.</ThemedText>
-              ) : (
-                <Card>
-                  {shown.map((person, i) => (
-                    <PersonRow
-                      key={person.id}
-                      person={person}
-                      divider={i > 0}
-                      detail={coachingDetail(person, links.data ?? [])}
-                      onPress={() =>
-                        router.push({ pathname: '/person/[userId]', params: { userId: person.id } })
-                      }
-                    />
-                  ))}
-                </Card>
-              )}
-            </>
-          );
-        }}
+            </Card>
+            {pages.hasNextPage ? (
+              <Button
+                label="Show more"
+                icon="chevron-down"
+                variant="secondary"
+                size="compact"
+                loading={pages.isFetchingNextPage}
+                onPress={() => pages.fetchNextPage()}
+              />
+            ) : null}
+          </>
+        )}
       </QueryState>
 
       <MovedMembers gymId={gym.gymId} />

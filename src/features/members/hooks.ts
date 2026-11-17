@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import {
@@ -11,6 +17,8 @@ import {
   listGymMembers,
   listInvites,
   listPeople,
+  listPeoplePage,
+  peopleCounts,
   promoteToTrainer,
   removePerson,
   resendInvite,
@@ -27,6 +35,7 @@ import type {
   InviteChannel,
   InviteOutcome,
   InviteRole,
+  PeopleFilter,
   ResendChannel,
 } from '@/features/members/types';
 import { uploadAdmissionPhotos } from '@/features/body/api';
@@ -37,6 +46,9 @@ export const memberKeys = {
   all: ['members'] as const,
   list: (gymId: string, kind: MemberKind) => [...memberKeys.all, gymId, kind] as const,
   people: (gymId: string) => [...memberKeys.all, gymId, 'people'] as const,
+  peoplePages: (gymId: string, filter: PeopleFilter, query: string) =>
+    [...memberKeys.all, gymId, 'people-pages', filter, query] as const,
+  peopleCounts: (gymId: string) => [...memberKeys.all, gymId, 'people-counts'] as const,
   invites: (gymId: string) => [...memberKeys.all, gymId, 'invites'] as const,
   coached: (gymId: string, trainerId: string) =>
     [...memberKeys.all, gymId, 'coached', trainerId] as const,
@@ -79,6 +91,23 @@ export function usePeople(gymId: string, { enabled = true }: { enabled?: boolean
     queryFn: () => listPeople(gymId),
     enabled,
   });
+}
+
+/** The People tab: 30 at a time, filtered and searched on the server. */
+export function usePeoplePages(gymId: string, filter: PeopleFilter, query: string) {
+  return useInfiniteQuery({
+    queryKey: memberKeys.peoplePages(gymId, filter, query),
+    queryFn: ({ pageParam }) => listPeoplePage(gymId, filter, query, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.nextOffset,
+    // Keeps the list on screen while a new filter or search loads.
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** How many people each People filter chip holds. */
+export function usePeopleCounts(gymId: string) {
+  return useQuery({ queryKey: memberKeys.peopleCounts(gymId), queryFn: () => peopleCounts(gymId) });
 }
 
 export function useInvites(gymId: string) {

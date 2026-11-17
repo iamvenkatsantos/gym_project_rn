@@ -12,6 +12,7 @@ import type {
   InviteByCode,
   InviteResult,
   InviteRole,
+  PeopleFilter,
   ResendChannel,
   ResendOutcome,
 } from '@/features/members/types';
@@ -22,6 +23,8 @@ import type { PhotoPose } from '@/features/body/types';
 import { mobileLoginEmail } from '@/lib/mobile-login';
 import {
   coachRoles,
+  countPeople,
+  filterPeople,
   normalizeEmail,
   normalizeInviteCode,
   sortCoaches,
@@ -130,14 +133,8 @@ export async function inviteHasAccount(
   ) as boolean;
 }
 
-export async function listPeople(gymId: string): Promise<GymPerson[]> {
-  if (!supabase) {
-    return delay(
-      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
-    );
-  }
-  const rows = unwrap(await supabase.rpc('gym_people', { p_gym_id: gymId })) as PersonRow[];
-  return rows.map((r) => ({
+function toPerson(r: PersonRow): GymPerson {
+  return {
     id: r.user_id,
     fullName: r.full_name || r.email || 'Unnamed',
     email: r.email ?? '',
@@ -151,7 +148,94 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     avatarUrl: avatarUrl(r.avatar_path),
     signedUp: r.signed_up ?? true,
     dateOfBirth: r.date_of_birth ?? null,
-  }));
+  };
+}
+
+export async function listPeople(gymId: string): Promise<GymPerson[]> {
+  if (!supabase) {
+    return delay(
+      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    );
+  }
+  const rows = unwrap(await supabase.rpc('gym_people', { p_gym_id: gymId })) as PersonRow[];
+  return rows.map(toPerson);
+}
+
+/** People shown at a time on the People tab. */
+export const PEOPLE_PAGE_SIZE = 30;
+
+export type PeoplePage = { people: GymPerson[]; nextOffset: number | null };
+
+/**
+ * One page of the People list, filtered and searched on the server: gym_people() returns a table,
+ * so PostgREST filters, orders and ranges its rows and only the page comes back.
+ */
+export async function listPeoplePage(
+  gymId: string,
+  filter: PeopleFilter,
+  query: string,
+  offset: number,
+): Promise<PeoplePage> {
+  const size = PEOPLE_PAGE_SIZE;
+  if (!supabase) {
+    const all = filterPeople(await listPeople(gymId), filter, query);
+    return {
+      people: all.slice(offset, offset + size),
+      nextOffset: offset + size < all.length ? offset + size : null,
+    };
+  }
+  let request = supabase.rpc('gym_people', { p_gym_id: gymId });
+  if (filter === 'suspended') request = request.eq('status', 'suspended');
+  else if (filter !== 'all') request = request.eq('role', filter).neq('status', 'suspended');
+  const pattern = searchPattern(query);
+  if (pattern) request = request.or(`full_name.ilike.${pattern},email.ilike.${pattern}`);
+  // One extra row says whether there's another page, without counting everyone.
+  const rows = unwrap(
+    await request
+      .order('full_name')
+      .order('user_id')
+      .range(offset, offset + size),
+  ) as PersonRow[];
+  return {
+    people: rows.slice(0, size).map(toPerson),
+    nextOffset: rows.length > size ? offset + size : null,
+  };
+}
+
+/**
+ * Search text as a quoted `*text*` pattern for a PostgREST `or` filter. Commas, brackets, quotes,
+ * backslashes and wildcards are dropped: they'd break the filter or match everything.
+ */
+export function searchPattern(query: string): string | null {
+  const text = query
+    .replace(/[,()"\\*%]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text ? `"*${text}*"` : null;
+}
+
+/** How many people each People filter chip holds. */
+export async function peopleCounts(gymId: string): Promise<Record<PeopleFilter, number>> {
+  if (!supabase) return countPeople(await listPeople(gymId));
+  const { data, error } = await supabase.rpc('gym_people_counts', { p_gym_id: gymId }).single();
+  // Before the paging migration: count the full list instead.
+  if (error?.code === 'PGRST202') return countPeople(await listPeople(gymId));
+  const row = unwrap({ data, error }) as {
+    everyone: number;
+    member: number;
+    trainer: number;
+    supervisor: number;
+    owner: number;
+    suspended: number;
+  };
+  return {
+    all: row.everyone,
+    member: row.member,
+    trainer: row.trainer,
+    supervisor: row.supervisor,
+    owner: row.owner,
+    suspended: row.suspended,
+  };
 }
 
 export async function listInvites(gymId: string): Promise<GymInvite[]> {

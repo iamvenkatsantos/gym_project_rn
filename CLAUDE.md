@@ -561,6 +561,12 @@ text that must stay English, or that it picks up but is never shown, goes in
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
+- **Long lists load 30 at a time** (Venkat, 2026-11-17): People (`usePeoplePages`, search and
+  filter on the server through `gym_people()` with PostgREST filters + `range`, chip counts from
+  `gym_people_counts()`) and the Payments tab (`useLatestMemberships`, each member's latest
+  membership via `gym_latest_memberships()`, ending soonest first) use `useInfiniteQuery` with a
+  **Show more** button. Both fall back to fetching everything if the migration isn't pushed
+  (`PGRST202`). New lists that grow with the gym follow the same pattern.
 - **Screens use `Screen`,** which gives pull-to-refresh and refetch-on-focus for free. Pass
   `refreshable={false}` on forms.
 - **Headers:** every `Stack.Screen` needs a `title` (iOS back label). Gate screens without a back
