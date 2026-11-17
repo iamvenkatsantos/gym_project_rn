@@ -554,6 +554,13 @@ text that must stay English, or that it picks up but is never shown, goes in
   and Add email (`email_change`) use `ResendCodeButton` (`src/features/auth/components/`), and
   invites use the Invited list's resend. One per email a minute (`resend.ts`, Supabase's own limit);
   a new screen that waits on an emailed code must offer it too.
+- **Long lists are paged** (Venkat, 2026-11-17): a list that grows with the gym loads one page at a time
+  (`useInfiniteQuery`, **Show more** button), with filter, search and counts on the server, so a gym of 300
+  doesn't download everyone to open a screen. People: `gym_people_page()` + `gym_people_counts()`
+  (`usePeoplePage`, `usePeopleCounts`, 50 a page, search debounced 300 ms; same rows and order as `gym_people()`,
+  test `supabase/tests/people-paging.sql`). `gym_people()` stays for older apps and for pickers that need
+  everyone. Page keys sit under `memberKeys.people(gymId)`, so existing invalidations cover them. Keep the
+  mock path in step (`listPeoplePage`).
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes

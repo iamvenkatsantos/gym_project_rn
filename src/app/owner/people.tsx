@@ -19,8 +19,8 @@ import type { TrainerLink } from '@/features/coaching/types';
 import { MovedMembers } from '@/features/gym-invites/components/moved-members';
 import { PendingInvites } from '@/features/members/components/pending-invites';
 import { PersonRow } from '@/features/members/components/person-row';
-import { usePeople } from '@/features/members/hooks';
-import { countPeople, filterPeople, isSignedUp } from '@/features/members/rules';
+import { useDebounced, usePeopleCounts, usePeoplePage } from '@/features/members/hooks';
+import { isSignedUp } from '@/features/members/rules';
 import type { GymPerson, PeopleFilter } from '@/features/members/types';
 import { useT } from '@/i18n';
 
@@ -37,13 +37,14 @@ const filters: { value: PeopleFilter; label: string }[] = [
 export default function OwnerPeopleScreen() {
   const t = useT();
   const gym = useActiveGym();
-  const people = usePeople(gym.gymId);
   const links = useTrainerLinks(gym.gymId);
   // Supervisors can only withdraw the invites they could have sent.
   const canWithdraw = (role: GymPerson['role']) =>
     gym.role === 'owner' || role === 'member' || role === 'trainer';
   const [filter, setFilter] = useState<PeopleFilter>('all');
   const [query, setQuery] = useState('');
+  const people = usePeoplePage(gym.gymId, filter, useDebounced(query));
+  const counts = usePeopleCounts(gym.gymId);
 
   return (
     <Screen>
@@ -78,10 +79,14 @@ export default function OwnerPeopleScreen() {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <QueryState query={people} isEmpty={(list) => list.length === 0} emptyText="Nobody here yet.">
-        {(list) => {
-          const counts = countPeople(list);
-          const shown = filterPeople(list, filter, query);
+      <QueryState
+        query={people}
+        isEmpty={(data) => data.pages[0].total === 0 && filter === 'all' && !query.trim()}
+        emptyText="Nobody here yet.">
+        {(data) => {
+          const shown = data.pages.flatMap((p) => p.people);
+          const total = data.pages[0].total;
+          const loaded = shown.length;
           return (
             <>
               <ScrollView
@@ -91,7 +96,7 @@ export default function OwnerPeopleScreen() {
                 {filters.map((f) => (
                   <Chip
                     key={f.value}
-                    label={`${t(f.label)} ${counts[f.value]}`}
+                    label={`${t(f.label)} ${counts.data?.[f.value] ?? ''}`.trim()}
                     selected={filter === f.value}
                     onPress={() => setFilter(f.value)}
                   />
@@ -114,6 +119,14 @@ export default function OwnerPeopleScreen() {
                   ))}
                 </Card>
               )}
+              {people.hasNextPage ? (
+                <Button
+                  label={`Show more (${loaded} of ${total})`}
+                  variant="secondary"
+                  loading={people.isFetchingNextPage}
+                  onPress={() => people.fetchNextPage()}
+                />
+              ) : null}
             </>
           );
         }}
