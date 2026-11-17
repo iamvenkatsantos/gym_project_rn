@@ -872,6 +872,7 @@ export const part4: Record<string, readonly [string, string]> = {
   '{length} in this plan': ['இந்தத் திட்டத்தில் {length}', 'इस प्लान में {length}'],
   '{length} logged': ['{length} பதிவானது', '{length} दर्ज'],
   '{length} members': ['{length} உறுப்பினர்கள்', '{length} सदस्य'],
+  '{renewalCount} members': ['{renewalCount} உறுப்பினர்கள்', '{renewalCount} सदस्य'],
   '{length} on this plan': ['இந்தத் திட்டத்தில் {length}', 'इस प्लान पर {length}'],
   '{length} paid': ['{length} செலுத்தியவர்', '{length} भुगतान किया'],
   '{length} to do': ['செய்ய வேண்டியவை {length}', 'करने को {length}'],

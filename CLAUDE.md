@@ -566,6 +566,11 @@ text that must stay English, or that it picks up but is never shown, goes in
   `count: 'exact'` for the total), `useLatestMemberships`, 50 a page, ending soonest first, test
   `supabase/tests/latest-memberships.sql`. Falls back to the full list until the migration is pushed
   (`PGRST202`).
+  Owner/supervisor Home: `owner_dashboard_counts(gym, today)` (active members, renewals due, no trainer yet,
+  birthdays today) and `gym_renewals_due()` (the 2 rows it lists) replace loading every person, membership and
+  trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
+  `memberships/rules.ts`, test `supabase/tests/owner-dashboard.sql`; falls back to the full lists on `PGRST202`).
+  Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
