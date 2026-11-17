@@ -16,6 +16,7 @@ import { useSelfPlans, useSelfPrefs, useSelfWorkoutsOn } from '@/features/self-w
 import { prefsSummary } from '@/features/self-workouts/rules';
 import { WorkoutCard } from '@/features/workouts/components/workout-card';
 import { daysLabel, isoWeekday, Weekdays } from '@/features/workouts/schedule';
+import { useT } from '@/i18n';
 
 /**
  * A member's own week (self workouts): pick a day to see its plan, edit any plan or add one.
@@ -23,6 +24,7 @@ import { daysLabel, isoWeekday, Weekdays } from '@/features/workouts/schedule';
  * Owners and supervisors look only. memberId defaults to the signed-in member.
  */
 export default function SelfPlanScreen() {
+  const t = useT();
   const params = useLocalSearchParams<{ memberId?: string; name?: string }>();
   const profile = useProfile();
   const gym = useActiveGym();
@@ -40,7 +42,9 @@ export default function SelfPlanScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: isMember ? 'My plan' : (params.name ?? 'Their plan') }} />
+      <Stack.Screen
+        options={{ title: isMember ? t('My plan') : (params.name ?? t('Their plan')) }}
+      />
       {prefs.data ? (
         <ThemedText type="small" themeColor="textSecondary">
           {prefsSummary(prefs.data)}

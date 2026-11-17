@@ -8,6 +8,7 @@ import { Spacing } from '@/constants/theme';
 import { AccountButton } from '@/features/auth/components/account-button';
 import { InboxButton } from '@/features/notifications/components/inbox-button';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 export type RoleTab = {
   name: string;
@@ -22,6 +23,7 @@ export type RoleTab = {
 export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: boolean }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useT();
   // The tabs live in one screen of the root stack. Naming that screen after the open tab means
   // screens pushed on top say "< People" or "< Home" on iOS, rather than the route ("< owner").
   const stackScreen = useNavigation();
@@ -31,7 +33,7 @@ export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: bool
       screenListeners={({ route }) => ({
         focus: () => {
           const tab = tabs.find((t) => t.name === route.name);
-          if (tab) stackScreen.setOptions({ title: tab.title });
+          if (tab) stackScreen.setOptions({ title: t(tab.title) });
         },
       })}
       screenOptions={{
@@ -64,7 +66,7 @@ export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: bool
           key={tab.name}
           name={tab.name}
           options={{
-            title: tab.title,
+            title: t(tab.title),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name={tab.icon} color={color as string} size={size} />
             ),

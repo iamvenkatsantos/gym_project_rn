@@ -12,9 +12,11 @@ import { useDeletePhoto, useProgressPhotos } from '@/features/body/hooks';
 import { POSES } from '@/features/body/rules';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/lib/format';
+import { useT } from '@/i18n';
 
 /** One progress photo, full width. Only its owner can delete it. */
 export default function ProgressPhotoScreen() {
+  const t = useT();
   const { photoId, memberId } = useLocalSearchParams<{ photoId: string; memberId: string }>();
   const theme = useTheme();
   const profile = useProfile();
@@ -37,7 +39,7 @@ export default function ProgressPhotoScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: `${pose} · ${formatDate(photo.takenOn)}` }} />
+      <Stack.Screen options={{ title: t(`${pose} · ${formatDate(photo.takenOn)}`) }} />
       <View style={[styles.frame, { backgroundColor: theme.backgroundSelected }]}>
         {photo.url ? (
           <Image source={{ uri: photo.url }} style={styles.image} contentFit="contain" />

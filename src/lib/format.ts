@@ -1,10 +1,12 @@
+import { appLocale } from '@/lib/locale';
+
 export function formatPrice(cents: number, currency: string) {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
+  return new Intl.NumberFormat(appLocale(), { style: 'currency', currency }).format(cents / 100);
 }
 
 /** A price without paise when it's a whole amount, e.g. ₹1,500 rather than ₹1,500.00. */
 export function formatAmount(cents: number, currency: string) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(appLocale(), {
     style: 'currency',
     currency,
     minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
@@ -12,7 +14,7 @@ export function formatAmount(cents: number, currency: string) {
 }
 
 export function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString(appLocale(), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -22,7 +24,7 @@ export function formatDateTime(iso: string) {
 }
 
 export function formatDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString(undefined, {
+  return new Date(isoDate).toLocaleDateString(appLocale(), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -30,11 +32,11 @@ export function formatDate(isoDate: string) {
 }
 
 export function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatWeekday(date: Date) {
-  return date.toLocaleDateString(undefined, { weekday: 'short' });
+  return date.toLocaleDateString(appLocale(), { weekday: 'short' });
 }
 
 /** "Today", "Tomorrow", or a short weekday and date. */
@@ -44,5 +46,5 @@ export function formatRelativeDay(iso: string, now: Date = new Date()) {
   const days = Math.round((startOf(date) - startOf(now)) / (24 * 60 * 60 * 1000));
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
-  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(appLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
+import { alert } from '@/i18n/alert';
 
 import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
@@ -19,7 +19,7 @@ export default function AnnouncementsScreen() {
   const remove = useDeleteAnnouncement();
 
   const confirmRemove = (a: Announcement) =>
-    Alert.alert('Remove announcement?', 'It comes off this list. Inbox copies already sent stay.', [
+    alert('Remove announcement?', 'It comes off this list. Inbox copies already sent stay.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => remove.mutate(a.id) },
     ]);

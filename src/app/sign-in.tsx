@@ -34,6 +34,7 @@ import {
   validateName,
   validateNewPassword,
 } from '@/lib/validation';
+import { LanguagePicker } from '@/i18n/components/language-picker';
 
 const features: { label: string; icon: IconName }[] = [
   { label: 'Classes', icon: 'calendar-outline' },
@@ -117,6 +118,7 @@ export default function SignInScreen() {
 
   return (
     <Screen refreshable={false}>
+      <LanguagePicker compact />
       <View style={styles.hero}>
         <View style={styles.brand}>
           <Image source={require('@/assets/images/logo.png')} style={styles.logo} />

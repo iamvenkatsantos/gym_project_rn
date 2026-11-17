@@ -16,6 +16,7 @@ import { useExercises } from '@/features/exercises/hooks';
 import { emptyFilter, facets, filterExercises } from '@/features/exercises/rules';
 import { useExercisePicks } from '@/features/workouts/exercise-picks';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * Search pinned at the top and results below it, so the keyboard never covers
@@ -23,6 +24,7 @@ import { useTheme } from '@/hooks/use-theme';
  * when replacing one exercise mid-workout, which goes back after the pick.
  */
 export default function AddExercisesScreen() {
+  const t = useT();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const gym = useActiveGym();
@@ -46,7 +48,7 @@ export default function AddExercisesScreen() {
 
   return (
     <ThemedView style={styles.root}>
-      {options.single ? <Stack.Screen options={{ title: 'Replace exercise' }} /> : null}
+      {options.single ? <Stack.Screen options={{ title: t('Replace exercise') }} /> : null}
       <KeyboardAvoidingView behavior="padding" style={styles.root}>
         <View style={styles.top}>
           <TextField

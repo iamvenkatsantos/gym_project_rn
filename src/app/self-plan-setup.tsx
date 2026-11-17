@@ -27,6 +27,7 @@ import { DayPicker } from '@/features/workouts/components/day-picker';
 import { daysLabel } from '@/features/workouts/schedule';
 import type { WorkoutLevel } from '@/features/workouts/types';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 const defaults: SelfPrefs = {
   goal: 'stay_fit',
@@ -111,6 +112,7 @@ function SetupForm({
   memberId: string;
   initial: SelfPrefs;
 }) {
+  const t = useT();
   const [prefs, setPrefs] = useState(initial);
   const [showProblem, setShowProblem] = useState(false);
   const exercises = useExercises(gymId);
@@ -132,7 +134,9 @@ function SetupForm({
 
   return (
     <Screen refreshable={false}>
-      <Stack.Screen options={{ title: existing.length ? 'Re-create my plan' : 'Set up my plan' }} />
+      <Stack.Screen
+        options={{ title: t(existing.length ? 'Re-create my plan' : 'Set up my plan') }}
+      />
       <ThemedText type="label" themeColor="textSecondary">
         Your goal
       </ThemedText>

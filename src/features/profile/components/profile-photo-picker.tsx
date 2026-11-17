@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { alert } from '@/i18n/alert';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
@@ -57,7 +58,7 @@ export function ProfilePhotoPicker({
     keep(await ImagePicker.launchImageLibraryAsync(AVATAR_PICKER_OPTIONS));
 
   const ask = () =>
-    Alert.alert('Profile photo', undefined, [
+    alert('Profile photo', undefined, [
       { text: 'Take photo', onPress: takePhoto },
       { text: 'From gallery', onPress: choosePhoto },
       ...(onRemove

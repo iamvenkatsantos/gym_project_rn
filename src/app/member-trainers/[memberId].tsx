@@ -15,6 +15,7 @@ import type { TrainerLink } from '@/features/coaching/types';
 import { usePeople } from '@/features/members/hooks';
 import { activeCoaches, coachLabel } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
+import { useT } from '@/i18n';
 
 /** Past this many coaches the list gets a search box. */
 const SEARCH_FROM = 6;
@@ -50,6 +51,7 @@ function Picker({
   people: GymPerson[];
   links: TrainerLink[];
 }) {
+  const t = useT();
   const profile = useProfile();
   const save = useChangeTrainerLinks(gymId, { kind: 'member', id: member.id });
   const saved = trainersOf(links, member.id).map((l) => l.trainerId);
@@ -64,7 +66,7 @@ function Picker({
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ title: `${firstName}'s trainers` }} />
+      <Stack.Screen options={{ title: t(`${firstName}'s trainers`) }} />
       <Screen>
         <View>
           <ThemedText type="title">{member.fullName}</ThemedText>

@@ -17,6 +17,7 @@ import type { TrainerLink } from '@/features/coaching/types';
 import { usePeople } from '@/features/members/hooks';
 import { coachLabel } from '@/features/members/rules';
 import type { GymPerson } from '@/features/members/types';
+import { useT } from '@/i18n';
 
 type Filter = 'all' | 'none' | 'theirs';
 
@@ -51,6 +52,7 @@ function Picker({
   people: GymPerson[];
   links: TrainerLink[];
 }) {
+  const t = useT();
   const profile = useProfile();
   const save = useChangeTrainerLinks(gymId, { kind: 'trainer', id: coach.id });
   const saved = membersOf(links, coach.id).map((l) => l.memberId);
@@ -85,7 +87,11 @@ function Picker({
   return (
     <View style={styles.root}>
       <Stack.Screen
-        options={{ title: isYou ? 'Your members' : `${coach.fullName.split(' ')[0]}'s members` }}
+        options={{
+          title: isYou
+            ? t('Your members')
+            : t("{name}'s members", { name: coach.fullName.split(' ')[0] }),
+        }}
       />
       <Screen>
         <View>

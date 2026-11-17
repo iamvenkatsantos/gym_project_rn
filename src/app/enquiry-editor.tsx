@@ -30,6 +30,7 @@ import {
   validateOptionalText,
   validatePhone,
 } from '@/lib/validation';
+import { useT } from '@/i18n';
 
 /** Adds a walk-in or caller, or edits one's details. */
 export default function EnquiryEditorScreen() {
@@ -51,6 +52,7 @@ export default function EnquiryEditorScreen() {
 }
 
 function EnquiryForm({ gymId, enquiry }: { gymId: string; enquiry?: Enquiry }) {
+  const t = useT();
   const profile = useProfile();
   const enquiries = useEnquiries(gymId);
   const people = usePeople(gymId);
@@ -110,7 +112,7 @@ function EnquiryForm({ gymId, enquiry }: { gymId: string; enquiry?: Enquiry }) {
 
   return (
     <Screen refreshable={false}>
-      <Stack.Screen options={{ title: enquiry ? 'Edit enquiry' : 'New enquiry' }} />
+      <Stack.Screen options={{ title: t(enquiry ? 'Edit enquiry' : 'New enquiry') }} />
       <TextField
         label="Name"
         placeholder="Their full name"

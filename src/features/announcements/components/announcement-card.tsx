@@ -30,9 +30,11 @@ export function AnnouncementCard({
       <View style={styles.row}>
         <Icon name="megaphone-outline" size={22} color="accent" />
         <View style={styles.flex}>
-          <ThemedText type="smallBold">{announcement.title}</ThemedText>
+          <ThemedText type="smallBold" translate={false}>
+            {announcement.title}
+          </ThemedText>
           {announcement.body ? (
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="small" themeColor="textSecondary" translate={false}>
               {announcement.body}
             </ThemedText>
           ) : null}
