@@ -9,24 +9,20 @@ import { useGymReferrals } from '@/features/referrals/hooks';
 import { ShortcutGrid, type Shortcut } from '@/components/shortcut-grid';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
-import { useDayAttendance } from '@/features/attendance/hooks';
-import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
-import { upcomingBirthdays } from '@/features/birthdays/rules';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
 import { BranchSwitcher } from '@/features/branches/components/branch-switcher';
 import { classesOnDay } from '@/features/bookings/rules';
 import { TrainerRequestRow } from '@/features/coaching/components/trainer-request-row';
-import { useTrainerLinks, useTrainerRequests } from '@/features/coaching/hooks';
-import { pendingRequests, unmappedMembers } from '@/features/coaching/rules';
+import { useTrainerRequests } from '@/features/coaching/hooks';
+import { pendingRequests } from '@/features/coaching/rules';
+import { useDashboardCounts, useRenewalsDue } from '@/features/dashboard/hooks';
 import { useEnquiries } from '@/features/enquiries/hooks';
 import { countEnquiries } from '@/features/enquiries/rules';
-import { usePeople } from '@/features/members/hooks';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { RenewalRow } from '@/features/memberships/components/renewal-row';
-import { useMemberships, usePlans } from '@/features/memberships/hooks';
-import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
+import { usePlans } from '@/features/memberships/hooks';
 import { PlanBanner } from '@/features/subscription/components/plan-banner';
 import { usePermissions } from '@/features/trainer-hours/hooks';
 import { pendingCount } from '@/features/trainer-hours/rules';
@@ -39,31 +35,22 @@ const CLASSES_SHOWN = 2;
 /** The owner's and the supervisor's home: money, attendance, trainer matching and today's classes. */
 export default function OwnerDashboardScreen() {
   const gym = useActiveGym();
-  const memberships = useMemberships(gym.gymId);
+  // The tile numbers and the first renewals come from the server, not the full people,
+  // membership, attendance and trainer-link lists (~400 KB at 300 members).
+  const counts = useDashboardCounts(gym.gymId).data;
+  const renewalsDue = useRenewalsDue(gym.gymId, RENEWALS_SHOWN);
   const plans = usePlans(gym.gymId);
   const classes = useUpcomingClasses(gym.gymId);
-  const people = usePeople(gym.gymId);
-  const links = useTrainerLinks(gym.gymId);
   const requests = useTrainerRequests(gym.gymId);
-  const attendance = useDayAttendance(gym.gymId, 0);
   const enquiries = useEnquiries(gym.gymId);
   // Trainer hours and permissions are owners' only.
   const permissions = usePermissions(gym.gymId, undefined, gym.role === 'owner');
   const enquiryCounts = enquiries.data ? countEnquiries(enquiries.data) : undefined;
-  const present = attendance.data ? countByRole(attendance.data) : undefined;
 
-  const latest = memberships.data ? [...latestByMember(memberships.data).values()] : undefined;
   const referrals = useGymReferrals(gym.gymId);
-  const statuses = latest?.map((m) => membershipStatus(m));
-  const activeCount = statuses?.filter((s) => s === 'active' || s === 'expiringSoon').length;
-  const renewals = memberships.data ? renewalsDue(memberships.data) : undefined;
+  const renewalCount = renewalsDue.data?.total;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
-  const birthdaysToday = people.data
-    ? upcomingBirthdays(people.data, new Date(), 0).length
-    : undefined;
-  const noTrainer =
-    people.data && links.data ? unmappedMembers(people.data, links.data).length : undefined;
 
   const referralsToCall = referrals.data?.filter((r) => r.status === 'pending').length;
 
@@ -87,7 +74,7 @@ export default function OwnerDashboardScreen() {
     {
       label: 'Birthdays',
       icon: 'gift-outline',
-      badge: birthdaysToday,
+      badge: counts?.birthdaysToday,
       onPress: () => router.push('/birthdays'),
     },
     {
@@ -130,7 +117,7 @@ export default function OwnerDashboardScreen() {
       <View style={styles.grid}>
         <StatTile
           label="Active members"
-          value={activeCount}
+          value={counts?.activeMembers}
           icon="people"
           accent
           compact
@@ -138,28 +125,28 @@ export default function OwnerDashboardScreen() {
         />
         <StatTile
           label="Renewals due"
-          value={renewals?.length}
+          value={renewalCount}
           icon="alert-circle-outline"
           compact
           onPress={() => router.push('/renewals')}
         />
         <StatTile
           label="No trainer yet"
-          value={noTrainer}
+          value={counts?.noTrainer}
           icon="person-outline"
           compact
           onPress={() => router.push('/match-trainers')}
         />
         <StatTile
           label="Came today"
-          value={present?.member.present}
+          value={counts?.membersPresent}
           icon="log-in-outline"
           compact
           onPress={() => router.push('/attendance')}
         />
         <StatTile
           label="Trainers in"
-          value={present && `${present.trainer.present}/${present.trainer.total}`}
+          value={counts && `${counts.trainersPresent}/${counts.trainersTotal}`}
           icon="barbell-outline"
           compact
           onPress={() => router.push('/attendance')}
@@ -195,24 +182,22 @@ export default function OwnerDashboardScreen() {
 
       <SectionHeader
         title="Renewals due"
-        detail={renewals?.length ? `${renewals.length} members` : undefined}
+        detail={renewalCount ? `${renewalCount} members` : undefined}
       />
       <QueryState
-        query={memberships}
-        isEmpty={(list) => renewalsDue(list).length === 0}
+        query={renewalsDue}
+        isEmpty={(due) => due.total === 0}
         emptyText="No renewals due this week.">
-        {(list) =>
-          renewalsDue(list)
-            .slice(0, RENEWALS_SHOWN)
-            .map((m) => (
-              // WhatsApp lives on the full Renewals screen to keep the dashboard short.
-              <RenewalRow key={m.id} gymId={gym.gymId} gymName={gym.gymName} membership={m} />
-            ))
+        {(due) =>
+          due.memberships.map((m) => (
+            // WhatsApp lives on the full Renewals screen to keep the dashboard short.
+            <RenewalRow key={m.id} gymId={gym.gymId} gymName={gym.gymName} membership={m} />
+          ))
         }
       </QueryState>
-      {renewals && renewals.length > RENEWALS_SHOWN ? (
+      {renewalCount && renewalCount > RENEWALS_SHOWN ? (
         <Button
-          label={`See all ${renewals.length} renewals`}
+          label={`See all ${renewalCount} renewals`}
           icon="alert-circle-outline"
           variant="secondary"
           size="compact"

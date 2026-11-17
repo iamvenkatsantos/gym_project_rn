@@ -12,7 +12,15 @@ import {
   membershipOn,
   unusedPauseDays,
 } from '@/features/memberships/pause';
-import { addDays, coversToday, latestByMember, toIsoDate } from '@/features/memberships/rules';
+import {
+  addDays,
+  coversToday,
+  EXPIRING_SOON_DAYS,
+  latestByMember,
+  RECENTLY_ENDED_DAYS,
+  renewalsDue,
+  toIsoDate,
+} from '@/features/memberships/rules';
 import {
   delay,
   forGym,
@@ -298,6 +306,38 @@ export async function listLatestMemberships(
     total,
     nextOffset: offset + size < total ? offset + size : null,
   };
+}
+
+/**
+ * The first `limit` renewals due (renewalsDue: each member's latest membership, ending within a
+ * week or ended in the last 30 days), soonest first, and how many there are. Pages
+ * gym_latest_memberships() by end date instead of downloading every membership.
+ */
+export async function listRenewalsDue(
+  gymId: string,
+  limit: number,
+  today: Date = new Date(),
+): Promise<{ memberships: Membership[]; total: number }> {
+  const fromAll = async () => {
+    const due = renewalsDue(await listMemberships(gymId), today);
+    return { memberships: due.slice(0, limit), total: due.length };
+  };
+  if (!supabase) return fromAll();
+  const day = toIsoDate(today);
+  const { data, error, count } = await supabase
+    .rpc('gym_latest_memberships', { p_gym_id: gymId }, { count: 'exact' })
+    .select(MEMBERSHIP_COLUMNS)
+    // Started (not upcoming), ending within EXPIRING_SOON_DAYS or ended within RECENTLY_ENDED_DAYS.
+    .lte('starts_on', day)
+    .gte('ends_on', addDays(day, -RECENTLY_ENDED_DAYS))
+    .lte('ends_on', addDays(day, EXPIRING_SOON_DAYS - 1))
+    .order('ends_on')
+    .order('id')
+    .limit(limit);
+  // Before the latest-memberships migration: count from every membership instead.
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as unknown as MembershipRow[];
+  return { memberships: rows.map(toMembership), total: count ?? rows.length };
 }
 
 /** Creates a plan (planId null) or edits one. Existing memberships keep what was paid. */

@@ -566,6 +566,13 @@ text that must stay English, or that it picks up but is never shown, goes in
   `count: 'exact'` for the total), `useLatestMemberships`, 50 a page, ending soonest first, test
   `supabase/tests/latest-memberships.sql`. Falls back to the full list until the migration is pushed
   (`PGRST202`).
+- **Owner Home counts on the server** (2026-11-17): the tiles (active members, no trainer yet, birthdays
+  badge, came today, trainers in) come from `owner_dashboard_counts(gym, phone's today)` (`useDashboardCounts`,
+  `src/features/dashboard/`), and Renewals due from `listRenewalsDue()` (`gym_latest_memberships()` filtered
+  by end date, first 2 + count). Home no longer loads the full people, membership, attendance or trainer-link
+  lists. Both use `staleTime: 0`, so returning to Home recounts. Keep the SQL in step with the app rules it
+  mirrors (`membershipStatus`, `unmappedMembers`, `upcomingBirthdays`, `countByRole`, `renewalsDue`); test
+  `supabase/tests/owner-dashboard-counts.sql`. Falls back to counting the lists (`PGRST202`).
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
