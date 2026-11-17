@@ -23,6 +23,7 @@ import { useOnlinePaymentsEnabled, usePayOnline } from '@/features/payments/hook
 import { useWorkoutLogs } from '@/features/progress/hooks';
 import { weekStreak, workoutsThisWeek } from '@/features/progress/rules';
 import { formatAmount } from '@/lib/format';
+import { LanguagePicker } from '@/i18n/components/language-picker';
 
 export default function MemberProfileScreen() {
   const profile = useProfile();
@@ -114,6 +115,9 @@ export default function MemberProfileScreen() {
 
       <SectionHeader title="Privacy" />
       <HistorySharing gymId={gym.gymId} userId={profile.id} />
+
+      <SectionHeader title="Language" />
+      <LanguagePicker />
 
       <SectionHeader title="Appearance" />
       <AppearancePicker />

@@ -5,6 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLanguage } from '@/i18n';
 
 type StatTileProps = {
   label: string;
@@ -19,6 +20,8 @@ type StatTileProps = {
 
 export function StatTile({ label, value, icon, accent, compact, onPress }: StatTileProps) {
   const theme = useTheme();
+  // Tamil and Hindi labels run longer, so they may take a second line.
+  const labelLines = useLanguage() === 'en' ? 1 : 2;
 
   const content = (
     <>
@@ -33,7 +36,7 @@ export function StatTile({ label, value, icon, accent, compact, onPress }: StatT
       <ThemedText
         type="small"
         themeColor="textSecondary"
-        numberOfLines={1}
+        numberOfLines={labelLines}
         adjustsFontSizeToFit
         minimumFontScale={0.7}>
         {label}

@@ -21,6 +21,7 @@ import { addDays, toIsoDate } from '@/features/memberships/rules';
 import type { MembershipPlan, PlanOffer } from '@/features/memberships/types';
 import { formatDate } from '@/lib/format';
 import { firstError, parseAmount, validateAmount, validateTitle } from '@/lib/validation';
+import { useT } from '@/i18n';
 
 type OfferKind = 'none' | PlanOffer['type'];
 
@@ -87,6 +88,7 @@ function PlanForm({
   /** The owner's brand has 2+ branches, so a plan can cover all of them. */
   multiBranch: boolean;
 }) {
+  const t = useT();
   const today = toIsoDate(new Date());
   const saved = plan?.offer ?? null;
   // An offer that has ended starts over as no offer.
@@ -138,7 +140,7 @@ function PlanForm({
 
   return (
     <Screen refreshable={false}>
-      <Stack.Screen options={{ title: plan ? 'Edit plan' : 'New membership plan' }} />
+      <Stack.Screen options={{ title: t(plan ? 'Edit plan' : 'New membership plan') }} />
       <TextField
         label="Plan name"
         placeholder="e.g. Monthly, Quarterly, Annual"

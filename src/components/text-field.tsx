@@ -5,6 +5,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
 import { MaxFontScale, Radius, Spacing, TapTarget } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 type TextFieldProps = TextInputProps & {
   label: string;
@@ -33,9 +34,11 @@ export function TextField({
   ref,
   error,
   showError,
+  placeholder,
   ...rest
 }: TextFieldProps) {
   const theme = useTheme();
+  const t = useT();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -64,9 +67,10 @@ export function TextField({
         <TextInput
           maxFontSizeMultiplier={MaxFontScale}
           ref={ref}
-          accessibilityLabel={label}
+          accessibilityLabel={t(label)}
           accessibilityHint={visibleError ?? undefined}
           aria-invalid={!!visibleError}
+          placeholder={placeholder ? t(placeholder) : placeholder}
           placeholderTextColor={theme.textSecondary}
           multiline={multiline}
           secureTextEntry={secureTextEntry && !revealed}
@@ -85,7 +89,7 @@ export function TextField({
         {secureTextEntry ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            accessibilityLabel={t(revealed ? 'Hide password' : 'Show password')}
             hitSlop={8}
             onPress={() => setRevealed((r) => !r)}>
             <Icon name={revealed ? 'eye-off-outline' : 'eye-outline'} size={20} />

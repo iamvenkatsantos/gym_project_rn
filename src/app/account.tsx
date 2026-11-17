@@ -28,6 +28,7 @@ import { PushSettings } from '@/features/notifications/components/push-settings'
 import { useWorkoutDraft } from '@/features/progress/draft-store';
 import { versionLabel } from '@/features/updates/rules';
 import { queryClient } from '@/lib/query-client';
+import { LanguagePicker } from '@/i18n/components/language-picker';
 
 export default function AccountScreen() {
   const profile = useAuthStore((s) => s.profile);
@@ -117,6 +118,9 @@ export default function AccountScreen() {
           />
         </ListGroup>
       ) : null}
+
+      <SectionHeader title="Language" />
+      <LanguagePicker />
 
       <SectionHeader title="Appearance" />
       <AppearancePicker />

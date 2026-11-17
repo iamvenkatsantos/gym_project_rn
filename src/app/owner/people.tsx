@@ -22,6 +22,7 @@ import { PersonRow } from '@/features/members/components/person-row';
 import { usePeople } from '@/features/members/hooks';
 import { countPeople, filterPeople, isSignedUp } from '@/features/members/rules';
 import type { GymPerson, PeopleFilter } from '@/features/members/types';
+import { useT } from '@/i18n';
 
 const filters: { value: PeopleFilter; label: string }[] = [
   { value: 'all', label: 'Everyone' },
@@ -34,6 +35,7 @@ const filters: { value: PeopleFilter; label: string }[] = [
 
 /** Everyone at the gym, for owners and supervisors. */
 export default function OwnerPeopleScreen() {
+  const t = useT();
   const gym = useActiveGym();
   const people = usePeople(gym.gymId);
   const links = useTrainerLinks(gym.gymId);
@@ -89,7 +91,7 @@ export default function OwnerPeopleScreen() {
                 {filters.map((f) => (
                   <Chip
                     key={f.value}
-                    label={`${f.label} ${counts[f.value]}`}
+                    label={`${t(f.label)} ${counts[f.value]}`}
                     selected={filter === f.value}
                     onPress={() => setFilter(f.value)}
                   />

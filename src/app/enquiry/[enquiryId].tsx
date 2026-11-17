@@ -51,11 +51,13 @@ import type { InviteOutcome } from '@/features/members/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { normalizeEmail, validateEmail, validateOptionalText } from '@/lib/validation';
+import { useT } from '@/i18n';
 
 type Panel = 'followUp' | 'trial' | 'convert' | 'lost' | 'delete' | null;
 
 /** One enquiry: who they are, what happens next, and everything said so far. */
 export default function EnquiryScreen() {
+  const t = useT();
   const { enquiryId } = useLocalSearchParams<{ enquiryId: string }>();
   const gym = useActiveGym();
   const enquiries = useEnquiries(gym.gymId);
@@ -64,7 +66,7 @@ export default function EnquiryScreen() {
   if (!enquiry) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Enquiry' }} />
+        <Stack.Screen options={{ title: t('Enquiry') }} />
         {enquiries.isPending ? (
           <ThemedText themeColor="textSecondary">Loading…</ThemedText>
         ) : (
@@ -322,7 +324,11 @@ function NoteRow({ note, divider }: { note: EnquiryNote; divider: boolean }) {
         color={note.kind === 'status' ? 'accent' : 'textSecondary'}
       />
       <View style={styles.flex}>
-        <ThemedText type={note.kind === 'status' ? 'smallBold' : 'small'}>{note.body}</ThemedText>
+        <ThemedText
+          type={note.kind === 'status' ? 'smallBold' : 'small'}
+          translate={note.kind === 'status'}>
+          {note.body}
+        </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {formatDateTime(note.createdAt)}
           {note.authorName ? ` · ${note.authorName}` : ''}

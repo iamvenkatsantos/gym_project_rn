@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { alert } from '@/i18n/alert';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
@@ -52,7 +53,7 @@ export function StartingPhotos({
     keep(pose, await ImagePicker.launchImageLibraryAsync(PHOTO_PICKER_OPTIONS));
 
   const askForPhoto = (pose: PhotoPose, label: string) =>
-    Alert.alert(`${label} photo`, undefined, [
+    alert(`${label} photo`, undefined, [
       { text: 'Take photo', onPress: () => takePhoto(pose) },
       { text: 'From gallery', onPress: () => choosePhoto(pose) },
       { text: 'Cancel', style: 'cancel' },

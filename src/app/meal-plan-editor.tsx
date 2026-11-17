@@ -32,6 +32,7 @@ import {
   type MealPlanDraft,
 } from '@/features/diet/plan-draft';
 import { validateOptionalText, validateTitle } from '@/lib/validation';
+import { useT } from '@/i18n';
 
 export default function MealPlanEditorScreen() {
   const { planId } = useLocalSearchParams<{ planId?: string }>();
@@ -74,6 +75,7 @@ function MealPlanForm({
   planId?: string;
   initial: MealPlanDraft;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState(initial);
   const [showProblem, setShowProblem] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -101,7 +103,7 @@ function MealPlanForm({
 
   return (
     <Screen refreshable={false}>
-      <Stack.Screen options={{ title: planId ? 'Edit diet plan' : 'New diet plan' }} />
+      <Stack.Screen options={{ title: t(planId ? 'Edit diet plan' : 'New diet plan') }} />
       <TextField
         label="Plan name"
         placeholder="e.g. Fat loss, vegetarian"

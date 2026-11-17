@@ -38,6 +38,7 @@ import { daysLabel } from '@/features/workouts/schedule';
 import { draftFromSmartPlan, smartPlans } from '@/features/workouts/smart-plans';
 import type { WorkoutLevel } from '@/features/workouts/types';
 import { firstError, validateOptionalText, validateTitle } from '@/lib/validation';
+import { useT } from '@/i18n';
 
 export default function PlanEditorScreen() {
   const { workoutId, smartPlanId, memberId } = useLocalSearchParams<{
@@ -175,6 +176,7 @@ function PlanForm({
   /** A member's own plan: saved with its days, not assigned afterwards. */
   self?: { memberId: string; days: number[] };
 }) {
+  const t = useT();
   const [plan, setPlan] = useState(initial);
   const [days, setDays] = useState(self?.days ?? []);
   const [showProblem, setShowProblem] = useState(false);
@@ -215,7 +217,7 @@ function PlanForm({
 
   return (
     <Screen refreshable={false}>
-      <Stack.Screen options={{ title: workoutId ? 'Edit plan' : 'New plan' }} />
+      <Stack.Screen options={{ title: t(workoutId ? 'Edit plan' : 'New plan') }} />
       <TextField
         label="Plan name"
         placeholder="e.g. Upper body push"
