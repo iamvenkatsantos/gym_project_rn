@@ -1,7 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import {
+  getPeopleCounts,
   importMembers,
   inviteGymOwner,
   invitePerson,
@@ -11,6 +18,7 @@ import {
   listGymMembers,
   listInvites,
   listPeople,
+  listPeoplePage,
   promoteToTrainer,
   removePerson,
   resendInvite,
@@ -27,6 +35,7 @@ import type {
   InviteChannel,
   InviteOutcome,
   InviteRole,
+  PeopleFilter,
   ResendChannel,
 } from '@/features/members/types';
 import { uploadAdmissionPhotos } from '@/features/body/api';
@@ -78,6 +87,39 @@ export function usePeople(gymId: string, { enabled = true }: { enabled?: boolean
     queryKey: memberKeys.people(gymId),
     queryFn: () => listPeople(gymId),
     enabled,
+  });
+}
+
+/** Debounced copy of a value, for search boxes that query the server. */
+export function useDebounced<T>(value: T, ms = 300) {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return settled;
+}
+
+/** The People screen's list, one page at a time; `fetchNextPage` is the Show more button. */
+export function usePeoplePage(gymId: string, filter: PeopleFilter, query: string) {
+  const q = query.trim();
+  return useInfiniteQuery({
+    queryKey: [...memberKeys.people(gymId), 'page', filter, q],
+    queryFn: ({ pageParam }) => listPeoplePage(gymId, filter, q, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.people.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** The chip counts on the People screen. */
+export function usePeopleCounts(gymId: string) {
+  return useQuery({
+    queryKey: [...memberKeys.people(gymId), 'counts'],
+    queryFn: () => getPeopleCounts(gymId),
   });
 }
 

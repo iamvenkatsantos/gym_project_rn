@@ -12,6 +12,7 @@ import type {
   InviteByCode,
   InviteResult,
   InviteRole,
+  PeopleFilter,
   ResendChannel,
   ResendOutcome,
 } from '@/features/members/types';
@@ -22,6 +23,8 @@ import type { PhotoPose } from '@/features/body/types';
 import { mobileLoginEmail } from '@/lib/mobile-login';
 import {
   coachRoles,
+  countPeople,
+  filterPeople,
   normalizeEmail,
   normalizeInviteCode,
   sortCoaches,
@@ -130,14 +133,8 @@ export async function inviteHasAccount(
   ) as boolean;
 }
 
-export async function listPeople(gymId: string): Promise<GymPerson[]> {
-  if (!supabase) {
-    return delay(
-      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
-    );
-  }
-  const rows = unwrap(await supabase.rpc('gym_people', { p_gym_id: gymId })) as PersonRow[];
-  return rows.map((r) => ({
+function toPerson(r: PersonRow): GymPerson {
+  return {
     id: r.user_id,
     fullName: r.full_name || r.email || 'Unnamed',
     email: r.email ?? '',
@@ -151,7 +148,71 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     avatarUrl: avatarUrl(r.avatar_path),
     signedUp: r.signed_up ?? true,
     dateOfBirth: r.date_of_birth ?? null,
-  }));
+  };
+}
+
+export async function listPeople(gymId: string): Promise<GymPerson[]> {
+  if (!supabase) {
+    return delay(
+      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    );
+  }
+  const rows = unwrap(await supabase.rpc('gym_people', { p_gym_id: gymId })) as PersonRow[];
+  return rows.map(toPerson);
+}
+
+/** People shown per page on the People screen. */
+export const PEOPLE_PAGE_SIZE = 50;
+
+export type PeoplePage = { people: GymPerson[]; total: number };
+
+/** One page of people, filtered and searched on the server (gym_people_page). */
+export async function listPeoplePage(
+  gymId: string,
+  filter: PeopleFilter,
+  query: string,
+  offset: number,
+): Promise<PeoplePage> {
+  if (!supabase) {
+    const all = filterPeople(
+      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+      filter,
+      query,
+    );
+    return delay({ people: all.slice(offset, offset + PEOPLE_PAGE_SIZE), total: all.length });
+  }
+  const rows = unwrap(
+    await supabase.rpc('gym_people_page', {
+      p_gym_id: gymId,
+      p_filter: filter,
+      p_query: query.trim(),
+      p_limit: PEOPLE_PAGE_SIZE,
+      p_offset: offset,
+    }),
+  ) as (PersonRow & { total: number })[];
+  return { people: rows.map(toPerson), total: rows.length ? Number(rows[0].total) : 0 };
+}
+
+/** The People filter chip counts (gym_people_counts). */
+export async function getPeopleCounts(gymId: string): Promise<Record<PeopleFilter, number>> {
+  if (!supabase) return delay(countPeople(forGym(gymId, mockPeople)));
+  const rows = unwrap(await supabase.rpc('gym_people_counts', { p_gym_id: gymId })) as {
+    everyone: number;
+    members: number;
+    trainers: number;
+    supervisors: number;
+    owners: number;
+    suspended: number;
+  }[];
+  const r = rows[0];
+  return {
+    all: Number(r?.everyone ?? 0),
+    member: Number(r?.members ?? 0),
+    trainer: Number(r?.trainers ?? 0),
+    supervisor: Number(r?.supervisors ?? 0),
+    owner: Number(r?.owners ?? 0),
+    suspended: Number(r?.suspended ?? 0),
+  };
 }
 
 export async function listInvites(gymId: string): Promise<GymInvite[]> {
