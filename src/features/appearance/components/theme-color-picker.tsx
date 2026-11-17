@@ -12,6 +12,7 @@ import {
 } from '@/constants/theme';
 import { useAppearance } from '@/features/appearance/appearance-store';
 import { useColorSchemeName, useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 const SWATCH = 40;
 
@@ -21,6 +22,7 @@ export function ThemeColorPicker() {
   const setColor = useAppearance((s) => s.setColor);
   const scheme = useColorSchemeName();
   const theme = useTheme();
+  const t = useT();
 
   return (
     <View accessibilityRole="radiogroup" style={styles.row}>
@@ -32,7 +34,7 @@ export function ThemeColorPicker() {
             key={id}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            accessibilityLabel={`${ThemeColorLabels[id]} theme`}
+            accessibilityLabel={t(`${ThemeColorLabels[id]} theme`)}
             onPress={() => setColor(id)}
             style={styles.item}>
             <View style={[styles.ring, { borderColor: selected ? swatch.accent : 'transparent' }]}>

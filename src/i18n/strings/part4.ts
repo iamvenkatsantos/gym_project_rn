@@ -1064,4 +1064,10 @@ export const part4: Record<string, readonly [string, string]> = {
     '· {waitlistCount} प्रतीक्षा में',
   ],
   '₹ off': ['₹ தள்ளுபடி', '₹ छूट'],
+  Blue: ['நீலம்', 'नीला'],
+  Green: ['பச்சை', 'हरा'],
+  Orange: ['ஆரஞ்சு', 'नारंगी'],
+  Pink: ['இளஞ்சிவப்பு', 'गुलाबी'],
+  Purple: ['ஊதா', 'बैंगनी'],
+  '{x} theme': ['{x} தீம்', '{x} थीम'],
 };
