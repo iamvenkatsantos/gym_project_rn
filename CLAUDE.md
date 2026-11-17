@@ -565,6 +565,11 @@ text that must stay English, or that it picks up but is never shown, goes in
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
   without the person saving it (attendance, bookings, notifications, payments).
+- **A tab switch refetches only that screen's data** (Venkat, 2026-11-17): tabs stay mounted, so React Query
+  counts every open tab's queries as active, and each switch reloaded and redrew all of them. `Screen` now
+  claims the queries that start while it is focused (`useScreenQueries`, `src/lib/screen-queries.ts`), and
+  refetch-on-focus and pull-to-refresh touch that screen's queries plus any no screen owns (tab bar, app-wide).
+  Mutations still invalidate by key, and returning to the app still refetches every stale query.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
