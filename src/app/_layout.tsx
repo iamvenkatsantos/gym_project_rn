@@ -3,10 +3,10 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type Theme } from 'expo-
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-import { Colors, type ColorScheme } from '@/constants/theme';
+import { type ColorScheme, type Palette } from '@/constants/theme';
 
 import {
   selectActiveGym,
@@ -21,7 +21,7 @@ import { usePushNotifications } from '@/features/notifications/use-push-notifica
 import { AnimatedSplash } from '@/features/splash/components/animated-splash';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
 import { useOtaUpdates } from '@/features/updates/use-ota-updates';
-import { useColorSchemeName } from '@/hooks/use-theme';
+import { useColorSchemeName, useTheme } from '@/hooks/use-theme';
 import { queryClient } from '@/lib/query-client';
 import { useT } from '@/i18n';
 
@@ -30,9 +30,8 @@ SplashScreen.preventAutoHideAsync();
 // 400 ms fade showed both logos at once and held the intro back.
 SplashScreen.setOptions({ fade: false, duration: 0 });
 
-function navigationTheme(scheme: ColorScheme): Theme {
+function navigationTheme(scheme: ColorScheme, colors: Palette): Theme {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
-  const colors = Colors[scheme];
   return {
     ...base,
     colors: {
@@ -49,17 +48,19 @@ function navigationTheme(scheme: ColorScheme): Theme {
 
 export default function RootLayout() {
   const scheme = useColorSchemeName();
+  const colors = useTheme();
+  const navTheme = useMemo(() => navigationTheme(scheme, colors), [scheme, colors]);
   const authLoaded = useAuthStore((s) => s.status !== 'loading');
 
   // The window behind the app shows during transitions and the keyboard; keep it on theme.
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync(Colors[scheme].background).catch(() => {});
-  }, [scheme]);
+    SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
+  }, [colors.background]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <KeyboardProvider>
-        <ThemeProvider value={navigationTheme(scheme)}>
+        <ThemeProvider value={navTheme}>
           <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <RootNavigator />
           {/* Takes over from the native splash and fades away once sign-in has loaded. */}
