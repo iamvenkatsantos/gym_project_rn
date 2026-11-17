@@ -1,13 +1,15 @@
 -- Payments tab paging: each member's latest membership, and only what the caller may see.
 -- Self-contained: run after the migrations. Each step says what to expect.
 \set ON_ERROR_STOP 0
+begin;
 insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
  ('b5000000-0000-0000-0000-00000000000a','olga@lm.test',now(),'{"full_name":"Olga Owner"}'),
  ('b5000000-0000-0000-0000-00000000000b','mani@lm.test',now(),'{"full_name":"Mani Member"}'),
  ('b5000000-0000-0000-0000-00000000000c','tejas@lm.test',now(),'{"full_name":"Tejas Trainer"}'),
  ('b5000000-0000-0000-0000-00000000000e','rani@lm.test',now(),'{"full_name":"Rani Member"}');
-insert into public.gyms (id, name, time_zone) values
- ('b6000000-0000-0000-0000-000000000001','LM Fitness','Asia/Kolkata');
+insert into public.brands (id, name) values ('b6100000-0000-0000-0000-000000000001','LM');
+insert into public.gyms (id, name, time_zone, brand_id) values
+ ('b6000000-0000-0000-0000-000000000001','LM Fitness','Asia/Kolkata','b6100000-0000-0000-0000-000000000001');
 update public.gyms set paid_until = current_date + 365 where id = 'b6000000-0000-0000-0000-000000000001';
 insert into public.gym_members (gym_id, user_id, role) values
  ('b6000000-0000-0000-0000-000000000001','b5000000-0000-0000-0000-00000000000a','owner'),
@@ -35,3 +37,4 @@ select pg_temp.as_user('b5000000-0000-0000-0000-00000000000b');
 select id from public.gym_latest_memberships('b6000000-0000-0000-0000-000000000001');
 
 reset role;
+rollback;
