@@ -38,7 +38,7 @@ type PlanRow = {
   all_branches: boolean;
 };
 
-type MembershipRow = {
+export type MembershipRow = {
   id: string;
   member_id: string;
   starts_on: string;
@@ -60,7 +60,7 @@ function toPause(row: PauseRow): MembershipPause {
 const PLAN_COLUMNS =
   'id, name, price_cents, currency, duration_days, offer_type, offer_value, offer_label, offer_starts_on, offer_ends_on, all_branches';
 // The inner join lets queries filter memberships by the plan's gym.
-const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, created_at, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS}), pauses:membership_pauses(id, starts_on, ends_on)`;
+export const MEMBERSHIP_COLUMNS = `id, member_id, starts_on, ends_on, amount_paid_cents, payment_method, created_at, member:profiles!memberships_member_id_fkey(full_name), plan:membership_plans!inner(${PLAN_COLUMNS}), pauses:membership_pauses(id, starts_on, ends_on)`;
 
 function toPlan(row: PlanRow): MembershipPlan {
   return {
@@ -83,7 +83,7 @@ function toPlan(row: PlanRow): MembershipPlan {
   };
 }
 
-function toMembership(row: MembershipRow): Membership {
+export function toMembership(row: MembershipRow): Membership {
   return {
     id: row.id,
     memberId: row.member_id,

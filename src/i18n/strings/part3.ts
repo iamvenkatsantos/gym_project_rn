@@ -636,9 +636,9 @@ export const part3: Record<string, readonly [string, string]> = {
     'பயிற்சிகள், தசைகள், கருவிகளைத் தேடு',
     'एक्सरसाइज़, मसल, उपकरण खोजें',
   ],
-  'See all {length} renewals': [
-    'அனைத்து {length} புதுப்பித்தல்களையும் பார்',
-    'सभी {length} रिन्यूअल देखें',
+  'See all {renewalCount} renewals': [
+    'அனைத்து {renewalCount} புதுப்பித்தல்களையும் பார்',
+    'सभी {renewalCount} रिन्यूअल देखें',
   ],
   'See your schedule and workouts': [
     'உங்கள் அட்டவணையையும் பயிற்சிகளையும் பாருங்கள்',
