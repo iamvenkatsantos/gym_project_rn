@@ -44,6 +44,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `src/features/<feature>/`    | `types.ts`, `api.ts`, `hooks.ts`, `rules.ts`, `components/`, `__tests__/`                                                                                                    |
 | `src/components/`            | Shared UI: `Screen`, Button, Card, ListRow, StatTile, ShortcutGrid, TextField, …                                                                                             |
 | `src/constants/theme.ts`     | Light/dark tokens, `TapTarget`, `MaxFontScale`                                                                                                                               |
+| `src/i18n/`                  | Languages (English, Tamil, Hindi): `t()`/`useT()`, the language store and picker, translations in `strings/` (see Languages below)                                           |
 | `src/lib/`                   | `supabase.ts`, `env.ts` (`isDemoMode`), `mock-db.ts`, `query-client.ts`                                                                                                      |
 | `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                                                               |
 | `supabase/functions/`        | `invite-member`, `accept-invite`, `reset-password`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
@@ -483,6 +484,29 @@ are measured on develop only. Add a new read RPC to `READ_RPCS` only after check
 nothing. Credentials come from `PERF_*` env vars; never commit them, ids or tokens. Measurement code
 in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data.
 
+**Languages** (Venkat, 2026-11-17): the app speaks English, Tamil and Hindi (`src/i18n/`), more
+Indian languages later. The person picks one on Sign in (chips at the top), Account or member
+Profile → **Language**; it's kept on the phone (`corefit-language`, like Appearance), and until
+they pick, the phone's language decides if the app speaks it, else English. JS only, so it ships
+over the air. **English text is the key:** `strings/part*.ts` map it to `[Tamil, Hindi]`
+(`data-values.ts` holds lower-case data values: roles, exercise filter words); `{name}` in a key
+matches a value filled in at run time ("{count} members" also translates "12 members"), and a
+value that is itself a key is translated too. `ThemedText` translates what it shows by itself,
+so most screens need no code; text that doesn't go through it uses `t()` / `useT()`: header
+titles (`title: t('…')`), tab names (`RoleTabs`), alerts (`alert()` from `@/i18n/alert`, never
+`Alert.alert`), raw `TextInput` placeholders (`TextField` translates its own label and
+placeholder). Pass `translate={false}` on text people type (announcements, inbox bodies, notes)
+so a key never rewrites it; open-ended keys like "{a} until {b}" only match short text anyway.
+Dates and numbers use `ta-IN` / `hi-IN` (`src/lib/locale.ts`, read by `format.ts`; English keeps
+the phone's locale). Tamil and Hindi get 20% more line height and no letter spacing
+(`ThemedText`), and `StatTile` labels may wrap to two lines. **Still English:** the platform
+admin area, exercise names and how-to steps, stretches and smart plans, the receipt and QR
+poster, WhatsApp messages sent to others, push and inbox text and error messages from the
+server, and auth emails (follow-ups). **Any PR that adds or changes app text adds its Tamil and
+Hindi in the same PR:** `npm run i18n:check` lists what's missing (`scripts/i18n-extract.mjs`;
+text that must stay English, or that it picks up but is never shown, goes in
+`scripts/i18n-ignore.json`). Keep translations as short as the English.
+
 **Cron jobs** (`pg_cron`, scheduled inside migrations): `corefit-reminders` (`send_reminders`,
 5 min: classes, sessions, membership expiry), `corefit-enquiry-reminders` (5 min),
 `corefit-auto-check-out` (10 min), `corefit-birthdays` (hourly, managers' 9 am birthday push),
@@ -549,7 +573,7 @@ in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data.
   `ThemeColors` + `tints`; the contrast test in `src/features/appearance/__tests__` must pass.
 - **Demo mode** (`npm run demo`) uses `src/lib/mock-db.ts`; keep the mock path working, and never
   show demo data in store builds.
-- **Before saying done:** `npm run typecheck`, `npm run lint`, `npm test`. In the cloud container
+- **Before saying done:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run i18n:check`. In the cloud container
   prefix Expo CLI with `EXPO_OFFLINE=1`; the container can't reach `*.supabase.co`, so real sign-in
   is tested on Venkat's phone.
 

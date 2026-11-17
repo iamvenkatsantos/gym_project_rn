@@ -31,6 +31,7 @@ import { usePeople } from '@/features/members/hooks';
 import { activeCoaches, coachLabel } from '@/features/members/rules';
 import { formatDate } from '@/lib/format';
 import { firstError, validateTitle } from '@/lib/validation';
+import { useT } from '@/i18n';
 
 export default function ClassEditorScreen() {
   const { classId, trainerId } = useLocalSearchParams<{ classId?: string; trainerId?: string }>();
@@ -66,6 +67,7 @@ function ClassForm({
   gymClass?: GymClass;
   defaultTrainerId?: string;
 }) {
+  const t = useT();
   const profile = useProfile();
   const gym = useActiveGym();
   // Trainers and supervisors schedule and edit their own classes; owners can pick any coach.
@@ -107,7 +109,7 @@ function ClassForm({
 
   return (
     <Screen refreshable={false}>
-      <Stack.Screen options={{ title: gymClass ? 'Edit class' : 'Schedule a class' }} />
+      <Stack.Screen options={{ title: t(gymClass ? 'Edit class' : 'Schedule a class') }} />
       <TextField
         label="Class name"
         placeholder="e.g. Morning HIIT, Yoga, Spin"

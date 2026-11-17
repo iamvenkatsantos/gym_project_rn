@@ -12,6 +12,7 @@ import { useCoachedMembers } from '@/features/members/hooks';
 import { ProgressOverview } from '@/features/progress/components/progress-overview';
 import { useWorkoutHistory } from '@/features/progress/hooks';
 import { CoachSelfWorkouts } from '@/features/self-workouts/components/coach-self-workouts';
+import { useT } from '@/i18n';
 
 type Tab = 'workouts' | 'self' | 'body';
 
@@ -22,6 +23,7 @@ type Tab = 'workouts' | 'self' | 'body';
  * workouts: the switch, their own plan and self-checks to reply to.
  */
 export default function MemberProgressScreen() {
+  const t = useT();
   const { memberId, name } = useLocalSearchParams<{ memberId: string; name?: string }>();
   const profile = useProfile();
   const gym = useActiveGym();
@@ -34,7 +36,7 @@ export default function MemberProgressScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: member?.fullName ?? name ?? 'Member' }} />
+      <Stack.Screen options={{ title: member?.fullName ?? name ?? t('Member') }} />
       {member ? (
         <View>
           <ThemedText type="title">{member.fullName}</ThemedText>

@@ -11,12 +11,14 @@ import { useExercises } from '@/features/exercises/hooks';
 import { emptyFilter, facets, filterExercises } from '@/features/exercises/rules';
 import type { Difficulty, ExerciseFilter } from '@/features/exercises/types';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 const difficulties: Difficulty[] = ['beginner', 'intermediate', 'advanced'];
 
 /** Searchable, filterable exercise library, shared by members and trainers. */
 export function ExerciseLibrary({ gymId }: { gymId: string }) {
   const theme = useTheme();
+  const t = useT();
   const exercises = useExercises(gymId);
   const [filter, setFilter] = useState<ExerciseFilter>(emptyFilter);
   const options = useMemo(() => facets(exercises.data ?? []), [exercises.data]);
@@ -36,7 +38,7 @@ export function ExerciseLibrary({ gymId }: { gymId: string }) {
         <TextInput
           maxFontSizeMultiplier={MaxFontScale}
           accessibilityLabel="Search exercises"
-          placeholder="Search exercises, muscles, equipment"
+          placeholder={t('Search exercises, muscles, equipment')}
           placeholderTextColor={theme.textSecondary}
           style={[styles.input, { color: theme.text }]}
           value={filter.query}

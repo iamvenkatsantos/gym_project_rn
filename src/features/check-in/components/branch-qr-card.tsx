@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { type ComponentRef, useRef } from 'react';
-import { Alert, type View } from 'react-native';
+import { type View } from 'react-native';
+import { alert } from '@/i18n/alert';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -54,7 +55,7 @@ export function BranchQrCard({ branch }: { branch: PosterBranch }) {
               variant="secondary"
               loading={reset.isPending}
               onPress={() =>
-                Alert.alert(
+                alert(
                   'Reset this branch’s QR?',
                   'The printed QR stops working. Send the owner the new one straight away.',
                   [

@@ -84,7 +84,7 @@ function NotificationCard({ n }: { n: AppNotification }) {
         <View style={styles.flex}>
           <ThemedText type="smallBold">{n.title}</ThemedText>
           {n.body ? (
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="small" themeColor="textSecondary" translate={false}>
               {n.body}
             </ThemedText>
           ) : null}

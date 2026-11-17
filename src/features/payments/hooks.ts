@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { alert } from '@/i18n/alert';
 
 import { membershipKeys } from '@/features/memberships/hooks';
 import {
@@ -84,7 +84,7 @@ export async function openPaymentPage(url: string) {
 /** Shows the member the online charges on top of the price; resolves true to pay. */
 function confirmCharges(quote: PaymentQuote) {
   return new Promise<boolean>((resolve) =>
-    Alert.alert(
+    alert(
       'Online payment charges',
       quoteMessage(quote),
       [

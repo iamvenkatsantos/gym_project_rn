@@ -1,7 +1,16 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  type StyleProp,
+  type TextProps,
+  type TextStyle,
+} from 'react-native';
 
 import { Fonts, MaxFontScale, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { translateTo, useLanguage } from '@/i18n';
+import { translateChildren } from '@/i18n/children';
 
 export type ThemedTextProps = TextProps & {
   type?:
@@ -15,6 +24,8 @@ export type ThemedTextProps = TextProps & {
     | 'linkPrimary'
     | 'code';
   themeColor?: ThemeColor;
+  /** Off for text that must stay as typed, like names and codes. On by default. */
+  translate?: boolean;
 };
 
 export function ThemedText({
@@ -22,19 +33,38 @@ export function ThemedText({
   type = 'default',
   themeColor,
   maxFontSizeMultiplier = MaxFontScale,
+  translate = true,
+  children,
   ...rest
 }: ThemedTextProps) {
   const theme = useTheme();
+  const language = useLanguage();
+  const english = language === 'en';
 
   const color = theme[themeColor ?? (type === 'linkPrimary' ? 'accent' : 'text')];
 
   return (
     <Text
-      style={[{ color }, styles[type], style]}
+      style={[{ color }, styles[type], style, !english && scriptStyle(styles[type], style)]}
       maxFontSizeMultiplier={maxFontSizeMultiplier}
-      {...rest}
-    />
+      {...rest}>
+      {english || !translate
+        ? children
+        : translateChildren(children, (s) => translateTo(language, s))}
+    </Text>
   );
+}
+
+/**
+ * Tamil and Devanagari letters reach further above and below the line than Latin, so give
+ * them more line height, and drop letter spacing, which breaks up joined letters.
+ */
+function scriptStyle(base: TextStyle, style: StyleProp<TextStyle>): TextStyle {
+  const flat = { ...base, ...StyleSheet.flatten(style) };
+  return {
+    ...(flat.lineHeight ? { lineHeight: Math.round(flat.lineHeight * 1.2) } : null),
+    ...(flat.letterSpacing ? { letterSpacing: 0 } : null),
+  };
 }
 
 const styles = StyleSheet.create({

@@ -69,6 +69,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "i18n:check": "node scripts/i18n-extract.mjs --strict",
     "format": "prettier --write .",
     "ota": "node scripts/ota.mjs",
     "ota:dev": "node scripts/ota.mjs publish --channel develop",
