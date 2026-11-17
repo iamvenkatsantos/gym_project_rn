@@ -12,7 +12,7 @@ import {
   membershipOn,
   unusedPauseDays,
 } from '@/features/memberships/pause';
-import { addDays, coversToday, toIsoDate } from '@/features/memberships/rules';
+import { addDays, coversToday, latestByMember, toIsoDate } from '@/features/memberships/rules';
 import {
   delay,
   forGym,
@@ -251,6 +251,53 @@ export async function listMemberships(gymId: string): Promise<Membership[]> {
       .order('ends_on'),
   ) as unknown as MembershipRow[];
   return rows.map(toMembership);
+}
+
+/** Members shown at a time on the Payments tab, like People. */
+export const MEMBERSHIPS_PAGE_SIZE = 50;
+
+export type LatestMembershipsPage = {
+  memberships: Membership[];
+  /** Members with a membership at the branch. */
+  total: number;
+  nextOffset: number | null;
+};
+
+/**
+ * One page of each member's latest membership, the one ending soonest first (the Payments tab).
+ * gym_latest_memberships() returns memberships rows, so the plan, member and pauses embed as usual.
+ */
+export async function listLatestMemberships(
+  gymId: string,
+  offset: number,
+): Promise<LatestMembershipsPage> {
+  const size = MEMBERSHIPS_PAGE_SIZE;
+  const fromAll = async () => {
+    const latest = [...latestByMember(await listMemberships(gymId)).values()].sort((a, b) =>
+      a.endsOn.localeCompare(b.endsOn),
+    );
+    return {
+      memberships: latest.slice(offset, offset + size),
+      total: latest.length,
+      nextOffset: offset + size < latest.length ? offset + size : null,
+    };
+  };
+  if (!supabase) return fromAll();
+  const { data, error, count } = await supabase
+    .rpc('gym_latest_memberships', { p_gym_id: gymId }, { count: 'exact' })
+    .select(MEMBERSHIP_COLUMNS)
+    .order('ends_on')
+    .order('id')
+    .range(offset, offset + size - 1);
+  // Before the paging migration: page through everything instead.
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as unknown as MembershipRow[];
+  const total = count ?? offset + rows.length;
+  return {
+    memberships: rows.map(toMembership),
+    total,
+    nextOffset: offset + size < total ? offset + size : null,
+  };
 }
 
 /** Creates a plan (planId null) or edits one. Existing memberships keep what was paid. */

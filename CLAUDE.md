@@ -561,6 +561,11 @@ text that must stay English, or that it picks up but is never shown, goes in
   test `supabase/tests/people-paging.sql`). `gym_people()` stays for older apps and for pickers that need
   everyone. Page keys sit under `memberKeys.people(gymId)`, so existing invalidations cover them. Keep the
   mock path in step (`listPeoplePage`).
+  Payments tab Members: `gym_latest_memberships()` (each member's latest membership as `memberships` rows,
+  runs as the caller so RLS applies; the app embeds plan/member/pauses and pages with `order` + `range`,
+  `count: 'exact'` for the total), `useLatestMemberships`, 50 a page, ending soonest first, test
+  `supabase/tests/latest-memberships.sql`. Falls back to the full list until the migration is pushed
+  (`PGRST202`).
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes

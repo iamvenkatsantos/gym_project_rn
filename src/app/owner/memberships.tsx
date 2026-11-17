@@ -10,12 +10,13 @@ import { useActiveGym } from '@/features/auth/use-profile';
 import { MembershipRow } from '@/features/memberships/components/membership-card';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
 import { PlanCard } from '@/features/memberships/components/plan-card';
-import { useLoyaltyOffer, useMemberships, usePlans } from '@/features/memberships/hooks';
-import { latestByMember } from '@/features/memberships/rules';
+import { useLatestMemberships, useLoyaltyOffer, usePlans } from '@/features/memberships/hooks';
 
 export default function OwnerMembershipsScreen() {
   const gym = useActiveGym();
-  const memberships = useMemberships(gym.gymId);
+  // Each member's latest membership, a page at a time, ending soonest first.
+  const latest = useLatestMemberships(gym.gymId);
+  const size = latest.data?.pages[0]?.total;
   const plans = usePlans(gym.gymId);
   const loyalty = useLoyaltyOffer(gym.gymId).data;
   // Supervisors record payments; selling plans stays with the owner.
@@ -99,25 +100,35 @@ export default function OwnerMembershipsScreen() {
         </>
       ) : null}
 
-      <SectionHeader
-        title="Members"
-        detail={memberships.data ? `${latestByMember(memberships.data).size} total` : undefined}
-      />
+      <SectionHeader title="Members" detail={size === undefined ? undefined : `${size} total`} />
       <QueryState
-        query={memberships}
-        isEmpty={(m) => m.length === 0}
+        query={latest}
+        isEmpty={(data) => data.pages[0]?.memberships.length === 0}
         emptyText={
           noPlans
             ? 'Memberships show here once you record payments.'
             : 'No memberships recorded yet. Tap Record a payment to add one.'
         }>
-        {(list) =>
-          [...latestByMember(list).values()]
-            .sort((a, b) => a.endsOn.localeCompare(b.endsOn))
-            .map((m) => (
-              <MembershipRow key={m.id} membership={m} onRenew={() => renew(m.memberId)} />
-            ))
-        }
+        {(data) => {
+          const shown = data.pages.flatMap((page) => page.memberships);
+          const loaded = shown.length;
+          const total = data.pages[0]?.total ?? loaded;
+          return (
+            <>
+              {shown.map((m) => (
+                <MembershipRow key={m.id} membership={m} onRenew={() => renew(m.memberId)} />
+              ))}
+              {latest.hasNextPage ? (
+                <Button
+                  label={`Show more (${loaded} of ${total})`}
+                  variant="secondary"
+                  loading={latest.isFetchingNextPage}
+                  onPress={() => latest.fetchNextPage()}
+                />
+              ) : null}
+            </>
+          );
+        }}
       </QueryState>
     </Screen>
   );
