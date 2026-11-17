@@ -8,6 +8,9 @@ export type PerfEntry =
   | { kind: 'screen'; name: string; ms: number; requests: number; at: number }
   | { kind: 'mark'; name: string; ms: number; at: number };
 
+/** When this file loaded, which is when the JS bundle started running. */
+const jsStartedAt = Date.now();
+
 const MAX_ENTRIES = 500;
 const entries: PerfEntry[] = [];
 
@@ -40,7 +43,7 @@ export function perfRecord(entry: NewEntry): void {
 
 export function perfMark(name: string): void {
   if (!perfEnabled) return;
-  perfRecord({ kind: 'mark', name, ms: Math.round(globalThis.performance?.now?.() ?? 0) });
+  perfRecord({ kind: 'mark', name, ms: Date.now() - jsStartedAt });
 }
 
 /** Counts API requests that finished since `since` (epoch ms). */
