@@ -551,6 +551,10 @@ text that must stay English, or that it picks up but is never shown, goes in
   and Add email (`email_change`) use `ResendCodeButton` (`src/features/auth/components/`), and
   invites use the Invited list's resend. One per email a minute (`resend.ts`, Supabase's own limit);
   a new screen that waits on an emailed code must offer it too.
+- **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
+  details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
+  mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
+  without the person saving it (attendance, bookings, notifications, payments).
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
