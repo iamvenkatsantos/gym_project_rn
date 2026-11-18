@@ -82,6 +82,9 @@ export function useWeeklyHours(gymId: string, trainerId: string) {
   return useQuery({
     queryKey: trainerKeys.hours(gymId, trainerId),
     queryFn: () => getWeeklyHours(gymId, trainerId),
+    // Only the trainer's own save changes it (that invalidates it), so revisiting Training
+    // doesn't ask again (perf audit, 2026-11-18).
+    staleTime: STATIC_STALE_TIME,
   });
 }
 

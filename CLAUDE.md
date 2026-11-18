@@ -590,7 +590,7 @@ text that must stay English, or that it picks up but is never shown, goes in
   when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
   stays busy until every refetch lands.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
-  details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
+  details, trainer list and hours rules, a coach's own weekly hours and diet plans) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
   without the person saving it (attendance, bookings, notifications, payments).
 - **A tab switch refetches only that screen's data** (Venkat, 2026-11-17): tabs stay mounted, so React Query
