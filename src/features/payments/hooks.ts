@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
@@ -10,6 +16,7 @@ import {
   fetchOnlinePaymentsEnabled,
   fetchReceipt,
   listOnlinePayments,
+  listPaymentMembers,
   quoteOnlinePayment,
   startOnlinePayment,
 } from '@/features/payments/api';
@@ -65,6 +72,21 @@ export function useOnlinePayments(gymId: string, memberId?: string) {
   return useQuery({
     queryKey: paymentKeys.list(gymId, memberId),
     queryFn: () => listOnlinePayments(gymId, memberId),
+  });
+}
+
+/**
+ * Staff Payment history: members with payments, a page at a time (`fetchNextPage` is Show more).
+ * Under the membership keys so recording or paying a membership refreshes it.
+ */
+export function usePaymentMembers(gymId: string, query: string) {
+  const q = query.trim();
+  return useInfiniteQuery({
+    queryKey: [...membershipKeys.all, gymId, 'payment-members', q],
+    queryFn: ({ pageParam }) => listPaymentMembers(gymId, q, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.nextOffset,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,6 +1,8 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 
 import { fetchGymDetails } from '@/features/gyms/api';
+import { listMemberships } from '@/features/memberships/api';
+import { paymentsByMember, searchMembers, type MemberPayments } from '@/features/payments/history';
 import { hasReceipt, toReceipt, type Receipt, type ReceiptRow } from '@/features/payments/receipt';
 import type { OnlinePayment, PaymentQuote, StartedPayment } from '@/features/payments/types';
 import { delay, MOCK_GYM_ID, mockMemberships } from '@/lib/mock-db';
@@ -126,6 +128,75 @@ export async function listOnlinePayments(
     await query.order('created_at', { ascending: false }).limit(limit),
   ) as unknown as OnlinePaymentRow[];
   return rows.map(toPayment);
+}
+
+/** Members shown at a time on the staff Payment history, like People. */
+export const PAYMENT_MEMBERS_PAGE_SIZE = 50;
+
+export type PaymentMembersPage = {
+  members: MemberPayments[];
+  /** Members matching the search, before paging. */
+  total: number;
+  nextOffset: number | null;
+};
+
+type PaymentMemberRow = {
+  member_id: string;
+  member_name: string;
+  payments: number;
+  total_cents: number;
+  currency: string | null;
+  last_paid_at: string | null;
+  pending: number;
+  total: number;
+};
+
+/**
+ * The staff Payment history, one line per member who has paid or is paying now, a page at a
+ * time with the search done on the server (`gym_payment_history_page`). Before that migration
+ * is pushed it pages through the full lists instead.
+ */
+export async function listPaymentMembers(
+  gymId: string,
+  query: string,
+  offset: number,
+): Promise<PaymentMembersPage> {
+  const size = PAYMENT_MEMBERS_PAGE_SIZE;
+  const fromAll = async () => {
+    const [memberships, online] = await Promise.all([
+      listMemberships(gymId),
+      listOnlinePayments(gymId),
+    ]);
+    const all = searchMembers(paymentsByMember(memberships, online), query);
+    return {
+      members: all.slice(offset, offset + size),
+      total: all.length,
+      nextOffset: offset + size < all.length ? offset + size : null,
+    };
+  };
+  if (!supabase) return fromAll();
+  const { data, error } = await supabase.rpc('gym_payment_history_page', {
+    p_gym_id: gymId,
+    p_query: query,
+    p_limit: size,
+    p_offset: offset,
+  });
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as unknown as PaymentMemberRow[];
+  const total = rows[0]?.total ?? 0;
+  return {
+    members: rows.map((r) => ({
+      memberId: r.member_id,
+      memberName: r.member_name,
+      payments: Number(r.payments),
+      totalCents: Number(r.total_cents),
+      currency: r.currency ?? 'INR',
+      lastPaidAt: r.last_paid_at ?? '',
+      pending: Number(r.pending),
+    })),
+    total: Number(total),
+    nextOffset: offset + size < Number(total) ? offset + size : null,
+  };
 }
 
 /**

@@ -18,6 +18,7 @@ export const READ_RPCS = new Set([
   'member_insights',
   'busiest_hours',
   'gym_people',
+  'gym_payment_history_page',
   'gym_people_page',
   'gym_people_counts',
   'gym_latest_memberships',

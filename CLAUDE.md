@@ -566,6 +566,10 @@ text that must stay English, or that it picks up but is never shown, goes in
   `count: 'exact'` for the total), `useLatestMemberships`, 50 a page, ending soonest first, test
   `supabase/tests/latest-memberships.sql`. Falls back to the full list until the migration is pushed
   (`PGRST202`).
+  Staff Payment history: `gym_payment_history_page(gym, query, limit, offset)` (one line per member: payments,
+  total, last paid, paying now; same numbers and order as `paymentsByMember()`; search on the server, runs as the
+  caller), `usePaymentMembers`, 50 a page, **Show more**, test `supabase/tests/payment-history-paging.sql`; the
+  header's "N paid" follows the search. Falls back to the full lists on `PGRST202`.
   Owner/supervisor Home: `owner_dashboard_counts(gym, today)` (active members, renewals due, no trainer yet,
   birthdays today) and `gym_renewals_due()` (the 2 rows it lists) replace loading every person, membership and
   trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
