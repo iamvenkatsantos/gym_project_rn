@@ -1,31 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchDashboardCounts } from '@/features/dashboard/api';
-import { listRenewalsDue } from '@/features/memberships/api';
+import { getOwnerDashboard } from '@/features/dashboard/api';
 import { membershipKeys } from '@/features/memberships/hooks';
-
-export const dashboardKeys = {
-  all: ['dashboard'] as const,
-  counts: (gymId: string) => [...dashboardKeys.all, gymId, 'counts'] as const,
-};
+import { toIsoDate } from '@/features/memberships/rules';
 
 /**
- * The Home tiles. Always stale, so coming back to Home (after a payment, a check-in, a trainer
- * match) recounts: it's one small call, and the lists it replaces each had their own key.
+ * The owner's Home numbers. It sits under the memberships key so recording or changing a
+ * membership refreshes it, and it is never stale: it is a few bytes, and a trainer link, a
+ * birthday or a new member can change it without touching that key, so Home asks again each visit.
  */
-export function useDashboardCounts(gymId: string) {
+export function useOwnerDashboard(gymId: string) {
+  const day = toIsoDate(new Date());
   return useQuery({
-    queryKey: dashboardKeys.counts(gymId),
-    queryFn: () => fetchDashboardCounts(gymId),
-    staleTime: 0,
-  });
-}
-
-/** The first few renewals due and how many there are, for Home. */
-export function useRenewalsDue(gymId: string, limit: number) {
-  return useQuery({
-    queryKey: [...membershipKeys.all, gymId, 'renewals-due', limit],
-    queryFn: () => listRenewalsDue(gymId, limit),
+    queryKey: [...membershipKeys.all, gymId, 'dashboard', day],
+    queryFn: () => getOwnerDashboard(gymId),
     staleTime: 0,
   });
 }

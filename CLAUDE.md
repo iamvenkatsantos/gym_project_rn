@@ -49,7 +49,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                                                               |
 | `supabase/functions/`        | `invite-member`, `accept-invite`, `reset-password`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
 | `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                                              |
-| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                                           |
+| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand; code only, no link or button (Venkat, 2026-11-18)                                                                        |
 | `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                   |
 | `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
 | `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
@@ -566,13 +566,11 @@ text that must stay English, or that it picks up but is never shown, goes in
   `count: 'exact'` for the total), `useLatestMemberships`, 50 a page, ending soonest first, test
   `supabase/tests/latest-memberships.sql`. Falls back to the full list until the migration is pushed
   (`PGRST202`).
-- **Owner Home counts on the server** (2026-11-17): the tiles (active members, no trainer yet, birthdays
-  badge, came today, trainers in) come from `owner_dashboard_counts(gym, phone's today)` (`useDashboardCounts`,
-  `src/features/dashboard/`), and Renewals due from `listRenewalsDue()` (`gym_latest_memberships()` filtered
-  by end date, first 2 + count). Home no longer loads the full people, membership, attendance or trainer-link
-  lists. Both use `staleTime: 0`, so returning to Home recounts. Keep the SQL in step with the app rules it
-  mirrors (`membershipStatus`, `unmappedMembers`, `upcomingBirthdays`, `countByRole`, `renewalsDue`); test
-  `supabase/tests/owner-dashboard-counts.sql`. Falls back to counting the lists (`PGRST202`).
+  Owner/supervisor Home: `owner_dashboard_counts(gym, today)` (active members, renewals due, no trainer yet,
+  birthdays today) and `gym_renewals_due()` (the 2 rows it lists) replace loading every person, membership and
+  trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
+  `memberships/rules.ts`, test `supabase/tests/owner-dashboard.sql`; falls back to the full lists on `PGRST202`).
+  Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes

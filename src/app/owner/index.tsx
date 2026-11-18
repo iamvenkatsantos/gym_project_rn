@@ -9,6 +9,8 @@ import { useGymReferrals } from '@/features/referrals/hooks';
 import { ShortcutGrid, type Shortcut } from '@/components/shortcut-grid';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
+import { useDayAttendance } from '@/features/attendance/hooks';
+import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
@@ -17,7 +19,8 @@ import { classesOnDay } from '@/features/bookings/rules';
 import { TrainerRequestRow } from '@/features/coaching/components/trainer-request-row';
 import { useTrainerRequests } from '@/features/coaching/hooks';
 import { pendingRequests } from '@/features/coaching/rules';
-import { useDashboardCounts, useRenewalsDue } from '@/features/dashboard/hooks';
+import { HOME_RENEWALS_SHOWN } from '@/features/dashboard/api';
+import { useOwnerDashboard } from '@/features/dashboard/hooks';
 import { useEnquiries } from '@/features/enquiries/hooks';
 import { countEnquiries } from '@/features/enquiries/rules';
 import { MembershipSetup } from '@/features/memberships/components/membership-setup';
@@ -28,29 +31,30 @@ import { usePermissions } from '@/features/trainer-hours/hooks';
 import { pendingCount } from '@/features/trainer-hours/rules';
 
 /** How much of each list the dashboard shows before the screen behind it. */
-const RENEWALS_SHOWN = 2;
 const REQUESTS_SHOWN = 2;
 const CLASSES_SHOWN = 2;
 
 /** The owner's and the supervisor's home: money, attendance, trainer matching and today's classes. */
 export default function OwnerDashboardScreen() {
   const gym = useActiveGym();
-  // The tile numbers and the first renewals come from the server, not the full people,
-  // membership, attendance and trainer-link lists (~400 KB at 300 members).
-  const counts = useDashboardCounts(gym.gymId).data;
-  const renewalsDue = useRenewalsDue(gym.gymId, RENEWALS_SHOWN);
+  const dashboard = useOwnerDashboard(gym.gymId);
   const plans = usePlans(gym.gymId);
   const classes = useUpcomingClasses(gym.gymId);
   const requests = useTrainerRequests(gym.gymId);
+  const attendance = useDayAttendance(gym.gymId, 0);
   const enquiries = useEnquiries(gym.gymId);
   // Trainer hours and permissions are owners' only.
   const permissions = usePermissions(gym.gymId, undefined, gym.role === 'owner');
   const enquiryCounts = enquiries.data ? countEnquiries(enquiries.data) : undefined;
+  const present = attendance.data ? countByRole(attendance.data) : undefined;
 
   const referrals = useGymReferrals(gym.gymId);
-  const renewalCount = renewalsDue.data?.total;
+  const activeCount = dashboard.data?.activeMembers;
+  const renewalCount = dashboard.data?.renewalsDue;
   const today = classes.data ? classesOnDay(classes.data, new Date()) : undefined;
   const waiting = requests.data ? pendingRequests(requests.data) : undefined;
+  const birthdaysToday = dashboard.data?.birthdaysToday;
+  const noTrainer = dashboard.data?.noTrainer;
 
   const referralsToCall = referrals.data?.filter((r) => r.status === 'pending').length;
 
@@ -74,7 +78,7 @@ export default function OwnerDashboardScreen() {
     {
       label: 'Birthdays',
       icon: 'gift-outline',
-      badge: counts?.birthdaysToday,
+      badge: birthdaysToday,
       onPress: () => router.push('/birthdays'),
     },
     {
@@ -117,7 +121,7 @@ export default function OwnerDashboardScreen() {
       <View style={styles.grid}>
         <StatTile
           label="Active members"
-          value={counts?.activeMembers}
+          value={activeCount}
           icon="people"
           accent
           compact
@@ -132,21 +136,21 @@ export default function OwnerDashboardScreen() {
         />
         <StatTile
           label="No trainer yet"
-          value={counts?.noTrainer}
+          value={noTrainer}
           icon="person-outline"
           compact
           onPress={() => router.push('/match-trainers')}
         />
         <StatTile
           label="Came today"
-          value={counts?.membersPresent}
+          value={present?.member.present}
           icon="log-in-outline"
           compact
           onPress={() => router.push('/attendance')}
         />
         <StatTile
           label="Trainers in"
-          value={counts && `${counts.trainersPresent}/${counts.trainersTotal}`}
+          value={present && `${present.trainer.present}/${present.trainer.total}`}
           icon="barbell-outline"
           compact
           onPress={() => router.push('/attendance')}
@@ -185,17 +189,17 @@ export default function OwnerDashboardScreen() {
         detail={renewalCount ? `${renewalCount} members` : undefined}
       />
       <QueryState
-        query={renewalsDue}
-        isEmpty={(due) => due.total === 0}
+        query={dashboard}
+        isEmpty={(data) => data.renewals.length === 0}
         emptyText="No renewals due this week.">
-        {(due) =>
-          due.memberships.map((m) => (
+        {(data) =>
+          data.renewals.map((m) => (
             // WhatsApp lives on the full Renewals screen to keep the dashboard short.
             <RenewalRow key={m.id} gymId={gym.gymId} gymName={gym.gymName} membership={m} />
           ))
         }
       </QueryState>
-      {renewalCount && renewalCount > RENEWALS_SHOWN ? (
+      {renewalCount && renewalCount > HOME_RENEWALS_SHOWN ? (
         <Button
           label={`See all ${renewalCount} renewals`}
           icon="alert-circle-outline"

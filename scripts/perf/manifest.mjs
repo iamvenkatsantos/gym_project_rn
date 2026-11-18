@@ -20,6 +20,9 @@ export const READ_RPCS = new Set([
   'gym_people',
   'gym_people_page',
   'gym_people_counts',
+  'gym_latest_memberships',
+  'owner_dashboard_counts',
+  'gym_renewals_due',
   'membership_receipt',
   'history_gyms',
   'my_referrals',
@@ -225,6 +228,8 @@ export async function buildCalls(ctx) {
   }
   if (STAFF.includes(role)) {
     out.push(
+      rpc('owner_dashboard_counts', { p_gym_id: gymId, p_today: day() }),
+      rpc('gym_renewals_due', { p_gym_id: gymId, p_today: day(), p_limit: 2 }),
       rpc('gym_moved_members', { p_gym_id: gymId }),
       get(
         'gym_invites (pending)',

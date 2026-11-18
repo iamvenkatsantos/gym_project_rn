@@ -36,10 +36,7 @@ export const part3: Record<string, readonly [string, string]> = {
     'अभी किसी ने बुक नहीं किया।',
   ],
   'Nobody here yet.': ['இன்னும் இங்கு யாரும் இல்லை.', 'अभी यहाँ कोई नहीं।'],
-  'Show more ({loaded} of {total})': [
-    'மேலும் காட்டு ({loaded} / {total})',
-    'और दिखाएँ ({loaded} / {total})',
-  ],
+  'Show more ({loaded} of {total})': ['மேலும் காட்டு ({loaded} / {total})', 'और दिखाएँ ({loaded} / {total})'],
   'Nobody matches.': ['யாரும் பொருந்தவில்லை.', 'कोई मेल नहीं खाता।'],
   "Nobody's membership ends this week.": [
     'இந்த வாரம் யாருடைய மெம்பர்ஷிப்பும் முடியவில்லை.',
@@ -638,10 +635,6 @@ export const part3: Record<string, readonly [string, string]> = {
   'Search exercises, muscles, equipment': [
     'பயிற்சிகள், தசைகள், கருவிகளைத் தேடு',
     'एक्सरसाइज़, मसल, उपकरण खोजें',
-  ],
-  'See all {length} renewals': [
-    'அனைத்து {length} புதுப்பித்தல்களையும் பார்',
-    'सभी {length} रिन्यूअल देखें',
   ],
   'See all {renewalCount} renewals': [
     'அனைத்து {renewalCount} புதுப்பித்தல்களையும் பார்',
