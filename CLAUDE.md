@@ -590,6 +590,9 @@ text that must stay English, or that it picks up but is never shown, goes in
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
 - **Screens use `Screen`,** which gives pull-to-refresh and refetch-on-focus for free. Pass
   `refreshable={false}` on forms.
+- **Save-on-tap screens close from the header** (Venkat, 2026-11-18): screens whose changes save on each tap
+  (Assign a workout or diet plan) put Done in the header as a tick (`HeaderDoneButton`, via `Stack.Screen`
+  `headerRight`), not as a button under a long list.
 - **Headers:** every `Stack.Screen` needs a `title` (iOS back label). Gate screens without a back
   route (onboarding, profile-setup, enter-code, set-up-gym) use the native header (`headerShown: true`) so the title
   clears the Android status bar.
