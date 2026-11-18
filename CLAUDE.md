@@ -593,9 +593,11 @@ text that must stay English, or that it picks up but is never shown, goes in
   the background and once after a run of quick taps (`ASSIGN_PLAN_KEY`); trainer links and people refresh only
   when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
   stays busy until every refetch lands.
-- **The phone runs at most 5 requests at once to one host** (OkHttp's default on Android): a screen that
-  starts 9 queries makes the last ones wait, and the timing log counts that wait (Training → Coaching:
-  0-row calls at 1.5 s and 3 s, 2026-11-18). Fewer, combined calls per screen help more than faster SQL.
+- **The phone ran at most 5 requests at once to one host** (OkHttp's default on Android): a screen that
+  starts 9 queries made the last ones wait, and the timing log counts that wait (Training → Coaching:
+  0-row calls at 1.5 s and 3 s, 2026-11-18). `plugins/with-okhttp-request-limit.js` (an Expo config plugin
+  in `app.json`) raises it to 16 a host in `MainApplication`, from build 1.2.4. Native, so it needs a new
+  build, not an OTA. Still prefer fewer, combined calls per screen.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules, a coach's own weekly hours and diet plans) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
