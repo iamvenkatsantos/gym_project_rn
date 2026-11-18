@@ -36,10 +36,7 @@ export const part3: Record<string, readonly [string, string]> = {
     'अभी किसी ने बुक नहीं किया।',
   ],
   'Nobody here yet.': ['இன்னும் இங்கு யாரும் இல்லை.', 'अभी यहाँ कोई नहीं।'],
-  'Show more ({loaded} of {total})': [
-    'மேலும் காட்டு ({loaded} / {total})',
-    'और दिखाएँ ({loaded} / {total})',
-  ],
+  'Show more ({loaded} of {total})': ['மேலும் காட்டு ({loaded} / {total})', 'और दिखाएँ ({loaded} / {total})'],
   'Nobody matches.': ['யாரும் பொருந்தவில்லை.', 'कोई मेल नहीं खाता।'],
   "Nobody's membership ends this week.": [
     'இந்த வாரம் யாருடைய மெம்பர்ஷிப்பும் முடியவில்லை.',

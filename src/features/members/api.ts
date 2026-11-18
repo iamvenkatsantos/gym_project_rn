@@ -814,20 +814,22 @@ export async function listCoachedMembers(
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
 }
 
-/**
- * Mobile numbers for just these members (the Renewals screen's WhatsApp buttons), instead of the
- * whole people list. contact_details RLS lets the gym's managers read them.
- */
-export async function listPhones(gymId: string, userIds: string[]): Promise<Map<string, string>> {
-  if (userIds.length === 0) return new Map();
+/** Mobile numbers for the given people (for WhatsApp buttons), by id; managers can read them. */
+export async function listPhones(
+  gymId: string,
+  userIds: string[],
+): Promise<Record<string, string | null>> {
+  if (userIds.length === 0) return {};
   if (!supabase) {
-    const people = forGym(gymId, mockPeople).filter((p) => userIds.includes(p.id) && p.phone);
-    return delay(new Map(people.map((p) => [p.id, p.phone!])));
+    const people = await listPeople(gymId);
+    return Object.fromEntries(
+      people.filter((p) => userIds.includes(p.id)).map((p) => [p.id, p.phone ?? null]),
+    );
   }
   const rows = unwrap(
     await supabase.from('contact_details').select('user_id, phone').in('user_id', userIds),
-  ) as { user_id: string; phone: string | null }[];
-  return new Map(rows.filter((r) => r.phone).map((r) => [r.user_id, r.phone!]));
+  ) as unknown as { user_id: string; phone: string | null }[];
+  return Object.fromEntries(rows.map((r) => [r.user_id, r.phone]));
 }
 
 /** Members shown at a time on Match trainers. */

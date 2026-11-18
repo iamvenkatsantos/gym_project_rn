@@ -571,19 +571,18 @@ text that must stay English, or that it picks up but is never shown, goes in
   open, status `created` under 20 min, count as paying now and sort first), name search there too;
   `usePaymentHistoryPage`, 50 a page, key under `membershipKeys.all` so recording a payment refreshes it, test
   `supabase/tests/payment-history-page.sql`. Falls back to summing the full lists (`PGRST202`).
-  Renewals: `listRenewalsPage()` filters `gym_latest_memberships()` by end date per section (ending this week
-  soonest first, ended in the last 30 days most recent first; same rules as `groupRenewals`), 50 a page each, and
-  mobiles for WhatsApp come only for the rows shown (`usePhones`, `contact_details`), not from everyone.
-  Match trainers, By member: `gym_match_members_page()` (same rules as `membersToMatch`: active signed-up
-  members, no trainer first; trainers' names and both chip counts with the search applied; an empty page is
-  one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
-  `supabase/tests/match-members-page.sql`. By trainer still loads everyone and every link, only on that tab.
-  Both fall back to the full lists (`PGRST202`).
   Owner/supervisor Home: `owner_dashboard_counts(gym, today)` (active members, renewals due, no trainer yet,
   birthdays today) and `gym_renewals_due()` (the 2 rows it lists) replace loading every person, membership and
   trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
   `memberships/rules.ts`, test `supabase/tests/owner-dashboard.sql`; falls back to the full lists on `PGRST202`).
   Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
+  Renewals screen: the same `gym_renewals_due()` (cap 1000 since `20261118120000`) via `useRenewalsDue`, and
+  WhatsApp numbers for just those members (`usePhones`, `contact_details`) instead of every membership and the
+  full people list. Match trainers, By member: `gym_match_members_page()` (same rules as `membersToMatch`:
+  active signed-up members, no trainer first; trainers' names and both chip counts with the search applied; an
+  empty page is one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
+  `supabase/tests/match-members-page.sql`, falls back to the full lists (`PGRST202`). By trainer loads people
+  and links only while that tab is open.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes

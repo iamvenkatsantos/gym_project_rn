@@ -1,4 +1,4 @@
-import { getOwnerDashboard, HOME_RENEWALS_SHOWN } from '@/features/dashboard/api';
+import { getOwnerDashboard, HOME_RENEWALS_SHOWN, listRenewalsDue } from '@/features/dashboard/api';
 import { listMemberships } from '@/features/memberships/api';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 import { MOCK_GYM_ID } from '@/lib/mock-db';
@@ -20,5 +20,12 @@ describe('owner dashboard (demo mode)', () => {
         .slice(0, HOME_RENEWALS_SHOWN)
         .map((m) => m.id),
     );
+  });
+
+  it('lists every renewal due, like the full list does', async () => {
+    const today = new Date();
+    const all = await listMemberships(MOCK_GYM_ID);
+    const due = await listRenewalsDue(MOCK_GYM_ID, today);
+    expect(due.map((m) => m.id)).toEqual(renewalsDue(all, today).map((m) => m.id));
   });
 });

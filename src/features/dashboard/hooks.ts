@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getOwnerDashboard } from '@/features/dashboard/api';
+import { getOwnerDashboard, listRenewalsDue } from '@/features/dashboard/api';
 import { membershipKeys } from '@/features/memberships/hooks';
 import { toIsoDate } from '@/features/memberships/rules';
 
@@ -15,5 +15,14 @@ export function useOwnerDashboard(gymId: string) {
     queryKey: [...membershipKeys.all, gymId, 'dashboard', day],
     queryFn: () => getOwnerDashboard(gymId),
     staleTime: 0,
+  });
+}
+
+/** The Renewals screen's list. Under the memberships key, so recording a membership refreshes it. */
+export function useRenewalsDue(gymId: string) {
+  const day = toIsoDate(new Date());
+  return useQuery({
+    queryKey: [...membershipKeys.all, gymId, 'renewals-due', day],
+    queryFn: () => listRenewalsDue(gymId),
   });
 }

@@ -18,9 +18,9 @@ import {
   listGymMembers,
   listInvites,
   listPeople,
-  listPhones,
   listMatchMembersPage,
   listPeoplePage,
+  listPhones,
   promoteToTrainer,
   removePerson,
   resendInvite,
@@ -117,6 +117,15 @@ export function usePeoplePage(gymId: string, filter: PeopleFilter, query: string
   });
 }
 
+/** Mobile numbers of just these people, for WhatsApp buttons; the list shows while they load. */
+export function usePhones(gymId: string, userIds: string[]) {
+  return useQuery({
+    queryKey: [...memberKeys.all, gymId, 'phones', userIds.join(',')],
+    queryFn: () => listPhones(gymId, userIds),
+    enabled: userIds.length > 0,
+  });
+}
+
 /** The chip counts on the People screen. */
 export function usePeopleCounts(gymId: string) {
   return useQuery({
@@ -137,18 +146,6 @@ export function useMatchMembersPage(gymId: string, unmatched: boolean, query: st
       const loaded = pages.reduce((n, p) => n + p.members.length, 0);
       return loaded < last.total ? loaded : undefined;
     },
-    placeholderData: keepPreviousData,
-  });
-}
-
-/** Mobile numbers for just these members, e.g. the rows a screen shows. */
-export function usePhones(gymId: string, userIds: string[]) {
-  const ids = [...new Set(userIds)].sort();
-  return useQuery({
-    queryKey: [...memberKeys.all, gymId, 'phones', ids.join(',')],
-    queryFn: () => listPhones(gymId, ids),
-    enabled: ids.length > 0,
-    // Show more adds ids; keep the numbers we have while the new set loads.
     placeholderData: keepPreviousData,
   });
 }
