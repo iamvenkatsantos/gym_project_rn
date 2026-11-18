@@ -90,6 +90,19 @@ select active_members, renewals_due, no_trainer, birthdays_today
 from public.owner_dashboard_counts('d1300000-0000-0000-0000-00000000000a', date '2026-11-17');
 select count(*) from public.gym_renewals_due('d1300000-0000-0000-0000-00000000000a', date '2026-11-17', 10);
 
+\echo 'D8 Came today / Trainers in: member 1 and the trainer checked in (expect 1 | 1 | 1)'
+reset role;
+insert into public.attendance (gym_id, user_id, day, role, checked_in_at) values
+ ('d1300000-0000-0000-0000-00000000000a','d2000000-0000-0000-0000-000000000001', public.gym_day('d1300000-0000-0000-0000-00000000000a'), 'member', now()),
+ ('d1300000-0000-0000-0000-00000000000a','d1000000-0000-0000-0000-00000000000b', public.gym_day('d1300000-0000-0000-0000-00000000000a'), 'trainer', now());
+set role authenticated;
+select pg_temp.as_user('d1000000-0000-0000-0000-00000000000a');
+select * from public.owner_attendance_counts('d1300000-0000-0000-0000-00000000000a');
+
+\echo 'D9 a trainer is refused (expect ERROR: Only owners and supervisors see attendance)'
+select pg_temp.as_user('d1000000-0000-0000-0000-00000000000b');
+select * from public.owner_attendance_counts('d1300000-0000-0000-0000-00000000000a');
+
 \echo 'D7 anon cannot call it (expect permission denied)'
 reset role; set role anon;
 select * from public.owner_dashboard_counts('d1300000-0000-0000-0000-00000000000a', date '2026-11-17');

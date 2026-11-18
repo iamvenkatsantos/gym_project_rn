@@ -135,9 +135,15 @@ export function usePeopleCounts(gymId: string) {
 }
 
 /** Match trainers' members, a page at a time; `fetchNextPage` is Show more. */
-export function useMatchMembersPage(gymId: string, unmatched: boolean, query: string) {
+export function useMatchMembersPage(
+  gymId: string,
+  unmatched: boolean,
+  query: string,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
   const q = query.trim();
   return useInfiniteQuery({
+    enabled,
     // Under people, so mapping a trainer (which invalidates members) refreshes it.
     queryKey: [...memberKeys.people(gymId), 'match', unmatched, q],
     queryFn: ({ pageParam }) => listMatchMembersPage(gymId, unmatched, q, pageParam),

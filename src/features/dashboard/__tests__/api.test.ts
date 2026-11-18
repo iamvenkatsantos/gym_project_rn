@@ -1,4 +1,6 @@
 import { getOwnerDashboard, HOME_RENEWALS_SHOWN, listRenewalsDue } from '@/features/dashboard/api';
+import { listDayAttendance } from '@/features/attendance/api';
+import { countByRole } from '@/features/attendance/rules';
 import { listMemberships } from '@/features/memberships/api';
 import { latestByMember, membershipStatus, renewalsDue } from '@/features/memberships/rules';
 import { MOCK_GYM_ID } from '@/lib/mock-db';
@@ -20,6 +22,14 @@ describe('owner dashboard (demo mode)', () => {
         .slice(0, HOME_RENEWALS_SHOWN)
         .map((m) => m.id),
     );
+  });
+
+  it("counts today's attendance like the full list does", async () => {
+    const dashboard = await getOwnerDashboard(MOCK_GYM_ID);
+    const present = countByRole(await listDayAttendance(MOCK_GYM_ID, 0));
+    expect(dashboard.membersPresent).toBe(present.member.present);
+    expect(dashboard.trainersPresent).toBe(present.trainer.present);
+    expect(dashboard.trainersTotal).toBe(present.trainer.total);
   });
 
   it('lists every renewal due, like the full list does', async () => {

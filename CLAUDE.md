@@ -576,6 +576,8 @@ text that must stay English, or that it picks up but is never shown, goes in
   trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
   `memberships/rules.ts`, test `supabase/tests/owner-dashboard.sql`; falls back to the full lists on `PGRST202`).
   Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
+  "Came today" and "Trainers in" come from `owner_attendance_counts()` (counts `gym_attendance(gym, 0)` like
+  `countByRole`), so Home no longer downloads today's attendance list either.
   Renewals screen: the same `gym_renewals_due()` (cap 1000 since `20261118120000`) via `useRenewalsDue`, and
   WhatsApp numbers for just those members (`usePhones`, `contact_details`) instead of every membership and the
   full people list. Match trainers, By member: `gym_match_members_page()` (same rules as `membersToMatch`:
@@ -583,12 +585,17 @@ text that must stay English, or that it picks up but is never shown, goes in
   empty page is one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
   `supabase/tests/match-members-page.sql`, falls back to the full lists (`PGRST202`). By trainer loads people
   and links only while that tab is open.
+  Assign (workout plans): owners' and supervisors' "not your member yet" rows come from the same
+  `gym_match_members_page()` (all members, searched on the server, **Show more**) instead of `gym_people()`.
 - **Tap-to-save lists update optimistically** (Venkat, 2026-11-18): on Assign (workout plans) a tick or a day
   change shows at once (`useOptimisticWorkouts` + `withAssignment`/`withDays` in
   `src/features/workouts/optimistic.ts`), is undone if the server refuses, and only plan lists refresh after, in
   the background and once after a run of quick taps (`ASSIGN_PLAN_KEY`); trainer links and people refresh only
   when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
   stays busy until every refetch lands.
+- **The phone runs at most 5 requests at once to one host** (OkHttp's default on Android): a screen that
+  starts 9 queries makes the last ones wait, and the timing log counts that wait (Training → Coaching:
+  0-row calls at 1.5 s and 3 s, 2026-11-18). Fewer, combined calls per screen help more than faster SQL.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules, a coach's own weekly hours and diet plans) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
