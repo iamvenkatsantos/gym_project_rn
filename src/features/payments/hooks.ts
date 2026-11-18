@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
@@ -8,6 +14,7 @@ import { membershipKeys } from '@/features/memberships/hooks';
 import {
   fetchOnlinePayment,
   fetchOnlinePaymentsEnabled,
+  listPaymentHistoryPage,
   fetchReceipt,
   listOnlinePayments,
   quoteOnlinePayment,
@@ -59,6 +66,24 @@ export function useOnlinePayment(paymentId: string) {
     });
   }, [paid, queryClient]);
   return query;
+}
+
+/**
+ * The staff Payment history, one page of members at a time; `fetchNextPage` is the Show more
+ * button. Under the memberships key, so recording a payment refreshes it.
+ */
+export function usePaymentHistoryPage(gymId: string, query: string) {
+  const q = query.trim();
+  return useInfiniteQuery({
+    queryKey: [...membershipKeys.all, gymId, 'payment-history', q],
+    queryFn: ({ pageParam }) => listPaymentHistoryPage(gymId, q, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.members.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useOnlinePayments(gymId: string, memberId?: string) {
