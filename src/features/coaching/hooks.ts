@@ -26,10 +26,12 @@ export const coachingKeys = {
 export function useTrainerLinks(
   gymId: string,
   filter: { memberId?: string; trainerId?: string } = {},
+  { enabled = true }: { enabled?: boolean } = {},
 ) {
   return useQuery({
     queryKey: coachingKeys.links(gymId, filter),
     queryFn: () => listTrainerLinks(gymId, filter),
+    enabled,
   });
 }
 

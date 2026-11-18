@@ -571,6 +571,14 @@ text that must stay English, or that it picks up but is never shown, goes in
   open, status `created` under 20 min, count as paying now and sort first), name search there too;
   `usePaymentHistoryPage`, 50 a page, key under `membershipKeys.all` so recording a payment refreshes it, test
   `supabase/tests/payment-history-page.sql`. Falls back to summing the full lists (`PGRST202`).
+  Renewals: `listRenewalsPage()` filters `gym_latest_memberships()` by end date per section (ending this week
+  soonest first, ended in the last 30 days most recent first; same rules as `groupRenewals`), 50 a page each, and
+  mobiles for WhatsApp come only for the rows shown (`usePhones`, `contact_details`), not from everyone.
+  Match trainers, By member: `gym_match_members_page()` (same rules as `membersToMatch`: active signed-up
+  members, no trainer first; trainers' names and both chip counts with the search applied; an empty page is
+  one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
+  `supabase/tests/match-members-page.sql`. By trainer still loads everyone and every link, only on that tab.
+  Both fall back to the full lists (`PGRST202`).
   Owner/supervisor Home: `owner_dashboard_counts(gym, today)` (active members, renewals due, no trainer yet,
   birthdays today) and `gym_renewals_due()` (the 2 rows it lists) replace loading every person, membership and
   trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as

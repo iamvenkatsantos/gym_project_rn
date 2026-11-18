@@ -18,6 +18,8 @@ import {
   listGymMembers,
   listInvites,
   listPeople,
+  listPhones,
+  listMatchMembersPage,
   listPeoplePage,
   promoteToTrainer,
   removePerson,
@@ -120,6 +122,34 @@ export function usePeopleCounts(gymId: string) {
   return useQuery({
     queryKey: [...memberKeys.people(gymId), 'counts'],
     queryFn: () => getPeopleCounts(gymId),
+  });
+}
+
+/** Match trainers' members, a page at a time; `fetchNextPage` is Show more. */
+export function useMatchMembersPage(gymId: string, unmatched: boolean, query: string) {
+  const q = query.trim();
+  return useInfiniteQuery({
+    // Under people, so mapping a trainer (which invalidates members) refreshes it.
+    queryKey: [...memberKeys.people(gymId), 'match', unmatched, q],
+    queryFn: ({ pageParam }) => listMatchMembersPage(gymId, unmatched, q, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.members.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Mobile numbers for just these members, e.g. the rows a screen shows. */
+export function usePhones(gymId: string, userIds: string[]) {
+  const ids = [...new Set(userIds)].sort();
+  return useQuery({
+    queryKey: [...memberKeys.all, gymId, 'phones', ids.join(',')],
+    queryFn: () => listPhones(gymId, ids),
+    enabled: ids.length > 0,
+    // Show more adds ids; keep the numbers we have while the new set loads.
+    placeholderData: keepPreviousData,
   });
 }
 

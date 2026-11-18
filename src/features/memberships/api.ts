@@ -12,7 +12,15 @@ import {
   membershipOn,
   unusedPauseDays,
 } from '@/features/memberships/pause';
-import { addDays, coversToday, latestByMember, toIsoDate } from '@/features/memberships/rules';
+import {
+  addDays,
+  coversToday,
+  EXPIRING_SOON_DAYS,
+  groupRenewals,
+  latestByMember,
+  RECENTLY_ENDED_DAYS,
+  toIsoDate,
+} from '@/features/memberships/rules';
 import {
   delay,
   forGym,
@@ -298,6 +306,53 @@ export async function listLatestMemberships(
     total,
     nextOffset: offset + size < total ? offset + size : null,
   };
+}
+
+/** Renewals shown at a time on the Renewals screen, per section. */
+export const RENEWALS_PAGE_SIZE = 50;
+
+export type RenewalsKind = 'endingSoon' | 'ended';
+
+export type RenewalsPage = { memberships: Membership[]; total: number };
+
+/**
+ * One page of the Renewals screen's sections (groupRenewals): memberships ending within
+ * EXPIRING_SOON_DAYS, soonest first, or ended in the last RECENTLY_ENDED_DAYS, most recent first.
+ * Filters gym_latest_memberships() by end date instead of downloading every membership.
+ */
+export async function listRenewalsPage(
+  gymId: string,
+  kind: RenewalsKind,
+  offset: number,
+  today: Date = new Date(),
+): Promise<RenewalsPage> {
+  const size = RENEWALS_PAGE_SIZE;
+  const fromAll = async () => {
+    const grouped = groupRenewals(await listMemberships(gymId), today);
+    const list = kind === 'endingSoon' ? grouped.endingSoon : grouped.ended;
+    return { memberships: list.slice(offset, offset + size), total: list.length };
+  };
+  if (!supabase) return fromAll();
+  const day = toIsoDate(today);
+  let request = supabase
+    .rpc('gym_latest_memberships', { p_gym_id: gymId }, { count: 'exact' })
+    .select(MEMBERSHIP_COLUMNS)
+    .lte('starts_on', day);
+  request =
+    kind === 'endingSoon'
+      ? request
+          .gte('ends_on', day)
+          .lte('ends_on', addDays(day, EXPIRING_SOON_DAYS - 1))
+          .order('ends_on')
+      : request
+          .lt('ends_on', day)
+          .gte('ends_on', addDays(day, -RECENTLY_ENDED_DAYS))
+          .order('ends_on', { ascending: false });
+  const { data, error, count } = await request.order('id').range(offset, offset + size - 1);
+  // Before the latest-memberships migration: group every membership instead.
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as unknown as MembershipRow[];
+  return { memberships: rows.map(toMembership), total: count ?? offset + rows.length };
 }
 
 /** Creates a plan (planId null) or edits one. Existing memberships keep what was paid. */

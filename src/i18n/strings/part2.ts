@@ -868,5 +868,9 @@ export const part2: Record<string, readonly [string, string]> = {
   'No trainer yet': ['பயிற்சியாளர் இல்லை', 'अभी ट्रेनर नहीं'],
   'No trainer yet.': ['இன்னும் பயிற்சியாளர் இல்லை.', 'अभी कोई ट्रेनर नहीं।'],
   'No trainer {length}': ['பயிற்சியாளர் இல்லை {length}', 'कोई ट्रेनर नहीं {length}'],
+  'No trainer {unmatchedCount}': [
+    'பயிற்சியாளர் இல்லை {unmatchedCount}',
+    'कोई ट्रेनर नहीं {unmatchedCount}',
+  ],
   'No trainer {none}': ['பயிற்சியாளர் இல்லை {none}', 'कोई ट्रेनर नहीं {none}'],
 };

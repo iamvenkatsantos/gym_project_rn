@@ -10,6 +10,7 @@ import {
   listLatestMemberships,
   listMemberMemberships,
   listMemberships,
+  listRenewalsPage,
   listPlans,
   pauseMembership,
   recordMembership,
@@ -17,6 +18,7 @@ import {
   saveLoyaltyOffer,
   savePlan,
 } from '@/features/memberships/api';
+import type { RenewalsKind } from '@/features/memberships/api';
 import type { Role } from '@/features/auth/types';
 import { priceFor } from '@/features/memberships/offers';
 import { latestByMember, renewalStart } from '@/features/memberships/rules';
@@ -84,6 +86,19 @@ export function useLatestMemberships(gymId: string) {
     queryFn: ({ pageParam }) => listLatestMemberships(gymId, pageParam),
     initialPageParam: 0,
     getNextPageParam: (last) => last.nextOffset,
+  });
+}
+
+/** One section of the Renewals screen, a page at a time; `fetchNextPage` is Show more. */
+export function useRenewalsPage(gymId: string, kind: RenewalsKind) {
+  return useInfiniteQuery({
+    queryKey: [...membershipKeys.all, gymId, 'renewals', kind],
+    queryFn: ({ pageParam }) => listRenewalsPage(gymId, kind, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.memberships.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
   });
 }
 

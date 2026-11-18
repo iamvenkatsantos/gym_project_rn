@@ -21,6 +21,7 @@ import type { ImportRow } from '@/features/members/import-rules';
 import type { AdmissionDetails } from '@/features/onboarding/types';
 import type { PhotoPose } from '@/features/body/types';
 import { mobileLoginEmail } from '@/lib/mobile-login';
+import { membersToMatch } from '@/features/coaching/rules';
 import {
   coachRoles,
   countPeople,
@@ -811,4 +812,108 @@ export async function listCoachedMembers(
       plans: rows.filter((r) => r.member_id === link.memberId).map((r) => r.workout.title),
     }))
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+/**
+ * Mobile numbers for just these members (the Renewals screen's WhatsApp buttons), instead of the
+ * whole people list. contact_details RLS lets the gym's managers read them.
+ */
+export async function listPhones(gymId: string, userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  if (!supabase) {
+    const people = forGym(gymId, mockPeople).filter((p) => userIds.includes(p.id) && p.phone);
+    return delay(new Map(people.map((p) => [p.id, p.phone!])));
+  }
+  const rows = unwrap(
+    await supabase.from('contact_details').select('user_id, phone').in('user_id', userIds),
+  ) as { user_id: string; phone: string | null }[];
+  return new Map(rows.filter((r) => r.phone).map((r) => [r.user_id, r.phone!]));
+}
+
+/** Members shown at a time on Match trainers. */
+export const MATCH_PAGE_SIZE = 50;
+
+export type MatchMember = { person: GymPerson; trainerNames: string[] };
+
+export type MatchMembersPage = {
+  members: MatchMember[];
+  /** Matches for the chip picked, before paging. */
+  total: number;
+  /** The two chips, with the search applied. */
+  unmatchedCount: number;
+  membersCount: number;
+};
+
+type MatchRow = {
+  user_id: string | null;
+  full_name: string;
+  email: string | null;
+  avatar_path: string | null;
+  trainer_names: string[] | null;
+  total: number;
+  unmatched_count: number;
+  members_count: number;
+};
+
+/**
+ * One page of Match trainers' members (membersToMatch: active, signed up, no trainer first),
+ * with their trainers' names and the chip counts, from gym_match_members_page() instead of
+ * everyone plus every trainer link. Demo mode, and a server without the migration yet, work it
+ * out from the full lists here.
+ */
+export async function listMatchMembersPage(
+  gymId: string,
+  unmatched: boolean,
+  query: string,
+  offset: number,
+): Promise<MatchMembersPage> {
+  const size = MATCH_PAGE_SIZE;
+  const fromAll = async () => {
+    const [people, links] = await Promise.all([listPeople(gymId), listTrainerLinks(gymId)]);
+    const all = membersToMatch(people, links, query).map((person) => ({
+      person,
+      trainerNames: links.filter((l) => l.memberId === person.id).map((l) => l.trainerName),
+    }));
+    const noTrainer = all.filter((m) => m.trainerNames.length === 0);
+    const list = unmatched ? noTrainer : all;
+    return {
+      members: list.slice(offset, offset + size),
+      total: list.length,
+      unmatchedCount: noTrainer.length,
+      membersCount: all.length,
+    };
+  };
+  if (!supabase) return fromAll();
+  const { data, error } = await supabase.rpc('gym_match_members_page', {
+    p_gym_id: gymId,
+    p_unmatched: unmatched,
+    p_query: query.trim(),
+    p_limit: size,
+    p_offset: offset,
+  });
+  // Before the match-members migration: work it out from everyone instead.
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as MatchRow[];
+  const first = rows[0];
+  return {
+    // An empty page comes back as one row without a member, carrying the counts.
+    members: rows
+      .filter((r) => r.user_id)
+      .map((r) => ({
+        person: {
+          id: r.user_id!,
+          fullName: r.full_name,
+          email: r.email ?? '',
+          role: 'member',
+          status: 'active',
+          joinedAt: '',
+          avatarUrl: avatarUrl(r.avatar_path),
+          signedUp: true,
+        },
+        trainerNames: r.trainer_names ?? [],
+      })),
+    total: Number(first?.total ?? 0),
+    unmatchedCount: Number(first?.unmatched_count ?? 0),
+    membersCount: Number(first?.members_count ?? 0),
+  };
 }
