@@ -52,6 +52,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `supabase/templates/`        | Auth email templates, pasted into Supabase by hand; code only, no link or button (Venkat, 2026-11-18)                                                                        |
 | `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                   |
 | `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
+| `plugins/`                   | Our Expo config plugins (native config; a change needs a new build): `with-http-concurrency.js`                                                                              |
 | `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
 | `scripts/perf/`              | Performance audit tools (`api-bench.mjs`, `inventory.mjs`, `db-stats.sql`; README there) and reports in `docs/perf/`                                                         |
 
@@ -593,9 +594,12 @@ text that must stay English, or that it picks up but is never shown, goes in
   the background and once after a run of quick taps (`ASSIGN_PLAN_KEY`); trainer links and people refresh only
   when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
   stays busy until every refetch lands.
-- **The phone runs at most 5 requests at once to one host** (OkHttp's default on Android): a screen that
-  starts 9 queries makes the last ones wait, and the timing log counts that wait (Training → Coaching:
-  0-row calls at 1.5 s and 3 s, 2026-11-18). Fewer, combined calls per screen help more than faster SQL.
+- **Android runs up to 16 requests at once to one host** (from 1.2.4; Venkat, 2026-11-18). OkHttp's default is 5,
+  so a screen that started 9-11 queries made the rest wait, and the timing log counted that wait (Training →
+  Coaching: 0-row calls at 1.5 s and 3 s). `plugins/with-http-concurrency.js` sets React Native's
+  `OkHttpClientFactory` in `MainApplication.onCreate` (same builder, cookie jar and cache, a `Dispatcher` with 16
+  per host). Native: changing it needs a new build and an `expo.version` bump. Older builds keep 5, so fewer,
+  combined calls per screen still help.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules, a coach's own weekly hours and diet plans) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes

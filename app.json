@@ -2,7 +2,7 @@
   "expo": {
     "name": "CoreFit",
     "slug": "corefit",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "corefit",
@@ -92,7 +92,8 @@
           "cameraPermission": "CoreFit uses the camera to scan your gym's check-in QR and to take progress photos.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "./plugins/with-http-concurrency"
     ],
     "experiments": {
       "typedRoutes": true,
