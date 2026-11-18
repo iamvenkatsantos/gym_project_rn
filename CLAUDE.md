@@ -583,6 +583,12 @@ text that must stay English, or that it picks up but is never shown, goes in
   empty page is one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
   `supabase/tests/match-members-page.sql`, falls back to the full lists (`PGRST202`). By trainer loads people
   and links only while that tab is open.
+- **Tap-to-save lists update optimistically** (Venkat, 2026-11-18): on Assign (workout plans) a tick or a day
+  change shows at once (`useOptimisticWorkouts` + `withAssignment`/`withDays` in
+  `src/features/workouts/optimistic.ts`), is undone if the server refuses, and only plan lists refresh after, in
+  the background and once after a run of quick taps (`ASSIGN_PLAN_KEY`); trainer links and people refresh only
+  when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
+  stays busy until every refetch lands.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
