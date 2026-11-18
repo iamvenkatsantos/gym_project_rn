@@ -1,9 +1,9 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
-import { HeaderDoneButton } from '@/components/navigation/header-done-button';
 import { Icon } from '@/components/icon';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
@@ -37,10 +37,6 @@ export default function AssignMealPlanScreen() {
   if (!plan) {
     return (
       <Screen>
-        {/* Assigning saves on each tap; the tick just closes the screen, always in reach. */}
-        <Stack.Screen
-          options={{ headerRight: () => <HeaderDoneButton onPress={() => router.back()} /> }}
-        />
         <ThemedText themeColor="textSecondary">
           {plans.isPending ? 'Loading…' : 'Plan not found.'}
         </ThemedText>
@@ -50,10 +46,6 @@ export default function AssignMealPlanScreen() {
 
   return (
     <Screen>
-      {/* Assigning saves on each tap; the tick just closes the screen, always in reach. */}
-      <Stack.Screen
-        options={{ headerRight: () => <HeaderDoneButton onPress={() => router.back()} /> }}
-      />
       <View>
         <ThemedText type="label" themeColor="accent">
           Assign diet plan
@@ -155,6 +147,7 @@ export default function AssignMealPlanScreen() {
       {assign.error ? (
         <ThemedText themeColor="danger">Couldn&apos;t update: {assign.error.message}</ThemedText>
       ) : null}
+      <Button label="Done" variant="secondary" onPress={() => router.back()} />
     </Screen>
   );
 }
