@@ -578,7 +578,17 @@ text that must stay English, or that it picks up but is never shown, goes in
   Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
   Renewals screen: the same `gym_renewals_due()` (cap 1000 since `20261118120000`) via `useRenewalsDue`, and
   WhatsApp numbers for just those members (`usePhones`, `contact_details`) instead of every membership and the
-  full people list. Match trainers loads its lists whole but draws 50 rows at a time (**Show more**).
+  full people list. Match trainers, By member: `gym_match_members_page()` (same rules as `membersToMatch`:
+  active signed-up members, no trainer first; trainers' names and both chip counts with the search applied; an
+  empty page is one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
+  `supabase/tests/match-members-page.sql`, falls back to the full lists (`PGRST202`). By trainer loads people
+  and links only while that tab is open.
+- **Tap-to-save lists update optimistically** (Venkat, 2026-11-18): on Assign (workout plans) a tick or a day
+  change shows at once (`useOptimisticWorkouts` + `withAssignment`/`withDays` in
+  `src/features/workouts/optimistic.ts`), is undone if the server refuses, and only plan lists refresh after, in
+  the background and once after a run of quick taps (`ASSIGN_PLAN_KEY`); trainer links and people refresh only
+  when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
+  stays busy until every refetch lands.
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes

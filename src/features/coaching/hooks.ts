@@ -14,7 +14,8 @@ import { dietKeys } from '@/features/diet/keys';
 import { memberKeys } from '@/features/members/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
 import { setAssignment } from '@/features/workouts/api';
-import { workoutKeys } from '@/features/workouts/hooks';
+import { useOptimisticWorkouts, workoutKeys } from '@/features/workouts/hooks';
+import { withAssignment } from '@/features/workouts/optimistic';
 
 export const coachingKeys = {
   all: ['coaching'] as const,
@@ -26,10 +27,12 @@ export const coachingKeys = {
 export function useTrainerLinks(
   gymId: string,
   filter: { memberId?: string; trainerId?: string } = {},
+  { enabled = true }: { enabled?: boolean } = {},
 ) {
   return useQuery({
     queryKey: coachingKeys.links(gymId, filter),
     queryFn: () => listTrainerLinks(gymId, filter),
+    enabled,
   });
 }
 
@@ -69,14 +72,21 @@ export function useChangeTrainerLinks(
   });
 }
 
+const ASSIGN_PLAN_KEY = ['assign-plan'];
+
 /**
  * Assigns or unassigns a coach's plan. Owners and supervisors can assign to any
  * member: one they don't coach yet is mapped to them first, since plans only go
- * to a coach's own members.
+ * to a coach's own members. The tick shows at once (optimistic) and only the plan
+ * lists refresh after, in the background; trainer links and people refresh too only when this
+ * made the coach their trainer. Before, every tap waited for people, links, plans, diet plans
+ * and the inbox to download again (perf audit, 2026-11-18).
  */
 export function useAssignPlan(gymId: string, coachId: string) {
-  const invalidate = useInvalidateCoaching();
+  const queryClient = useQueryClient();
+  const optimistic = useOptimisticWorkouts();
   return useMutation({
+    mutationKey: ASSIGN_PLAN_KEY,
     mutationFn: async ({
       workoutId,
       memberId,
@@ -91,7 +101,21 @@ export function useAssignPlan(gymId: string, coachId: string) {
       if (assigned && mapFirst) await assignTrainer(gymId, memberId, coachId);
       await setAssignment(workoutId, memberId, assigned);
     },
-    onSettled: invalidate,
+    onMutate: async ({ workoutId, memberId, assigned }) => ({
+      undo: await optimistic((list) => withAssignment(list, workoutId, memberId, assigned)),
+    }),
+    onError: (_error, _vars, context) => context?.undo(),
+    // Not awaited, so the row is free again as soon as the save is done.
+    onSettled: (_data, _error, { assigned, mapFirst }) => {
+      // With quick taps on several members, refresh once after the last save, so a refetch
+      // can't briefly undo ticks that are still saving.
+      if (queryClient.isMutating({ mutationKey: ASSIGN_PLAN_KEY }) > 1) return;
+      const keys: readonly unknown[][] = [
+        [...workoutKeys.all],
+        ...(assigned && mapFirst ? [[...coachingKeys.all], [...memberKeys.all]] : []),
+      ];
+      for (const queryKey of keys) queryClient.invalidateQueries({ queryKey }).catch(() => {});
+    },
   });
 }
 

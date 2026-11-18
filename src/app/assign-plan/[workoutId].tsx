@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
@@ -138,19 +138,17 @@ export default function AssignPlanScreen() {
                           </ThemedText>
                         )}
                       </View>
-                      {saving ? (
-                        <ActivityIndicator color={theme.accent} />
-                      ) : (
-                        <View
-                          style={[
-                            styles.check,
-                            assigned
-                              ? { backgroundColor: theme.primary }
-                              : { borderColor: theme.border, borderWidth: 2 },
-                          ]}>
-                          {assigned ? <Icon name="checkmark" size={18} color="onPrimary" /> : null}
-                        </View>
-                      )}
+                      {/* The tick changes on tap; it's dimmed until the server has it. */}
+                      <View
+                        style={[
+                          styles.check,
+                          assigned
+                            ? { backgroundColor: theme.primary }
+                            : { borderColor: theme.border, borderWidth: 2 },
+                          saving && styles.saving,
+                        ]}>
+                        {assigned ? <Icon name="checkmark" size={18} color="onPrimary" /> : null}
+                      </View>
                     </Pressable>
                     {assigned ? (
                       <DayPicker
@@ -207,6 +205,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: {
+    opacity: 0.6,
+  },
+  saving: {
     opacity: 0.6,
   },
 });

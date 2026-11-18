@@ -9,6 +9,8 @@ import {
   setAssignmentDays,
   setCatchUpDays,
 } from '@/features/workouts/api';
+import { withDays } from '@/features/workouts/optimistic';
+import type { Workout } from '@/features/workouts/types';
 
 export const workoutKeys = {
   all: ['workouts'] as const,
@@ -60,8 +62,28 @@ export function useSetAssignment() {
   });
 }
 
+/**
+ * Changes plan lists in the cache straight away (Assign shows the change on tap) and gives back
+ * a way to undo it if the server refuses.
+ */
+export function useOptimisticWorkouts() {
+  const queryClient = useQueryClient();
+  return async (change: (list: Workout[]) => Workout[]) => {
+    await queryClient.cancelQueries({ queryKey: workoutKeys.all });
+    const before = queryClient.getQueriesData<Workout[]>({ queryKey: workoutKeys.all });
+    for (const [key, data] of before) {
+      // The catch-up days setting lives under the same key; only plan lists change.
+      if (Array.isArray(data)) queryClient.setQueryData(key, change(data));
+    }
+    return () => {
+      for (const [key, data] of before) queryClient.setQueryData(key, data);
+    };
+  };
+}
+
 export function useSetAssignmentDays() {
-  const invalidate = useInvalidateWorkouts();
+  const queryClient = useQueryClient();
+  const optimistic = useOptimisticWorkouts();
   return useMutation({
     mutationFn: ({
       workoutId,
@@ -72,7 +94,14 @@ export function useSetAssignmentDays() {
       memberId: string;
       days: number[];
     }) => setAssignmentDays(workoutId, memberId, days),
-    onSettled: invalidate,
+    onMutate: async ({ workoutId, memberId, days }) => ({
+      undo: await optimistic((list) => withDays(list, workoutId, memberId, days)),
+    }),
+    onError: (_error, _vars, context) => context?.undo(),
+    // Not awaited: the days already show, so the server's copy refreshes in the background.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: workoutKeys.all }).catch(() => {});
+    },
   });
 }
 

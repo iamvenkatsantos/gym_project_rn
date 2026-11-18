@@ -158,6 +158,10 @@ export const part1: Record<string, readonly [string, string]> = {
   'All branches': ['அனைத்து கிளைகளும்', 'सभी ब्रांच'],
   'All exercises': ['அனைத்து பயிற்சிகளும்', 'सभी एक्सरसाइज़'],
   'All members {length}': ['அனைத்து உறுப்பினர்கள் {length}', 'सभी सदस्य {length}'],
+  'All members {membersCount}': [
+    'அனைத்து உறுப்பினர்கள் {membersCount}',
+    'सभी सदस्य {membersCount}',
+  ],
   'All plans': ['அனைத்து திட்டங்களும்', 'सभी प्लान'],
   'All {all}': ['அனைத்தும் {all}', 'सभी {all}'],
   'All-out': ['முழு வேகம்', 'पूरी ताक़त'],
