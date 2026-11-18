@@ -1072,4 +1072,5 @@ export const part4: Record<string, readonly [string, string]> = {
   Pink: ['இளஞ்சிவப்பு', 'गुलाबी'],
   Purple: ['ஊதா', 'बैंगनी'],
   '{x} theme': ['{x} தீம்', '{x} थीम'],
+  'Done, {count} assigned': ['முடிந்தது, {count} ஒதுக்கப்பட்டது', 'हो गया, {count} असाइन'],
 };

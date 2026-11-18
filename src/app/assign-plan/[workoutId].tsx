@@ -1,10 +1,10 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
+import { HeaderDoneButton } from '@/components/navigation/header-done-button';
 import { QueryState } from '@/components/query-state';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
@@ -48,6 +48,17 @@ export default function AssignPlanScreen() {
 
   return (
     <Screen>
+      {/* Picks save on tap, so the header tick only closes the screen; it shows the count. */}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <HeaderDoneButton
+              count={workout.assignedMemberIds.length}
+              disabled={assign.isPending || setDays.isPending}
+            />
+          ),
+        }}
+      />
       <View>
         <ThemedText type="label" themeColor="accent">
           Assign plan
@@ -163,7 +174,6 @@ export default function AssignPlanScreen() {
           Couldn&apos;t update: {(assign.error ?? setDays.error)?.message}
         </ThemedText>
       ) : null}
-      <Button label="Done" variant="secondary" onPress={() => router.back()} />
     </Screen>
   );
 }
