@@ -90,3 +90,29 @@ type CountsRow = {
   no_trainer: number;
   birthdays_today: number;
 };
+
+/** The most the old function returned (before the cap went up), so a full page may be cut short. */
+const OLD_RENEWALS_CAP = 100;
+
+/**
+ * Everyone due for renewal (ending within a week, or ended in the last 30 days), soonest to end
+ * first, for the Renewals screen: one request instead of every membership. Falls back to the
+ * full list before the migrations are pushed.
+ */
+export async function listRenewalsDue(
+  gymId: string,
+  today: Date = new Date(),
+): Promise<Membership[]> {
+  const fromAllMemberships = async () => renewalsDue(await listMemberships(gymId), today);
+  if (!supabase) return fromAllMemberships();
+  const { data, error } = await supabase
+    .rpc('gym_renewals_due', { p_gym_id: gymId, p_today: toIsoDate(today), p_limit: 1000 })
+    .select(MEMBERSHIP_COLUMNS)
+    .order('ends_on')
+    .order('id');
+  if (error?.code === 'PGRST202') return fromAllMemberships();
+  const rows = unwrap({ data, error }) as unknown as MembershipRow[];
+  // The older function stops at 100; a full page may be cut short, so count it from the full list.
+  if (rows.length === OLD_RENEWALS_CAP) return fromAllMemberships();
+  return rows.map(toMembership);
+}

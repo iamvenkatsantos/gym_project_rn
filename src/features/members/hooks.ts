@@ -19,6 +19,7 @@ import {
   listInvites,
   listPeople,
   listPeoplePage,
+  listPhones,
   promoteToTrainer,
   removePerson,
   resendInvite,
@@ -112,6 +113,15 @@ export function usePeoplePage(gymId: string, filter: PeopleFilter, query: string
       return loaded < last.total ? loaded : undefined;
     },
     placeholderData: keepPreviousData,
+  });
+}
+
+/** Mobile numbers of just these people, for WhatsApp buttons; the list shows while they load. */
+export function usePhones(gymId: string, userIds: string[]) {
+  return useQuery({
+    queryKey: [...memberKeys.all, gymId, 'phones', userIds.join(',')],
+    queryFn: () => listPhones(gymId, userIds),
+    enabled: userIds.length > 0,
   });
 }
 

@@ -70,6 +70,9 @@ from public.gym_renewals_due('d1300000-0000-0000-0000-00000000000a', date '2026-
 \echo 'D3 the limit applies (expect 2 rows)'
 select count(*) from public.gym_renewals_due('d1300000-0000-0000-0000-00000000000a', date '2026-11-17', 2);
 
+\echo 'D3b The Renewals screen asks for up to 1000 (expect 5 rows)'
+select count(*) from public.gym_renewals_due('d1300000-0000-0000-0000-00000000000a', date '2026-11-17', 1000);
+
 \echo 'D4 29 Feb counts on 28 Feb in a year without one (expect 1, then 1 on a leap year 29 Feb, 0 on 28 Feb of that leap year)'
 select birthdays_today from public.owner_dashboard_counts('d1300000-0000-0000-0000-00000000000a', date '2027-02-28');
 select birthdays_today from public.owner_dashboard_counts('d1300000-0000-0000-0000-00000000000a', date '2028-02-29');

@@ -576,6 +576,9 @@ text that must stay English, or that it picks up but is never shown, goes in
   trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
   `memberships/rules.ts`, test `supabase/tests/owner-dashboard.sql`; falls back to the full lists on `PGRST202`).
   Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
+  Renewals screen: the same `gym_renewals_due()` (cap 1000 since `20261118120000`) via `useRenewalsDue`, and
+  WhatsApp numbers for just those members (`usePhones`, `contact_details`) instead of every membership and the
+  full people list. Match trainers loads its lists whole but draws 50 rows at a time (**Show more**).
 - **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
   details, trainer list and hours rules) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
   mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
