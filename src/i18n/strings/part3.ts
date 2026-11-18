@@ -733,6 +733,7 @@ export const part3: Record<string, readonly [string, string]> = {
   'Show all {length}': ['அனைத்து {length} ஐயும் காட்டு', 'सभी {length} दिखाएँ'],
   'Show demo': ['டெமோவைக் காட்டு', 'डेमो दिखाएँ'],
   'Show live QR': ['நேரலை QR காட்டு', 'लाइव QR दिखाएँ'],
+  'Show more': ['மேலும் காட்டு', 'और दिखाएँ'],
   'Show password': ['கடவுச்சொல்லைக் காட்டு', 'पासवर्ड दिखाएँ'],
   'Show {x} more': ['மேலும் {x} காட்டு', '{x} और दिखाएँ'],
   'Shown to your members so they can reach you.': [

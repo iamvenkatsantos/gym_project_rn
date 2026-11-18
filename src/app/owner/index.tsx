@@ -9,8 +9,6 @@ import { useGymReferrals } from '@/features/referrals/hooks';
 import { ShortcutGrid, type Shortcut } from '@/components/shortcut-grid';
 import { StatTile } from '@/components/stat-tile';
 import { Spacing } from '@/constants/theme';
-import { useDayAttendance } from '@/features/attendance/hooks';
-import { countByRole } from '@/features/attendance/rules';
 import { ClassRow } from '@/features/bookings/components/class-row';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { useUpcomingClasses } from '@/features/bookings/hooks';
@@ -41,12 +39,10 @@ export default function OwnerDashboardScreen() {
   const plans = usePlans(gym.gymId);
   const classes = useUpcomingClasses(gym.gymId);
   const requests = useTrainerRequests(gym.gymId);
-  const attendance = useDayAttendance(gym.gymId, 0);
   const enquiries = useEnquiries(gym.gymId);
   // Trainer hours and permissions are owners' only.
   const permissions = usePermissions(gym.gymId, undefined, gym.role === 'owner');
   const enquiryCounts = enquiries.data ? countEnquiries(enquiries.data) : undefined;
-  const present = attendance.data ? countByRole(attendance.data) : undefined;
 
   const referrals = useGymReferrals(gym.gymId);
   const activeCount = dashboard.data?.activeMembers;
@@ -143,14 +139,16 @@ export default function OwnerDashboardScreen() {
         />
         <StatTile
           label="Came today"
-          value={present?.member.present}
+          value={dashboard.data?.membersPresent}
           icon="log-in-outline"
           compact
           onPress={() => router.push('/attendance')}
         />
         <StatTile
           label="Trainers in"
-          value={present && `${present.trainer.present}/${present.trainer.total}`}
+          value={
+            dashboard.data && `${dashboard.data.trainersPresent}/${dashboard.data.trainersTotal}`
+          }
           icon="barbell-outline"
           compact
           onPress={() => router.push('/attendance')}

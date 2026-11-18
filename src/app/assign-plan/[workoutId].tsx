@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
 import { HeaderDoneButton } from '@/components/navigation/header-done-button';
@@ -15,7 +16,7 @@ import { canManageGym } from '@/features/auth/types';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
 import { useAssignPlan } from '@/features/coaching/hooks';
 import { assignableMembers } from '@/features/coaching/rules';
-import { useCoachedMembers, usePeople } from '@/features/members/hooks';
+import { useCoachedMembers, useDebounced, useMatchMembersPage } from '@/features/members/hooks';
 import { initials } from '@/features/trainers/rules';
 import { DayPicker } from '@/features/workouts/components/day-picker';
 import { useSetAssignmentDays, useWorkout } from '@/features/workouts/hooks';
@@ -31,10 +32,13 @@ export default function AssignPlanScreen() {
   // Owners and supervisors can coach anyone; trainers only their mapped members.
   const manager = canManageGym(gym.role);
   const members = useCoachedMembers(gym.gymId, profile.id);
-  const people = usePeople(gym.gymId, { enabled: manager });
+  const [query, setQuery] = useState('');
+  // Owners and supervisors also see members they don't coach yet: a page at a time from the
+  // server (searched there), instead of the whole people list.
+  const others = useMatchMembersPage(gym.gymId, false, useDebounced(query), { enabled: manager });
+  const otherPeople = others.data?.pages.flatMap((page) => page.members.map((m) => m.person)) ?? [];
   const assign = useAssignPlan(gym.gymId, profile.id);
   const setDays = useSetAssignmentDays();
-  const [query, setQuery] = useState('');
 
   if (!workout) {
     return (
@@ -85,7 +89,7 @@ export default function AssignPlanScreen() {
         emptyText="No members matched with you yet. Ask the owner or a supervisor to assign some.">
         {(list) => {
           const q = query.trim().toLowerCase();
-          const matches = assignableMembers(list, manager ? people.data : []).filter((m) =>
+          const matches = assignableMembers(list, manager ? otherPeople : []).filter((m) =>
             m.fullName.toLowerCase().includes(q),
           );
           if (matches.length === 0) {
@@ -167,6 +171,14 @@ export default function AssignPlanScreen() {
           );
         }}
       </QueryState>
+      {manager && others.hasNextPage ? (
+        <Button
+          label="Show more"
+          variant="secondary"
+          loading={others.isFetchingNextPage}
+          onPress={() => others.fetchNextPage()}
+        />
+      ) : null}
       {assign.error || setDays.error ? (
         <ThemedText themeColor="danger">
           Couldn&apos;t update: {(assign.error ?? setDays.error)?.message}
