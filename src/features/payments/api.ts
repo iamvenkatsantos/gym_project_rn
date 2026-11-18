@@ -2,6 +2,8 @@ import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 
 import { fetchGymDetails } from '@/features/gyms/api';
 import { hasReceipt, toReceipt, type Receipt, type ReceiptRow } from '@/features/payments/receipt';
+import { listMemberships } from '@/features/memberships/api';
+import { paymentsByMember, searchMembers, type MemberPayments } from '@/features/payments/history';
 import type { OnlinePayment, PaymentQuote, StartedPayment } from '@/features/payments/types';
 import { delay, MOCK_GYM_ID, mockMemberships } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -165,4 +167,63 @@ export async function fetchReceipt(membershipId: string): Promise<Receipt | null
     await supabase.rpc('membership_receipt', { p_membership_id: membershipId }),
   ) as ReceiptRow | null;
   return row ? toReceipt(row) : null;
+}
+
+/** Members shown at a time on the staff Payment history screen, like People. */
+export const PAYMENT_HISTORY_PAGE_SIZE = 50;
+
+export type PaymentHistoryPage = { members: MemberPayments[]; total: number };
+
+type PaymentHistoryRow = {
+  member_id: string;
+  member_name: string;
+  payments: number;
+  total_cents: number;
+  currency: string;
+  last_paid_at: string | null;
+  pending: number;
+  total: number;
+};
+
+/**
+ * One page of the staff Payment history: each member's payments summed on the server
+ * (gym_payment_history_page, same rules as paymentsByMember), searched by name there too.
+ * Demo mode, and a server without the migration yet, sum the full lists here instead.
+ */
+export async function listPaymentHistoryPage(
+  gymId: string,
+  query: string,
+  offset: number,
+): Promise<PaymentHistoryPage> {
+  const size = PAYMENT_HISTORY_PAGE_SIZE;
+  const fromAll = async () => {
+    const [memberships, online] = await Promise.all([
+      listMemberships(gymId),
+      listOnlinePayments(gymId),
+    ]);
+    const all = searchMembers(paymentsByMember(memberships, online), query);
+    return { members: all.slice(offset, offset + size), total: all.length };
+  };
+  if (!supabase) return fromAll();
+  const { data, error } = await supabase.rpc('gym_payment_history_page', {
+    p_gym_id: gymId,
+    p_query: query.trim(),
+    p_limit: size,
+    p_offset: offset,
+  });
+  // Before the payment history migration: page through everything instead.
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as PaymentHistoryRow[];
+  return {
+    members: rows.map((r) => ({
+      memberId: r.member_id,
+      memberName: r.member_name,
+      payments: r.payments,
+      totalCents: Number(r.total_cents),
+      currency: r.currency,
+      lastPaidAt: r.last_paid_at ?? '',
+      pending: r.pending,
+    })),
+    total: rows.length ? Number(rows[0].total) : 0,
+  };
 }
