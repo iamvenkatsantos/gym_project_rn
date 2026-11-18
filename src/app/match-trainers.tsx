@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { QueryState } from '@/components/query-state';
@@ -27,6 +28,8 @@ import { activeCoaches, coachLabel } from '@/features/members/rules';
 
 type Tab = 'members' | 'trainers';
 
+const MEMBERS_SHOWN = 50;
+
 /**
  * One place to match members with trainers: members without one come first, and each
  * trainer opens a list to add several members at once.
@@ -41,6 +44,8 @@ export default function MatchTrainersScreen() {
   const [tab, setTab] = useState<Tab>(params.tab === 'trainers' ? 'trainers' : 'members');
   const [onlyUnmatched, setOnlyUnmatched] = useState(true);
   const [query, setQuery] = useState('');
+  // Rows drawn at a time; the lists are already loaded, so this only cuts drawing 300 rows at once.
+  const [visible, setVisible] = useState(MEMBERS_SHOWN);
   const waiting = requests.data ? pendingRequests(requests.data) : [];
 
   return (
@@ -96,7 +101,10 @@ export default function MatchTrainersScreen() {
 
           const members = membersToMatch(list, allLinks, query);
           const unmatched = members.filter((m) => trainersOf(allLinks, m.id).length === 0);
-          const shown = onlyUnmatched ? unmatched : members;
+          const all = onlyUnmatched ? unmatched : members;
+          const shown = all.slice(0, visible);
+          const loaded = shown.length;
+          const total = all.length;
           return (
             <>
               {waiting.length ? (
@@ -121,7 +129,10 @@ export default function MatchTrainersScreen() {
                 label="Find a member"
                 placeholder="Name or email"
                 value={query}
-                onChangeText={setQuery}
+                onChangeText={(text) => {
+                  setQuery(text);
+                  setVisible(MEMBERS_SHOWN);
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
@@ -132,12 +143,18 @@ export default function MatchTrainersScreen() {
                 <Chip
                   label={`No trainer ${unmatched.length}`}
                   selected={onlyUnmatched}
-                  onPress={() => setOnlyUnmatched(true)}
+                  onPress={() => {
+                    setOnlyUnmatched(true);
+                    setVisible(MEMBERS_SHOWN);
+                  }}
                 />
                 <Chip
                   label={`All members ${members.length}`}
                   selected={!onlyUnmatched}
-                  onPress={() => setOnlyUnmatched(false)}
+                  onPress={() => {
+                    setOnlyUnmatched(false);
+                    setVisible(MEMBERS_SHOWN);
+                  }}
                 />
               </ScrollView>
               {shown.length === 0 ? (
@@ -164,6 +181,13 @@ export default function MatchTrainersScreen() {
                   ))}
                 </Card>
               )}
+              {total > loaded ? (
+                <Button
+                  label={`Show more (${loaded} of ${total})`}
+                  variant="secondary"
+                  onPress={() => setVisible((n) => n + MEMBERS_SHOWN)}
+                />
+              ) : null}
             </>
           );
         }}
