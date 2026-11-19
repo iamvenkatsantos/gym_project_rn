@@ -749,6 +749,7 @@ export const part3: Record<string, readonly [string, string]> = {
     'अब से {normalizeEmail} से साइन इन करें।',
   ],
   'Sign out': ['வெளியேறு', 'साइन आउट'],
+  'Sign out?': ['வெளியேற வேண்டுமா?', 'साइन आउट करें?'],
   Skip: ['தவிர்', 'छोड़ें'],
   'Sleep well and drink enough water.': [
     'நன்றாகத் தூங்கி, போதுமான தண்ணீர் குடியுங்கள்.',

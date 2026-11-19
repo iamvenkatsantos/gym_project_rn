@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
 import { BranchSwitcher } from '@/features/branches/components/branch-switcher';
-import { useSignOut } from '@/features/auth/use-sign-out';
+import { useConfirmSignOut } from '@/features/auth/use-sign-out';
 import { PlanAndPay } from '@/features/subscription/components/plan-and-pay';
 import { useSubscription } from '@/features/subscription/hooks';
 import { canPayPlanInApp } from '@/features/subscription/platform';
@@ -22,7 +22,7 @@ import { canPayPlanInApp } from '@/features/subscription/platform';
 export default function PlanLockedScreen() {
   const gym = useActiveGym();
   const isOwner = gym.role === 'owner';
-  const signOut = useSignOut();
+  const signOut = useConfirmSignOut();
 
   return (
     <Screen>

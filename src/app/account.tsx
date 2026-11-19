@@ -20,7 +20,7 @@ import { AppearancePicker } from '@/features/appearance/components/appearance-pi
 import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/auth-store';
 import { ProfileHeader } from '@/features/auth/components/profile-header';
-import { useSignOut } from '@/features/auth/use-sign-out';
+import { useConfirmSignOut } from '@/features/auth/use-sign-out';
 import { branchLabel } from '@/features/branches/rules';
 import { GymInvitesCard } from '@/features/gym-invites/components/gym-invites-card';
 import { useCanSetUpGym, useIsPlatformAdmin } from '@/features/gyms/hooks';
@@ -38,7 +38,7 @@ export default function AccountScreen() {
   const setActiveGym = useAuthStore((s) => s.setActiveGym);
   const inAdmin = useAuthStore(selectInAdmin);
   const setAdminMode = useAuthStore((s) => s.setAdminMode);
-  const signOut = useSignOut();
+  const signOut = useConfirmSignOut();
   // People an admin invited to run a gym can set up another one from here.
   const canSetUpGym = useCanSetUpGym();
   // CoreFit admins switch between the admin view and any gym they belong to.

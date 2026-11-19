@@ -2,6 +2,7 @@ import { signOut } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { unregisterForPush } from '@/features/notifications/push';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
+import { alert } from '@/i18n/alert';
 import { queryClient } from '@/lib/query-client';
 
 export function useSignOut() {
@@ -17,4 +18,15 @@ export function useSignOut() {
     useAuthStore.getState().setNeedsPassword(false);
     setProfile(null);
   };
+}
+
+/** Sign out after the person confirms, so a stray tap doesn't log them out. */
+export function useConfirmSignOut() {
+  const signOut = useSignOut();
+
+  return () =>
+    alert('Sign out?', undefined, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
+    ]);
 }

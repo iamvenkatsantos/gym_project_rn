@@ -10,7 +10,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, withAlpha } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
-import { useSignOut } from '@/features/auth/use-sign-out';
+import { useConfirmSignOut } from '@/features/auth/use-sign-out';
 import { useProgressPhotos } from '@/features/body/hooks';
 import type { PhotoPose } from '@/features/body/types';
 import { BirthDateField } from '@/features/birthdays/components/birth-date-field';
@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
   const theme = useTheme();
   const profile = useProfile();
   const gym = useActiveGym();
-  const signOut = useSignOut();
+  const signOut = useConfirmSignOut();
   const uploaded = useProgressPhotos(gym.gymId, profile.id);
   const complete = useCompleteOnboarding(gym.gymId, profile.id);
   const [texts, setTexts] = useState<OnboardingTexts>({
