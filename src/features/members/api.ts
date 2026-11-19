@@ -12,6 +12,7 @@ import type {
   InviteByCode,
   InviteResult,
   InviteRole,
+  PeopleFilter,
   ResendChannel,
   ResendOutcome,
 } from '@/features/members/types';
@@ -20,8 +21,11 @@ import type { ImportRow } from '@/features/members/import-rules';
 import type { AdmissionDetails } from '@/features/onboarding/types';
 import type { PhotoPose } from '@/features/body/types';
 import { mobileLoginEmail } from '@/lib/mobile-login';
+import { membersToMatch } from '@/features/coaching/rules';
 import {
   coachRoles,
+  countPeople,
+  filterPeople,
   normalizeEmail,
   normalizeInviteCode,
   sortCoaches,
@@ -130,14 +134,8 @@ export async function inviteHasAccount(
   ) as boolean;
 }
 
-export async function listPeople(gymId: string): Promise<GymPerson[]> {
-  if (!supabase) {
-    return delay(
-      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
-    );
-  }
-  const rows = unwrap(await supabase.rpc('gym_people', { p_gym_id: gymId })) as PersonRow[];
-  return rows.map((r) => ({
+function toPerson(r: PersonRow): GymPerson {
+  return {
     id: r.user_id,
     fullName: r.full_name || r.email || 'Unnamed',
     email: r.email ?? '',
@@ -151,7 +149,71 @@ export async function listPeople(gymId: string): Promise<GymPerson[]> {
     avatarUrl: avatarUrl(r.avatar_path),
     signedUp: r.signed_up ?? true,
     dateOfBirth: r.date_of_birth ?? null,
-  }));
+  };
+}
+
+export async function listPeople(gymId: string): Promise<GymPerson[]> {
+  if (!supabase) {
+    return delay(
+      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    );
+  }
+  const rows = unwrap(await supabase.rpc('gym_people', { p_gym_id: gymId })) as PersonRow[];
+  return rows.map(toPerson);
+}
+
+/** People shown per page on the People screen. */
+export const PEOPLE_PAGE_SIZE = 50;
+
+export type PeoplePage = { people: GymPerson[]; total: number };
+
+/** One page of people, filtered and searched on the server (gym_people_page). */
+export async function listPeoplePage(
+  gymId: string,
+  filter: PeopleFilter,
+  query: string,
+  offset: number,
+): Promise<PeoplePage> {
+  if (!supabase) {
+    const all = filterPeople(
+      [...forGym(gymId, mockPeople)].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+      filter,
+      query,
+    );
+    return delay({ people: all.slice(offset, offset + PEOPLE_PAGE_SIZE), total: all.length });
+  }
+  const rows = unwrap(
+    await supabase.rpc('gym_people_page', {
+      p_gym_id: gymId,
+      p_filter: filter,
+      p_query: query.trim(),
+      p_limit: PEOPLE_PAGE_SIZE,
+      p_offset: offset,
+    }),
+  ) as (PersonRow & { total: number })[];
+  return { people: rows.map(toPerson), total: rows.length ? Number(rows[0].total) : 0 };
+}
+
+/** The People filter chip counts (gym_people_counts). */
+export async function getPeopleCounts(gymId: string): Promise<Record<PeopleFilter, number>> {
+  if (!supabase) return delay(countPeople(forGym(gymId, mockPeople)));
+  const rows = unwrap(await supabase.rpc('gym_people_counts', { p_gym_id: gymId })) as {
+    everyone: number;
+    members: number;
+    trainers: number;
+    supervisors: number;
+    owners: number;
+    suspended: number;
+  }[];
+  const r = rows[0];
+  return {
+    all: Number(r?.everyone ?? 0),
+    member: Number(r?.members ?? 0),
+    trainer: Number(r?.trainers ?? 0),
+    supervisor: Number(r?.supervisors ?? 0),
+    owner: Number(r?.owners ?? 0),
+    suspended: Number(r?.suspended ?? 0),
+  };
 }
 
 export async function listInvites(gymId: string): Promise<GymInvite[]> {
@@ -750,4 +812,110 @@ export async function listCoachedMembers(
       plans: rows.filter((r) => r.member_id === link.memberId).map((r) => r.workout.title),
     }))
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+/** Mobile numbers for the given people (for WhatsApp buttons), by id; managers can read them. */
+export async function listPhones(
+  gymId: string,
+  userIds: string[],
+): Promise<Record<string, string | null>> {
+  if (userIds.length === 0) return {};
+  if (!supabase) {
+    const people = await listPeople(gymId);
+    return Object.fromEntries(
+      people.filter((p) => userIds.includes(p.id)).map((p) => [p.id, p.phone ?? null]),
+    );
+  }
+  const rows = unwrap(
+    await supabase.from('contact_details').select('user_id, phone').in('user_id', userIds),
+  ) as unknown as { user_id: string; phone: string | null }[];
+  return Object.fromEntries(rows.map((r) => [r.user_id, r.phone]));
+}
+
+/** Members shown at a time on Match trainers. */
+export const MATCH_PAGE_SIZE = 50;
+
+export type MatchMember = { person: GymPerson; trainerNames: string[] };
+
+export type MatchMembersPage = {
+  members: MatchMember[];
+  /** Matches for the chip picked, before paging. */
+  total: number;
+  /** The two chips, with the search applied. */
+  unmatchedCount: number;
+  membersCount: number;
+};
+
+type MatchRow = {
+  user_id: string | null;
+  full_name: string;
+  email: string | null;
+  avatar_path: string | null;
+  trainer_names: string[] | null;
+  total: number;
+  unmatched_count: number;
+  members_count: number;
+};
+
+/**
+ * One page of Match trainers' members (membersToMatch: active, signed up, no trainer first),
+ * with their trainers' names and the chip counts, from gym_match_members_page() instead of
+ * everyone plus every trainer link. Demo mode, and a server without the migration yet, work it
+ * out from the full lists here.
+ */
+export async function listMatchMembersPage(
+  gymId: string,
+  unmatched: boolean,
+  query: string,
+  offset: number,
+): Promise<MatchMembersPage> {
+  const size = MATCH_PAGE_SIZE;
+  const fromAll = async () => {
+    const [people, links] = await Promise.all([listPeople(gymId), listTrainerLinks(gymId)]);
+    const all = membersToMatch(people, links, query).map((person) => ({
+      person,
+      trainerNames: links.filter((l) => l.memberId === person.id).map((l) => l.trainerName),
+    }));
+    const noTrainer = all.filter((m) => m.trainerNames.length === 0);
+    const list = unmatched ? noTrainer : all;
+    return {
+      members: list.slice(offset, offset + size),
+      total: list.length,
+      unmatchedCount: noTrainer.length,
+      membersCount: all.length,
+    };
+  };
+  if (!supabase) return fromAll();
+  const { data, error } = await supabase.rpc('gym_match_members_page', {
+    p_gym_id: gymId,
+    p_unmatched: unmatched,
+    p_query: query.trim(),
+    p_limit: size,
+    p_offset: offset,
+  });
+  // Before the match-members migration: work it out from everyone instead.
+  if (error?.code === 'PGRST202') return fromAll();
+  const rows = unwrap({ data, error }) as MatchRow[];
+  const first = rows[0];
+  return {
+    // An empty page comes back as one row without a member, carrying the counts.
+    members: rows
+      .filter((r) => r.user_id)
+      .map((r) => ({
+        person: {
+          id: r.user_id!,
+          fullName: r.full_name,
+          email: r.email ?? '',
+          role: 'member',
+          status: 'active',
+          joinedAt: '',
+          avatarUrl: avatarUrl(r.avatar_path),
+          signedUp: true,
+        },
+        trainerNames: r.trainer_names ?? [],
+      })),
+    total: Number(first?.total ?? 0),
+    unmatchedCount: Number(first?.unmatched_count ?? 0),
+    membersCount: Number(first?.members_count ?? 0),
+  };
 }

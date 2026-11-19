@@ -872,8 +872,10 @@ export const part4: Record<string, readonly [string, string]> = {
   '{length} in this plan': ['இந்தத் திட்டத்தில் {length}', 'इस प्लान में {length}'],
   '{length} logged': ['{length} பதிவானது', '{length} दर्ज'],
   '{length} members': ['{length} உறுப்பினர்கள்', '{length} सदस्य'],
+  '{renewalCount} members': ['{renewalCount} உறுப்பினர்கள்', '{renewalCount} सदस्य'],
   '{length} on this plan': ['இந்தத் திட்டத்தில் {length}', 'इस प्लान पर {length}'],
   '{length} paid': ['{length} செலுத்தியவர்', '{length} भुगतान किया'],
+  '{total} paid': ['{total} செலுத்தியவர்', '{total} भुगतान किया'],
   '{length} to do': ['செய்ய வேண்டியவை {length}', 'करने को {length}'],
   '{length} total': ['மொத்தம் {length}', 'कुल {length}'],
   '{length} upcoming': ['{length} வரவிருக்கும்', '{length} आने वाले'],
@@ -1070,4 +1072,9 @@ export const part4: Record<string, readonly [string, string]> = {
   Pink: ['இளஞ்சிவப்பு', 'गुलाबी'],
   Purple: ['ஊதா', 'बैंगनी'],
   '{x} theme': ['{x} தீம்', '{x} थीम'],
+  'Done, {count} assigned': ['முடிந்தது, {count} ஒதுக்கப்பட்டது', 'हो गया, {count} असाइन'],
+  'You’ll need your password to sign in again.': [
+    'மீண்டும் உள்நுழைய உங்கள் கடவுச்சொல் தேவை.',
+    'फिर से साइन इन करने के लिए पासवर्ड चाहिए।',
+  ],
 };

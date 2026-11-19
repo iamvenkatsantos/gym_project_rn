@@ -18,6 +18,14 @@ export const READ_RPCS = new Set([
   'member_insights',
   'busiest_hours',
   'gym_people',
+  'gym_people_page',
+  'gym_people_counts',
+  'gym_latest_memberships',
+  'owner_dashboard_counts',
+  'owner_attendance_counts',
+  'gym_renewals_due',
+  'gym_payment_history_page',
+  'gym_match_members_page',
   'membership_receipt',
   'history_gyms',
   'my_referrals',
@@ -169,6 +177,8 @@ export async function buildCalls(ctx) {
     if (STAFF.includes(role))
       out.push(
         rpc('gym_people', { p_gym_id: gymId }),
+        rpc('gym_people_page', { p_gym_id: gymId, p_filter: 'all', p_query: '', p_limit: 50, p_offset: 0 }),
+        rpc('gym_people_counts', { p_gym_id: gymId }),
         rpc('gym_attendance', { p_gym_id: gymId, p_days_ago: 0 }),
         rpc('attendance_report', { p_gym_id: gymId, p_days: 7 }),
       );
@@ -221,6 +231,11 @@ export async function buildCalls(ctx) {
   }
   if (STAFF.includes(role)) {
     out.push(
+      rpc('owner_dashboard_counts', { p_gym_id: gymId, p_today: day() }),
+      rpc('owner_attendance_counts', { p_gym_id: gymId }),
+      rpc('gym_renewals_due', { p_gym_id: gymId, p_today: day(), p_limit: 2 }),
+      rpc('gym_payment_history_page', { p_gym_id: gymId, p_query: '', p_limit: 50, p_offset: 0 }),
+      rpc('gym_match_members_page', { p_gym_id: gymId, p_unmatched: true, p_query: '', p_limit: 50, p_offset: 0 }),
       rpc('gym_moved_members', { p_gym_id: gymId }),
       get(
         'gym_invites (pending)',

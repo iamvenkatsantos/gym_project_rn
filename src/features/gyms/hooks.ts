@@ -5,6 +5,7 @@ import { useAuthStore } from '@/features/auth/auth-store';
 import { canSetUpGym, createGym, fetchGymDetails, updateGymDetails } from '@/features/gyms/api';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
+import { STATIC_STALE_TIME } from '@/lib/query-client';
 
 export const gymKeys = {
   all: ['gyms'] as const,
@@ -24,7 +25,11 @@ export function useCanSetUpGym() {
 }
 
 export function useGymDetails(gymId: string) {
-  return useQuery({ queryKey: gymKeys.details(gymId), queryFn: () => fetchGymDetails(gymId) });
+  return useQuery({
+    queryKey: gymKeys.details(gymId),
+    queryFn: () => fetchGymDetails(gymId),
+    staleTime: STATIC_STALE_TIME,
+  });
 }
 
 /**

@@ -49,7 +49,7 @@ scheme `corefit://`. The app is called **CoreFit** (`expo.name`, renamed from Co
 | `supabase/migrations/`       | One timestamped file per change; never edit a pushed migration                                                                                                               |
 | `supabase/functions/`        | `invite-member`, `accept-invite`, `reset-password`, `join`, `import-members`, `send-push`, `create-payment`, `razorpay-webhook`, `delete-account`; shared code in `_shared/` |
 | `supabase/tests/`            | SQL checks run on plain Postgres (see README "Database checks")                                                                                                              |
-| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand                                                                                                                           |
+| `supabase/templates/`        | Auth email templates, pasted into Supabase by hand; code only, no link or button (Venkat, 2026-11-18)                                                                        |
 | `infra/api-proxy/`           | Cloudflare Worker behind `api.vinven.net`, the app's Supabase URL; pasted into Cloudflare by hand, plus a WAF rate-limit rule (its README)                                   |
 | `infra/updates-server/`      | Our over-the-air update server on `updates.vinven.net` (Worker + R2, also runs on Node); deployed with `npx wrangler deploy`                                                 |
 | `scripts/ota.mjs`            | `npm run ota`: publish, list and roll back over-the-air updates                                                                                                              |
@@ -229,7 +229,9 @@ person, their gym's managers and, for members, their mapped trainers) and may ad
 Photos live in the public `avatars` bucket at `<user id>/<random>.<ext>` (`profiles.avatar_path`,
 checked to sit in the person's own folder); progress photos stay private. Anyone edits their photo,
 name and mobile on `edit-profile` (tap the profile card, or Edit profile on Profile/Account). Use
-`TrainerAvatar` with `url` to show a photo with initials as the fallback. The person screen has
+`TrainerAvatar` with `url` to show a photo with initials as the fallback. The header's Account button shows the
+person's photo when they have one (`AccountButton`), else the profile icon. Every **Sign out** button asks first
+in the app's own dialog (`useConfirmSignOut`); `useSignOut` stays for flows that sign out on purpose (set-password's Cancel). The person screen has
 **Call** and **WhatsApp** buttons from the mobile on file (`callUrl`, `whatsappUrl`).
 
 **Birthdays.** Date of birth lives in `contact_details.date_of_birth` (same readers as the mobile).
@@ -482,7 +484,10 @@ reads and the `READ_RPCS` allow-list in `manifest.mjs`, one request at a time, 2
 `api.vinven.net` with the anon key, aborts on any error or p95 over 5 s). Writes and edge functions
 are measured on develop only. Add a new read RPC to `READ_RPCS` only after checking its body writes
 nothing. Credentials come from `PERF_*` env vars; never commit them, ids or tokens. Measurement code
-in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data.
+in the app must sit behind `EXPO_PUBLIC_PERF_LOG` and log no personal data: `src/lib/perf-log.ts` times each API
+request (route/API name, ms, KB; `perfFetch` wraps the Supabase fetch), `usePerfScreen` in `Screen` times each
+screen until its queries settle, and Account shows **Share timing log** only when the flag is on. Only the EAS
+`perf` profile sets the flag (own update channel `perf`, never `develop` or `main`), so no store or OTA build has it.
 
 **Languages** (Venkat, 2026-11-17): the app speaks English, Tamil and Hindi (`src/i18n/`), more
 Indian languages later. The person picks one on Sign in (chips at the top), Account or member
@@ -551,6 +556,59 @@ text that must stay English, or that it picks up but is never shown, goes in
   and Add email (`email_change`) use `ResendCodeButton` (`src/features/auth/components/`), and
   invites use the Invited list's resend. One per email a minute (`resend.ts`, Supabase's own limit);
   a new screen that waits on an emailed code must offer it too.
+- **Long lists are paged** (Venkat, 2026-11-17): a list that grows with the gym loads one page at a time
+  (`useInfiniteQuery`, **Show more** button), with filter, search and counts on the server, so a gym of 300
+  doesn't download everyone to open a screen. People: `gym_people_page()` + `gym_people_counts()`
+  (`usePeoplePage`, `usePeopleCounts`, 50 a page, search debounced 300 ms; same rows and order as `gym_people()`,
+  test `supabase/tests/people-paging.sql`). `gym_people()` stays for older apps and for pickers that need
+  everyone. Page keys sit under `memberKeys.people(gymId)`, so existing invalidations cover them. Keep the
+  mock path in step (`listPeoplePage`).
+  Payments tab Members: `gym_latest_memberships()` (each member's latest membership as `memberships` rows,
+  runs as the caller so RLS applies; the app embeds plan/member/pauses and pages with `order` + `range`,
+  `count: 'exact'` for the total), `useLatestMemberships`, 50 a page, ending soonest first, test
+  `supabase/tests/latest-memberships.sql`. Falls back to the full list until the migration is pushed
+  (`PGRST202`).
+  Payment history (staff): `gym_payment_history_page()` sums each member's payments on the server (same rules
+  as `paymentsByMember`: every membership on the branch's plans, paid at = `created_at`; in-app payments still
+  open, status `created` under 20 min, count as paying now and sort first), name search there too;
+  `usePaymentHistoryPage`, 50 a page, key under `membershipKeys.all` so recording a payment refreshes it, test
+  `supabase/tests/payment-history-page.sql`. Falls back to summing the full lists (`PGRST202`).
+  Owner/supervisor Home: `owner_dashboard_counts(gym, today)` (active members, renewals due, no trainer yet,
+  birthdays today) and `gym_renewals_due()` (the 2 rows it lists) replace loading every person, membership and
+  trainer link (`useOwnerDashboard`, `src/features/dashboard/`; `today` is the phone's date, same status rules as
+  `memberships/rules.ts`, test `supabase/tests/owner-dashboard.sql`; falls back to the full lists on `PGRST202`).
+  Never stale (`staleTime: 0`), because trainer links and birthdays change it without touching the memberships key.
+  "Came today" and "Trainers in" come from `owner_attendance_counts()` (counts `gym_attendance(gym, 0)` like
+  `countByRole`), so Home no longer downloads today's attendance list either.
+  Renewals screen: the same `gym_renewals_due()` (cap 1000 since `20261118120000`) via `useRenewalsDue`, and
+  WhatsApp numbers for just those members (`usePhones`, `contact_details`) instead of every membership and the
+  full people list. Match trainers, By member: `gym_match_members_page()` (same rules as `membersToMatch`:
+  active signed-up members, no trainer first; trainers' names and both chip counts with the search applied; an
+  empty page is one row with a null `user_id` carrying the counts), `useMatchMembersPage`, 50 a page, test
+  `supabase/tests/match-members-page.sql`, falls back to the full lists (`PGRST202`). By trainer loads people
+  and links only while that tab is open.
+  Assign (workout plans): owners' and supervisors' "not your member yet" rows come from the same
+  `gym_match_members_page()` (all members, searched on the server, **Show more**) instead of `gym_people()`.
+- **Tap-to-save lists update optimistically** (Venkat, 2026-11-18): on Assign (workout plans) a tick or a day
+  change shows at once (`useOptimisticWorkouts` + `withAssignment`/`withDays` in
+  `src/features/workouts/optimistic.ts`), is undone if the server refuses, and only plan lists refresh after, in
+  the background and once after a run of quick taps (`ASSIGN_PLAN_KEY`); trainer links and people refresh only
+  when assigning made the coach their trainer. Don't await broad invalidations in `onSettled` of a tap: the row
+  stays busy until every refetch lands.
+- **The phone ran at most 5 requests at once to one host** (OkHttp's default on Android): a screen that
+  starts 9 queries made the last ones wait, and the timing log counts that wait (Training → Coaching:
+  0-row calls at 1.5 s and 3 s, 2026-11-18). `plugins/with-okhttp-request-limit.js` (an Expo config plugin
+  in `app.json`) raises it to 16 a host in `MainApplication`, from build 1.2.4. Native, so it needs a new
+  build, not an OTA. Still prefer fewer, combined calls per screen.
+- **Query freshness:** the default `staleTime` is 30 s. Rarely changing settings (plans, member rules, gym
+  details, trainer list and hours rules, a coach's own weekly hours and diet plans) use `STATIC_STALE_TIME` (5 min, `src/lib/query-client.ts`); their
+  mutations invalidate them and pull-to-refresh always refetches. Don't use it for anything that changes
+  without the person saving it (attendance, bookings, notifications, payments).
+- **A tab switch refetches only that screen's data** (Venkat, 2026-11-17): tabs stay mounted, so React Query
+  counts every open tab's queries as active, and each switch reloaded and redrew all of them. `Screen` now
+  claims the queries that start while it is focused (`useScreenQueries`, `src/lib/screen-queries.ts`), and
+  refetch-on-focus and pull-to-refresh touch that screen's queries plus any no screen owns (tab bar, app-wide).
+  Mutations still invalidate by key, and returning to the app still refetches every stale query.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
@@ -559,6 +617,10 @@ text that must stay English, or that it picks up but is never shown, goes in
 - **Headers:** every `Stack.Screen` needs a `title` (iOS back label). Gate screens without a back
   route (onboarding, profile-setup, enter-code, set-up-gym) use the native header (`headerShown: true`) so the title
   clears the Android status bar.
+- **Confirm dialogs are in-app, not the system alert** (Venkat, 2026-11-19): ask before an action with
+  `confirm({ title, message, confirmLabel, icon, tone })` from `src/components/confirm-dialog.tsx` (resolves
+  true/false; drawn by `ConfirmDialogHost` in the root layout), or render `<ConfirmDialog visible … />` where a
+  screen keeps its own state. `tone: 'danger'` makes the button and icon red. Plain notices can stay `alert()`.
 - **Copy:** keep in-app text crisp. One short line per hint, step or empty state; no paragraphs.
   Explanations belong in this file or the PR, not the UI (Venkat's rule).
 - **Layout:** test at 360px wide and with large fonts (1.3x; demo on web at 277px). Use `useTheme()`

@@ -3,9 +3,9 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { useActiveGym } from '@/features/auth/use-profile';
-import { usePeople } from '@/features/members/hooks';
+import { useRenewalsDue } from '@/features/dashboard/hooks';
+import { usePhones } from '@/features/members/hooks';
 import { RenewalRow } from '@/features/memberships/components/renewal-row';
-import { useMemberships } from '@/features/memberships/hooks';
 import {
   EXPIRING_SOON_DAYS,
   groupRenewals,
@@ -16,10 +16,9 @@ import {
 /** Everyone to talk to about renewing, for owners and supervisors. */
 export default function RenewalsScreen() {
   const gym = useActiveGym();
-  const memberships = useMemberships(gym.gymId);
-  // Mobile numbers for WhatsApp; the list still shows while they load.
-  const people = usePeople(gym.gymId);
-  const phones = new Map((people.data ?? []).map((p) => [p.id, p.phone]));
+  const memberships = useRenewalsDue(gym.gymId);
+  // Mobile numbers for WhatsApp, just for the people listed; the list still shows while they load.
+  const phones = usePhones(gym.gymId, (memberships.data ?? []).map((m) => m.memberId).sort()).data;
 
   return (
     <Screen>
@@ -48,7 +47,7 @@ export default function RenewalsScreen() {
                   gymId={gym.gymId}
                   gymName={gym.gymName}
                   membership={m}
-                  phone={phones.get(m.memberId)}
+                  phone={phones?.[m.memberId]}
                 />
               ))}
               <SectionHeader
@@ -66,7 +65,7 @@ export default function RenewalsScreen() {
                   gymId={gym.gymId}
                   gymName={gym.gymName}
                   membership={m}
-                  phone={phones.get(m.memberId)}
+                  phone={phones?.[m.memberId]}
                 />
               ))}
             </>

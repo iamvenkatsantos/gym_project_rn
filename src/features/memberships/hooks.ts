@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import {
@@ -7,6 +7,7 @@ import {
   fetchLoyaltyOffer,
   getCurrentMembership,
   hasCurrentMembership,
+  listLatestMemberships,
   listMemberMemberships,
   listMemberships,
   listPlans,
@@ -25,6 +26,7 @@ import type {
   MembershipPlan,
   PlanInput,
 } from '@/features/memberships/types';
+import { STATIC_STALE_TIME } from '@/lib/query-client';
 
 export const membershipKeys = {
   all: ['memberships'] as const,
@@ -34,13 +36,18 @@ export const membershipKeys = {
   covered: (gymId: string, memberId: string) =>
     [...membershipKeys.all, gymId, 'covered', memberId] as const,
   list: (gymId: string) => [...membershipKeys.all, gymId, 'list'] as const,
+  latest: (gymId: string) => [...membershipKeys.all, gymId, 'latest'] as const,
   loyalty: (gymId: string) => [...membershipKeys.all, gymId, 'loyalty'] as const,
   member: (gymId: string, memberId: string) =>
     [...membershipKeys.all, gymId, 'member', memberId] as const,
 };
 
 export function usePlans(gymId: string) {
-  return useQuery({ queryKey: membershipKeys.plans(gymId), queryFn: () => listPlans(gymId) });
+  return useQuery({
+    queryKey: membershipKeys.plans(gymId),
+    queryFn: () => listPlans(gymId),
+    staleTime: STATIC_STALE_TIME,
+  });
 }
 
 export function useCurrentMembership(gymId: string, memberId: string) {
@@ -67,6 +74,16 @@ export function useMemberships(gymId: string) {
   return useQuery({
     queryKey: membershipKeys.list(gymId),
     queryFn: () => listMemberships(gymId),
+  });
+}
+
+/** The Payments tab: each member's latest membership, a page at a time. */
+export function useLatestMemberships(gymId: string) {
+  return useInfiniteQuery({
+    queryKey: membershipKeys.latest(gymId),
+    queryFn: ({ pageParam }) => listLatestMemberships(gymId, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.nextOffset,
   });
 }
 

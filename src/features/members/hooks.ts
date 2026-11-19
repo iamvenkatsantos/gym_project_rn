@@ -1,7 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import {
+  getPeopleCounts,
   importMembers,
   inviteGymOwner,
   invitePerson,
@@ -11,6 +18,9 @@ import {
   listGymMembers,
   listInvites,
   listPeople,
+  listMatchMembersPage,
+  listPeoplePage,
+  listPhones,
   promoteToTrainer,
   removePerson,
   resendInvite,
@@ -27,6 +37,7 @@ import type {
   InviteChannel,
   InviteOutcome,
   InviteRole,
+  PeopleFilter,
   ResendChannel,
 } from '@/features/members/types';
 import { uploadAdmissionPhotos } from '@/features/body/api';
@@ -78,6 +89,70 @@ export function usePeople(gymId: string, { enabled = true }: { enabled?: boolean
     queryKey: memberKeys.people(gymId),
     queryFn: () => listPeople(gymId),
     enabled,
+  });
+}
+
+/** Debounced copy of a value, for search boxes that query the server. */
+export function useDebounced<T>(value: T, ms = 300) {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return settled;
+}
+
+/** The People screen's list, one page at a time; `fetchNextPage` is the Show more button. */
+export function usePeoplePage(gymId: string, filter: PeopleFilter, query: string) {
+  const q = query.trim();
+  return useInfiniteQuery({
+    queryKey: [...memberKeys.people(gymId), 'page', filter, q],
+    queryFn: ({ pageParam }) => listPeoplePage(gymId, filter, q, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.people.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Mobile numbers of just these people, for WhatsApp buttons; the list shows while they load. */
+export function usePhones(gymId: string, userIds: string[]) {
+  return useQuery({
+    queryKey: [...memberKeys.all, gymId, 'phones', userIds.join(',')],
+    queryFn: () => listPhones(gymId, userIds),
+    enabled: userIds.length > 0,
+  });
+}
+
+/** The chip counts on the People screen. */
+export function usePeopleCounts(gymId: string) {
+  return useQuery({
+    queryKey: [...memberKeys.people(gymId), 'counts'],
+    queryFn: () => getPeopleCounts(gymId),
+  });
+}
+
+/** Match trainers' members, a page at a time; `fetchNextPage` is Show more. */
+export function useMatchMembersPage(
+  gymId: string,
+  unmatched: boolean,
+  query: string,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  const q = query.trim();
+  return useInfiniteQuery({
+    enabled,
+    // Under people, so mapping a trainer (which invalidates members) refreshes it.
+    queryKey: [...memberKeys.people(gymId), 'match', unmatched, q],
+    queryFn: ({ pageParam }) => listMatchMembersPage(gymId, unmatched, q, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.members.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+    placeholderData: keepPreviousData,
   });
 }
 

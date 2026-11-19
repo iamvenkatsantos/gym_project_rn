@@ -5,7 +5,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { usePullToRefresh, useRefreshOnFocus } from '@/hooks/use-pull-to-refresh';
+import { usePerfScreen } from '@/hooks/use-perf-screen';
+import { usePullToRefresh, useRefreshOnFocus, useScreenQueries } from '@/hooks/use-pull-to-refresh';
 import { useTheme } from '@/hooks/use-theme';
 
 type ScreenProps = {
@@ -18,8 +19,10 @@ type ScreenProps = {
 
 export function Screen({ eyebrow, title, children, refreshable = true }: ScreenProps) {
   const theme = useTheme();
-  const { refreshing, onRefresh } = usePullToRefresh();
-  useRefreshOnFocus(refreshable);
+  const screenId = useScreenQueries();
+  const { refreshing, onRefresh } = usePullToRefresh(screenId);
+  useRefreshOnFocus(refreshable, screenId);
+  usePerfScreen();
 
   return (
     <ThemedView style={styles.root}>

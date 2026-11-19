@@ -18,7 +18,9 @@ import { canCoach, canManageGym } from '@/features/auth/types';
 import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
+import { perfMark } from '@/lib/perf-log';
 import { AnimatedSplash } from '@/features/splash/components/animated-splash';
+import { ConfirmDialogHost } from '@/components/confirm-dialog';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
 import { useOtaUpdates } from '@/features/updates/use-ota-updates';
 import { useColorSchemeName, useTheme } from '@/hooks/use-theme';
@@ -52,6 +54,10 @@ export default function RootLayout() {
   const navTheme = useMemo(() => navigationTheme(scheme, colors), [scheme, colors]);
   const authLoaded = useAuthStore((s) => s.status !== 'loading');
 
+  useEffect(() => {
+    if (authLoaded) perfMark('Sign-in loaded');
+  }, [authLoaded]);
+
   // The window behind the app shows during transitions and the keyboard; keep it on theme.
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
@@ -63,6 +69,8 @@ export default function RootLayout() {
         <ThemeProvider value={navTheme}>
           <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <RootNavigator />
+          {/* In-app confirm dialogs (confirm() from components/confirm-dialog). */}
+          <ConfirmDialogHost />
           {/* Takes over from the native splash and fades away once sign-in has loaded. */}
           <AnimatedSplash ready={authLoaded} />
         </ThemeProvider>

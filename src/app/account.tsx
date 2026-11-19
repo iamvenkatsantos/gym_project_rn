@@ -4,7 +4,7 @@ import * as Updates from 'expo-updates';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -20,13 +20,14 @@ import { AppearancePicker } from '@/features/appearance/components/appearance-pi
 import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/auth-store';
 import { ProfileHeader } from '@/features/auth/components/profile-header';
-import { useSignOut } from '@/features/auth/use-sign-out';
+import { useConfirmSignOut } from '@/features/auth/use-sign-out';
 import { branchLabel } from '@/features/branches/rules';
 import { GymInvitesCard } from '@/features/gym-invites/components/gym-invites-card';
 import { useCanSetUpGym, useIsPlatformAdmin } from '@/features/gyms/hooks';
 import { PushSettings } from '@/features/notifications/components/push-settings';
 import { useWorkoutDraft } from '@/features/progress/draft-store';
 import { versionLabel } from '@/features/updates/rules';
+import { perfEnabled, perfReport } from '@/lib/perf-log';
 import { queryClient } from '@/lib/query-client';
 import { LanguagePicker } from '@/i18n/components/language-picker';
 
@@ -37,7 +38,7 @@ export default function AccountScreen() {
   const setActiveGym = useAuthStore((s) => s.setActiveGym);
   const inAdmin = useAuthStore(selectInAdmin);
   const setAdminMode = useAuthStore((s) => s.setAdminMode);
-  const signOut = useSignOut();
+  const signOut = useConfirmSignOut();
   // People an admin invited to run a gym can set up another one from here.
   const canSetUpGym = useCanSetUpGym();
   // CoreFit admins switch between the admin view and any gym they belong to.
@@ -198,6 +199,16 @@ export default function AccountScreen() {
             icon="trash-outline"
             tone="danger"
             onPress={() => setConfirmingDelete(true)}
+          />
+        </ListGroup>
+      )}
+      {perfEnabled && (
+        <ListGroup>
+          <ListRow
+            label="Share timing log"
+            detail="Test build only"
+            icon="speedometer-outline"
+            onPress={() => Share.share({ message: perfReport() })}
           />
         </ListGroup>
       )}

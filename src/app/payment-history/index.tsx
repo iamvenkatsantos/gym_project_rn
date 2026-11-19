@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon } from '@/components/icon';
 import { Pill } from '@/components/pill';
@@ -12,10 +13,10 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useActiveGym, useProfile } from '@/features/auth/use-profile';
-import { useMemberships } from '@/features/memberships/hooks';
+import { useDebounced } from '@/features/members/hooks';
 import { MemberPaymentHistory } from '@/features/payments/components/member-payment-history';
-import { paymentsByMember, searchMembers, type MemberPayments } from '@/features/payments/history';
-import { useOnlinePayments } from '@/features/payments/hooks';
+import { type MemberPayments } from '@/features/payments/history';
+import { usePaymentHistoryPage } from '@/features/payments/hooks';
 import { formatAmount, formatDate } from '@/lib/format';
 
 /** Members see their own payments; owners and supervisors pick a member. */
@@ -38,9 +39,9 @@ export default function PaymentHistoryScreen() {
 }
 
 function StaffPaymentHistory({ gymId }: { gymId: string }) {
-  const memberships = useMemberships(gymId);
-  const online = useOnlinePayments(gymId).data ?? [];
   const [query, setQuery] = useState('');
+  // 50 members at a time, summed and searched on the server, so a big gym opens fast.
+  const history = usePaymentHistoryPage(gymId, useDebounced(query));
 
   return (
     <Screen>
@@ -53,20 +54,29 @@ function StaffPaymentHistory({ gymId }: { gymId: string }) {
         autoCorrect={false}
       />
       <QueryState
-        query={memberships}
-        isEmpty={(list) => paymentsByMember(list, online).length === 0}
+        query={history}
+        isEmpty={(data) => data.pages[0].total === 0 && !query.trim()}
         emptyText="No payments yet. They show here once you record one or a member pays in the app.">
-        {(list) => {
-          const all = paymentsByMember(list, online);
-          const shown = searchMembers(all, query);
+        {(data) => {
+          const shown = data.pages.flatMap((page) => page.members);
+          const total = data.pages[0].total;
+          const loaded = shown.length;
           return (
             <>
-              <SectionHeader title="Members" detail={`${all.length} paid`} />
+              <SectionHeader title="Members" detail={`${total} paid`} />
               {shown.length === 0 ? (
                 <ThemedText themeColor="textSecondary">Nobody by that name.</ThemedText>
               ) : (
                 shown.map((m) => <MemberPaymentsRow key={m.memberId} member={m} />)
               )}
+              {history.hasNextPage ? (
+                <Button
+                  label={`Show more (${loaded} of ${total})`}
+                  variant="secondary"
+                  loading={history.isFetchingNextPage}
+                  onPress={() => history.fetchNextPage()}
+                />
+              ) : null}
             </>
           );
         }}

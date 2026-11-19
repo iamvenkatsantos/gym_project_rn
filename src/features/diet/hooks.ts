@@ -11,11 +11,14 @@ import {
   setMealPlanAssignment,
 } from '@/features/diet/api';
 import { dietKeys } from '@/features/diet/keys';
+import { STATIC_STALE_TIME } from '@/lib/query-client';
 
 export function useMealPlans(gymId: string, coachId: string) {
   return useQuery({
     queryKey: dietKeys.plans(gymId, coachId),
     queryFn: () => listMealPlans(gymId, coachId),
+    // A coach's own plans change when they save (that invalidates them); pull-to-refresh asks again.
+    staleTime: STATIC_STALE_TIME,
   });
 }
 

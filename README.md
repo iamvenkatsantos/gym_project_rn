@@ -132,8 +132,8 @@ Supabase settings these emails need (Dashboard → Authentication):
 4. **Providers → Email:** turn **Secure email change** off. Members who sign in with their mobile
    number add an email from Edit profile, and their mobile login has no inbox to confirm from.
 
-Every one of these emails has a code as well as a link. The link only opens the app on a phone
-that has it; the code works anywhere: on the sign-in screen tap **Got a code by email? Enter it**.
+Every one of these emails carries only a code, no link or button (a tapped link could use up the
+code before the app saw it). On the sign-in screen tap **Enter a code from your email**.
 
 ### Push notifications
 
@@ -301,6 +301,11 @@ psql -d corefit_test -f supabase/tests/invite-codes.sql
 psql -d corefit_test -f supabase/tests/subscriptions.sql
 psql -d corefit_test -f supabase/tests/membership-limits.sql
 psql -d corefit_test -f supabase/tests/pause-waitlist-referrals.sql
+psql -d corefit_test -f supabase/tests/people-paging.sql
+psql -d corefit_test -f supabase/tests/latest-memberships.sql
+psql -d corefit_test -f supabase/tests/payment-history-page.sql
+psql -d corefit_test -f supabase/tests/match-members-page.sql
+psql -d corefit_test -f supabase/tests/owner-dashboard.sql
 psql -d corefit_test -f supabase/tests/security-hardening.sql
 psql -d corefit_test -f supabase/tests/cross-gym-hardening.sql
 psql -d corefit_test -f supabase/tests/accept-invites-shared-history.sql
