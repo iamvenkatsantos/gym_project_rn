@@ -20,6 +20,7 @@ import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
 import { perfMark } from '@/lib/perf-log';
 import { AnimatedSplash } from '@/features/splash/components/animated-splash';
+import { ConfirmDialogHost } from '@/components/confirm-dialog';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
 import { useOtaUpdates } from '@/features/updates/use-ota-updates';
 import { useColorSchemeName, useTheme } from '@/hooks/use-theme';
@@ -68,6 +69,8 @@ export default function RootLayout() {
         <ThemeProvider value={navTheme}>
           <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <RootNavigator />
+          {/* In-app confirm dialogs (confirm() from components/confirm-dialog). */}
+          <ConfirmDialogHost />
           {/* Takes over from the native splash and fades away once sign-in has loaded. */}
           <AnimatedSplash ready={authLoaded} />
         </ThemeProvider>
