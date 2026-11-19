@@ -1073,4 +1073,8 @@ export const part4: Record<string, readonly [string, string]> = {
   Purple: ['ஊதா', 'बैंगनी'],
   '{x} theme': ['{x} தீம்', '{x} थीम'],
   'Done, {count} assigned': ['முடிந்தது, {count} ஒதுக்கப்பட்டது', 'हो गया, {count} असाइन'],
+  'You’ll need your password to sign in again.': [
+    'மீண்டும் உள்நுழைய உங்கள் கடவுச்சொல் தேவை.',
+    'फिर से साइन इन करने के लिए पासवर्ड चाहिए।',
+  ],
 };
