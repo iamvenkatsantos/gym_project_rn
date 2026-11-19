@@ -231,7 +231,7 @@ checked to sit in the person's own folder); progress photos stay private. Anyone
 name and mobile on `edit-profile` (tap the profile card, or Edit profile on Profile/Account). Use
 `TrainerAvatar` with `url` to show a photo with initials as the fallback. The header's Account button shows the
 person's photo when they have one (`AccountButton`), else the profile icon. Every **Sign out** button asks first
-(`useConfirmSignOut`); `useSignOut` stays for flows that sign out on purpose (set-password's Cancel). The person screen has
+in the app's own dialog (`useConfirmSignOut`); `useSignOut` stays for flows that sign out on purpose (set-password's Cancel). The person screen has
 **Call** and **WhatsApp** buttons from the mobile on file (`callUrl`, `whatsappUrl`).
 
 **Birthdays.** Date of birth lives in `contact_details.date_of_birth` (same readers as the mobile).
@@ -617,6 +617,10 @@ text that must stay English, or that it picks up but is never shown, goes in
 - **Headers:** every `Stack.Screen` needs a `title` (iOS back label). Gate screens without a back
   route (onboarding, profile-setup, enter-code, set-up-gym) use the native header (`headerShown: true`) so the title
   clears the Android status bar.
+- **Confirm dialogs are in-app, not the system alert** (Venkat, 2026-11-19): ask before an action with
+  `confirm({ title, message, confirmLabel, icon, tone })` from `src/components/confirm-dialog.tsx` (resolves
+  true/false; drawn by `ConfirmDialogHost` in the root layout), or render `<ConfirmDialog visible … />` where a
+  screen keeps its own state. `tone: 'danger'` makes the button and icon red. Plain notices can stay `alert()`.
 - **Copy:** keep in-app text crisp. One short line per hint, step or empty state; no paragraphs.
   Explanations belong in this file or the PR, not the UI (Venkat's rule).
 - **Layout:** test at 360px wide and with large fonts (1.3x; demo on web at 277px). Use `useTheme()`

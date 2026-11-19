@@ -1,4 +1,4 @@
-import { alert } from '@/i18n/alert';
+import { confirm } from '@/components/confirm-dialog';
 import { signOut } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { unregisterForPush } from '@/features/notifications/push';
@@ -20,12 +20,17 @@ export function useSignOut() {
   };
 }
 
-/** Sign out after a confirm popup, so a stray tap doesn't sign anyone out. */
+/** Sign out after the app's confirm dialog, so a stray tap doesn't sign anyone out. */
 export function useConfirmSignOut() {
   const signOut = useSignOut();
-  return () =>
-    alert('Sign out?', 'You’ll need your password to sign in again.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
-    ]);
+  return async () => {
+    const ok = await confirm({
+      title: 'Sign out?',
+      message: 'You’ll need your password to sign in again.',
+      confirmLabel: 'Sign out',
+      icon: 'log-out-outline',
+      tone: 'danger',
+    });
+    if (ok) await signOut();
+  };
 }
