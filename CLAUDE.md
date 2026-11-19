@@ -619,7 +619,8 @@ text that must stay English, or that it picks up but is never shown, goes in
   clears the Android status bar.
 - **Confirm dialogs are in-app, not the system alert** (Venkat, 2026-11-19): ask before an action with
   `confirm({ title, message, confirmLabel, icon, tone })` from `src/components/confirm-dialog.tsx` (resolves
-  true/false; drawn by `ConfirmDialogHost` in the root layout), or render `<ConfirmDialog visible … />` where a
+  true/false; drawn by `ConfirmDialogHost` in the focused `Screen`, because on iOS a root-level `Modal`
+  can't show above a modal-presented screen like Account), or render `<ConfirmDialog visible … />` where a
   screen keeps its own state. `tone: 'danger'` makes the button and icon red. Plain notices can stay `alert()`.
 - **Copy:** keep in-app text crisp. One short line per hint, step or empty state; no paragraphs.
   Explanations belong in this file or the PR, not the UI (Venkat's rule).
