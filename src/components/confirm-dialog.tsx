@@ -75,19 +75,21 @@ export function ConfirmDialog({
       statusBarTranslucent
       navigationBarTranslucent
       onRequestClose={onCancel}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={cancelLabel}
-        style={styles.backdrop}
-        onPress={onCancel}>
-        {/* Taps on the card don't reach the backdrop. */}
+      <View style={styles.backdrop}>
+        {/* Tapping the dimmed area cancels; it sits behind the card, so the card's buttons aren't
+            nested inside another button. */}
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cancelLabel}
+          style={[StyleSheet.absoluteFill, styles.dim]}
+          onPress={onCancel}
+        />
+        <View
           accessibilityViewIsModal
           style={[
             styles.card,
             { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          ]}
-          onPress={() => {}}>
+          ]}>
           {icon ? (
             <View
               style={[
@@ -117,8 +119,8 @@ export function ConfirmDialog({
               />
             </View>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -141,10 +143,12 @@ export function ConfirmDialogHost() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.four,
+  },
+  dim: {
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   card: {
     width: '100%',
