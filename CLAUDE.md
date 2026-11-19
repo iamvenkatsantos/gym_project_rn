@@ -229,7 +229,9 @@ person, their gym's managers and, for members, their mapped trainers) and may ad
 Photos live in the public `avatars` bucket at `<user id>/<random>.<ext>` (`profiles.avatar_path`,
 checked to sit in the person's own folder); progress photos stay private. Anyone edits their photo,
 name and mobile on `edit-profile` (tap the profile card, or Edit profile on Profile/Account). Use
-`TrainerAvatar` with `url` to show a photo with initials as the fallback. The person screen has
+`TrainerAvatar` with `url` to show a photo with initials as the fallback. The header's Account button shows the
+person's photo when they have one (`AccountButton`), else the profile icon. Every **Sign out** button asks first
+(`useConfirmSignOut`); `useSignOut` stays for flows that sign out on purpose (set-password's Cancel). The person screen has
 **Call** and **WhatsApp** buttons from the mobile on file (`callUrl`, `whatsappUrl`).
 
 **Birthdays.** Date of birth lives in `contact_details.date_of_birth` (same readers as the mobile).

@@ -7,7 +7,7 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing, withAlpha } from '@/constants/theme';
 import { useActiveGym } from '@/features/auth/use-profile';
-import { useSignOut } from '@/features/auth/use-sign-out';
+import { useConfirmSignOut } from '@/features/auth/use-sign-out';
 import { ProfileForm } from '@/features/profile/components/profile-form';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -19,7 +19,7 @@ import { useTheme } from '@/hooks/use-theme';
 export default function ProfileSetupScreen() {
   const theme = useTheme();
   const gym = useActiveGym();
-  const signOut = useSignOut();
+  const signOut = useConfirmSignOut();
 
   return (
     <Screen refreshable={false}>

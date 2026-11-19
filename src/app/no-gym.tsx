@@ -8,7 +8,7 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
-import { useSignOut } from '@/features/auth/use-sign-out';
+import { useConfirmSignOut } from '@/features/auth/use-sign-out';
 import { GymInvitesCard } from '@/features/gym-invites/components/gym-invites-card';
 import { gymInviteKeys } from '@/features/gym-invites/hooks';
 import { useCanSetUpGym } from '@/features/gyms/hooks';
@@ -16,7 +16,7 @@ import { queryClient } from '@/lib/query-client';
 
 /** Signed in but not (yet) part of any gym. New gym owners set up their gym from here. */
 export default function NoGymScreen() {
-  const signOut = useSignOut();
+  const signOut = useConfirmSignOut();
   const canSetUp = useCanSetUpGym();
   const setProfile = useAuthStore((s) => s.setProfile);
   const [checking, setChecking] = useState(false);

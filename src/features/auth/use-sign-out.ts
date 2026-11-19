@@ -1,3 +1,4 @@
+import { alert } from '@/i18n/alert';
 import { signOut } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { unregisterForPush } from '@/features/notifications/push';
@@ -17,4 +18,14 @@ export function useSignOut() {
     useAuthStore.getState().setNeedsPassword(false);
     setProfile(null);
   };
+}
+
+/** Sign out after a confirm popup, so a stray tap doesn't sign anyone out. */
+export function useConfirmSignOut() {
+  const signOut = useSignOut();
+  return () =>
+    alert('Sign out?', 'You’ll need your password to sign in again.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
+    ]);
 }
