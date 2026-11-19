@@ -1,6 +1,9 @@
 import { type ReactNode } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
+import { useIsFocused } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+
+import { ConfirmDialogHost } from '@/components/confirm-dialog';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -23,6 +26,7 @@ export function Screen({ eyebrow, title, children, refreshable = true }: ScreenP
   const { refreshing, onRefresh } = usePullToRefresh(screenId);
   useRefreshOnFocus(refreshable, screenId);
   usePerfScreen();
+  const focused = useIsFocused();
 
   return (
     <ThemedView style={styles.root}>
@@ -56,6 +60,9 @@ export function Screen({ eyebrow, title, children, refreshable = true }: ScreenP
         ) : null}
         {children}
       </KeyboardAwareScrollView>
+      {/* confirm() dialogs draw from the focused screen: on iOS a Modal mounted at the root can't
+          show above a screen presented as a modal (Account), so it never appeared there. */}
+      {focused ? <ConfirmDialogHost /> : null}
     </ThemedView>
   );
 }

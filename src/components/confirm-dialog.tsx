@@ -25,8 +25,8 @@ const useConfirmStore = create<ConfirmState>(() => ({ request: null }));
 
 /**
  * Asks before an action in the app's own style instead of the system dialog. Resolves true when
- * the person confirms, false when they cancel, tap outside or press back. Needs
- * `ConfirmDialogHost` mounted once (root layout).
+ * the person confirms, false when they cancel, tap outside or press back. Drawn by the
+ * focused `Screen` (`ConfirmDialogHost`), so it shows above iOS modal screens too.
  */
 export function confirm(request: ConfirmRequest): Promise<boolean> {
   return new Promise((resolve) => {
@@ -125,7 +125,10 @@ export function ConfirmDialog({
   );
 }
 
-/** Draws confirm() requests. Mount it once, above the navigator (root layout). */
+/**
+ * Draws confirm() requests. `Screen` mounts it while focused; a screen that doesn't use `Screen`
+ * must mount it itself to show confirm() dialogs.
+ */
 export function ConfirmDialogHost() {
   const request = useConfirmStore((s) => s.request);
   if (!request) return null;
