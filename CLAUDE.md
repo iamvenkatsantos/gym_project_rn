@@ -643,6 +643,16 @@ text that must stay English, or that it picks up but is never shown, goes in
   constraint plus `set_gym_theme_color()` (new migration); the contrast test in
   `src/features/appearance/__tests__` must pass. Before the migration is pushed the app and dashboard
   fall back to green (`42703`). Test `supabase/tests/gym-theme-color.sql`.
+- **Gym logo** (Venkat, 2026-11-21): the owner adds one per branch in Account → **Gym logo**
+  (`GymLogoPicker`, `set_gym_logo()`, `gyms.logo_path`, public `gym-logos` bucket at `<gym id>/<random>.<ext>`,
+  owner-only storage policies; test `supabase/tests/gym-logo.sql`). Everyone at the branch gets it with the
+  profile (`GymRole.logoUrl`): Home header (`RoleTabs` `headerLeft`) and the launch screen. The phone's
+  home-screen icon and the native splash stay CoreFit (fixed in the build; a per-gym icon would need a
+  white-label build). The launch screen draws before sign-in, so `useRememberGymBranding` keeps the active
+  gym's logo and name on the phone (`corefit-gym-branding`, `branding-store.ts`); `AnimatedSplash` crossfades
+  to the gym logo, its name and a "POWERED BY CoreFit" sign-off once the logo has loaded, else it stays the
+  CoreFit lockup (no logo, first launch, offline). Admin area and signed-out keep the last gym. Before the
+  migration is pushed the profile falls back without `logo_path`. JS only after `db push --remote`.
 - **Demo mode** (`npm run demo`) uses `src/lib/mock-db.ts`; keep the mock path working, and never
   show demo data in store builds.
 - **Before saying done:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run i18n:check`. In the cloud container

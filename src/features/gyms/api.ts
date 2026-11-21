@@ -1,4 +1,9 @@
+import { randomUUID } from 'expo-crypto';
+import { File } from 'expo-file-system';
+
 import type { ThemeColorId } from '@/constants/theme';
+import { LOGO_BUCKET } from '@/features/gyms/logo';
+import type { PickedPhoto } from '@/features/onboarding/types';
 import type { GymDetails } from '@/features/gyms/types';
 import { delay, MOCK_GYM_ID, mockId } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -69,4 +74,38 @@ export async function setGymThemeColor(gymId: string, color: ThemeColorId) {
   if (!supabase) return delay(undefined);
   const { error } = await supabase.rpc('set_gym_theme_color', { p_gym_id: gymId, p_color: color });
   if (error) throw error;
+}
+
+function logoExtension(mimeType: string) {
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  if (mimeType === 'image/heic') return 'heic';
+  return 'jpg';
+}
+
+/**
+ * Owners only: uploads the picked image to <gym>/<random>.<ext> in the gym-logos bucket and saves
+ * it as the branch's logo (a null photo removes it). A new name each time means a changed logo
+ * never shows an old cached one. Returns the saved path.
+ */
+export async function saveGymLogo(
+  gymId: string,
+  photo: PickedPhoto | null,
+  oldPath: string | null | undefined,
+): Promise<string | null> {
+  if (!supabase) return delay(photo ? photo.uri : null);
+  let path: string | null = null;
+  if (photo) {
+    path = `${gymId}/${randomUUID()}.${logoExtension(photo.mimeType)}`;
+    const bytes = await new File(photo.uri).arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(LOGO_BUCKET)
+      .upload(path, bytes, { contentType: photo.mimeType, upsert: false });
+    if (uploadError) throw uploadError;
+  }
+  const { error } = await supabase.rpc('set_gym_logo', { p_gym_id: gymId, p_path: path });
+  if (error) throw error;
+  // Best effort: a leftover file is harmless.
+  if (oldPath) await supabase.storage.from(LOGO_BUCKET).remove([oldPath]);
+  return path;
 }

@@ -7,9 +7,12 @@ import {
   canSetUpGym,
   createGym,
   fetchGymDetails,
+  saveGymLogo,
   setGymThemeColor,
   updateGymDetails,
 } from '@/features/gyms/api';
+import { gymLogoUrl } from '@/features/gyms/logo';
+import type { PickedPhoto } from '@/features/onboarding/types';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
 import { STATIC_STALE_TIME } from '@/lib/query-client';
@@ -109,6 +112,29 @@ export function useSetGymThemeColor(gymId: string) {
           ),
         });
       }
+    },
+  });
+}
+
+/** Saves (or removes, with null) the gym's logo and shows it at once in the app's copy of the gym. */
+export function useSaveGymLogo(gymId: string) {
+  return useMutation({
+    mutationFn: ({
+      photo,
+      oldPath,
+    }: {
+      photo: PickedPhoto | null;
+      oldPath: string | null | undefined;
+    }) => saveGymLogo(gymId, photo, oldPath),
+    onSuccess: (path) => {
+      const { profile, setProfile } = useAuthStore.getState();
+      if (!profile) return;
+      setProfile({
+        ...profile,
+        gyms: profile.gyms.map((g) =>
+          g.gymId === gymId ? { ...g, logoPath: path, logoUrl: gymLogoUrl(path) } : g,
+        ),
+      });
     },
   });
 }
