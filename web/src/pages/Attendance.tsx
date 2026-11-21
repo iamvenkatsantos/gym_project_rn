@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { addDays, toIsoDate } from '@/features/memberships/rules';
 
 import { useGym } from '../auth/session';
+import { Pagination, usePaging } from '../components/Pagination';
 import { Empty, PageHeader, Pill, QueryState, StatTile } from '../components/ui';
 import { useAttendanceReport, useDayAttendance } from '../data/hooks';
 import { daysAgo } from '../data/rules';
@@ -28,6 +29,7 @@ function DayView() {
   const todayIso = toIsoDate(new Date());
   const [day, setDay] = useState(todayIso);
   const query = useDayAttendance(gym.gymId, daysAgo(day));
+  const paging = usePaging(query.data?.length ?? 0, day);
 
   return (
     <section className="card">
@@ -100,7 +102,7 @@ function DayView() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((r) => (
+                      {paging.slice(rows).map((r) => (
                         <tr key={r.userId}>
                           <td>{r.fullName}</td>
                           <td>{r.role === 'trainer' ? 'Trainer' : 'Member'}</td>
@@ -131,6 +133,7 @@ function DayView() {
                   </table>
                 </div>
               )}
+              <Pagination paging={paging} total={rows.length} />
             </>
           );
         }}
@@ -143,6 +146,7 @@ function SummaryView() {
   const { gym } = useGym();
   const [days, setDays] = useState(30);
   const query = useAttendanceReport(gym.gymId, days);
+  const paging = usePaging(query.data?.length ?? 0, String(days));
 
   return (
     <section className="card">
@@ -164,38 +168,41 @@ function SummaryView() {
           rows.length === 0 ? (
             <Empty>No active members or trainers yet.</Empty>
           ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th className="num">Days present</th>
-                    <th className="num">Time in gym</th>
-                    <th className="num">Workouts</th>
-                    <th>Last seen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.userId}>
-                      <td>{r.fullName}</td>
-                      <td>{r.role === 'trainer' ? 'Trainer' : 'Member'}</td>
-                      <td className="num">{r.daysPresent}</td>
-                      <td className="num">{formatMinutes(r.minutesInGym)}</td>
-                      <td className="num">{r.workouts}</td>
-                      <td>
-                        {r.lastSeen ? (
-                          formatDay(r.lastSeen)
-                        ) : (
-                          <Pill tone="warn">Not in {days} days</Pill>
-                        )}
-                      </td>
+            <>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th className="num">Days present</th>
+                      <th className="num">Time in gym</th>
+                      <th className="num">Workouts</th>
+                      <th>Last seen</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paging.slice(rows).map((r) => (
+                      <tr key={r.userId}>
+                        <td>{r.fullName}</td>
+                        <td>{r.role === 'trainer' ? 'Trainer' : 'Member'}</td>
+                        <td className="num">{r.daysPresent}</td>
+                        <td className="num">{formatMinutes(r.minutesInGym)}</td>
+                        <td className="num">{r.workouts}</td>
+                        <td>
+                          {r.lastSeen ? (
+                            formatDay(r.lastSeen)
+                          ) : (
+                            <Pill tone="warn">Not in {days} days</Pill>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination paging={paging} total={rows.length} />
+            </>
           )
         }
       </QueryState>

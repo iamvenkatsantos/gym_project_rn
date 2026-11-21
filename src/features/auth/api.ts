@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 
+import { isThemeColor } from '@/constants/theme';
 import type { LinkSession } from '@/features/auth/auth-link';
 import type { Profile, Role } from '@/features/auth/types';
 import { avatarUrl, removeOwnAvatars } from '@/features/profile/api';
@@ -14,7 +15,7 @@ type ProfileRow = {
     role: Role;
     status: string;
     onboarded_at: string | null;
-    gym: { id: string; name: string; brand: { id: string; name: string } | null };
+    gym: { id: string; name: string; theme_color?: string; brand: { id: string; name: string } | null };
   }[];
 };
 
@@ -32,6 +33,7 @@ function toProfile(row: ProfileRow): Profile {
         role: g.role,
         brandId: g.gym.brand?.id,
         brandName: g.gym.brand?.name,
+        themeColor: isThemeColor(g.gym.theme_color) ? g.gym.theme_color : undefined,
         needsOnboarding: g.role === 'member' && g.onboarded_at === null,
       })),
   };
@@ -44,20 +46,22 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     return delay(profile);
   }
   const client = supabase;
-  const selectProfile = (profileColumns: string, gymColumns: string) =>
+  const selectProfile = (profileColumns: string, gymColumns: string, gymExtra: string) =>
     client
       .from('profiles')
       .select(
-        `${profileColumns}, gyms:gym_members!gym_members_user_id_fkey(${gymColumns}, gym:gyms(id, name, brand:brands(id, name)))`,
+        `${profileColumns}, gyms:gym_members!gym_members_user_id_fkey(${gymColumns}, gym:gyms(id, name, ${gymExtra}brand:brands(id, name)))`,
       )
       .eq('id', userId)
       .single();
-  // Newest columns first. Before the profile photo migration there's no avatar_path, and
-  // before the member onboarding one no onboarded_at (then nobody is asked yet).
-  const attempts: [string, string][] = [
-    ['id, full_name, avatar_path', 'role, status, onboarded_at'],
-    ['id, full_name', 'role, status, onboarded_at'],
-    ['id, full_name', 'role, status'],
+  // Newest columns first. Before the profile photo migration there's no avatar_path, before the
+  // member onboarding one no onboarded_at (then nobody is asked yet), and before the gym theme
+  // migration no theme_color (then every gym is green).
+  const attempts: [string, string, string][] = [
+    ['id, full_name, avatar_path', 'role, status, onboarded_at', 'theme_color, '],
+    ['id, full_name, avatar_path', 'role, status, onboarded_at', ''],
+    ['id, full_name', 'role, status, onboarded_at', ''],
+    ['id, full_name', 'role, status', ''],
   ];
   const selectContact = (columns: string) =>
     client.from('contact_details').select(columns).eq('user_id', userId).maybeSingle();
@@ -71,12 +75,14 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     firstContact.error?.code === '42703' ? await selectContact('phone') : firstContact;
   const contact = contactResult.data as { phone: string; date_of_birth?: string | null } | null;
   let profileResult = first;
-  // Saving a profile needs the profile photo migration; until it's pushed, nobody is asked.
-  const canSaveProfile = first.error?.code !== '42703';
+  let used = 0;
   for (const attempt of attempts.slice(1)) {
     if (profileResult.error?.code !== '42703') break;
+    used += 1;
     profileResult = await selectProfile(...attempt);
   }
+  // Saving a profile needs the profile photo migration; until it's pushed, nobody is asked.
+  const canSaveProfile = used < 2;
   const row = unwrap(profileResult) as unknown as ProfileRow;
   // Before the platform_admins migration the check fails; then nobody is an admin.
   return {

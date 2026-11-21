@@ -1,3 +1,4 @@
+import { selectActiveGym } from '@/features/auth/auth-store';
 import { Colors, getPalette, isThemeColor, ThemeColors } from '@/constants/theme';
 
 function luminance(hex: string) {
@@ -45,5 +46,13 @@ describe('theme colours', () => {
         expect(contrast(p.text, p.background)).toBeGreaterThanOrEqual(7);
       }
     }
+  });
+});
+
+describe('gym theme colour on the profile', () => {
+  it('useTheme reads the active gym, not the phone', () => {
+    const gym = { gymId: 'g', gymName: 'G', role: 'member', themeColor: 'pink' };
+    const state = { profile: { gyms: [gym] }, activeGymId: 'g', adminMode: false };
+    expect(selectActiveGym(state as never)?.themeColor).toBe('pink');
   });
 });
