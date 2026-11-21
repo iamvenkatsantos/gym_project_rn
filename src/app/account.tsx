@@ -17,7 +17,6 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/constants/legal';
 import { GymThemeColor } from '@/features/appearance/components/gym-theme-color';
-import { GymLogoPicker } from '@/features/gyms/components/gym-logo-picker';
 import { AppearancePicker } from '@/features/appearance/components/appearance-picker';
 import { deleteAccount } from '@/features/auth/api';
 import { selectActiveGym, selectInAdmin, useAuthStore } from '@/features/auth/auth-store';
@@ -128,7 +127,6 @@ export default function AccountScreen() {
       <SectionHeader title="Appearance" />
       <AppearancePicker />
       <GymThemeColor />
-      <GymLogoPicker />
 
       <SectionHeader title="Notifications" />
       <PushSettings />

@@ -6,20 +6,21 @@ import { Button } from '@/components/button';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing, withAlpha } from '@/constants/theme';
-import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
-import { useSaveGymLogo } from '@/features/gyms/hooks';
+import { gymLogoUrl } from '@/features/gyms/logo';
+import { useAdminGymLogo, useSaveGymLogo } from '@/features/gyms/hooks';
 import { AVATAR_PICKER_OPTIONS } from '@/features/profile/rules';
 import { alert } from '@/i18n/alert';
 import { useTheme } from '@/hooks/use-theme';
 
 const SIZE = 88;
 
-/** Owners add their gym's logo: it's the launch screen and Home header for everyone at the branch. */
-export function GymLogoPicker() {
-  const gym = useAuthStore(selectActiveGym);
+/** Admin only: a branch's logo, shown on the launch screen and Home header for everyone there. */
+export function GymLogoPicker({ gymId }: { gymId: string }) {
   const theme = useTheme();
-  const save = useSaveGymLogo(gym?.gymId ?? '');
-  if (!gym || gym.role !== 'owner') return null;
+  const current = useAdminGymLogo(gymId);
+  const save = useSaveGymLogo(gymId);
+  const logoPath = current.data ?? null;
+  const logoUrl = gymLogoUrl(logoPath);
 
   const fail = (e: Error) => alert("Couldn't save the logo", e.message);
   const choose = async () => {
@@ -29,7 +30,7 @@ export function GymLogoPicker() {
     save.mutate(
       {
         photo: { uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg' },
-        oldPath: gym.logoPath,
+        oldPath: logoPath,
       },
       { onError: fail },
     );
@@ -44,16 +45,16 @@ export function GymLogoPicker() {
       <View style={styles.row}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={gym.logoUrl ? 'Change gym logo' : 'Add gym logo'}
+          accessibilityLabel={logoUrl ? 'Change gym logo' : 'Add gym logo'}
           onPress={choose}
           disabled={save.isPending}
           style={[
             styles.box,
             { backgroundColor: withAlpha(theme.primary, 0.16), borderColor: theme.border },
           ]}>
-          {gym.logoUrl ? (
+          {logoUrl ? (
             <Image
-              source={{ uri: gym.logoUrl }}
+              source={{ uri: logoUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               accessibilityIgnoresInvertColors
@@ -66,17 +67,17 @@ export function GymLogoPicker() {
         </Pressable>
         <View style={styles.buttons}>
           <Button
-            label={gym.logoUrl ? 'Change logo' : 'Add logo'}
+            label={logoUrl ? 'Change logo' : 'Add logo'}
             variant="secondary"
             onPress={choose}
             loading={save.isPending}
           />
-          {gym.logoUrl ? (
+          {logoUrl ? (
             <Button
               label="Remove logo"
               variant="secondary"
               disabled={save.isPending}
-              onPress={() => save.mutate({ photo: null, oldPath: gym.logoPath }, { onError: fail })}
+              onPress={() => save.mutate({ photo: null, oldPath: logoPath }, { onError: fail })}
             />
           ) : null}
         </View>

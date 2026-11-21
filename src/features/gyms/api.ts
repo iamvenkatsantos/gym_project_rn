@@ -84,7 +84,7 @@ function logoExtension(mimeType: string) {
 }
 
 /**
- * Owners only: uploads the picked image to <gym>/<random>.<ext> in the gym-logos bucket and saves
+ * Platform admins only: uploads the picked image to <gym>/<random>.<ext> in the gym-logos bucket and saves
  * it as the branch's logo (a null photo removes it). A new name each time means a changed logo
  * never shows an old cached one. Returns the saved path.
  */
@@ -108,4 +108,12 @@ export async function saveGymLogo(
   // Best effort: a leftover file is harmless.
   if (oldPath) await supabase.storage.from(LOGO_BUCKET).remove([oldPath]);
   return path;
+}
+
+/** Platform admins only: the branch's current logo path (admins aren't members of the branch). */
+export async function fetchAdminGymLogo(gymId: string): Promise<string | null> {
+  if (!supabase) return delay(null);
+  const { data, error } = await supabase.rpc('admin_gym_logo', { p_gym_id: gymId });
+  if (error) throw error;
+  return (data as string | null) ?? null;
 }

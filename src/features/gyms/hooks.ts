@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/auth-store';
 import {
   canSetUpGym,
   createGym,
+  fetchAdminGymLogo,
   fetchGymDetails,
   saveGymLogo,
   setGymThemeColor,
@@ -21,6 +22,7 @@ export const gymKeys = {
   all: ['gyms'] as const,
   canSetUp: () => [...gymKeys.all, 'can-set-up'] as const,
   details: (gymId: string) => [...gymKeys.all, gymId, 'details'] as const,
+  logo: (gymId: string) => [...gymKeys.all, gymId, 'logo'] as const,
 };
 
 /** CoreFit's own admins, from the signed-in profile. */
@@ -116,8 +118,18 @@ export function useSetGymThemeColor(gymId: string) {
   });
 }
 
-/** Saves (or removes, with null) the gym's logo and shows it at once in the app's copy of the gym. */
+/** The branch's logo path, for the admin's branch screen. */
+export function useAdminGymLogo(gymId: string) {
+  return useQuery({
+    queryKey: gymKeys.logo(gymId),
+    queryFn: () => fetchAdminGymLogo(gymId),
+    staleTime: STATIC_STALE_TIME,
+  });
+}
+
+/** Admin only: saves (or removes, with null) a branch's logo; a member's own copy updates on their next profile refresh. */
 export function useSaveGymLogo(gymId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       photo,
@@ -127,6 +139,7 @@ export function useSaveGymLogo(gymId: string) {
       oldPath: string | null | undefined;
     }) => saveGymLogo(gymId, photo, oldPath),
     onSuccess: (path) => {
+      queryClient.invalidateQueries({ queryKey: gymKeys.logo(gymId) });
       const { profile, setProfile } = useAuthStore.getState();
       if (!profile) return;
       setProfile({

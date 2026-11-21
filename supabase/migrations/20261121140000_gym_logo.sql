@@ -1,4 +1,4 @@
--- Gym logo per branch (2026-11-21, Venkat): the owner uploads it; the launch screen, the Home header
+-- Gym logo per branch (2026-11-21, Venkat): the platform admin sets it (owners don't); the launch screen, the Home header
 -- and (later) other places show it to everyone at the branch, with "Powered by CoreFit".
 -- Files sit in the public gym-logos bucket at <gym id>/<random>.<ext> (random name, can't be listed).
 
@@ -17,29 +17,26 @@ values (
 )
 on conflict (id) do nothing;
 
--- Only the branch's owners touch the files in its <gym id>/ folder.
-create policy "Owners upload their gym logo" on storage.objects
+-- Only platform admins touch the files (the folder is the branch's id).
+create policy "Admins upload gym logos" on storage.objects
   for insert to authenticated with check (
-    bucket_id = 'gym-logos'
-    and public.has_gym_role(public.storage_path_uuid(name, 1), array['owner'])
+    bucket_id = 'gym-logos' and public.is_platform_admin()
   );
-create policy "Owners see their gym logos" on storage.objects
+create policy "Admins see gym logos" on storage.objects
   for select to authenticated using (
-    bucket_id = 'gym-logos'
-    and public.has_gym_role(public.storage_path_uuid(name, 1), array['owner'])
+    bucket_id = 'gym-logos' and public.is_platform_admin()
   );
-create policy "Owners delete their gym logo" on storage.objects
+create policy "Admins delete gym logos" on storage.objects
   for delete to authenticated using (
-    bucket_id = 'gym-logos'
-    and public.has_gym_role(public.storage_path_uuid(name, 1), array['owner'])
+    bucket_id = 'gym-logos' and public.is_platform_admin()
   );
 
 create function public.set_gym_logo(p_gym_id uuid, p_path text)
 returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if not public.has_gym_role(p_gym_id, array['owner']) then
-    raise exception 'Only owners change the gym logo';
+  if not public.is_platform_admin() then
+    raise exception 'Only the platform admin changes the gym logo';
   end if;
   if p_path is not null and p_path not like p_gym_id::text || '/%' then
     raise exception 'The logo must be in the gym''s own folder';
@@ -50,3 +47,18 @@ $$;
 
 revoke execute on function public.set_gym_logo(uuid, text) from public, anon;
 grant execute on function public.set_gym_logo(uuid, text) to authenticated;
+
+-- The admin's branch screen reads the current logo (admins aren't members of the branch).
+create function public.admin_gym_logo(p_gym_id uuid)
+returns text
+language plpgsql stable security definer set search_path = '' as $$
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Only the platform admin reads this';
+  end if;
+  return (select logo_path from public.gyms where id = p_gym_id);
+end;
+$$;
+
+revoke execute on function public.admin_gym_logo(uuid) from public, anon;
+grant execute on function public.admin_gym_logo(uuid) to authenticated;
