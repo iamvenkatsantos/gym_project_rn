@@ -4,7 +4,9 @@ import { daysRemaining, toIsoDate } from '@/features/memberships/rules';
 import { membershipsTable, reportFileName } from '@/features/reports/rules';
 
 import { useGym } from '../auth/session';
-import { Empty, errorMessage, PageHeader, Pill, QueryState, StandingPill } from '../components/ui';
+import { ExportButton } from '../components/ExportButton';
+import { Pagination, usePaging } from '../components/Pagination';
+import { Empty, PageHeader, Pill, QueryState, StandingPill } from '../components/ui';
 import { exportMemberships } from '../data/api';
 import { useMemberships, usePeople } from '../data/hooks';
 import { matchesSearch, memberRows, type MemberRow } from '../data/rules';
@@ -44,8 +46,6 @@ export function Members() {
   const memberships = useMemberships(gym.gymId);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
 
   const rows = useMemo(
     () => (people.data && memberships.data ? memberRows(people.data, memberships.data) : []),
@@ -53,20 +53,18 @@ export function Members() {
   );
   const active = FILTERS.find((f) => f.value === filter)!;
   const shown = rows.filter((r) => active.test(r) && matchesSearch(r, search));
+  const paging = usePaging(shown.length, `${filter}|${search}`);
 
+  // With a filter or search on, the file holds just those people; the export has no ids, so match on email.
+  const narrowed = filter !== 'all' || search.trim() !== '';
   const download = async () => {
-    setExporting(true);
-    setExportError(null);
-    try {
-      downloadCsv(
-        reportFileName('memberships', null),
-        membershipsTable(await exportMemberships(gym.gymId)),
-      );
-    } catch (err) {
-      setExportError(errorMessage(err));
-    } finally {
-      setExporting(false);
-    }
+    const all = await exportMemberships(gym.gymId);
+    const emails = new Set(shown.map((r) => r.email.toLowerCase()));
+    const exported = narrowed
+      ? all.filter((r) => r.memberEmail && emails.has(r.memberEmail.toLowerCase()))
+      : all;
+    downloadCsv(reportFileName('memberships', null), membershipsTable(exported));
+    return exported.length;
   };
 
   return (
@@ -74,15 +72,12 @@ export function Members() {
       <PageHeader
         title="Members"
         subtitle="Everyone with a member role, and the plan that decides their standing today">
-        <button className="button" onClick={download} disabled={exporting}>
-          {exporting ? 'Preparing…' : 'Download CSV'}
-        </button>
+        <ExportButton
+          onExport={download}
+          disabled={!rows.length}
+          label={narrowed ? `Download CSV (${shown.length})` : 'Download CSV'}
+        />
       </PageHeader>
-      {exportError ? (
-        <div className="notice error" role="alert">
-          {exportError}
-        </div>
-      ) : null}
 
       <section className="card">
         <div className="card-header">
@@ -118,52 +113,55 @@ export function Members() {
                       : 'No members match.'}
                   </Empty>
                 ) : (
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Member</th>
-                          <th>Plan</th>
-                          <th>Ends</th>
-                          <th>Status</th>
-                          <th className="num">Last paid</th>
-                          <th>Joined</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {shown.map((r) => (
-                          <tr key={r.id}>
-                            <td>
-                              {r.fullName}
-                              <span className="sub">{r.email}</span>
-                            </td>
-                            <td>{r.latest?.plan.name ?? '–'}</td>
-                            <td>
-                              {r.latest ? formatDay(r.latest.endsOn) : '–'}
-                              {r.standing === 'expiringSoon' && r.latest ? (
-                                <span className="sub">{daysRemaining(r.latest)} days left</span>
-                              ) : null}
-                            </td>
-                            <td>
-                              {r.status === 'suspended' ? (
-                                <Pill tone="bad">Suspended</Pill>
-                              ) : r.status === 'invited' ? (
-                                <Pill>Invited</Pill>
-                              ) : (
-                                <StandingPill standing={r.standing} />
-                              )}
-                            </td>
-                            <td className="num">
-                              {r.latest?.amountPaidCents != null
-                                ? formatMoney(r.latest.amountPaidCents, r.latest.plan.currency)
-                                : '–'}
-                            </td>
-                            <td>{formatDay(toIsoDate(new Date(r.joinedAt)))}</td>
+                  <>
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>Plan</th>
+                            <th>Ends</th>
+                            <th>Status</th>
+                            <th className="num">Last paid</th>
+                            <th>Joined</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {paging.slice(shown).map((r) => (
+                            <tr key={r.id}>
+                              <td>
+                                {r.fullName}
+                                <span className="sub">{r.email}</span>
+                              </td>
+                              <td>{r.latest?.plan.name ?? '–'}</td>
+                              <td>
+                                {r.latest ? formatDay(r.latest.endsOn) : '–'}
+                                {r.standing === 'expiringSoon' && r.latest ? (
+                                  <span className="sub">{daysRemaining(r.latest)} days left</span>
+                                ) : null}
+                              </td>
+                              <td>
+                                {r.status === 'suspended' ? (
+                                  <Pill tone="bad">Suspended</Pill>
+                                ) : r.status === 'invited' ? (
+                                  <Pill>Invited</Pill>
+                                ) : (
+                                  <StandingPill standing={r.standing} />
+                                )}
+                              </td>
+                              <td className="num">
+                                {r.latest?.amountPaidCents != null
+                                  ? formatMoney(r.latest.amountPaidCents, r.latest.plan.currency)
+                                  : '–'}
+                              </td>
+                              <td>{formatDay(toIsoDate(new Date(r.joinedAt)))}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination paging={paging} total={shown.length} />
+                  </>
                 )
               }
             </QueryState>

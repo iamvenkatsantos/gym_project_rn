@@ -507,3 +507,35 @@ td .sub {
 .site-links a {
   color: var(--text-secondary);
 }
+
+/* Pagination and exports */
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+}
+
+.page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-error {
+  color: var(--danger, #c62828);
+  font-size: 13px;
+  font-weight: 600;
+}
