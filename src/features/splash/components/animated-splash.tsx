@@ -184,6 +184,11 @@ export function AnimatedSplash({ ready }: AnimatedSplashProps) {
             allowFontScaling>
             {branding.name}
           </Text>
+          {branding.tagline ? (
+            <Text style={styles.gymTagline} maxFontSizeMultiplier={MaxFontScale} numberOfLines={2}>
+              {branding.tagline}
+            </Text>
+          ) : null}
           <View style={styles.footer}>
             <View style={styles.footerLine}>
               <View style={styles.rule} />
@@ -246,6 +251,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginTop: 22,
     paddingHorizontal: 32,
+    textAlign: 'center',
+  },
+  gymTagline: {
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
+    marginTop: 6,
+    paddingHorizontal: 40,
     textAlign: 'center',
   },
   footer: {

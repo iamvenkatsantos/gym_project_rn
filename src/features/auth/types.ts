@@ -29,6 +29,8 @@ export type GymRole = {
   /** The gym's logo (set by its owner) in the gym-logos bucket, and its public link. */
   logoPath?: string | null;
   logoUrl?: string | null;
+  /** A short line the platform admin sets beside the logo. */
+  tagline?: string | null;
   /** A member who still has to fill in their details and photos before using the app. */
   needsOnboarding?: boolean;
 };

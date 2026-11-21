@@ -12,11 +12,12 @@ export function useRememberGymBranding() {
   const gym = useAuthStore(selectActiveGym);
   const name = gym?.gymName;
   const logoUrl = gym?.logoUrl;
+  const tagline = gym?.tagline;
   const set = useGymBranding((s) => s.set);
   useEffect(() => {
     if (!name) return;
-    const next = brandingFor({ gymName: name, logoUrl });
+    const next = brandingFor({ gymName: name, logoUrl, tagline });
     set(next);
     if (next) Image.prefetch(next.logoUrl, 'disk').catch(() => {});
-  }, [name, logoUrl, set]);
+  }, [name, logoUrl, tagline, set]);
 }

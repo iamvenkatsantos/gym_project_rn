@@ -1,4 +1,5 @@
 import type { Membership, PaymentMethod } from '@/features/memberships/types';
+import { gymLogoUrl } from '@/features/gyms/logo';
 import { methodLabel } from '@/features/payments/history';
 import { formatAmount, formatDate } from '@/lib/format';
 
@@ -13,6 +14,8 @@ export type Receipt = {
   city: string;
   phone: string;
   email: string;
+  /** The branch's logo link, when the admin has set one. */
+  logoUrl?: string | null;
   memberName: string;
   memberPhone: string | null;
   planName: string;
@@ -87,6 +90,8 @@ export type ReceiptRow = {
   city: string;
   phone: string;
   email: string;
+  /** Missing from a server without the tagline migration. */
+  logo_path?: string | null;
   member_name: string;
   member_phone: string | null;
   plan_name: string;
@@ -111,6 +116,7 @@ export function toReceipt(row: ReceiptRow): Receipt {
     city: row.city,
     phone: row.phone,
     email: row.email,
+    logoUrl: gymLogoUrl(row.logo_path),
     memberName: row.member_name,
     memberPhone: row.member_phone,
     planName: row.plan_name,

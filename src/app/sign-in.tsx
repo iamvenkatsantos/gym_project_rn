@@ -20,6 +20,8 @@ import {
   signUp,
 } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
+import { useGymBranding } from '@/features/gyms/branding-store';
+import { BrandedHero, PoweredByCoreFit } from '@/features/gyms/components/branded-hero';
 import { ResendCodeButton, useResendWait } from '@/features/auth/components/resend-code-button';
 import { markCodeSent, resendLabel } from '@/features/auth/resend';
 import type { Profile, Role } from '@/features/auth/types';
@@ -61,6 +63,8 @@ export default function SignInScreen() {
   const theme = useTheme();
   const setProfile = useAuthStore((s) => s.setProfile);
   const linkError = useAuthStore((s) => s.linkError);
+  // The last gym this phone opened, if it has a logo: it brands the sign-in, with a CoreFit sign-off.
+  const branding = useGymBranding((s) => s.branding);
   const [mode, setMode] = useState<Mode>('signIn');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -119,31 +123,35 @@ export default function SignInScreen() {
   return (
     <Screen refreshable={false}>
       <LanguagePicker compact />
-      <View style={styles.hero}>
-        <View style={styles.brand}>
-          <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
-          <ThemedText type="heading">CoreFit</ThemedText>
-        </View>
-        <ThemedText type="display">
-          Train. Book.{'\n'}
-          <ThemedText type="display" themeColor="accent">
-            Repeat.
+      {branding ? (
+        <BrandedHero branding={branding} />
+      ) : (
+        <View style={styles.hero}>
+          <View style={styles.brand}>
+            <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
+            <ThemedText type="heading">CoreFit</ThemedText>
+          </View>
+          <ThemedText type="display">
+            Train. Book.{'\n'}
+            <ThemedText type="display" themeColor="accent">
+              Repeat.
+            </ThemedText>
           </ThemedText>
-        </ThemedText>
-        <ThemedText themeColor="textSecondary">
-          Your gym&apos;s classes, workouts and membership in one place.
-        </ThemedText>
-        <View style={styles.features}>
-          {features.map((f) => (
-            <View
-              key={f.label}
-              style={[styles.feature, { backgroundColor: theme.backgroundElement }]}>
-              <Icon name={f.icon} size={14} color="accent" />
-              <ThemedText type="small">{f.label}</ThemedText>
-            </View>
-          ))}
+          <ThemedText themeColor="textSecondary">
+            Your gym&apos;s classes, workouts and membership in one place.
+          </ThemedText>
+          <View style={styles.features}>
+            {features.map((f) => (
+              <View
+                key={f.label}
+                style={[styles.feature, { backgroundColor: theme.backgroundElement }]}>
+                <Icon name={f.icon} size={14} color="accent" />
+                <ThemedText type="small">{f.label}</ThemedText>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
       {isDemoMode ? (
         <View style={styles.form}>
@@ -371,6 +379,7 @@ export default function SignInScreen() {
           />
         </>
       )}
+      {branding && !isDemoMode ? <PoweredByCoreFit /> : null}
     </Screen>
   );
 }

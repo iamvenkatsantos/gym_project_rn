@@ -653,7 +653,13 @@ text that must stay English, or that it picks up but is never shown, goes in
   (`corefit-gym-branding`, `branding-store.ts`); `AnimatedSplash` crossfades to the gym logo, its name and a
   "POWERED BY CoreFit" sign-off once the logo has loaded, else it stays the CoreFit lockup (no logo, first
   launch, offline). Admin area and signed-out keep the last gym. Before the migration is pushed the profile
-  falls back without `logo_path`. JS only after `db push --remote`.
+  falls back without `logo_path`. JS only after `db push --remote`. **Tagline, branded sign-in and receipt logo**
+  (Venkat, 2026-11-21, `20261121160000_gym_tagline.sql`): the admin also sets a tagline (60 characters,
+  `gyms.tagline`, `set_gym_tagline()` / `admin_gym_tagline()`, `GymTaglineEditor` on the branch screen, test
+  `supabase/tests/gym-tagline.sql`). It shows under the name on the launch screen and on the sign-in screen, which
+  swaps its CoreFit hero for `BrandedHero` (logo, name, tagline) plus a "Powered by CoreFit" sign-off whenever the
+  phone remembers a gym with a logo (`PoweredByCoreFit`; the sign-in colours stay brand green). The receipt shows
+  the logo above the branch name (`membership_receipt()` returns `logo_path`; the card stays in print colours).
 - **Demo mode** (`npm run demo`) uses `src/lib/mock-db.ts`; keep the mock path working, and never
   show demo data in store builds.
 - **Before saying done:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run i18n:check`. In the cloud container
