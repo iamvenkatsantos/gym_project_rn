@@ -26,6 +26,9 @@ export type GymRole = {
   brandName?: string;
   /** The gym's theme colour, set by its owner. Missing (older server) means green. */
   themeColor?: ThemeColorId;
+  /** The gym's logo (set by its owner) in the gym-logos bucket, and its public link. */
+  logoPath?: string | null;
+  logoUrl?: string | null;
   /** A member who still has to fill in their details and photos before using the app. */
   needsOnboarding?: boolean;
 };

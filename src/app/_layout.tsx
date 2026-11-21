@@ -19,6 +19,7 @@ import { useAuthBootstrap } from '@/features/auth/use-auth-bootstrap';
 import { useAuthLinks } from '@/features/auth/use-auth-links';
 import { usePushNotifications } from '@/features/notifications/use-push-notifications';
 import { perfMark } from '@/lib/perf-log';
+import { useRememberGymBranding } from '@/features/gyms/use-remember-branding';
 import { AnimatedSplash } from '@/features/splash/components/animated-splash';
 import { useActiveBranchLocked } from '@/features/subscription/hooks';
 import { useOtaUpdates } from '@/features/updates/use-ota-updates';
@@ -52,6 +53,7 @@ export default function RootLayout() {
   const colors = useTheme();
   const navTheme = useMemo(() => navigationTheme(scheme, colors), [scheme, colors]);
   const authLoaded = useAuthStore((s) => s.status !== 'loading');
+  useRememberGymBranding();
 
   useEffect(() => {
     if (authLoaded) perfMark('Sign-in loaded');

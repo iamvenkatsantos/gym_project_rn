@@ -12,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 import { Button } from '@/components/button';
 import { FeeEditor } from '@/features/branches/components/fee-editor';
 import { BranchQrCard } from '@/features/check-in/components/branch-qr-card';
+import { GymLogoPicker } from '@/features/gyms/components/gym-logo-picker';
 import { PendingInvites } from '@/features/members/components/pending-invites';
 import { OnlinePaymentsEditor } from '@/features/branches/components/online-payments-editor';
 import {
@@ -71,6 +72,8 @@ export default function AdminBranchScreen() {
                     detail={b.feeCents === null ? 'Default fee' : 'Own fee'}
                   />
                   <BranchFee branch={b} billing={billing} />
+
+                  <GymLogoPicker gymId={b.gymId} />
 
                   <SectionHeader title="Online payments" />
                   <OnlinePaymentsEditor

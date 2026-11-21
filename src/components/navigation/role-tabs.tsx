@@ -1,10 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { Tabs, useNavigation } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type IconName } from '@/components/icon';
 import { Spacing } from '@/constants/theme';
+import { selectActiveGym, useAuthStore } from '@/features/auth/auth-store';
 import { AccountButton } from '@/features/auth/components/account-button';
 import { InboxButton } from '@/features/notifications/components/inbox-button';
 import { useTheme } from '@/hooks/use-theme';
@@ -35,6 +37,7 @@ export function RoleTabs({
   // The tabs live in one screen of the root stack. Naming that screen after the open tab means
   // screens pushed on top say "< People" or "< Home" on iOS, rather than the route ("< owner").
   const stackScreen = useNavigation();
+  const gymLogo = useAuthStore(selectActiveGym)?.logoUrl;
 
   return (
     <Tabs
@@ -61,6 +64,18 @@ export function RoleTabs({
         headerShadowVisible: false,
         headerTintColor: theme.text,
         headerTitleStyle: { fontWeight: 800 },
+        headerLeftContainerStyle: { paddingLeft: Spacing.three },
+        headerLeft: gymLogo
+          ? () => (
+              <Image
+                source={{ uri: gymLogo }}
+                style={styles.logo}
+                contentFit="cover"
+                cachePolicy="disk"
+                accessibilityIgnoresInvertColors
+              />
+            )
+          : undefined,
         headerRightContainerStyle: { paddingRight: Spacing.three },
         headerRight: () => (
           <View style={styles.actions}>
@@ -88,6 +103,7 @@ export function RoleTabs({
 const TAB_BAR_HEIGHT = 58;
 
 const styles = StyleSheet.create({
+  logo: { width: 32, height: 32, borderRadius: 8 },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
