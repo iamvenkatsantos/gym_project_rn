@@ -4,6 +4,7 @@ import { RoleTabs } from '@/components/navigation/role-tabs';
 export default function MemberLayout() {
   return (
     <RoleTabs
+      accountButton={false}
       tabs={[
         { name: 'index', title: 'Home', icon: 'home-outline' },
         { name: 'workouts', title: 'Workouts', icon: 'barbell-outline' },
