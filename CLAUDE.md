@@ -628,13 +628,21 @@ text that must stay English, or that it picks up but is never shown, goes in
 - **Layout:** test at 360px wide and with large fonts (1.3x; demo on web at 277px). Use `useTheme()`
   colours only; `primary` is for fills, `accent` for green text. New dashboard shortcuts go in the
   `ShortcutGrid`, not as more full-width buttons.
-- **Theme colours** (Venkat, 2026-11-17): Appearance (Account, member Profile) has System/Light/Dark
-  plus a colour: Green (default, the logo), Blue, Purple, Orange, Pink. Saved per phone in
-  `useAppearance` (`color`); `useTheme()` returns `getPalette(scheme, color)` from
-  `src/constants/theme.ts`. A colour swaps `primary`, `onPrimary`, `accent` and tints the greys;
-  success/warning/danger never change. So "green text" means `accent`, whatever the colour. The
-  splash, receipts, QR posters and the web dashboard stay brand green. A new colour goes in
-  `ThemeColors` + `tints`; the contrast test in `src/features/appearance/__tests__` must pass.
+- **Theme colours** (Venkat, 2026-11-17; owner-controlled 2026-11-21): the colour is a **gym setting**, not a
+  personal one. Only the branch's owner picks it, in Account → **Gym colour** (`GymThemeColor`,
+  `set_gym_theme_color()`, `gyms.theme_color`: Green default, Blue, Purple, Orange, Pink; owner only, a
+  per-branch choice). Members, trainers and supervisors have no colour picker; they get the active gym's
+  colour (`GymRole.themeColor`, read with the profile; `useTheme()` returns `getPalette(scheme, color)`
+  from `src/constants/theme.ts`) and the owner web dashboard follows the open gym's colour too
+  (`web/src/lib/theme.ts` swaps the CSS variables). Appearance (Account, member Profile) is now just
+  System/Light/Dark, saved per phone in `useAppearance`. The colour data is plain in
+  `src/constants/theme-colors.ts` (no React Native, so the web can import it). A colour swaps `primary`,
+  `onPrimary`, `accent` and tints the greys; success/warning/danger never change. So "green text" means
+  `accent`, whatever the colour. The sign-in screens, splash, receipts, QR posters and the admin area
+  stay brand green. A new colour goes in `ThemeColors` + `tints` **and** the `gyms_theme_color_check`
+  constraint plus `set_gym_theme_color()` (new migration); the contrast test in
+  `src/features/appearance/__tests__` must pass. Before the migration is pushed the app and dashboard
+  fall back to green (`42703`). Test `supabase/tests/gym-theme-color.sql`.
 - **Demo mode** (`npm run demo`) uses `src/lib/mock-db.ts`; keep the mock path working, and never
   show demo data in store builds.
 - **Before saying done:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run i18n:check`. In the cloud container

@@ -1,3 +1,4 @@
+import type { ThemeColorId } from '@/constants/theme';
 import type { GymDetails } from '@/features/gyms/types';
 import { delay, MOCK_GYM_ID, mockId } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -60,5 +61,12 @@ export async function updateGymDetails(gymId: string, details: GymDetails) {
     return delay(undefined);
   }
   const { error } = await supabase.from('gyms').update(details).eq('id', gymId);
+  if (error) throw error;
+}
+
+/** Owners only: the colour the branch's members, trainers, supervisors and dashboard use. */
+export async function setGymThemeColor(gymId: string, color: ThemeColorId) {
+  if (!supabase) return delay(undefined);
+  const { error } = await supabase.rpc('set_gym_theme_color', { p_gym_id: gymId, p_color: color });
   if (error) throw error;
 }

@@ -1,3 +1,5 @@
+import type { ThemeColorId } from '@/constants/theme';
+
 export type Role = 'member' | 'trainer' | 'supervisor' | 'owner';
 
 /** Owners and supervisors run the gym day to day: people, payments and trainer mapping. */
@@ -22,6 +24,8 @@ export type GymRole = {
   /** The brand the gym is a branch of. Every gym has one; a single gym is a one-branch brand. */
   brandId?: string;
   brandName?: string;
+  /** The gym's theme colour, set by its owner. Missing (older server) means green. */
+  themeColor?: ThemeColorId;
   /** A member who still has to fill in their details and photos before using the app. */
   needsOnboarding?: boolean;
 };

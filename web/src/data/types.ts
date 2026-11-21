@@ -1,3 +1,5 @@
+import type { ThemeColorId } from '@/constants/theme-colors';
+
 import type { Role } from '@/features/auth/types';
 import type { MembershipStatus } from '@/features/memberships/rules';
 import type { Membership } from '@/features/memberships/types';
@@ -10,7 +12,7 @@ export type {
   ReportPeriod,
 } from '@/features/reports/types';
 
-export type OwnedGym = { gymId: string; gymName: string };
+export type OwnedGym = { gymId: string; gymName: string; themeColor: ThemeColorId };
 
 export type PersonStatus = 'active' | 'invited' | 'suspended';
 

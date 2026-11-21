@@ -3,16 +3,11 @@ import { Appearance } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { DefaultThemeColor, isThemeColor, type ThemeColorId } from '@/constants/theme';
-
 export type AppearanceChoice = 'system' | 'light' | 'dark';
 
 type AppearanceState = {
   choice: AppearanceChoice;
   setChoice: (choice: AppearanceChoice) => void;
-  /** Theme colour for buttons, chips, tabs and green text; light/dark stays with `choice`. */
-  color: ThemeColorId;
-  setColor: (color: ThemeColorId) => void;
 };
 
 /** Native pieces (alerts, keyboards, date pickers) follow the same choice as the app. */
@@ -25,8 +20,8 @@ function applyToNative(choice: AppearanceChoice) {
 }
 
 /**
- * Light, dark or follow the phone, plus the theme colour. Kept on the device, so it's per phone,
- * not per account.
+ * Light, dark or follow the phone. Kept on the device, so it's per phone, not per account. The
+ * theme colour is the gym owner's choice (`gyms.theme_color`), not stored here.
  */
 export const useAppearance = create<AppearanceState>()(
   persist(
@@ -36,21 +31,10 @@ export const useAppearance = create<AppearanceState>()(
         applyToNative(choice);
         set({ choice });
       },
-      color: DefaultThemeColor,
-      setColor: (color) => set({ color: isThemeColor(color) ? color : DefaultThemeColor }),
     }),
     {
       name: 'corefit-appearance',
       storage: createJSONStorage(() => AsyncStorage),
-      // Phones saved before theme colours existed have no `color`; a removed colour falls back too.
-      merge: (persisted, current) => {
-        const saved = (persisted ?? {}) as Partial<AppearanceState>;
-        return {
-          ...current,
-          ...saved,
-          color: isThemeColor(saved.color) ? saved.color : DefaultThemeColor,
-        };
-      },
       onRehydrateStorage: () => (state) => {
         if (state && state.choice !== 'system') applyToNative(state.choice);
       },
