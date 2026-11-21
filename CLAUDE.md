@@ -609,6 +609,7 @@ text that must stay English, or that it picks up but is never shown, goes in
   claims the queries that start while it is focused (`useScreenQueries`, `src/lib/screen-queries.ts`), and
   refetch-on-focus and pull-to-refresh touch that screen's queries plus any no screen owns (tab bar, app-wide).
   Mutations still invalidate by key, and returning to the app still refetches every stale query.
+- **Class bookings stay `booked` after the class** (no job completes them), so the app hides ended ones: `useMyBookings` filters with `notEnded()` (`src/features/bookings/rules.ts`, start + duration). 1:1 sessions are filtered by `ends_at` in `listSessions`.
 - **Every UPDATE/DELETE needs a WHERE clause,** even in RPCs. Supabase rejects them otherwise.
 - **RLS on every new table,** plus a check in `supabase/tests/` for anything about who can see or
   change what. Keep migrations runnable on plain Postgres (guard `pg_cron`/`pg_net`/`vault` code).
