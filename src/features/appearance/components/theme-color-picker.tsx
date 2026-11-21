@@ -10,16 +10,21 @@ import {
   ThemeColors,
   type ThemeColorId,
 } from '@/constants/theme';
-import { useAppearance } from '@/features/appearance/appearance-store';
 import { useColorSchemeName, useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 
 const SWATCH = 40;
 
 /** A row of colour swatches; the picked one gets a ring and a tick. */
-export function ThemeColorPicker() {
-  const color = useAppearance((s) => s.color);
-  const setColor = useAppearance((s) => s.setColor);
+export function ThemeColorPicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: ThemeColorId;
+  onChange: (color: ThemeColorId) => void;
+  disabled?: boolean;
+}) {
   const scheme = useColorSchemeName();
   const theme = useTheme();
   const t = useT();
@@ -27,15 +32,16 @@ export function ThemeColorPicker() {
   return (
     <View accessibilityRole="radiogroup" style={styles.row}>
       {ThemeColors.map((id: ThemeColorId) => {
-        const selected = id === color;
+        const selected = id === value;
         const swatch = getPalette(scheme, id);
         return (
           <Pressable
             key={id}
             accessibilityRole="radio"
-            accessibilityState={{ selected }}
+            accessibilityState={{ selected, disabled }}
             accessibilityLabel={t(`${ThemeColorLabels[id]} theme`)}
-            onPress={() => setColor(id)}
+            disabled={disabled}
+            onPress={() => onChange(id)}
             style={styles.item}>
             <View style={[styles.ring, { borderColor: selected ? swatch.accent : 'transparent' }]}>
               <View style={[styles.swatch, { backgroundColor: swatch.primary }]}>

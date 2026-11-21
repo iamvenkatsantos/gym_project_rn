@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { fetchOwnedGyms } from '../data/api';
 import type { OwnedGym } from '../data/types';
 import { supabase } from '../lib/supabase';
+import { applyGymTheme, clearGymTheme } from '../lib/theme';
 
 const GYM_KEY = 'corefit.dashboard.gym';
 
@@ -60,6 +61,12 @@ export function GymProvider({
 }) {
   const [gymId, setGymId] = useState(readSavedGym);
   const gym = gyms.find((g) => g.gymId === gymId) ?? gyms[0];
+  // The owner picks the colour in the app; the dashboard follows the open gym's.
+  const themeColor = gym?.themeColor;
+  useEffect(() => {
+    if (themeColor) applyGymTheme(themeColor);
+    return clearGymTheme;
+  }, [themeColor]);
   const selectGym = (next: string) => {
     setGymId(next);
     try {

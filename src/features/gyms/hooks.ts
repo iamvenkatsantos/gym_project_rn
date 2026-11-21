@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { ThemeColorId } from '@/constants/theme';
 import { restoreProfile } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/auth-store';
-import { canSetUpGym, createGym, fetchGymDetails, updateGymDetails } from '@/features/gyms/api';
+import {
+  canSetUpGym,
+  createGym,
+  fetchGymDetails,
+  setGymThemeColor,
+  updateGymDetails,
+} from '@/features/gyms/api';
 import { cleanGymDetails } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
 import { STATIC_STALE_TIME } from '@/lib/query-client';
@@ -74,5 +81,34 @@ export function useUpdateGymDetails(gymId: string) {
       }
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: gymKeys.details(gymId) }),
+  });
+}
+
+/** Saves the gym's theme colour and shows it at once; undone if the server refuses. */
+export function useSetGymThemeColor(gymId: string) {
+  return useMutation({
+    mutationFn: (color: ThemeColorId) => setGymThemeColor(gymId, color),
+    onMutate: (color) => {
+      const { profile, setProfile } = useAuthStore.getState();
+      const previous = profile?.gyms.find((g) => g.gymId === gymId)?.themeColor;
+      if (profile) {
+        setProfile({
+          ...profile,
+          gyms: profile.gyms.map((g) => (g.gymId === gymId ? { ...g, themeColor: color } : g)),
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _color, context) => {
+      const { profile, setProfile } = useAuthStore.getState();
+      if (profile) {
+        setProfile({
+          ...profile,
+          gyms: profile.gyms.map((g) =>
+            g.gymId === gymId ? { ...g, themeColor: context?.previous } : g,
+          ),
+        });
+      }
+    },
   });
 }

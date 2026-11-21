@@ -1,3 +1,4 @@
+import { DefaultThemeColor, isThemeColor } from '@/constants/theme-colors';
 import type {
   AttendanceExportRow,
   AttendanceSummary,
@@ -15,19 +16,27 @@ import { supabase, unwrap } from '../lib/supabase';
 // Every read goes through the same RLS and owner-checked RPCs the mobile app
 // uses, so the dashboard can't see anything the owner couldn't see on a phone.
 
-type GymRoleRow = { role: Role; status: string; gym: { id: string; name: string } };
+type GymRoleRow = {
+  role: Role;
+  status: string;
+  gym: { id: string; name: string; theme_color?: string };
+};
 
 /** The gyms the signed-in user owns. The dashboard is for owners only. */
 export async function fetchOwnedGyms(userId: string): Promise<OwnedGym[]> {
-  const rows = unwrap(
-    await supabase
-      .from('gym_members')
-      .select('role, status, gym:gyms(id, name)')
-      .eq('user_id', userId),
-  ) as unknown as GymRoleRow[];
+  const select = (gymColumns: string) =>
+    supabase.from('gym_members').select(`role, status, gym:gyms(${gymColumns})`).eq('user_id', userId);
+  let result = await select('id, name, theme_color');
+  // Before the gym theme migration there's no theme_color; every gym is then green.
+  if (result.error?.code === '42703') result = await select('id, name');
+  const rows = unwrap(result) as unknown as GymRoleRow[];
   return rows
     .filter((r) => r.role === 'owner' && r.status === 'active')
-    .map((r) => ({ gymId: r.gym.id, gymName: r.gym.name }))
+    .map((r) => ({
+      gymId: r.gym.id,
+      gymName: r.gym.name,
+      themeColor: isThemeColor(r.gym.theme_color) ? r.gym.theme_color : DefaultThemeColor,
+    }))
     .sort((a, b) => a.gymName.localeCompare(b.gymName));
 }
 
