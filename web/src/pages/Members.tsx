@@ -114,7 +114,7 @@ export function Members() {
                   </Empty>
                 ) : (
                   <>
-                    <div className="table-wrap">
+                    <div className="table-wrap table-scroll">
                       <table>
                         <thead>
                           <tr>
