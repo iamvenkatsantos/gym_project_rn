@@ -89,7 +89,7 @@ function DayView() {
               {rows.length === 0 ? (
                 <Empty>No active members or trainers yet.</Empty>
               ) : (
-                <div className="table-wrap">
+                <div className="table-wrap table-scroll">
                   <table>
                     <thead>
                       <tr>
@@ -169,7 +169,7 @@ function SummaryView() {
             <Empty>No active members or trainers yet.</Empty>
           ) : (
             <>
-              <div className="table-wrap">
+              <div className="table-wrap table-scroll">
                 <table>
                   <thead>
                     <tr>
