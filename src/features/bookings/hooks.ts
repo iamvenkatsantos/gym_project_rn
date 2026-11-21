@@ -9,6 +9,7 @@ import {
   scheduleClasses,
   updateClass,
 } from '@/features/bookings/api';
+import { notEnded } from '@/features/bookings/rules';
 import type { ClassInput } from '@/features/bookings/types';
 
 export const bookingKeys = {
@@ -29,6 +30,8 @@ export function useMyBookings(gymId: string, memberId: string) {
   return useQuery({
     queryKey: bookingKeys.mine(gymId, memberId),
     queryFn: () => listMyBookings(gymId, memberId),
+    // Past classes stay 'booked' in the database; hide them once they've ended.
+    select: (list) => notEnded(list),
   });
 }
 
