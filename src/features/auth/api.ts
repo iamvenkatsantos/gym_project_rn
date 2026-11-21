@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 import { isThemeColor } from '@/constants/theme';
 import type { LinkSession } from '@/features/auth/auth-link';
 import type { Profile, Role } from '@/features/auth/types';
+import { gymLogoUrl } from '@/features/gyms/logo';
 import { avatarUrl, removeOwnAvatars } from '@/features/profile/api';
 import { delay, mockProfiles } from '@/lib/mock-db';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -15,7 +16,7 @@ type ProfileRow = {
     role: Role;
     status: string;
     onboarded_at: string | null;
-    gym: { id: string; name: string; theme_color?: string; brand: { id: string; name: string } | null };
+    gym: { id: string; name: string; theme_color?: string; logo_path?: string | null; brand: { id: string; name: string } | null };
   }[];
 };
 
@@ -34,6 +35,8 @@ function toProfile(row: ProfileRow): Profile {
         brandId: g.gym.brand?.id,
         brandName: g.gym.brand?.name,
         themeColor: isThemeColor(g.gym.theme_color) ? g.gym.theme_color : undefined,
+        logoPath: g.gym.logo_path ?? null,
+        logoUrl: gymLogoUrl(g.gym.logo_path),
         needsOnboarding: g.role === 'member' && g.onboarded_at === null,
       })),
   };
@@ -56,8 +59,9 @@ export async function fetchProfile(userId: string): Promise<Profile> {
       .single();
   // Newest columns first. Before the profile photo migration there's no avatar_path, before the
   // member onboarding one no onboarded_at (then nobody is asked yet), and before the gym theme
-  // migration no theme_color (then every gym is green).
+  // migration no theme_color (then every gym is green), and before the gym logo one no logo_path.
   const attempts: [string, string, string][] = [
+    ['id, full_name, avatar_path', 'role, status, onboarded_at', 'theme_color, logo_path, '],
     ['id, full_name, avatar_path', 'role, status, onboarded_at', 'theme_color, '],
     ['id, full_name, avatar_path', 'role, status, onboarded_at', ''],
     ['id, full_name', 'role, status, onboarded_at', ''],
@@ -82,7 +86,7 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     profileResult = await selectProfile(...attempt);
   }
   // Saving a profile needs the profile photo migration; until it's pushed, nobody is asked.
-  const canSaveProfile = used < 2;
+  const canSaveProfile = used < 3;
   const row = unwrap(profileResult) as unknown as ProfileRow;
   // Before the platform_admins migration the check fails; then nobody is an admin.
   return {

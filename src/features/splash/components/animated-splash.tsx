@@ -1,3 +1,4 @@
+import { Image as CachedImage } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
@@ -12,6 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useGymBranding } from '@/features/gyms/branding-store';
 import { BrandGreen, Colors, MaxFontScale, SplashBackground } from '@/constants/theme';
 import {
   LOGO_END_SCALE,
@@ -45,6 +47,20 @@ export function AnimatedSplash({ ready }: AnimatedSplashProps) {
   const tagline = useSharedValue(0);
   const shown = useSharedValue(1);
   const wordmarkWidth = useSharedValue(0);
+
+  // A gym with a logo takes over the screen once its logo has loaded (from the phone's cache, so
+  // nearly at once). Until then, and for every gym without one, it stays the CoreFit lockup.
+  const branding = useGymBranding((s) => s.branding);
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const branded = useSharedValue(0);
+  const showBranded = !!branding && logoLoaded;
+  useEffect(() => {
+    branded.value = showBranded
+      ? reduceMotion
+        ? 1
+        : withTiming(1, { duration: 320, easing: EASE_OUT })
+      : 0;
+  }, [showBranded, reduceMotion, branded]);
 
   // The first frame matches the native splash, so swapping them is invisible.
   const onFirstLayout = () => {
@@ -89,6 +105,11 @@ export function AnimatedSplash({ ready }: AnimatedSplashProps) {
   };
 
   const overlayStyle = useAnimatedStyle(() => ({ opacity: shown.value }));
+  const coreFitStyle = useAnimatedStyle(() => ({ opacity: 1 - branded.value }));
+  const brandedStyle = useAnimatedStyle(() => ({
+    opacity: branded.value,
+    transform: [{ scale: interpolate(branded.value, [0, 1], [0.94, 1]) }],
+  }));
 
   const logoStyle = useAnimatedStyle(() => {
     const { logoX } = lockupOffsets(wordmarkWidth.value);
@@ -121,27 +142,69 @@ export function AnimatedSplash({ ready }: AnimatedSplashProps) {
       pointerEvents={leaving ? 'none' : 'auto'}
       style={[StyleSheet.absoluteFill, styles.overlay, overlayStyle]}
       accessible
-      accessibilityLabel="CoreFit">
-      <Animated.View style={[styles.centre, logoStyle]}>
-        <Image
-          source={require('@/assets/images/splash-icon.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </Animated.View>
-      <View style={[StyleSheet.absoluteFill, styles.centre]} pointerEvents="none">
-        <Animated.View onLayout={onWordmarkLayout} style={wordmarkStyle}>
-          <Text style={styles.wordmark} maxFontSizeMultiplier={MaxFontScale} numberOfLines={1}>
-            Core<Text style={styles.fit}>Fit</Text>
-          </Text>
-          <Animated.Text
-            style={[styles.tagline, taglineStyle]}
-            maxFontSizeMultiplier={MaxFontScale}
-            numberOfLines={1}>
-            TRAIN · TRACK · GROW
-          </Animated.Text>
+      accessibilityLabel={branding?.name ?? 'CoreFit'}>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.centre, coreFitStyle]}>
+        <Animated.View style={[styles.centre, logoStyle]}>
+          <Image
+            source={require('@/assets/images/splash-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </Animated.View>
-      </View>
+        <View style={[StyleSheet.absoluteFill, styles.centre]} pointerEvents="none">
+          <Animated.View onLayout={onWordmarkLayout} style={wordmarkStyle}>
+            <Text style={styles.wordmark} maxFontSizeMultiplier={MaxFontScale} numberOfLines={1}>
+              Core<Text style={styles.fit}>Fit</Text>
+            </Text>
+            <Animated.Text
+              style={[styles.tagline, taglineStyle]}
+              maxFontSizeMultiplier={MaxFontScale}
+              numberOfLines={1}>
+              TRAIN · TRACK · GROW
+            </Animated.Text>
+          </Animated.View>
+        </View>
+      </Animated.View>
+      {branding ? (
+        <Animated.View
+          style={[StyleSheet.absoluteFill, styles.centre, brandedStyle]}
+          pointerEvents="none">
+          <CachedImage
+            source={{ uri: branding.logoUrl }}
+            style={styles.gymLogo}
+            contentFit="cover"
+            cachePolicy="disk"
+            onLoad={() => setLogoLoaded(true)}
+            accessibilityIgnoresInvertColors
+          />
+          <Text
+            style={styles.gymName}
+            maxFontSizeMultiplier={MaxFontScale}
+            numberOfLines={2}
+            allowFontScaling>
+            {branding.name}
+          </Text>
+          <View style={styles.footer}>
+            <View style={styles.footerLine}>
+              <View style={styles.rule} />
+              <Text style={styles.poweredBy} maxFontSizeMultiplier={MaxFontScale}>
+                POWERED BY
+              </Text>
+              <View style={styles.rule} />
+            </View>
+            <View style={styles.footerBrand}>
+              <Image
+                source={require('@/assets/images/splash-icon.png')}
+                style={styles.footerLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.footerName} maxFontSizeMultiplier={MaxFontScale}>
+                Core<Text style={styles.fit}>Fit</Text>
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+      ) : null}
     </Animated.View>
   );
 }
@@ -171,6 +234,39 @@ const styles = StyleSheet.create({
   fit: {
     color: BrandGreen,
   },
+  gymLogo: {
+    width: 120,
+    height: 120,
+    borderRadius: 28,
+  },
+  gymName: {
+    color: Colors.dark.text,
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    marginTop: 22,
+    paddingHorizontal: 32,
+    textAlign: 'center',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 40,
+    right: 40,
+    alignItems: 'center',
+    gap: 10,
+  },
+  footerLine: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch' },
+  rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: Colors.dark.border },
+  poweredBy: {
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2.2,
+  },
+  footerBrand: { flexDirection: 'row', alignItems: 'center' },
+  footerLogo: { width: 38, height: 38, marginRight: -4 },
+  footerName: { color: Colors.dark.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.2 },
   tagline: {
     color: Colors.dark.textSecondary,
     fontSize: 11,

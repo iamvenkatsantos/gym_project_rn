@@ -40,6 +40,7 @@
   "Open CoreFit, type your mobile number, tap Forgot password? then I have a reset code.",
   "Or tap \"I have an invite code\" and enter {formatInviteCode}",
   "PAYMENT RECEIPT",
+  "POWERED BY",
   "Payment receipt No. {receiptNumber}",
   "Payment receipt, not a tax invoice · CoreFit",
   "Power_Clean",
@@ -72,12 +73,13 @@
   "id, name, price_cents, currency, duration_days, offer_type, offer_value, offer_label, offer_starts_on, offer_ends_on, all_branches",
   "id, trainer_id, trainer_name, title, starts_at, duration_minutes, capacity, booked_count, waitlist_count, series_id",
   "phone, date_of_birth",
+  "rgba(0, 0, 0, 0.55)",
   "role, status",
   "role, status, onboarded_at",
   "s have",
+  "theme_color, logo_path,",
   "useActiveGym called without an active gym",
   "useProfile called while signed out",
   "{name} check-in QR.png",
-  "{name} membership at {gymName}: {formatAmount} instead of {formatAmount2}, till {spellDate}. Renew in the app or at the front desk.",
-  "rgba(0, 0, 0, 0.55)"
+  "{name} membership at {gymName}: {formatAmount} instead of {formatAmount2}, till {spellDate}. Renew in the app or at the front desk."
 ]
