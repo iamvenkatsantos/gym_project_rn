@@ -6,7 +6,8 @@ export function spotsLeft(gymClass: GymClass) {
 
 /** waitlist: the class is full, so booking joins its waitlist. */
 export type BookingEligibility =
-  { ok: true; waitlist: boolean } | { ok: false; reason: 'started' | 'alreadyBooked' | 'limit' };
+  | { ok: true; waitlist: boolean }
+  | { ok: false; reason: 'started' | 'alreadyBooked' | 'limit' };
 
 /** Booked or waiting: what counts against the gym's booking limit. */
 export function isHeld(booking: Pick<Booking, 'status'>) {
@@ -30,6 +31,17 @@ export function canBook(
   const held = myBookings.filter((b) => isHeld(b) && new Date(b.gymClass.startsAt) > now).length;
   if (cap !== null && held >= cap) return { ok: false, reason: 'limit' };
   return { ok: true, waitlist: spotsLeft(gymClass) === 0 };
+}
+
+/** Bookings whose class hasn't ended yet; finished classes drop out of "Coming up". */
+export function notEnded<T extends Pick<Booking, 'gymClass'>>(
+  bookings: T[],
+  now: Date = new Date(),
+) {
+  return bookings.filter(
+    (b) =>
+      new Date(b.gymClass.startsAt).getTime() + b.gymClass.durationMinutes * 60000 > now.getTime(),
+  );
 }
 
 export function fillRate(gymClass: GymClass) {

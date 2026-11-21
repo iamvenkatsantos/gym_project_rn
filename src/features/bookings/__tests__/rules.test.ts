@@ -5,6 +5,7 @@ import {
   classProblem,
   formatClock,
   minutesOfDay,
+  notEnded,
   spotsLeft,
   upcomingDays,
   weeklyStarts,
@@ -130,5 +131,23 @@ describe('scheduling helpers', () => {
     expect(classProblem({ title: ' ', startsAt: future }, now)).toBe('Give the class a name.');
     expect(classProblem({ title: 'HIIT', startsAt: now }, now)).toBe('Pick a time in the future.');
     expect(classProblem({ title: 'HIIT', startsAt: future }, now)).toBeNull();
+  });
+});
+
+describe('notEnded', () => {
+  const b = (startsAt: string) =>
+    ({
+      id: startsAt,
+      classId: startsAt,
+      memberId: 'm',
+      status: 'booked',
+      gymClass: { ...gymClass, startsAt },
+    }) as Booking;
+  it('drops finished classes but keeps one still running', () => {
+    const list = [b('2026-10-20T12:00:00Z'), b('2026-10-24T09:45:00Z'), b('2026-10-25T12:00:00Z')];
+    expect(notEnded(list, now).map((x) => x.id)).toEqual([
+      '2026-10-24T09:45:00Z',
+      '2026-10-25T12:00:00Z',
+    ]);
   });
 });
