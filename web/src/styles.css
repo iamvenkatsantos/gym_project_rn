@@ -510,6 +510,33 @@ td .sub {
 
 /* Pagination and exports */
 
+.table-wrap.table-scroll {
+  margin-bottom: 0;
+}
+
+@media (min-width: 861px) {
+  .table-scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .table-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+    box-shadow: 0 1px 0 var(--border);
+  }
+}
+
+th:first-child {
+  width: 30%;
+}
+
+td.num + td,
+th.num + th {
+  padding-left: 32px;
+}
+
 .pagination {
   display: flex;
   flex-wrap: wrap;
@@ -521,10 +548,39 @@ td .sub {
   margin-top: 18px;
 }
 
+.pagination .toolbar {
+  gap: 10px;
+}
+
+.pagination .button {
+  min-height: 36px;
+  padding: 0 14px;
+  font-weight: 500;
+}
+
+.pagination .select {
+  min-height: 36px;
+}
+
+.pagination .muted {
+  white-space: nowrap;
+}
+
 .page-size {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.export-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.export-period {
+  min-height: 40px;
 }
 
 .export {

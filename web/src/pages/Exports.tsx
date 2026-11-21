@@ -86,12 +86,16 @@ function ExportCard({
         <h2>{title}</h2>
         <p className="muted">{description}</p>
       </div>
-      {usesPeriod ? (
-        <div className="toolbar">
-          <PeriodPicker value={period} onChange={setPeriod} />
+      <div className="export-controls">
+        <div className="toolbar export-period">
+          {usesPeriod ? (
+            <PeriodPicker value={period} onChange={setPeriod} />
+          ) : (
+            <span className="muted">Always as of today</span>
+          )}
         </div>
-      ) : null}
-      <ExportButton primary onExport={download} />
+        <ExportButton primary onExport={download} />
+      </div>
     </div>
   );
 }
