@@ -8,6 +8,7 @@ import {
   replyToWorkout,
   saveLog,
 } from '@/features/progress/api';
+import { offlineError } from '@/lib/network';
 import { draftToLog, useWorkoutDraft } from '@/features/progress/draft-store';
 
 export const progressKeys = {
@@ -41,6 +42,24 @@ export function useGymWorkoutLogs(gymId: string, viewer: { id: string; role: Rol
   });
 }
 
+const SAVE_TIMEOUT_MS = 20_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, error: Error): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(error), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(id);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(id);
+        reject(e);
+      },
+    );
+  });
+}
+
 /**
  * Uploads the workout in progress. The draft is only cleared once the server
  * has it, so a failed upload can be retried without losing anything.
@@ -52,11 +71,20 @@ export function useFinishWorkout(memberId: string) {
     mutationFn: async () => {
       const { draft } = useWorkoutDraft.getState();
       if (!draft) throw new Error('No workout in progress');
-      await saveLog(draft.gymId, memberId, draftToLog(draft));
+      // The save is idempotent (client_id), so a timed-out try is safe to retry.
+      await withTimeout(
+        saveLog(draft.gymId, memberId, draftToLog(draft)),
+        SAVE_TIMEOUT_MS,
+        offlineError(new Error('Saving the workout timed out')),
+      );
     },
     // The screen leaves first, then the draft is cleared: clearing it while the workout
     // screen is open unmounts it before it can navigate.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+    // Not awaited: the mutation stays pending until this promise settles, and the refetches of
+    // every progress query kept the Finish button spinning long after the workout was saved.
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: progressKeys.all });
+    },
   });
 }
 
