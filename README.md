@@ -293,6 +293,7 @@ psql -d corefit_test -f supabase/tests/qr-check-in.sql
 psql -d corefit_test -f supabase/tests/all-branch-memberships.sql
 psql -d corefit_test -f supabase/tests/gym-hours.sql
 psql -d corefit_test -f supabase/tests/gym-logo.sql
+psql -d corefit_test -f supabase/tests/gym-tagline.sql
 psql -d corefit_test -f supabase/tests/profiles.sql
 psql -d corefit_test -f supabase/tests/admission-details.sql
 psql -d corefit_test -f supabase/tests/whatsapp-without-email.sql

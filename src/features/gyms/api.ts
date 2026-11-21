@@ -117,3 +117,18 @@ export async function fetchAdminGymLogo(gymId: string): Promise<string | null> {
   if (error) throw error;
   return (data as string | null) ?? null;
 }
+
+/** Platform admins only: the branch's current tagline (admins aren't members of the branch). */
+export async function fetchAdminGymTagline(gymId: string): Promise<string> {
+  if (!supabase) return delay('');
+  const { data, error } = await supabase.rpc('admin_gym_tagline', { p_gym_id: gymId });
+  if (error) throw error;
+  return (data as string | null) ?? '';
+}
+
+/** Platform admins only: sets the tagline (blank clears it). */
+export async function saveGymTagline(gymId: string, tagline: string) {
+  if (!supabase) return delay(undefined);
+  const { error } = await supabase.rpc('set_gym_tagline', { p_gym_id: gymId, p_tagline: tagline });
+  if (error) throw error;
+}

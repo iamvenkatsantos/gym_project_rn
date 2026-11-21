@@ -7,14 +7,16 @@ import {
   canSetUpGym,
   createGym,
   fetchAdminGymLogo,
+  fetchAdminGymTagline,
   fetchGymDetails,
   saveGymLogo,
+  saveGymTagline,
   setGymThemeColor,
   updateGymDetails,
 } from '@/features/gyms/api';
 import { gymLogoUrl } from '@/features/gyms/logo';
 import type { PickedPhoto } from '@/features/onboarding/types';
-import { cleanGymDetails } from '@/features/gyms/rules';
+import { cleanGymDetails, cleanTagline } from '@/features/gyms/rules';
 import type { GymDetails } from '@/features/gyms/types';
 import { STATIC_STALE_TIME } from '@/lib/query-client';
 
@@ -23,6 +25,7 @@ export const gymKeys = {
   canSetUp: () => [...gymKeys.all, 'can-set-up'] as const,
   details: (gymId: string) => [...gymKeys.all, gymId, 'details'] as const,
   logo: (gymId: string) => [...gymKeys.all, gymId, 'logo'] as const,
+  tagline: (gymId: string) => [...gymKeys.all, gymId, 'tagline'] as const,
 };
 
 /** CoreFit's own admins, from the signed-in profile. */
@@ -149,5 +152,23 @@ export function useSaveGymLogo(gymId: string) {
         ),
       });
     },
+  });
+}
+
+/** The branch's tagline, for the admin's branch screen. */
+export function useAdminGymTagline(gymId: string) {
+  return useQuery({
+    queryKey: gymKeys.tagline(gymId),
+    queryFn: () => fetchAdminGymTagline(gymId),
+    staleTime: STATIC_STALE_TIME,
+  });
+}
+
+/** Admin only: saves a branch's tagline; members see it on their next profile refresh. */
+export function useSaveGymTagline(gymId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tagline: string) => saveGymTagline(gymId, cleanTagline(tagline)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: gymKeys.tagline(gymId) }),
   });
 }

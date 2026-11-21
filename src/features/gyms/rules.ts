@@ -40,3 +40,16 @@ export function cleanGymDetails(details: GymDetails): GymDetails {
     email: details.email.trim().toLowerCase(),
   };
 }
+
+/** The longest tagline the server takes (a short line under the gym's name). */
+export const MAX_TAGLINE = 60;
+
+/** Trimmed, with runs of spaces collapsed; blank means no tagline. */
+export function cleanTagline(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/** An error for a tagline that's too long, or null. */
+export function validateTagline(text: string): string | null {
+  return cleanTagline(text).length > MAX_TAGLINE ? 'Keep it to 60 characters.' : null;
+}

@@ -1,4 +1,5 @@
 import { type ComponentRef, type ReactNode, type Ref, useState } from 'react';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -39,6 +40,15 @@ export function ReceiptCard({
     <View ref={ref} collapsable={false} style={styles.backing}>
       <View style={styles.card}>
         <View style={styles.head}>
+          {receipt.logoUrl ? (
+            <Image
+              source={{ uri: receipt.logoUrl }}
+              style={styles.logo}
+              contentFit="cover"
+              cachePolicy="disk"
+              accessibilityIgnoresInvertColors
+            />
+          ) : null}
           {showBrand ? (
             <Text allowFontScaling={false} style={styles.brand}>
               {receipt.brandName.toUpperCase()}
@@ -177,6 +187,12 @@ const styles = StyleSheet.create({
   head: {
     alignItems: 'center',
     gap: 2,
+  },
+  logo: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    marginBottom: 6,
   },
   brand: {
     color: BRAND,
