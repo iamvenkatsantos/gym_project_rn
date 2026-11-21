@@ -18,9 +18,17 @@ export type RoleTab = {
 
 /**
  * Shared tab navigator for the member, trainer, supervisor, owner and admin areas. The admin
- * area has no gym, so it has no inbox.
+ * area has no gym, so it has no inbox. Members have a Profile tab, so they skip the Account button.
  */
-export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: boolean }) {
+export function RoleTabs({
+  tabs,
+  inbox = true,
+  accountButton = true,
+}: {
+  tabs: RoleTab[];
+  inbox?: boolean;
+  accountButton?: boolean;
+}) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const t = useT();
@@ -57,7 +65,7 @@ export function RoleTabs({ tabs, inbox = true }: { tabs: RoleTab[]; inbox?: bool
         headerRight: () => (
           <View style={styles.actions}>
             {inbox ? <InboxButton /> : null}
-            <AccountButton />
+            {accountButton ? <AccountButton /> : null}
           </View>
         ),
       }}>
